@@ -53,7 +53,7 @@ export default function UserTable({ data, loading, onDeactivate, sortBy, sortDir
           >
             Edit
           </Link>
-          {r.is_active && (
+          {r.is_active && r.role !== "admin" && (
             <button
               onClick={() => onDeactivate?.(r)}
               className="text-red-600 hover:underline text-sm"
