@@ -1,10 +1,11 @@
+import re
 from datetime import datetime, date
 from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from sqlalchemy.exc import IntegrityError
 from extensions import db
-from models import BaseUser, Employee, Attendance, ManualAttendance, NetworkStatus
-from utils import paginate_query, apply_search_filters
+from models import BaseUser, Employee, Attendance, ManualAttendance, NetworkStatus, Department, Designation, Role
+from utils import paginate_query, apply_search_filters, hash_password
 
 employee_bp = Blueprint("employee_bp", __name__)
 
@@ -109,6 +110,100 @@ def _parse_float(value):
         return None
 
 
+def _parse_int(value):
+    if value is None or value == "":
+        return None
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+NAME_RE = re.compile(r"^[A-Za-z][A-Za-z\s'-]*$")
+MOBILE_RE = re.compile(r"^[0-9+\-\s]{10,15}$")
+PINCODE_RE = re.compile(r"^[A-Za-z0-9\s-]{4,10}$")
+EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
+
+
+def _validate_employee_fields(data, partial=False):
+    """Validate employee fields. In partial mode (updates) only fields
+    present in `data` are checked; required-field checks are skipped."""
+    errors = []
+
+    def present(field):
+        return not partial or field in data
+
+    def required_and_blanked(field):
+        # In partial (update) mode a required field must not be cleared out
+        # once it's included in the payload.
+        return partial and field in data and not data.get(field)
+
+    if (not partial and not data.get("employee_code")) or required_and_blanked("employee_code"):
+        errors.append("employee_code is required")
+
+    if (not partial and not data.get("email")) or required_and_blanked("email"):
+        errors.append("email is required")
+    if present("email") and data.get("email") and not EMAIL_RE.match(data.get("email")):
+        errors.append("email must be a valid email address")
+
+    if (not partial and not data.get("password")) or required_and_blanked("password"):
+        errors.append("password is required")
+    if present("password") and data.get("password") and len(data.get("password")) < 6:
+        errors.append("password must be at least 6 characters")
+
+    if present("role_id") and data.get("role_id") not in (None, ""):
+        if _parse_int(data.get("role_id")) is None:
+            errors.append("role_id must be an integer")
+
+    if (not partial and not data.get("department_id")) or required_and_blanked("department_id"):
+        errors.append("department_id is required")
+    if present("department_id") and data.get("department_id") not in (None, ""):
+        if _parse_int(data.get("department_id")) is None:
+            errors.append("department_id must be an integer")
+
+    if (not partial and not data.get("designation_id")) or required_and_blanked("designation_id"):
+        errors.append("designation_id is required")
+    if present("designation_id") and data.get("designation_id") not in (None, ""):
+        if _parse_int(data.get("designation_id")) is None:
+            errors.append("designation_id must be an integer")
+
+    if (not partial and not data.get("first_name")) or required_and_blanked("first_name"):
+        errors.append("first_name is required")
+    if present("first_name") and data.get("first_name") and not NAME_RE.match(data.get("first_name")):
+        errors.append("first_name must contain only letters")
+
+    if present("last_name") and data.get("last_name") and not NAME_RE.match(data.get("last_name")):
+        errors.append("last_name must contain only letters")
+
+    if present("gender") and data.get("gender") and data.get("gender") not in {"Male", "Female", "Other"}:
+        errors.append("gender must be Male, Female or Other")
+
+    if present("dob") and data.get("dob"):
+        dob = _parse_date(data.get("dob"))
+        if dob is None:
+            errors.append("dob must be a valid date")
+        elif dob > date.today():
+            errors.append("dob cannot be in the future")
+
+    if present("phone") and data.get("phone") and not MOBILE_RE.match(data.get("phone")):
+        errors.append("phone must be a valid mobile number")
+
+    if present("emergency_contact") and data.get("emergency_contact") and not MOBILE_RE.match(data.get("emergency_contact")):
+        errors.append("emergency_contact must be a valid mobile number")
+
+    if present("pincode") and data.get("pincode") and not PINCODE_RE.match(data.get("pincode")):
+        errors.append("pincode is invalid")
+
+    if present("joining_date") and data.get("joining_date"):
+        joining_date = _parse_date(data.get("joining_date"))
+        if joining_date is None:
+            errors.append("joining_date must be a valid date")
+        elif joining_date > date.today():
+            errors.append("joining_date cannot be in the future")
+
+    return errors
+
+
 from functools import wraps
 
 
@@ -161,15 +256,76 @@ def create_employee(token_response):
 
     data = _get_request_data()
 
+    errors = _validate_employee_fields(data, partial=False)
+    if errors:
+        return jsonify({"message": "Validation failed", "errors": errors}), 400
+
+    if data.get("salary") not in (None, "") and _parse_float(data.get("salary")) is None:
+        return jsonify({"message": "Salary must be a valid number"}), 400
+
+    if not Department.query.get(_parse_int(data.get("department_id"))):
+        return jsonify({"message": "Department not found for the provided department_id"}), 404
+    if not Designation.query.get(_parse_int(data.get("designation_id"))):
+        return jsonify({"message": "Designation not found for the provided designation_id"}), 404
+
+    email = data.get("email")
+    password = data.get("password")
+    employee_code = data.get("employee_code")
+
+    if Employee.query.filter_by(employee_code=employee_code).first():
+        return jsonify({"message": "Employee code already exists"}), 409
+
+    # An account with this email may already exist without an employee
+    # record attached (e.g. it registered itself, or an admin created the
+    # login separately) — link that account instead of erroring, rather
+    # than leaving the admin with no way to attach an employee record to it.
+    existing_user = BaseUser.query.filter_by(email=email).first()
+    if existing_user:
+        if existing_user.employee:
+            return jsonify({"message": "Employee already exists for this user"}), 409
+        user = existing_user
+        user.password = hash_password(password)
+    else:
+        if BaseUser.query.filter_by(username=employee_code).first():
+            return jsonify({"message": "Employee code already in use as a username"}), 409
+
+        role_name = "employee"
+        if data.get("role_id") is not None:
+            try:
+                role_name = {1: "admin", 2: "employee"}.get(int(data.get("role_id")), "employee")
+            except (ValueError, TypeError):
+                role_name = "employee"
+        elif data.get("role"):
+            role_name = data.get("role")
+
+        role_obj = Role.query.filter_by(name=role_name).first()
+        if not role_obj:
+            role_obj = Role(name=role_name, is_active=True, actions="")
+            db.session.add(role_obj)
+            db.session.flush()
+
+        # BaseUser is created first so its generated id can be used as
+        # Employee.user_id; both rows are then persisted in one transaction.
+        user = BaseUser(
+            username=employee_code,
+            email=email,
+            password=hash_password(password),
+            role=role_name,
+            role_id=role_obj.id,
+            is_active=True,
+        )
+        db.session.add(user)
+    db.session.flush()
+
     employee = Employee(
-        user_id=data.get("user_id"),
-        employee_code=data.get("employee_code"),
+        user_id=user.id,
+        employee_code=employee_code,
         department_id=data.get("department_id"),
         designation_id=data.get("designation_id"),
         first_name=data.get("first_name"),
         last_name=data.get("last_name"),
         gender=data.get("gender"),
-        dob=data.get("dob"),
+        dob=data.get("dob") or None,
         phone=data.get("phone"),
         emergency_contact=data.get("emergency_contact"),
         address=data.get("address"),
@@ -177,12 +333,10 @@ def create_employee(token_response):
         state=data.get("state"),
         country=data.get("country"),
         pincode=data.get("pincode"),
-        joining_date=data.get("joining_date"),
+        joining_date=data.get("joining_date") or None,
         salary=_parse_float(data.get("salary")) if data.get("salary") is not None else 0,
         status=_parse_bool(data.get("status")) if data.get("status") is not None else True,
     )
-    if data.get("user_id") and Employee.query.filter_by(user_id=data.get("user_id")).first():
-        return jsonify({"message": "Employee already exists for this user"}), 409
 
     db.session.add(employee)
     try:
@@ -191,8 +345,8 @@ def create_employee(token_response):
         return _handle_integrity_error(exc, {
             "employees_employee_code_key": "Employee code already exists",
             "employee_code": "Employee code already exists",
-            "employees_user_id_key": "Employee already exists for this user",
-            "user_id": "Employee already exists for this user",
+            "base_users_username_key": "Employee code already in use as a username",
+            "base_users_email_key": "Email already exists",
         })
     except Exception:
         db.session.rollback()
@@ -214,9 +368,45 @@ def update_employee(employee_id, token_response):
 
     data = _get_request_data()
 
+    errors = _validate_employee_fields(data, partial=True)
+    if errors:
+        return jsonify({"message": "Validation failed", "errors": errors}), 400
+
+    if "department_id" in data and not Department.query.get(_parse_int(data.get("department_id"))):
+        return jsonify({"message": "Department not found for the provided department_id"}), 404
+    if "designation_id" in data and not Designation.query.get(_parse_int(data.get("designation_id"))):
+        return jsonify({"message": "Designation not found for the provided designation_id"}), 404
+
+    if "email" in data or "password" in data or "role_id" in data:
+        linked_user = employee.user
+        if linked_user is None:
+            return jsonify({"message": "Linked user account not found for this employee"}), 404
+
+        if "email" in data:
+            new_email = data.get("email")
+            if BaseUser.query.filter(BaseUser.id != linked_user.id, BaseUser.email == new_email).first():
+                return jsonify({"message": "Email already exists"}), 409
+            linked_user.email = new_email
+
+        if data.get("password"):
+            linked_user.password = hash_password(data.get("password"))
+
+        if data.get("role_id") is not None:
+            try:
+                role_name = {1: "admin", 2: "employee"}.get(int(data.get("role_id")), linked_user.role)
+            except (ValueError, TypeError):
+                role_name = linked_user.role
+            role_obj = Role.query.filter_by(name=role_name).first()
+            if not role_obj:
+                role_obj = Role(name=role_name, is_active=True, actions="")
+                db.session.add(role_obj)
+                db.session.flush()
+            linked_user.role = role_name
+            linked_user.role_id = role_obj.id
+
     for field in ["employee_code", "department_id", "designation_id", "first_name", "last_name", "gender", "dob", "phone", "emergency_contact", "address", "city", "state", "country", "pincode", "joining_date"]:
         if field in data:
-            setattr(employee, field, data[field])
+            setattr(employee, field, data[field] or None)
 
     if "salary" in data:
         salary_value = _parse_float(data.get("salary"))
@@ -238,6 +428,7 @@ def update_employee(employee_id, token_response):
             "employee_code": "Employee code already exists",
             "employees_user_id_key": "Employee already exists for this user",
             "user_id": "Employee already exists for this user",
+            "base_users_email_key": "Email already exists",
         })
     except Exception:
         db.session.rollback()

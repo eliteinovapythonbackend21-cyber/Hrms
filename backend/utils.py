@@ -11,10 +11,14 @@ def serialize_model(item):
 
 def apply_sort(query, args):
     sort_by = args.get("sort_by")
+    model = query.column_descriptions[0]["type"]
+
     if not sort_by:
+        # Default listing order: most recently updated record first.
+        if hasattr(model, "__table__") and "updated_at" in model.__table__.columns:
+            return query.order_by(model.updated_at.desc())
         return query
 
-    model = query.column_descriptions[0]["type"]
     if not hasattr(model, "__table__") or sort_by not in model.__table__.columns:
         return query
 

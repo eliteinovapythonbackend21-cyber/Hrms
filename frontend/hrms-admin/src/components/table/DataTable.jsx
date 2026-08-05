@@ -56,13 +56,13 @@ export default function DataTable({
             {columns.map((col) => (
               <th
                 key={col.key}
-                className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider"
+                className="px-6 py-3 text-left text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider"
               >
                 {col.sortable && onSort ? (
                   <button
                     type="button"
                     onClick={() => onSort(col.key)}
-                    className="inline-flex items-center gap-1 hover:text-slate-700 dark:hover:text-slate-200"
+                    className="inline-flex items-center gap-1 hover:text-slate-900 dark:hover:text-white"
                   >
                     {col.label}
                     <SortIcon direction={sortBy === col.key ? sortDir : null} />

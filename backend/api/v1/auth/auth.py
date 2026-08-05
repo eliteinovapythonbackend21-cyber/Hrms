@@ -1,3 +1,4 @@
+import re
 from datetime import timedelta
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity, get_jwt
@@ -29,14 +30,27 @@ ROLE_MAP = {
 }
 
 
+EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
+MOBILE_RE = re.compile(r"^[0-9+\-\s]{10,15}$")
+
+
 def _validate_user_data(data, require_password=True):
     errors = []
     if not data.get("username"):
         errors.append("username is required")
+    elif len(data.get("username").strip()) < 3:
+        errors.append("username must be at least 3 characters")
     if not data.get("email"):
         errors.append("email is required")
-    if require_password and not data.get("password"):
-        errors.append("password is required")
+    elif not EMAIL_RE.match(data.get("email")):
+        errors.append("email must be a valid email address")
+    if data.get("mobile") and not MOBILE_RE.match(data.get("mobile")):
+        errors.append("mobile must be a valid phone number")
+    if require_password:
+        if not data.get("password"):
+            errors.append("password is required")
+        elif len(data.get("password")) < 6:
+            errors.append("password must be at least 6 characters")
     if data.get("role") and data.get("role") not in ["admin", "employee"]:
         errors.append("role must be admin or employee")
     if data.get("role_id") is not None:

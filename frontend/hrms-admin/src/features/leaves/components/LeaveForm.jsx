@@ -11,8 +11,8 @@ import { validateLeave } from "../leaveValidation";
 
 export default function LeaveForm({ initialData = {}, onSubmit, loading, isAdmin }) {
   const { data: leaveTypes } = useQuery({
-    queryKey: ["leave-types", { page: 1, per_page: 100 }],
-    queryFn: async () => (await masterApi.listLeaveTypes({ page: 1, per_page: 100 })).data.data,
+    queryKey: ["leave-types", { page: 1, per_page: 100, is_active: true }],
+    queryFn: async () => (await masterApi.listLeaveTypes({ page: 1, per_page: 100, is_active: true })).data.data,
   });
 
   const { data: employees } = useQuery({

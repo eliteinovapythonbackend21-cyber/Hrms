@@ -43,13 +43,18 @@ export default function LeaveFormPage() {
 
   return (
     <div className="max-w-lg mx-auto">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-          {isEdit ? "Edit Leave" : "Request Leave"}
-        </h1>
-        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-          {isEdit ? "Update your leave request" : "Submit a new leave request"}
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+            {isEdit ? "Edit Leave" : "Request Leave"}
+          </h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            {isEdit ? "Update your leave request" : "Submit a new leave request"}
+          </p>
+        </div>
+        <Button variant="secondary" onClick={() => navigate("/leaves")} className="w-full sm:w-auto">
+          Back
+        </Button>
       </div>
 
       <div className="card p-6">
@@ -59,11 +64,6 @@ export default function LeaveFormPage() {
           loading={createLeave.isPending || updateLeave.isPending}
           isAdmin={isAdmin}
         />
-        <div className="mt-4">
-          <Button variant="secondary" onClick={() => navigate("/leaves")}>
-            Back
-          </Button>
-        </div>
       </div>
     </div>
   );

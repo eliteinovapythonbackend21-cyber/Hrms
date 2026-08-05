@@ -40,13 +40,18 @@ export default function EmployeeFormPage() {
 
   return (
     <div className="max-w-3xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-          {isEdit ? "Edit Employee" : "Add Employee"}
-        </h1>
-        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-          {isEdit ? `Editing: ${employee?.first_name} ${employee?.last_name}` : "Create a new employee record"}
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+            {isEdit ? "Edit Employee" : "Add Employee"}
+          </h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            {isEdit ? `Editing: ${employee?.first_name} ${employee?.last_name}` : "Create a new employee record"}
+          </p>
+        </div>
+        <Button variant="secondary" onClick={() => navigate("/employees")} className="w-full sm:w-auto">
+          Back
+        </Button>
       </div>
 
       <div className="card p-6">
@@ -55,11 +60,6 @@ export default function EmployeeFormPage() {
           onSubmit={handleSubmit}
           loading={createEmployee.isPending || updateEmployee.isPending}
         />
-        <div className="mt-4">
-          <Button variant="secondary" onClick={() => navigate("/employees")}>
-            Back
-          </Button>
-        </div>
       </div>
     </div>
   );

@@ -1,3 +1,4 @@
+import re
 from datetime import date
 from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
@@ -24,6 +25,31 @@ def _is_admin(user):
 def _get_current_user():
     current_user_id = int(get_jwt_identity())
     return BaseUser.query.get(current_user_id)
+
+
+EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
+MOBILE_RE = re.compile(r"^[0-9+\-\s]{10,15}$")
+
+
+def _validate_user_fields(data, require_password=False):
+    errors = []
+    if "username" in data and data.get("username") is not None:
+        if not data.get("username") or len(data.get("username").strip()) < 3:
+            errors.append("username must be at least 3 characters")
+    if "email" in data and data.get("email") is not None:
+        if not data.get("email") or not EMAIL_RE.match(data.get("email")):
+            errors.append("email must be a valid email address")
+    if data.get("mobile") and not MOBILE_RE.match(data.get("mobile")):
+        errors.append("mobile must be a valid phone number")
+    if require_password:
+        password = data.get("password")
+        if not password or len(password) < 6:
+            errors.append("password must be at least 6 characters")
+    elif data.get("password") is not None and len(data.get("password")) < 6:
+        errors.append("password must be at least 6 characters")
+    if data.get("role") and data.get("role") not in ("admin", "employee"):
+        errors.append("role must be admin or employee")
+    return errors
 
 
 def _handle_integrity_error(exc, duplicates=None):
@@ -137,9 +163,17 @@ def create_user(token_response):
         return jsonify({"message": "Admin privileges required"}), 403
 
     data = _get_request_data()
+
+    if not data.get("username"):
+        return jsonify({"message": "Validation failed", "errors": ["username is required"]}), 400
+    if not data.get("email"):
+        return jsonify({"message": "Validation failed", "errors": ["email is required"]}), 400
+
+    errors = _validate_user_fields(data, require_password=True)
+    if errors:
+        return jsonify({"message": "Validation failed", "errors": errors}), 400
+
     password = data.get("password")
-    if not password:
-        return jsonify({"error": "Password required"}), 400
 
     if BaseUser.query.filter_by(username=data.get("username")).first():
         return jsonify({"message": "Username already exists"}), 409
@@ -221,6 +255,10 @@ def update_user(user_id, token_response):
     if error_response:
         return error_response
     data = _get_request_data()
+
+    errors = _validate_user_fields(data)
+    if errors:
+        return jsonify({"message": "Validation failed", "errors": errors}), 400
 
     if "username" in data and data.get("username"):
         username = data.get("username")
@@ -325,6 +363,11 @@ def update_profile(user_id, token_response):
     if error_response:
         return error_response
     data = _get_request_data()
+
+    errors = _validate_user_fields(data)
+    if errors:
+        return jsonify({"message": "Validation failed", "errors": errors}), 400
+
     profile_file = request.files.get("profile_picture")
     if profile_file:
         profile_picture = handle_image_upload(profile_file, current_app.config["ALLOWED_IMAGE_EXTENSIONS"])

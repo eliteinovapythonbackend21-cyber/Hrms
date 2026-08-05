@@ -2,7 +2,6 @@ import { useState } from "react";
 import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
-import FileUpload from "@/components/ui/FileUpload";
 import Avatar from "@/components/ui/Avatar";
 import { useToast } from "@/components/feedback/Toast";
 import { usersApi } from "@/api/users.api";
@@ -74,13 +73,29 @@ export default function EditProfileModal({ open, onClose, user }) {
     <Modal open={open} onClose={onClose} title="Edit Profile" size="lg">
       <form onSubmit={handleSubmit}>
         <div className="flex items-center gap-4 mb-6">
-          <Avatar name={form.username} src={preview} size="lg" />
-          <FileUpload
-            label="Profile Picture"
-            placeholder="Choose an image"
-            onChange={handlePictureChange}
-            className="flex-1"
-          />
+          <div className="relative shrink-0">
+            <Avatar name={form.username} src={preview} size="lg" />
+            <label
+              title="Upload photo"
+              className="absolute -bottom-1 -right-1 flex items-center justify-center h-6 w-6 rounded-full bg-primary-600 hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-400 text-white dark:text-slate-950 ring-2 ring-white dark:ring-slate-800 cursor-pointer transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 9l5-5 5 5M12 4v12" />
+              </svg>
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => handlePictureChange(e.target.files?.[0])}
+              />
+            </label>
+          </div>
+          <div>
+            <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Profile Picture</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              Click the upload icon to change your photo
+            </p>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4">

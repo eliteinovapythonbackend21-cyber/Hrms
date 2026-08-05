@@ -3,6 +3,15 @@ import { useQuery } from "@tanstack/react-query";
 import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
 import { masterApi } from "@/api/master.api";
+import { isRequired } from "@/utils/validators";
+
+const validateDesignation = (data) => {
+  const errors = {};
+  if (!isRequired(data.designation_code)) errors.designation_code = "Designation code is required";
+  if (!isRequired(data.designation_name)) errors.designation_name = "Designation name is required";
+  if (!isRequired(data.department_id)) errors.department_id = "Department is required";
+  return errors;
+};
 
 export default function DesignationForm({ initialData = {}, onSubmit, loading }) {
   const { data: departments } = useQuery({
@@ -17,6 +26,7 @@ export default function DesignationForm({ initialData = {}, onSubmit, loading })
     description: initialData.description || "",
     status: initialData.status !== undefined ? initialData.status : true,
   });
+  const [errors, setErrors] = useState({});
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -25,6 +35,9 @@ export default function DesignationForm({ initialData = {}, onSubmit, loading })
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    const validationErrors = validateDesignation(form);
+    setErrors(validationErrors);
+    if (Object.keys(validationErrors).length > 0) return;
     onSubmit(form);
   };
 
@@ -35,9 +48,9 @@ export default function DesignationForm({ initialData = {}, onSubmit, loading })
 
   return (
     <form id="designation-form" onSubmit={handleSubmit}>
-      <Input label="Designation Code" name="designation_code" value={form.designation_code} onChange={handleChange} required />
-      <Input label="Designation Name" name="designation_name" value={form.designation_name} onChange={handleChange} required />
-      <Select label="Department" name="department_id" options={deptOptions} value={form.department_id} onChange={handleChange} required />
+      <Input label="Designation Code" name="designation_code" value={form.designation_code} onChange={handleChange} error={errors.designation_code} required />
+      <Input label="Designation Name" name="designation_name" value={form.designation_name} onChange={handleChange} error={errors.designation_name} required />
+      <Select label="Department" name="department_id" options={deptOptions} value={form.department_id} onChange={handleChange} error={errors.department_id} required />
       <Input label="Description" name="description" value={form.description} onChange={handleChange} />
       <div className="mb-4">
         <label className="inline-flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">

@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 const colorMap = {
   primary: "bg-primary-100 text-primary-700 dark:bg-primary-500/20 dark:text-primary-300",
   accent: "bg-accent-100 text-accent-700 dark:bg-accent-500/20 dark:text-accent-300",
@@ -67,9 +69,10 @@ export default function DashboardCard({
   color = "primary",
   loading = false,
   percent,
+  to,
 }) {
-  return (
-    <div className="card relative overflow-hidden p-5 flex items-center gap-4">
+  const content = (
+    <>
       <span className={`absolute inset-x-0 top-0 h-1 ${barMap[color]}`} aria-hidden="true" />
       <div
         className={`h-12 w-12 rounded-lg flex items-center justify-center shrink-0 ${colorMap[color]}`}
@@ -83,6 +86,20 @@ export default function DashboardCard({
         </p>
       </div>
       {!loading && percent != null && <MiniRing percent={percent} color={color} />}
-    </div>
+    </>
   );
+
+  const className =
+    "card relative overflow-hidden p-5 flex items-center gap-4 transition-all duration-150" +
+    (to ? " hover:-translate-y-0.5 hover:shadow-md dark:hover:shadow-black/40 hover:border-slate-300 dark:hover:border-white/20 cursor-pointer" : "");
+
+  if (to) {
+    return (
+      <Link to={to} className={className}>
+        {content}
+      </Link>
+    );
+  }
+
+  return <div className={className}>{content}</div>;
 }

@@ -5,12 +5,16 @@ import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
 import DatePicker from "@/components/ui/DatePicker";
 import { employeesApi } from "@/api/employees.api";
-import { isRequired } from "@/utils/validators";
+import { isRequired, isNotFutureDate } from "@/utils/validators";
+import { toDateInputValue } from "@/utils/formatDate";
+
+const todayInputValue = toDateInputValue(new Date());
 
 const validateManualAttendance = (data) => {
   const errors = {};
   if (!isRequired(data.employee_id)) errors.employee_id = "Employee is required";
   if (!isRequired(data.attendance_date)) errors.attendance_date = "Attendance date is required";
+  else if (!isNotFutureDate(data.attendance_date)) errors.attendance_date = "Attendance date cannot be in the future";
   if (!isRequired(data.check_in)) errors.check_in = "Check-in time is required";
   if (!isRequired(data.check_out)) errors.check_out = "Check-out time is required";
   if (data.check_in && data.check_out && data.check_out <= data.check_in) {
@@ -76,43 +80,47 @@ export default function ManualAttendanceForm({ initialData = {}, onSubmit, loadi
         error={errors.employee_id}
         required
       />
-      <DatePicker
-        label="Attendance Date"
-        name="attendance_date"
-        value={form.attendance_date}
-        onChange={handleChange}
-        error={errors.attendance_date}
-        required
-      />
-      <Input
-        label="Check In"
-        name="check_in"
-        type="time"
-        value={form.check_in}
-        onChange={handleChange}
-        error={errors.check_in}
-        required
-      />
-      <Input
-        label="Check Out"
-        name="check_out"
-        type="time"
-        value={form.check_out}
-        onChange={handleChange}
-        error={errors.check_out}
-        required
-      />
-      <Select
-        label="Status"
-        name="attendance_status"
-        options={[
-          { value: "Present", label: "Present" },
-          { value: "Absent", label: "Absent" },
-          { value: "Leave", label: "Leave" },
-        ]}
-        value={form.attendance_status}
-        onChange={handleChange}
-      />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
+        <DatePicker
+          label="Attendance Date"
+          name="attendance_date"
+          value={form.attendance_date}
+          onChange={handleChange}
+          error={errors.attendance_date}
+          required
+        />
+        <Select
+          label="Status"
+          name="attendance_status"
+          options={[
+            { value: "Present", label: "Present" },
+            { value: "Absent", label: "Absent" },
+            { value: "Leave", label: "Leave" },
+          ]}
+          value={form.attendance_status}
+          onChange={handleChange}
+        />
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
+        <Input
+          label="Check In"
+          name="check_in"
+          type="time"
+          value={form.check_in}
+          onChange={handleChange}
+          error={errors.check_in}
+          required
+        />
+        <Input
+          label="Check Out"
+          name="check_out"
+          type="time"
+          value={form.check_out}
+          onChange={handleChange}
+          error={errors.check_out}
+          required
+        />
+      </div>
       <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">
         Location (optional)
       </p>

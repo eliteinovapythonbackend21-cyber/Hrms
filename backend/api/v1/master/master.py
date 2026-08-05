@@ -257,10 +257,15 @@ def delete_designation(designation_id, token_response):
 @with_token
 def list_leave_types(token_response):
     current_user = _get_current_user()
-    if not _is_admin(current_user):
-        return jsonify({"message": "Admin privileges required"}), 403
+    if not current_user:
+        return jsonify({"message": "Invalid token"}), 401
 
+    # Every authenticated user (not just admins) needs to read leave types —
+    # employees pick from this list on the Request Leave form and the leave
+    # list filter.
     query = LeaveType.query
+    if request.args.get("is_active") is not None:
+        query = query.filter(LeaveType.is_active == (request.args.get("is_active").lower() in {"true", "1", "yes"}))
     query = apply_search_filters(query, request.args, ["name"])
     return jsonify({"message": "Leave types fetched", "data": paginate_query(query, request.args), "token_response": token_response}), 200
 

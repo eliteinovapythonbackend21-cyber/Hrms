@@ -103,7 +103,7 @@ def list_leaves():
     if not _is_admin(current_user):
         if not current_user.employee:
             return jsonify({"message": "Employee record not found for current user"}), 404
-        query = query.filter_by(employee_id=current_user.employee.id)
+        query = query.filter(Leave.employee_id == current_user.employee.id)
 
     leave_type_filter = request.args.get("leave_type")
     if leave_type_filter:

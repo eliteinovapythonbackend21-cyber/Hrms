@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useCheckIn, useCheckOut } from "./useCheckInOut";
 import { useAttendance } from "./useAttendance";
 import { useGeolocation } from "@/hooks/useGeolocation";
@@ -9,6 +9,7 @@ import { toDateInputValue, toTimeInputValue } from "@/utils/formatDate";
 import { getUser } from "@/utils/tokenHelpers";
 
 const now = new Date();
+const today = toDateInputValue(now);
 
 // Best-effort device/network telemetry the backend stores alongside every
 // check-in (NetworkStatus row). All of these are optional browser APIs —
@@ -43,9 +44,14 @@ export default function CheckInOutWidget() {
 
   const user = getUser();
   const employeeId = user?.employee?.id;
-  const [attendanceDate, setAttendanceDate] = useState(toDateInputValue(now));
+  const attendanceDate = today;
   const [checkInTime, setCheckInTime] = useState(toTimeInputValue(now));
   const [checkOutTime, setCheckOutTime] = useState(toTimeInputValue(now));
+
+  useEffect(() => {
+    getLocation();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const todayQuery = useAttendance(
     { employee_id: employeeId, attendance_date: attendanceDate },
@@ -119,12 +125,6 @@ export default function CheckInOutWidget() {
         </p>
       )}
 
-      <Input
-        label="Attendance Date"
-        type="date"
-        value={attendanceDate}
-        onChange={(e) => setAttendanceDate(e.target.value)}
-      />
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
         <Input
           label="Check In Time"
@@ -141,12 +141,10 @@ export default function CheckInOutWidget() {
       </div>
 
       <div className="mb-4">
-        <Button variant="secondary" onClick={getLocation} isLoading={geoLoading} className="w-full">
-          {coords.latitude ? "Location Captured" : "Capture Location"}
-        </Button>
-        {geoError && <p className="mt-1 text-xs text-red-500">{geoError}</p>}
+        {geoLoading && <p className="text-xs text-slate-500 dark:text-slate-400">Detecting location…</p>}
+        {geoError && <p className="text-xs text-red-500">{geoError}</p>}
         {coords.latitude && (
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
             Lat: {coords.latitude.toFixed(6)}, Lng: {coords.longitude.toFixed(6)}
           </p>
         )}
