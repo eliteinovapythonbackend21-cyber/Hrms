@@ -45,7 +45,7 @@ def _validate_user_fields(data, require_password=False):
         password = data.get("password")
         if not password or len(password) < 6:
             errors.append("password must be at least 6 characters")
-    elif data.get("password") is not None and len(data.get("password")) < 6:
+    elif data.get("password") and len(data.get("password")) < 6:
         errors.append("password must be at least 6 characters")
     if data.get("role") and data.get("role") not in ("admin", "employee"):
         errors.append("role must be admin or employee")
