@@ -646,6 +646,11 @@ def create_manual_attendance(token_response):
     if attendance_date_obj > date.today():
         return jsonify({"message": "attendance_date cannot be in the future"}), 400
 
+    if Attendance.query.filter_by(employee_id=employee_id, attendance_date=attendance_date_obj).first():
+        return jsonify({"message": "Employee already has attendance marked for this date"}), 409
+    if ManualAttendance.query.filter_by(employee_id=employee_id, attendance_date=attendance_date_obj, is_active=True).first():
+        return jsonify({"message": "Manual attendance already recorded for this employee and date"}), 409
+
     check_in_datetime = _parse_datetime(attendance_date_obj, data.get("check_in"))
     check_out_datetime = _parse_datetime(attendance_date_obj, data.get("check_out"))
     if check_in_datetime is None or check_out_datetime is None:
