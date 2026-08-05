@@ -16,7 +16,7 @@ export default function UserProfilePage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { showToast } = useToast();
-  const { data: user, isLoading, isError } = useUser(id);
+  const { data: user, isLoading, isError, isFetching, refetch } = useUser(id);
   const [showImage, setShowImage] = useState(false);
 
   if (isLoading) {
@@ -55,9 +55,19 @@ export default function UserProfilePage() {
         <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
           User Profile
         </h1>
-        <Button variant="secondary" onClick={() => navigate("/users")} className="w-full sm:w-auto">
-          Back
-        </Button>
+        <div className="flex gap-2 w-full sm:w-auto">
+          <Button
+            variant="secondary"
+            onClick={() => refetch()}
+            isLoading={isFetching}
+            className="w-full sm:w-auto"
+          >
+            Refresh
+          </Button>
+          <Button variant="secondary" onClick={() => navigate("/users")} className="w-full sm:w-auto">
+            Back
+          </Button>
+        </div>
       </div>
 
       <div className="card p-6">
