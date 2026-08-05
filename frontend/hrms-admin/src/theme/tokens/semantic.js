@@ -1,0 +1,33 @@
+// Semantic color tokens (light and dark variants).
+export const semantic = {
+  light: {
+    primary: "#d4941f",
+    primaryHover: "#b47417",
+    accent: "#0f766e",
+    accentHover: "#115e59",
+    success: "#16a34a",
+    warning: "#d97706",
+    danger: "#dc2626",
+    info: "#2563eb",
+    background: "#f8fafc",
+    surface: "#ffffff",
+    text: "#0f172a",
+    muted: "#64748b",
+    border: "#e2e8f0",
+  },
+  dark: {
+    primary: "#e2a938",
+    primaryHover: "#ecc356",
+    accent: "#2dd4bf",
+    accentHover: "#5eead4",
+    success: "#22c55e",
+    warning: "#f59e0b",
+    danger: "#ef4444",
+    info: "#3b82f6",
+    background: "#05050a",
+    surface: "#0f0f16",
+    text: "#f1f5f9",
+    muted: "#94a3b8",
+    border: "rgba(255, 255, 255, 0.1)",
+  },
+};

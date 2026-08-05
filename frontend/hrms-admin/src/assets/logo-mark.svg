@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none" role="img" aria-label="HRMS logo">
+  <defs>
+    <linearGradient id="globeFill" x1="20" y1="20" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#14b8a6" />
+      <stop offset="1" stop-color="#0f766e" />
+    </linearGradient>
+    <linearGradient id="ribbonFill" x1="10" y1="90" x2="110" y2="30" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#f5c451" />
+      <stop offset="1" stop-color="#d4a72c" />
+    </linearGradient>
+    <clipPath id="globeClip">
+      <circle cx="60" cy="62" r="38" />
+    </clipPath>
+  </defs>
+
+  <circle cx="60" cy="62" r="38" fill="url(#globeFill)" />
+
+  <g clip-path="url(#globeClip)" stroke="#ccfbf1" stroke-opacity="0.55" stroke-width="1.4" fill="none">
+    <ellipse cx="60" cy="62" rx="15" ry="38" />
+    <ellipse cx="60" cy="62" rx="30" ry="38" />
+    <line x1="22" y1="62" x2="98" y2="62" />
+    <path d="M24 44 Q60 56 96 44" />
+    <path d="M24 80 Q60 68 96 80" />
+  </g>
+
+  <g clip-path="url(#globeClip)" fill="#0d5c56">
+    <path d="M32 50c4-6 12-8 18-4 4 3 3 8-1 10-6 3-9 9-16 7-6-2-6-9-1-13Z" />
+    <path d="M70 78c6-4 15-3 19 3 3 5-1 10-7 10-7 0-16 2-19-4-2-4 2-7 7-9Z" />
+    <path d="M74 34c5-2 12 1 13 6 1 4-4 6-8 5-5-1-11 1-12-4-1-4 3-6 7-7Z" />
+  </g>
+
+  <circle cx="60" cy="62" r="38" fill="none" stroke="#083d3a" stroke-opacity="0.25" stroke-width="1.5" />
+
+  <path
+    d="M14 82c14 14 34 22 56 20 16-1.5 30-9 38-19"
+    stroke="url(#ribbonFill)"
+    stroke-width="11"
+    stroke-linecap="round"
+    fill="none"
+  />
+  <path d="M100 90 L112 84 L102 74Z" fill="#d4a72c" />
+</svg>

@@ -1,0 +1,86 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-primary: #d4941f;
+    --color-primary-hover: #b47417;
+    --color-accent: #0f766e;
+    --color-accent-hover: #115e59;
+    --color-bg: #f8fafc;
+    --color-surface: #ffffff;
+    --color-text: #0f172a;
+    --color-muted: #64748b;
+    --color-border: #e2e8f0;
+  }
+
+  .dark {
+    --color-primary: #e2a938;
+    --color-primary-hover: #ecc356;
+    --color-accent: #2dd4bf;
+    --color-accent-hover: #5eead4;
+    --color-bg: #05050a;
+    --color-surface: #0f0f16;
+    --color-text: #f1f5f9;
+    --color-muted: #94a3b8;
+    --color-border: rgba(255, 255, 255, 0.1);
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  html {
+    color-scheme: light;
+  }
+
+  html.dark {
+    color-scheme: dark;
+  }
+
+  body {
+    margin: 0;
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+      Helvetica, Arial, sans-serif;
+  }
+}
+
+@layer components {
+  /* Solid in light mode; a frosted glass panel in dark mode (matches the
+     dark-first brand reference — translucent surface, blurred backdrop,
+     hairline border instead of a solid one). */
+  .card {
+    @apply bg-white dark:bg-white/[0.04] dark:backdrop-blur-xl rounded-lg border border-slate-200 dark:border-white/10 shadow-sm dark:shadow-2xl dark:shadow-black/40;
+  }
+
+  .input {
+    @apply w-full px-3 py-2 border border-slate-300 dark:border-white/10 rounded-md bg-white dark:bg-white/5 text-sm text-inherit focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center px-4 py-2 bg-primary-600 hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-400 dark:text-slate-950 text-white text-sm font-medium rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center px-4 py-2 bg-white dark:bg-white/5 border border-slate-300 dark:border-white/10 text-slate-700 dark:text-slate-200 text-sm font-medium rounded-md hover:bg-slate-50 dark:hover:bg-white/10 transition-colors disabled:opacity-50;
+  }
+
+  .btn-danger {
+    @apply inline-flex items-center justify-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-md transition-colors disabled:opacity-50;
+  }
+
+  .btn-accent {
+    @apply inline-flex items-center justify-center px-4 py-2 bg-accent-500 hover:bg-accent-600 text-white text-sm font-medium rounded-md transition-colors disabled:opacity-50;
+  }
+
+  /* Large, low-opacity brand mark used as a background watermark behind
+     hero/auth surfaces. Purely decorative — kept out of the tab order. */
+  .brand-watermark {
+    @apply pointer-events-none select-none absolute opacity-[0.06] dark:opacity-[0.08];
+  }
+}

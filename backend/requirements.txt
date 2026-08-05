@@ -1,0 +1,12 @@
+Flask
+Flask-Cors
+Flask-SQLAlchemy
+Flask-Migrate
+Flask-JWT-Extended
+psycopg2-binary
+python-dotenv
+marshmallow
+bcrypt
+flask_jwt_extended
+openpyxl
+cloudinary

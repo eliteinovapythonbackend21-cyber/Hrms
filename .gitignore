@@ -1,0 +1,116 @@
+# =====================================
+# Python / Flask Backend API (.gitignore)
+# =====================================
+
+# ---- Virtual Environments ----
+env/
+venv/
+.venv/
+ENV/
+env.bak/
+venv.bak/
+
+# ---- Environment / Config Files ----
+.env
+.env.*
+.env.local
+.env.*.local
+*.env
+!.env.example
+
+# ---- Python Bytecode / Compiled Files ----
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# ---- Distribution / Build Artifacts ----
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# ---- Node / Frontend ----
+node_modules/
+.vercel/
+
+# ---- Test / Coverage Artifacts ----
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.coverage
+.hypothesis/
+.cache/
+*.cover
+
+# ---- Database Files ----
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+
+# ---- Logs ----
+*.log
+logs/
+*.log.*
+
+# ---- Uploaded Media Files ----
+# No longer used (files are stored on Cloudinary), but ignore just in case
+**/uploads/*
+!**/uploads/.gitkeep
+
+# ---- Local Tooling / Editor Config ----
+.claude/settings.json
+.claude/settings.local.json
+
+# ---- Project Docs / Local Reference Files (not needed in repo) ----
+backend/hrms_flowchart.md
+backend/postman_collection_hrms.json
+backend/postman_environment_local.json
+
+# ---- DB Migrations (managed fresh on the server) ----
+backend/migrations/
+
+# ---- Security / Credential Files ----
+*.pem
+*.key
+*.pub
+*.p12
+*.pfx
+*.crt
+*.cer
+
+# ---- IDE / Editor Files ----
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.settings/
+*.code-workspace
+
+# ---- OS Files ----
+.DS_Store
+Thumbs.db
+Desktop.ini
+ehthumbs.db
+
+# ---- Misc ----
+.directory
+*.pyo
+*.pyd
