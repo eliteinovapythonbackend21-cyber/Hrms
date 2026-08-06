@@ -4,14 +4,12 @@ import { isRequired } from "@/utils/validators";
 
 const validateDepartment = (data) => {
   const errors = {};
-  if (!isRequired(data.department_code)) errors.department_code = "Department code is required";
   if (!isRequired(data.department_name)) errors.department_name = "Department name is required";
   return errors;
 };
 
 export default function DepartmentForm({ initialData = {}, onSubmit, loading }) {
   const [form, setForm] = useState({
-    department_code: initialData.department_code || "",
     department_name: initialData.department_name || "",
     description: initialData.description || "",
     status: initialData.status !== undefined ? initialData.status : true,
@@ -33,7 +31,9 @@ export default function DepartmentForm({ initialData = {}, onSubmit, loading }) 
 
   return (
     <form id="department-form" onSubmit={handleSubmit}>
-      <Input label="Department Code" name="department_code" value={form.department_code} onChange={handleChange} error={errors.department_code} required />
+      {initialData.department_code && (
+        <Input label="Department Code" name="department_code" value={initialData.department_code} disabled />
+      )}
       <Input label="Department Name" name="department_name" value={form.department_name} onChange={handleChange} error={errors.department_name} required />
       <Input label="Description" name="description" value={form.description} onChange={handleChange} />
       <div className="mb-4">

@@ -5,31 +5,25 @@ import Input from "@/components/ui/Input";
 import Avatar from "@/components/ui/Avatar";
 import { useToast } from "@/components/feedback/Toast";
 import { usersApi } from "@/api/users.api";
-import { employeesApi } from "@/api/employees.api";
 import { setUser } from "@/utils/tokenHelpers";
 import { notifyUserUpdated } from "@/hooks/useCurrentUser";
 import { resolveUploadUrl } from "@/utils/fileUrl";
 import { validateEditProfile } from "./userValidation";
 
-const EMPLOYEE_FIELDS = ["phone", "address", "city", "state", "country", "pincode"];
-
 export default function EditProfileModal({ open, onClose, user }) {
   const { showToast } = useToast();
+  const isEmployee = user?.role === "employee";
   const [form, setForm] = useState({
     username: user?.username || "",
     email: user?.email || "",
     mobile: user?.mobile || "",
   });
-  const [employeeForm, setEmployeeForm] = useState(
-    Object.fromEntries(EMPLOYEE_FIELDS.map((f) => [f, ""]))
-  );
   const [picture, setPicture] = useState(null);
   const [preview, setPreview] = useState(resolveUploadUrl(user?.profile_picture?.url));
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
-  const handleEmployeeChange = (e) => setEmployeeForm({ ...employeeForm, [e.target.name]: e.target.value });
 
   const handlePictureChange = (file) => {
     if (!file) return;
@@ -49,15 +43,6 @@ export default function EditProfileModal({ open, onClose, user }) {
       if (picture) profilePayload.profile_picture = picture;
       const res = await usersApi.updateProfile(user.id, profilePayload);
       setUser({ ...user, ...res.data.data });
-
-      if (user?.role === "employee" && user?.employee?.id) {
-        const filledFields = Object.fromEntries(
-          Object.entries(employeeForm).filter(([, value]) => value !== "")
-        );
-        if (Object.keys(filledFields).length > 0) {
-          await employeesApi.update(user.employee.id, filledFields);
-        }
-      }
 
       notifyUserUpdated();
       showToast("Profile updated", "success");
@@ -99,26 +84,27 @@ export default function EditProfileModal({ open, onClose, user }) {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
-          <Input label="Username" name="username" value={form.username} onChange={handleChange} error={errors.username} required />
-          <Input label="Email" name="email" type="email" value={form.email} onChange={handleChange} error={errors.email} required />
+          <Input
+            label="Username"
+            name="username"
+            value={form.username}
+            onChange={handleChange}
+            error={errors.username}
+            required
+            disabled={isEmployee}
+          />
+          <Input
+            label="Email"
+            name="email"
+            type="email"
+            value={form.email}
+            onChange={handleChange}
+            error={errors.email}
+            required
+            disabled={isEmployee}
+          />
           <Input label="Mobile" name="mobile" value={form.mobile} onChange={handleChange} error={errors.mobile} />
         </div>
-
-        {user?.role === "employee" && user?.employee?.id && (
-          <>
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mt-2 mb-3">
-              Employee details
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
-              <Input label="Phone" name="phone" value={employeeForm.phone} onChange={handleEmployeeChange} />
-              <Input label="Address" name="address" value={employeeForm.address} onChange={handleEmployeeChange} />
-              <Input label="City" name="city" value={employeeForm.city} onChange={handleEmployeeChange} />
-              <Input label="State" name="state" value={employeeForm.state} onChange={handleEmployeeChange} />
-              <Input label="Country" name="country" value={employeeForm.country} onChange={handleEmployeeChange} />
-              <Input label="Pincode" name="pincode" value={employeeForm.pincode} onChange={handleEmployeeChange} />
-            </div>
-          </>
-        )}
 
         <div className="flex justify-end gap-2 mt-4">
           <Button type="button" variant="secondary" onClick={onClose}>

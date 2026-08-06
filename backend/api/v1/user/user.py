@@ -47,8 +47,8 @@ def _validate_user_fields(data, require_password=False):
             errors.append("password must be at least 6 characters")
     elif data.get("password") and len(data.get("password")) < 6:
         errors.append("password must be at least 6 characters")
-    if data.get("role") and data.get("role") not in ("admin", "employee"):
-        errors.append("role must be admin or employee")
+    if data.get("role") and data.get("role") not in ("admin", "employee", "hr", "finance"):
+        errors.append("role must be admin, employee, hr or finance")
     return errors
 
 
@@ -100,6 +100,9 @@ def list_users(token_response):
         return jsonify({"message": "Admin privileges required"}), 403
 
     query = BaseUser.query
+    role_filter = request.args.get("role")
+    if role_filter:
+        query = query.filter(BaseUser.role == role_filter)
     query = apply_search_filters(query, request.args, ["username", "email", "role"])
     result = paginate_query(query, request.args)
     return jsonify({"message": "Users fetched", "data": result, "token_response": token_response}), 200

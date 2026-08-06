@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { useRegister } from "./useAuth";
+import { authApi } from "@/api/auth.api";
 import { useToast } from "@/components/feedback/Toast";
 import { validateRegister } from "./authValidation";
 import Button from "@/components/ui/Button";
@@ -42,11 +44,37 @@ export default function RegisterPage() {
     mobile: "",
     password: "",
     role: "employee",
+    first_name: "",
+    last_name: "",
+    department_id: "",
+    designation_id: "",
   });
   const [errors, setErrors] = useState({});
 
+  const { data: departments } = useQuery({
+    queryKey: ["auth", "departments"],
+    queryFn: async () => (await authApi.departments()).data.data,
+  });
+
+  const { data: designations } = useQuery({
+    queryKey: ["auth", "designations", form.department_id],
+    queryFn: async () => (await authApi.designations(form.department_id)).data.data,
+    enabled: !!form.department_id,
+  });
+
+  const deptOptions = (departments || []).map((d) => ({ value: d.id, label: d.department_name }));
+  const desigOptions = (designations || []).map((d) => ({ value: d.id, label: d.designation_name }));
+
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    if (name === "department_id") {
+      // Designation belongs to a department — reset it whenever the
+      // department changes so a stale pick from a different department
+      // can't be submitted.
+      setForm({ ...form, department_id: value, designation_id: "" });
+      return;
+    }
+    setForm({ ...form, [name]: value });
   };
 
   const handleSubmit = async (e) => {
@@ -120,6 +148,45 @@ export default function RegisterPage() {
           error={errors.role}
           required
         />
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 sm:gap-x-4">
+          <Input
+            label="First Name"
+            name="first_name"
+            value={form.first_name}
+            onChange={handleChange}
+            error={errors.first_name}
+            required
+          />
+          <Input
+            label="Last Name"
+            name="last_name"
+            value={form.last_name}
+            onChange={handleChange}
+            error={errors.last_name}
+          />
+          <Select
+            label="Department"
+            name="department_id"
+            options={deptOptions}
+            value={form.department_id}
+            onChange={handleChange}
+            error={errors.department_id}
+            required
+          />
+          <Select
+            label="Designation"
+            name="designation_id"
+            options={desigOptions}
+            value={form.designation_id}
+            onChange={handleChange}
+            error={errors.designation_id}
+            placeholder={form.department_id ? "Select..." : "Select a department first"}
+            disabled={!form.department_id}
+            required
+          />
+        </div>
+
         <Button
           type="submit"
           className="w-full mt-2"

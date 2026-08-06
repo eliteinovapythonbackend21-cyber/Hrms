@@ -48,17 +48,20 @@ const navItemClass = (collapsed) => ({ isActive }) =>
       : "text-slate-600 dark:text-slate-300 border-transparent hover:bg-slate-100 dark:hover:bg-white/5"
   }`;
 
-function SubNav({ item, closeSidebar, collapsed }) {
+function SubNav({ item, closeSidebar, collapsed, userRole }) {
   const location = useLocation();
-  const childActive = item.children.some((c) => location.pathname.startsWith(c.path));
+  const children = item.children.filter((c) => !c.roles || c.roles.includes(userRole));
+  const childActive = children.some((c) => location.pathname.startsWith(c.path));
   const [open, setOpen] = useState(childActive);
+
+  if (children.length === 0) return null;
 
   if (collapsed) {
     // No room for an inline flyout in the icon rail — jump straight to the
-    // first child (e.g. Master Data -> Departments) instead.
+    // first (role-visible) child (e.g. Master Data -> Departments) instead.
     return (
       <NavLink
-        to={item.children[0].path}
+        to={children[0].path}
         onClick={closeSidebar}
         title={item.label}
         className={navItemClass(true)({ isActive: childActive })}
@@ -93,7 +96,7 @@ function SubNav({ item, closeSidebar, collapsed }) {
       </button>
       {open && (
         <div className="mt-1 ml-4 pl-4 border-l border-slate-200 dark:border-white/10 space-y-1">
-          {item.children.map((child) => (
+          {children.map((child) => (
             <NavLink key={child.path} to={child.path} onClick={closeSidebar} className={navItemClass(false)}>
               <Icon name={child.icon} />
               {child.label}
@@ -142,7 +145,7 @@ export default function Sidebar() {
         <nav className="flex-1 p-3 space-y-1 overflow-y-auto overflow-x-hidden">
           {filteredNav.map((item) =>
             item.children ? (
-              <SubNav key={item.path} item={item} closeSidebar={closeSidebar} collapsed={sidebarCollapsed} />
+              <SubNav key={item.path} item={item} closeSidebar={closeSidebar} collapsed={sidebarCollapsed} userRole={user?.role} />
             ) : (
               <NavLink
                 key={item.path}

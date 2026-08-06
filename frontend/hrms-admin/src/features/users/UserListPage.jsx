@@ -22,7 +22,7 @@ const EXPORT_COLUMNS = [
   { header: "Status", accessor: (r) => (r.is_active ? "Active" : "Inactive") },
 ];
 
-export default function UserListPage() {
+export default function UserListPage({ role }) {
   const { showToast } = useToast();
   const { params, page, perPage, setPage, setPerPage, sortBy, sortDir, toggleSort } = usePagination();
   const { value, setValue, debouncedValue } = useDebouncedSearch();
@@ -30,6 +30,7 @@ export default function UserListPage() {
   const queryParams = {
     ...params,
     search: debouncedValue || undefined,
+    role: role || undefined,
   };
 
   const { data, isLoading, isError, isFetching, refetch } = useUsers(queryParams);
@@ -60,9 +61,11 @@ export default function UserListPage() {
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Users</h1>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+            {role === "admin" ? "Admins" : role === "employee" ? "Employees" : "Users"}
+          </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Manage user accounts
+            {role === "admin" ? "Manage admin accounts" : role === "employee" ? "Manage employee accounts" : "Manage user accounts"}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">

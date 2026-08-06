@@ -123,6 +123,17 @@ NAME_RE = re.compile(r"^[A-Za-z][A-Za-z\s'-]*$")
 MOBILE_RE = re.compile(r"^[0-9+\-\s]{10,15}$")
 PINCODE_RE = re.compile(r"^[A-Za-z0-9\s-]{4,10}$")
 EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
+PF_NUMBER_RE = re.compile(r"^[A-Za-z0-9\-\/]{2,30}$")
+ESI_NUMBER_RE = re.compile(r"^[A-Za-z0-9\-\/]{2,30}$")
+ACCOUNT_NUMBER_RE = re.compile(r"^[A-Za-z0-9]{6,20}$")
+
+# Statutory employee-side contribution rates used for payslip deduction math.
+PF_EMPLOYEE_RATE = 0.12
+ESI_EMPLOYEE_RATE = 0.0075
+ESI_WAGE_CEILING = 21000
+
+# Working hours below this threshold on a given day are marked Absent.
+MINIMUM_PRESENT_HOURS = 8.0
 
 
 def _validate_employee_fields(data, partial=False):
@@ -137,9 +148,6 @@ def _validate_employee_fields(data, partial=False):
         # In partial (update) mode a required field must not be cleared out
         # once it's included in the payload.
         return partial and field in data and not data.get(field)
-
-    if (not partial and not data.get("employee_code")) or required_and_blanked("employee_code"):
-        errors.append("employee_code is required")
 
     if (not partial and not data.get("email")) or required_and_blanked("email"):
         errors.append("email is required")
@@ -193,6 +201,19 @@ def _validate_employee_fields(data, partial=False):
 
     if present("pincode") and data.get("pincode") and not PINCODE_RE.match(data.get("pincode")):
         errors.append("pincode is invalid")
+
+    if present("allowance") and data.get("allowance") not in (None, ""):
+        if _parse_float(data.get("allowance")) is None:
+            errors.append("allowance must be a valid number")
+
+    if present("pf_number") and data.get("pf_number") and not PF_NUMBER_RE.match(data.get("pf_number")):
+        errors.append("pf_number is invalid")
+
+    if present("esi_number") and data.get("esi_number") and not ESI_NUMBER_RE.match(data.get("esi_number")):
+        errors.append("esi_number is invalid")
+
+    if present("account_number") and data.get("account_number") and not ACCOUNT_NUMBER_RE.match(data.get("account_number")):
+        errors.append("account_number is invalid")
 
     if present("joining_date") and data.get("joining_date"):
         joining_date = _parse_date(data.get("joining_date"))
@@ -270,10 +291,7 @@ def create_employee(token_response):
 
     email = data.get("email")
     password = data.get("password")
-    employee_code = data.get("employee_code")
-
-    if Employee.query.filter_by(employee_code=employee_code).first():
-        return jsonify({"message": "Employee code already exists"}), 409
+    employee_code = Employee.generate_next_code()
 
     # An account with this email may already exist without an employee
     # record attached (e.g. it registered itself, or an admin created the
@@ -335,6 +353,10 @@ def create_employee(token_response):
         pincode=data.get("pincode"),
         joining_date=data.get("joining_date") or None,
         salary=_parse_float(data.get("salary")) if data.get("salary") is not None else 0,
+        allowance=_parse_float(data.get("allowance")) if data.get("allowance") is not None else 0,
+        pf_number=data.get("pf_number"),
+        esi_number=data.get("esi_number"),
+        account_number=data.get("account_number"),
         status=_parse_bool(data.get("status")) if data.get("status") is not None else True,
     )
 
@@ -367,6 +389,12 @@ def update_employee(employee_id, token_response):
         return error_response
 
     data = _get_request_data()
+
+    if not _is_admin(current_user):
+        SELF_SERVICE_FIELDS = {"phone", "emergency_contact"}
+        disallowed = set(data.keys()) - SELF_SERVICE_FIELDS
+        if disallowed:
+            return jsonify({"message": "You can only update phone and emergency contact"}), 403
 
     errors = _validate_employee_fields(data, partial=True)
     if errors:
@@ -404,7 +432,7 @@ def update_employee(employee_id, token_response):
             linked_user.role = role_name
             linked_user.role_id = role_obj.id
 
-    for field in ["employee_code", "department_id", "designation_id", "first_name", "last_name", "gender", "dob", "phone", "emergency_contact", "address", "city", "state", "country", "pincode", "joining_date"]:
+    for field in ["employee_code", "department_id", "designation_id", "first_name", "last_name", "gender", "dob", "phone", "emergency_contact", "address", "city", "state", "country", "pincode", "joining_date", "pf_number", "esi_number", "account_number"]:
         if field in data:
             setattr(employee, field, data[field] or None)
 
@@ -413,6 +441,12 @@ def update_employee(employee_id, token_response):
         if salary_value is None:
             return jsonify({"message": "Salary must be a valid number"}), 400
         employee.salary = salary_value
+
+    if "allowance" in data:
+        allowance_value = _parse_float(data.get("allowance"))
+        if allowance_value is None:
+            return jsonify({"message": "Allowance must be a valid number"}), 400
+        employee.allowance = allowance_value
 
     if "status" in data:
         status_value = _parse_bool(data.get("status"))
@@ -532,6 +566,62 @@ def reset_employee_salary(employee_id, token_response):
     return jsonify({"message": "Employee salary reset", "data": {"employee_id": employee.id, "salary": float(employee.salary)}, "token_response": token_response}), 200
 
 
+@employee_bp.route("/<int:employee_id>/payslip", methods=["GET"])
+@jwt_required()
+@with_token
+def get_employee_payslip(employee_id, token_response):
+    employee, error_response = _fetch_employee(employee_id)
+    if error_response:
+        return error_response
+    authorized, current_user, error_response = _authorize_employee_action(employee)
+    if not authorized:
+        return error_response
+
+    today = date.today()
+    month = _parse_int(request.args.get("month")) or today.month
+    year = _parse_int(request.args.get("year")) or today.year
+    if not (1 <= month <= 12):
+        return jsonify({"message": "month must be between 1 and 12"}), 400
+
+    basic_salary = float(employee.salary) if employee.salary is not None else 0.0
+    allowance = float(employee.allowance) if employee.allowance is not None else 0.0
+    gross_earnings = round(basic_salary + allowance, 2)
+
+    pf_deduction = round(basic_salary * PF_EMPLOYEE_RATE, 2)
+    esi_deduction = round(gross_earnings * ESI_EMPLOYEE_RATE, 2) if gross_earnings <= ESI_WAGE_CEILING else 0.0
+    total_deductions = round(pf_deduction + esi_deduction, 2)
+    net_pay = round(gross_earnings - total_deductions, 2)
+
+    data = {
+        "employee": {
+            "id": employee.id,
+            "employee_code": employee.employee_code,
+            "first_name": employee.first_name,
+            "last_name": employee.last_name,
+            "email": employee.user.email if employee.user else None,
+            "department": employee.department.department_name if employee.department else None,
+            "designation": employee.designation.designation_name if employee.designation else None,
+            "pf_number": employee.pf_number,
+            "esi_number": employee.esi_number,
+            "account_number": employee.account_number,
+        },
+        "period": {"month": month, "year": year},
+        "earnings": {
+            "basic_salary": basic_salary,
+            "allowance": allowance,
+            "gross_earnings": gross_earnings,
+        },
+        "deductions": {
+            "pf": pf_deduction,
+            "esi": esi_deduction,
+            "total_deductions": total_deductions,
+        },
+        "net_pay": net_pay,
+    }
+
+    return jsonify({"message": "Payslip fetched", "data": data, "token_response": token_response}), 200
+
+
 @employee_bp.route("/checkin", methods=["POST"])
 @jwt_required()
 @with_token
@@ -622,6 +712,7 @@ def employee_checkout(token_response):
     attendance.checkout_latitude = data.get("latitude")
     attendance.checkout_longitude = data.get("longitude")
     attendance.working_hours = round((check_out_datetime - attendance.check_in).total_seconds() / 3600, 2)
+    attendance.attendance_status = "Present" if attendance.working_hours >= MINIMUM_PRESENT_HOURS else "Absent"
     db.session.commit()
 
     return jsonify({"message": "Check-out recorded", "data": attendance.to_dict(), "token_response": token_response}), 200
@@ -660,17 +751,19 @@ def create_manual_attendance(token_response):
     if (check_out_datetime - check_in_datetime).total_seconds() < 60:
         return jsonify({"message": "Minimum attendance duration is 1 minute"}), 400
 
+    manual_working_hours = round((check_out_datetime - check_in_datetime).total_seconds() / 3600, 2)
+    default_status = "Present" if manual_working_hours >= MINIMUM_PRESENT_HOURS else "Absent"
     manual_attendance = ManualAttendance(
         employee_id=employee_id,
         attendance_date=attendance_date_obj,
         check_in=check_in_datetime,
         check_out=check_out_datetime,
-        working_hours=round((check_out_datetime - check_in_datetime).total_seconds() / 3600, 2),
+        working_hours=manual_working_hours,
         checkin_latitude=data.get("latitude"),
         checkin_longitude=data.get("longitude"),
         checkout_latitude=data.get("checkout_latitude"),
         checkout_longitude=data.get("checkout_longitude"),
-        attendance_status=data.get("attendance_status", "Present"),
+        attendance_status=data.get("attendance_status", default_status),
         description="admin",
     )
     db.session.add(manual_attendance)
@@ -733,12 +826,25 @@ def update_manual_attendance(manual_attendance_id, token_response):
     if (check_out_datetime - check_in_datetime).total_seconds() < 60:
         return jsonify({"message": "Minimum attendance duration is 1 minute"}), 400
 
+    target_employee_id = manual_attendance.employee_id
     if "employee_id" in data:
         employee, error_response = _fetch_employee(data.get("employee_id"))
         if error_response:
             return error_response
-        manual_attendance.employee_id = employee.id
+        target_employee_id = employee.id
 
+    if target_employee_id != manual_attendance.employee_id or attendance_date_obj != manual_attendance.attendance_date:
+        if Attendance.query.filter_by(employee_id=target_employee_id, attendance_date=attendance_date_obj).first():
+            return jsonify({"message": "Employee already has attendance marked for this date"}), 409
+        if ManualAttendance.query.filter(
+            ManualAttendance.employee_id == target_employee_id,
+            ManualAttendance.attendance_date == attendance_date_obj,
+            ManualAttendance.is_active == True,
+            ManualAttendance.id != manual_attendance_id,
+        ).first():
+            return jsonify({"message": "Manual attendance already recorded for this employee and date"}), 409
+
+    manual_attendance.employee_id = target_employee_id
     manual_attendance.attendance_date = attendance_date_obj
     manual_attendance.check_in = check_in_datetime
     manual_attendance.check_out = check_out_datetime
@@ -753,6 +859,8 @@ def update_manual_attendance(manual_attendance_id, token_response):
         manual_attendance.checkout_longitude = data.get("checkout_longitude")
     if "attendance_status" in data:
         manual_attendance.attendance_status = data.get("attendance_status")
+    else:
+        manual_attendance.attendance_status = "Present" if manual_attendance.working_hours >= MINIMUM_PRESENT_HOURS else "Absent"
 
     db.session.commit()
 

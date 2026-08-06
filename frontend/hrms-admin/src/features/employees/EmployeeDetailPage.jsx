@@ -44,6 +44,10 @@ export default function EmployeeDetailPage() {
     { label: "Pincode", value: employee.pincode || "-" },
     { label: "Joining Date", value: formatDate(employee.joining_date) },
     { label: "Salary", value: formatCurrency(employee.salary) },
+    { label: "Allowance", value: formatCurrency(employee.allowance) },
+    { label: "PF Number", value: employee.pf_number || "-" },
+    { label: "ESI Number", value: employee.esi_number || "-" },
+    { label: "Bank Account No.", value: employee.account_number || "-" },
     { label: "Created", value: formatDateTime(employee.created_at) },
   ];
 
@@ -65,6 +69,9 @@ export default function EmployeeDetailPage() {
           </Button>
           <Button variant="secondary" onClick={() => navigate(`/employees/${id}/edit`)}>
             Edit
+          </Button>
+          <Button variant="secondary" onClick={() => navigate(`/employees/${id}/payslip`)}>
+            Payslip
           </Button>
         </div>
       </div>

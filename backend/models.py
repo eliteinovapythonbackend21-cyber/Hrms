@@ -1,4 +1,4 @@
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from decimal import Decimal
 from io import BytesIO
 
@@ -210,6 +210,10 @@ class Employee(TimestampMixin, db.Model):
     pincode = db.Column(db.String(10))
     joining_date = db.Column(db.Date)
     salary = db.Column(db.Numeric(12, 2), default=0)
+    allowance = db.Column(db.Numeric(12, 2), default=0)
+    pf_number = db.Column(db.String(30))
+    esi_number = db.Column(db.String(30))
+    account_number = db.Column(db.String(30))
     status = db.Column(db.Boolean, default=True)
     is_active = db.Column(db.Boolean, default=True)
     # profile_picture = db.Column(JSONB, nullable=True)
@@ -230,6 +234,23 @@ class Employee(TimestampMixin, db.Model):
         data["leave_count"] = len(self.leaves) if self.leaves is not None else 0
         data["network_log_count"] = len(self.network_logs) if self.network_logs is not None else 0
         return data
+
+    CODE_PREFIX = "ET"
+
+    @classmethod
+    def generate_next_code(cls):
+        """Next sequential employee code, e.g. ET001, ET002, ... continuing
+        from the highest numbered code already in use."""
+        prefix = cls.CODE_PREFIX
+        max_seq = 0
+        codes = db.session.query(cls.employee_code).filter(
+            cls.employee_code.like(f"{prefix}%")
+        ).all()
+        for (code,) in codes:
+            suffix = code[len(prefix):]
+            if suffix.isdigit():
+                max_seq = max(max_seq, int(suffix))
+        return f"{prefix}{max_seq + 1:03d}"
 
 
 class Attendance(TimestampMixin, db.Model):
@@ -340,9 +361,12 @@ class Attendance(TimestampMixin, db.Model):
             elif to_date:
                 attendance_query = attendance_query.filter(cls.attendance_date <= to_date)
 
-            attendance_count = attendance_query.count()
+            attendance_records = attendance_query.all()
+            attendance_count = len(attendance_records)
             salary_value = float(employee.salary or 0)
-            approved_leave_days = 0
+
+            # Approved leave dates in range — these are excluded from any
+            # absent-day salary deduction and are surfaced for management.
             leave_query = Leave.query.filter(
                 Leave.employee_id == employee.id,
                 Leave.status == "Approved",
@@ -355,13 +379,32 @@ class Attendance(TimestampMixin, db.Model):
             elif to_date:
                 leave_query = leave_query.filter(Leave.from_date <= to_date)
 
+            approved_leave_dates = set()
             for leave in leave_query.all():
                 leave_start = max(from_date, leave.from_date) if from_date else leave.from_date
                 leave_end = min(to_date, leave.to_date) if to_date else leave.to_date
-                approved_leave_days += (leave_end - leave_start).days + 1
+                day = leave_start
+                while day <= leave_end:
+                    approved_leave_dates.add(day)
+                    day += timedelta(days=1)
 
-            leave_deduction = 0.0
-            net_salary = salary_value - leave_deduction
+            # Absent days not covered by an approved leave are the only days
+            # that reduce salary; absences on approved-leave dates are not deducted.
+            deductible_absent_dates = {
+                record.attendance_date
+                for record in attendance_records
+                if record.attendance_status == "Absent" and record.attendance_date not in approved_leave_dates
+            }
+
+            if from_date and to_date:
+                days_in_period = (to_date - from_date).days + 1
+            else:
+                days_in_period = 30
+            per_day_salary = (salary_value / days_in_period) if days_in_period else 0.0
+            absent_deduction = round(per_day_salary * len(deductible_absent_dates), 2)
+            net_salary = round(salary_value - absent_deduction, 2)
+
+            approved_leave_dates_label = ", ".join(d.isoformat() for d in sorted(approved_leave_dates))
 
             rows.append([
                 employee.id,
@@ -369,14 +412,20 @@ class Attendance(TimestampMixin, db.Model):
                 f"{employee.first_name or ''} {employee.last_name or ''}".strip(),
                 salary_value,
                 attendance_count,
-                approved_leave_days,
-                leave_deduction,
+                len(deductible_absent_dates),
+                len(approved_leave_dates),
+                approved_leave_dates_label,
+                absent_deduction,
                 net_salary,
                 from_date.isoformat() if from_date else "",
                 to_date.isoformat() if to_date else "",
             ])
 
-        headers = ["Employee ID", "Employee Code", "Employee Name", "Salary", "Attendance Count", "Approved Leave Days", "Leave Deduction", "Net Salary", "From Date", "To Date"]
+        headers = [
+            "Employee ID", "Employee Code", "Employee Name", "Salary", "Attendance Count",
+            "Absent Days (Deducted)", "Approved Leave Days", "Approved Leave Dates",
+            "Absent Deduction", "Net Salary", "From Date", "To Date",
+        ]
         return cls._create_workbook("Salary Report", headers, rows)
 
 

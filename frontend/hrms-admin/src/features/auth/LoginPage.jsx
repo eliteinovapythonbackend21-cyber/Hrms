@@ -6,6 +6,7 @@ import { validateLogin } from "./authValidation";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import AuthLayout from "@/layout/AuthLayout";
+import LoginTypeSelect from "./LoginTypeSelect";
 
 const MailIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -25,6 +26,8 @@ export default function LoginPage() {
   const [form, setForm] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState({});
   const [remember, setRemember] = useState(true);
+  const [loginType, setLoginType] = useState("admin");
+  const isAdminLogin = loginType === "admin";
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -47,7 +50,8 @@ export default function LoginPage() {
   return (
     <AuthLayout
       title="Welcome back"
-      subtitle="Sign in to your HRMS account"
+      subtitle={isAdminLogin ? "Sign in to your HRMS admin account" : "Sign in to your HRMS employee account"}
+      topRight={<LoginTypeSelect value={loginType} onChange={setLoginType} />}
     >
       <form onSubmit={handleSubmit}>
         <Input
@@ -83,9 +87,11 @@ export default function LoginPage() {
             />
             Remember me
           </label>
-          <span className="text-sm text-slate-400 dark:text-slate-500" title="Contact an administrator to reset your password">
-            Forgot password?
-          </span>
+          {isAdminLogin && (
+            <span className="text-sm text-slate-400 dark:text-slate-500" title="Contact an administrator to reset your password">
+              Forgot password?
+            </span>
+          )}
         </div>
 
         <Button
@@ -97,15 +103,17 @@ export default function LoginPage() {
         </Button>
       </form>
 
-      <p className="text-center text-sm text-slate-500 dark:text-slate-400 mt-6">
-        Don't have an account?{" "}
-        <Link
-          to="/register"
-          className="text-primary-600 dark:text-primary-400 hover:underline"
-        >
-          Register
-        </Link>
-      </p>
+      {isAdminLogin && (
+        <p className="text-center text-sm text-slate-500 dark:text-slate-400 mt-6">
+          Don't have an account?{" "}
+          <Link
+            to="/register"
+            className="text-primary-600 dark:text-primary-400 hover:underline"
+          >
+            Register
+          </Link>
+        </p>
+      )}
     </AuthLayout>
   );
 }

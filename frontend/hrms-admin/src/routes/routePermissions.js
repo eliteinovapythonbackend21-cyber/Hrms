@@ -1,32 +1,38 @@
+import { EMPLOYEE_LIKE_ROLES } from "@/constants/roles";
+
 // Single map: route pattern -> allowed roles.
 // Use a function to check if a path matches a pattern (supports :param).
 // NOTE: getRouteRoles does a linear scan and returns the first pattern that
 // matches, so more specific (literal-segment) patterns must be listed before
 // the generic ":id"-style pattern they'd otherwise be shadowed by
 // (e.g. "/users/new" before "/users/:id", since "new" also satisfies [^/]+).
+// HR and Finance get the same access as Employee (see EMPLOYEE_LIKE_ROLES).
 export const routePermissions = {
-  "/dashboard": ["admin", "employee"],
-  "/users": ["admin"],
+  "/dashboard": ["admin", ...EMPLOYEE_LIKE_ROLES],
+  "/users/admins": ["admin"],
+  "/users/employees": ["admin"],
   "/users/new": ["admin"],
-  "/users/profile/:id": ["admin", "employee"],
-  "/users/:id/edit": ["admin", "employee"],
-  "/users/:id": ["admin", "employee"],
+  "/users/profile/:id": ["admin", ...EMPLOYEE_LIKE_ROLES],
+  "/users/:id/edit": ["admin", ...EMPLOYEE_LIKE_ROLES],
+  "/users/:id": ["admin", ...EMPLOYEE_LIKE_ROLES],
   "/employees": ["admin"],
   "/employees/new": ["admin"],
-  "/employees/:id/edit": ["admin", "employee"],
-  "/employees/:id/salary": ["admin", "employee"],
-  "/employees/:id": ["admin", "employee"],
-  "/attendance": ["admin", "employee"],
+  "/employees/:id/edit": ["admin", ...EMPLOYEE_LIKE_ROLES],
+  "/employees/:id/salary": ["admin", ...EMPLOYEE_LIKE_ROLES],
+  "/employees/:id/payslip": ["admin", ...EMPLOYEE_LIKE_ROLES],
+  "/employees/:id": ["admin", ...EMPLOYEE_LIKE_ROLES],
+  "/attendance": ["admin", ...EMPLOYEE_LIKE_ROLES],
   "/attendance/manual": ["admin"],
   "/attendance/reports": ["admin"],
-  "/leaves": ["admin", "employee"],
-  "/leaves/new": ["admin", "employee"],
+  "/leaves": ["admin", ...EMPLOYEE_LIKE_ROLES],
+  "/leaves/new": ["admin", ...EMPLOYEE_LIKE_ROLES],
   "/leaves/approvals": ["admin"],
   "/master/departments": ["admin"],
   "/master/designations": ["admin"],
   "/master/leave-types": ["admin"],
   "/network": ["admin"],
-  "/roles": ["admin"],
+  // Roles CRUD is disabled for now — see navConfig.js for how to re-enable.
+  // "/roles": ["admin"],
 };
 
 // Convert a path with :params into a RegExp for matching.

@@ -5,6 +5,8 @@ export const API = {
     LOGIN: "/auth/login",
     ME: "/auth/me",
     LOGOUT: "/auth/logout",
+    DEPARTMENTS: "/auth/departments",
+    DESIGNATIONS: "/auth/designations",
   },
   USERS: {
     LIST: "/users/",
@@ -27,6 +29,7 @@ export const API = {
     SALARY_GET: (id) => `/employees/${id}/salary`,
     SALARY_UPDATE: (id) => `/employees/${id}/salary`,
     SALARY_RESET: (id) => `/employees/${id}/salary`,
+    PAYSLIP: (id) => `/employees/${id}/payslip`,
     CHECKIN: "/employees/checkin",
     CHECKOUT: "/employees/checkout",
     MANUAL_ATTENDANCE: "/employees/manual-attendance",

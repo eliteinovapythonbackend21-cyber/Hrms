@@ -7,10 +7,14 @@ import DatePicker from "@/components/ui/DatePicker";
 import { masterApi } from "@/api/master.api";
 import { toDateInputValue } from "@/utils/formatDate";
 import { validateEmployee } from "../employeeValidation";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 const todayInputValue = toDateInputValue(new Date());
 
 export default function EmployeeForm({ initialData = {}, onSubmit, loading }) {
+  const currentUser = useCurrentUser();
+  const isEmployee = currentUser?.role === "employee";
+
   const { data: departments } = useQuery({
     queryKey: ["departments", { page: 1, per_page: 100 }],
     queryFn: async () => (await masterApi.listDepartments({ page: 1, per_page: 100 })).data.data,
@@ -22,7 +26,6 @@ export default function EmployeeForm({ initialData = {}, onSubmit, loading }) {
   });
 
   const [form, setForm] = useState({
-    employee_code: initialData.employee_code || "",
     email: initialData.user?.email || "",
     password: "",
     department_id: initialData.department_id || "",
@@ -40,6 +43,10 @@ export default function EmployeeForm({ initialData = {}, onSubmit, loading }) {
     pincode: initialData.pincode || "",
     joining_date: toDateInputValue(initialData.joining_date),
     salary: initialData.salary || "",
+    allowance: initialData.allowance || "",
+    pf_number: initialData.pf_number || "",
+    esi_number: initialData.esi_number || "",
+    account_number: initialData.account_number || "",
     status: initialData.status !== undefined ? initialData.status : true,
   });
 
@@ -57,6 +64,13 @@ export default function EmployeeForm({ initialData = {}, onSubmit, loading }) {
     const validationErrors = validateEmployee(form, { isEdit });
     setErrors(validationErrors);
     if (Object.keys(validationErrors).length > 0) return;
+
+    // Employees can only self-edit phone and emergency contact; the backend
+    // rejects any other field on a non-admin update.
+    if (isEmployee) {
+      onSubmit({ phone: form.phone, emergency_contact: form.emergency_contact });
+      return;
+    }
 
     // On edit, an untouched password field stays blank — omit it so the
     // backend leaves the linked account's password unchanged.
@@ -81,8 +95,10 @@ export default function EmployeeForm({ initialData = {}, onSubmit, loading }) {
   return (
     <form onSubmit={handleSubmit}>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
-        <Input label="Employee Code" name="employee_code" value={form.employee_code} onChange={handleChange} error={errors.employee_code} required />
-        <Input label="Email" name="email" type="email" value={form.email} onChange={handleChange} error={errors.email} required />
+        {isEdit && (
+          <Input label="Employee Code" name="employee_code" value={initialData.employee_code || ""} disabled readOnly />
+        )}
+        <Input label="Email" name="email" type="email" value={form.email} onChange={handleChange} error={errors.email} required disabled={isEmployee} />
         {!isEdit && (
           <Input
             label="Password"
@@ -94,10 +110,10 @@ export default function EmployeeForm({ initialData = {}, onSubmit, loading }) {
             required
           />
         )}
-        <Select label="Department" name="department_id" options={deptOptions} value={form.department_id} onChange={handleChange} error={errors.department_id} required />
-        <Select label="Designation" name="designation_id" options={desigOptions} value={form.designation_id} onChange={handleChange} error={errors.designation_id} required />
-        <Input label="First Name" name="first_name" value={form.first_name} onChange={handleChange} error={errors.first_name} required />
-        <Input label="Last Name" name="last_name" value={form.last_name} onChange={handleChange} error={errors.last_name} />
+        <Select label="Department" name="department_id" options={deptOptions} value={form.department_id} onChange={handleChange} error={errors.department_id} required disabled={isEmployee} />
+        <Select label="Designation" name="designation_id" options={desigOptions} value={form.designation_id} onChange={handleChange} error={errors.designation_id} required disabled={isEmployee} />
+        <Input label="First Name" name="first_name" value={form.first_name} onChange={handleChange} error={errors.first_name} required disabled={isEmployee} />
+        <Input label="Last Name" name="last_name" value={form.last_name} onChange={handleChange} error={errors.last_name} disabled={isEmployee} />
         <Select
           label="Gender"
           name="gender"
@@ -109,6 +125,7 @@ export default function EmployeeForm({ initialData = {}, onSubmit, loading }) {
           value={form.gender}
           onChange={handleChange}
           error={errors.gender}
+          disabled={isEmployee}
         />
         <DatePicker
           label="Date of Birth"
@@ -117,14 +134,15 @@ export default function EmployeeForm({ initialData = {}, onSubmit, loading }) {
           onChange={handleChange}
           error={errors.dob}
           max={todayInputValue}
+          disabled={isEmployee}
         />
         <Input label="Phone" name="phone" value={form.phone} onChange={handleChange} error={errors.phone} />
         <Input label="Emergency Contact" name="emergency_contact" value={form.emergency_contact} onChange={handleChange} error={errors.emergency_contact} />
-        <Input label="Address" name="address" value={form.address} onChange={handleChange} error={errors.address} />
-        <Input label="City" name="city" value={form.city} onChange={handleChange} error={errors.city} />
-        <Input label="State" name="state" value={form.state} onChange={handleChange} error={errors.state} />
-        <Input label="Country" name="country" value={form.country} onChange={handleChange} error={errors.country} />
-        <Input label="Pincode" name="pincode" value={form.pincode} onChange={handleChange} error={errors.pincode} />
+        <Input label="Address" name="address" value={form.address} onChange={handleChange} error={errors.address} disabled={isEmployee} />
+        <Input label="City" name="city" value={form.city} onChange={handleChange} error={errors.city} disabled={isEmployee} />
+        <Input label="State" name="state" value={form.state} onChange={handleChange} error={errors.state} disabled={isEmployee} />
+        <Input label="Country" name="country" value={form.country} onChange={handleChange} error={errors.country} disabled={isEmployee} />
+        <Input label="Pincode" name="pincode" value={form.pincode} onChange={handleChange} error={errors.pincode} disabled={isEmployee} />
         <DatePicker
           label="Joining Date"
           name="joining_date"
@@ -132,12 +150,17 @@ export default function EmployeeForm({ initialData = {}, onSubmit, loading }) {
           onChange={handleChange}
           error={errors.joining_date}
           max={todayInputValue}
+          disabled={isEmployee}
         />
-        <Input label="Salary" name="salary" type="number" step="0.01" min="0" value={form.salary} onChange={handleChange} error={errors.salary} />
+        <Input label="Salary" name="salary" type="number" step="0.01" min="0" value={form.salary} onChange={handleChange} error={errors.salary} disabled={isEmployee} />
+        <Input label="Allowance" name="allowance" type="number" step="0.01" min="0" value={form.allowance} onChange={handleChange} error={errors.allowance} disabled={isEmployee} />
+        <Input label="PF Number" name="pf_number" value={form.pf_number} onChange={handleChange} error={errors.pf_number} disabled={isEmployee} />
+        <Input label="ESI Number" name="esi_number" value={form.esi_number} onChange={handleChange} error={errors.esi_number} disabled={isEmployee} />
+        <Input label="Account Number" name="account_number" value={form.account_number} onChange={handleChange} error={errors.account_number} disabled={isEmployee} />
       </div>
       <div className="mb-4">
         <label className="inline-flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
-          <input type="checkbox" name="status" checked={form.status} onChange={handleChange} className="h-4 w-4" />
+          <input type="checkbox" name="status" checked={form.status} onChange={handleChange} className="h-4 w-4" disabled={isEmployee} />
           Active
         </label>
       </div>

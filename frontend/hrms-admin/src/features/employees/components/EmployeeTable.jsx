@@ -58,6 +58,9 @@ export default function EmployeeTable({ data, loading, onDeactivate, sortBy, sor
           <Link to={`/employees/${r.id}/salary`} className="text-primary-600 hover:underline text-sm">
             Salary
           </Link>
+          <Link to={`/employees/${r.id}/payslip`} className="text-primary-600 hover:underline text-sm">
+            Payslip
+          </Link>
           {r.is_active && (
             <button
               onClick={() => onDeactivate?.(r)}

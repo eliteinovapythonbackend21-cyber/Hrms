@@ -7,7 +7,6 @@ import { isRequired } from "@/utils/validators";
 
 const validateDesignation = (data) => {
   const errors = {};
-  if (!isRequired(data.designation_code)) errors.designation_code = "Designation code is required";
   if (!isRequired(data.designation_name)) errors.designation_name = "Designation name is required";
   if (!isRequired(data.department_id)) errors.department_id = "Department is required";
   return errors;
@@ -20,7 +19,6 @@ export default function DesignationForm({ initialData = {}, onSubmit, loading })
   });
 
   const [form, setForm] = useState({
-    designation_code: initialData.designation_code || "",
     designation_name: initialData.designation_name || "",
     department_id: initialData.department_id || "",
     description: initialData.description || "",
@@ -48,7 +46,9 @@ export default function DesignationForm({ initialData = {}, onSubmit, loading })
 
   return (
     <form id="designation-form" onSubmit={handleSubmit}>
-      <Input label="Designation Code" name="designation_code" value={form.designation_code} onChange={handleChange} error={errors.designation_code} required />
+      {initialData.designation_code && (
+        <Input label="Designation Code" name="designation_code" value={initialData.designation_code} disabled />
+      )}
       <Input label="Designation Name" name="designation_name" value={form.designation_name} onChange={handleChange} error={errors.designation_name} required />
       <Select label="Department" name="department_id" options={deptOptions} value={form.department_id} onChange={handleChange} error={errors.department_id} required />
       <Input label="Description" name="description" value={form.description} onChange={handleChange} />

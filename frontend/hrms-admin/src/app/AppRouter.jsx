@@ -20,6 +20,7 @@ import EmployeeListPage from "@/features/employees/EmployeeListPage";
 import EmployeeDetailPage from "@/features/employees/EmployeeDetailPage";
 import EmployeeFormPage from "@/features/employees/EmployeeFormPage";
 import EmployeeSalaryPage from "@/features/employees/EmployeeSalaryPage";
+import PayslipPage from "@/features/employees/PayslipPage";
 
 // Attendance
 import AttendanceListPage from "@/features/attendance/AttendanceListPage";
@@ -39,8 +40,8 @@ import LeaveTypeListPage from "@/features/master/leaveTypes/LeaveTypeListPage";
 // Network
 import NetworkLogPage from "@/features/network/NetworkLogPage";
 
-// Roles
-import RoleListPage from "@/features/roles/RoleListPage";
+// Roles CRUD is disabled for now — see navConfig.js for how to re-enable.
+// import RoleListPage from "@/features/roles/RoleListPage";
 
 export default function AppRouter() {
   return (
@@ -60,7 +61,9 @@ export default function AppRouter() {
         <Route path="/dashboard" element={<RoleGuard><DashboardPage /></RoleGuard>} />
 
         {/* Users */}
-        <Route path="/users" element={<RoleGuard><UserListPage /></RoleGuard>} />
+        <Route path="/users" element={<Navigate to="/users/employees" replace />} />
+        <Route path="/users/admins" element={<RoleGuard><UserListPage role="admin" /></RoleGuard>} />
+        <Route path="/users/employees" element={<RoleGuard><UserListPage role="employee" /></RoleGuard>} />
         <Route path="/users/new" element={<RoleGuard><UserFormPage /></RoleGuard>} />
         <Route path="/users/:id/edit" element={<RoleGuard><UserFormPage /></RoleGuard>} />
         <Route path="/users/:id" element={<RoleGuard><UserProfilePage /></RoleGuard>} />
@@ -71,6 +74,7 @@ export default function AppRouter() {
         <Route path="/employees/:id" element={<RoleGuard><EmployeeDetailPage /></RoleGuard>} />
         <Route path="/employees/:id/edit" element={<RoleGuard><EmployeeFormPage /></RoleGuard>} />
         <Route path="/employees/:id/salary" element={<RoleGuard><EmployeeSalaryPage /></RoleGuard>} />
+        <Route path="/employees/:id/payslip" element={<RoleGuard><PayslipPage /></RoleGuard>} />
 
         {/* Attendance */}
         <Route path="/attendance" element={<RoleGuard><AttendanceListPage /></RoleGuard>} />
@@ -91,8 +95,8 @@ export default function AppRouter() {
         {/* Network */}
         <Route path="/network" element={<RoleGuard><NetworkLogPage /></RoleGuard>} />
 
-        {/* Roles */}
-        <Route path="/roles" element={<RoleGuard><RoleListPage /></RoleGuard>} />
+        {/* Roles CRUD is disabled for now — see navConfig.js for how to re-enable. */}
+        {/* <Route path="/roles" element={<RoleGuard><RoleListPage /></RoleGuard>} /> */}
 
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
       </Route>

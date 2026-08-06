@@ -6,11 +6,13 @@ import {
   isValidPincode,
   isValidMobile,
   isNonNegativeNumber,
+  isValidPfNumber,
+  isValidEsiNumber,
+  isValidAccountNumber,
 } from "@/utils/validators";
 
 export const validateEmployee = (data, { isEdit = false } = {}) => {
   const errors = {};
-  if (!isRequired(data.employee_code)) errors.employee_code = "Employee code is required";
 
   if (!isRequired(data.email)) errors.email = "Email is required";
   else if (!isValidEmail(data.email)) errors.email = "Enter a valid email address";
@@ -51,6 +53,17 @@ export const validateEmployee = (data, { isEdit = false } = {}) => {
   if (data.salary !== "" && data.salary !== undefined && data.salary !== null) {
     if (Number.isNaN(Number(data.salary))) errors.salary = "Salary must be a number";
     else if (!isNonNegativeNumber(data.salary)) errors.salary = "Salary cannot be negative";
+  }
+
+  if (data.allowance !== "" && data.allowance !== undefined && data.allowance !== null) {
+    if (Number.isNaN(Number(data.allowance))) errors.allowance = "Allowance must be a number";
+    else if (!isNonNegativeNumber(data.allowance)) errors.allowance = "Allowance cannot be negative";
+  }
+
+  if (data.pf_number && !isValidPfNumber(data.pf_number)) errors.pf_number = "Enter a valid PF number";
+  if (data.esi_number && !isValidEsiNumber(data.esi_number)) errors.esi_number = "Enter a valid ESI number";
+  if (data.account_number && !isValidAccountNumber(data.account_number)) {
+    errors.account_number = "Enter a valid account number";
   }
 
   return errors;

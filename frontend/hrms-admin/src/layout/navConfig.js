@@ -1,17 +1,24 @@
+import { EMPLOYEE_LIKE_ROLES } from "@/constants/roles";
+
 // Role-based navigation items.
 // roles: array of roles allowed to see this item (empty = all authenticated).
+// HR and Finance get the same access as Employee (see EMPLOYEE_LIKE_ROLES).
 export const navConfig = [
   {
     label: "Dashboard",
     path: "/dashboard",
     icon: "dashboard",
-    roles: ["admin", "employee"],
+    roles: ["admin", ...EMPLOYEE_LIKE_ROLES],
   },
   {
     label: "Users",
     path: "/users",
     icon: "users",
     roles: ["admin"],
+    children: [
+      { label: "Admin", path: "/users/admins", icon: "users" },
+      { label: "Employee", path: "/users/employees", icon: "users" },
+    ],
   },
   {
     label: "Employees",
@@ -23,13 +30,17 @@ export const navConfig = [
     label: "Attendance",
     path: "/attendance",
     icon: "attendance",
-    roles: ["admin", "employee"],
+    roles: ["admin", ...EMPLOYEE_LIKE_ROLES],
   },
   {
     label: "Leaves",
     path: "/leaves",
     icon: "leaves",
-    roles: ["admin", "employee"],
+    roles: ["admin", ...EMPLOYEE_LIKE_ROLES],
+    children: [
+      { label: "Leave Type", path: "/master/leave-types", icon: "leaveType", roles: ["admin"] },
+      { label: "Leave", path: "/leaves", icon: "leaves" },
+    ],
   },
   {
     label: "Master Data",
@@ -39,7 +50,6 @@ export const navConfig = [
     children: [
       { label: "Departments", path: "/master/departments", icon: "department" },
       { label: "Designations", path: "/master/designations", icon: "designation" },
-      { label: "Leave Types", path: "/master/leave-types", icon: "leaveType" },
     ],
   },
   {
@@ -48,10 +58,13 @@ export const navConfig = [
     icon: "network",
     roles: ["admin"],
   },
-  {
-    label: "Roles",
-    path: "/roles",
-    icon: "roles",
-    roles: ["admin"],
-  },
+  // Roles CRUD is disabled for now — not needed in the admin panel currently.
+  // Re-enable by uncommenting this entry, the route in AppRouter.jsx, and the
+  // routePermissions.js entry.
+  // {
+  //   label: "Roles",
+  //   path: "/roles",
+  //   icon: "roles",
+  //   roles: ["admin"],
+  // },
 ];

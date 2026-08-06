@@ -3,7 +3,7 @@ import ThemeToggle from "@/theme/ThemeToggle";
 // Shared chrome for the Login/Register screens: a glowing brand-gradient
 // backdrop behind a single centered card. Colors stay on-brand (gold/teal)
 // so this matches the rest of the dark-first app rather than a one-off palette.
-export default function AuthLayout({ title, subtitle, children }) {
+export default function AuthLayout({ title, subtitle, children, topRight }) {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 relative overflow-hidden bg-slate-50 dark:bg-[#05050a]">
       {/* Decorative glow blobs — brand gold + teal, dark mode only */}
@@ -20,9 +20,15 @@ export default function AuthLayout({ title, subtitle, children }) {
         aria-hidden="true"
       />
 
-      <div className="absolute top-4 right-4 z-10">
+      <div className="absolute top-4 left-4 z-10">
         <ThemeToggle />
       </div>
+
+      {topRight && (
+        <div className="absolute top-4 right-4 z-10">
+          {topRight}
+        </div>
+      )}
 
       <div className="w-full max-w-md relative z-10">
         <div className="card p-8 dark:shadow-[0_0_60px_-15px_rgba(212,148,31,0.25)]">

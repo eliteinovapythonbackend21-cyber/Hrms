@@ -11,6 +11,7 @@ export const employeesApi = {
   getSalary: (id) => axiosClient.get(API.EMPLOYEES.SALARY_GET(id)),
   updateSalary: (id, payload) => axiosClient.put(API.EMPLOYEES.SALARY_UPDATE(id), payload),
   resetSalary: (id) => axiosClient.delete(API.EMPLOYEES.SALARY_RESET(id)),
+  getPayslip: (id, params) => axiosClient.get(API.EMPLOYEES.PAYSLIP(id), { params }),
   checkin: (payload) => axiosClient.post(API.EMPLOYEES.CHECKIN, payload),
   checkout: (payload) => axiosClient.post(API.EMPLOYEES.CHECKOUT, payload),
   manualAttendance: (payload) => axiosClient.post(API.EMPLOYEES.MANUAL_ATTENDANCE, payload),

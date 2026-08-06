@@ -56,6 +56,24 @@ export const isNonNegativeNumber = (value) => {
   return !Number.isNaN(num) && num >= 0;
 };
 
+// Validate a PF (Provident Fund) number.
+export const isValidPfNumber = (value) => {
+  if (!value) return true;
+  return /^[A-Za-z0-9\-\/]{2,30}$/.test(value.trim());
+};
+
+// Validate an ESI (Employee State Insurance) number.
+export const isValidEsiNumber = (value) => {
+  if (!value) return true;
+  return /^[A-Za-z0-9\-\/]{2,30}$/.test(value.trim());
+};
+
+// Validate a bank account number.
+export const isValidAccountNumber = (value) => {
+  if (!value) return true;
+  return /^[A-Za-z0-9]{6,20}$/.test(value.trim());
+};
+
 // Build a FormData object from a plain object (for file uploads).
 export const toFormData = (payload) => {
   const formData = new FormData();

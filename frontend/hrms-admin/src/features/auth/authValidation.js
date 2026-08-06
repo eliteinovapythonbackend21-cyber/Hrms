@@ -18,5 +18,8 @@ export const validateRegister = (data) => {
     errors.mobile = "Enter a valid mobile number";
   }
   if (!isRequired(data.role)) errors.role = "Role is required";
+  if (!isRequired(data.first_name)) errors.first_name = "First name is required";
+  if (!isRequired(data.department_id)) errors.department_id = "Department is required";
+  if (!isRequired(data.designation_id)) errors.designation_id = "Designation is required";
   return errors;
 };

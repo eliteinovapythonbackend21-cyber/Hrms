@@ -1,3 +1,5 @@
+import re
+
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from sqlalchemy.exc import IntegrityError
@@ -10,6 +12,31 @@ master_bp = Blueprint("master_bp", __name__)
 
 def _is_admin(user):
     return user and user.role == "admin"
+
+
+def _initials(name):
+    letters = re.sub(r"[^A-Za-z]", "", name or "")[:2].upper()
+    return letters.ljust(2, "X")
+
+
+def _generate_department_code(department_name):
+    base = _initials(department_name)
+    code = base
+    suffix = 1
+    while Department.query.filter_by(department_code=code).first():
+        code = f"{base}{suffix}"
+        suffix += 1
+    return code
+
+
+def _generate_designation_code(department, designation_name):
+    base = f"{department.department_code}-{_initials(designation_name)}"
+    code = base
+    suffix = 1
+    while Designation.query.filter_by(designation_code=code).first():
+        code = f"{base}{suffix}"
+        suffix += 1
+    return code
 
 
 def _fetch_department(department_id):
@@ -106,7 +133,7 @@ def create_department(token_response):
 
     data = request.json or {}
     department = Department(
-        department_code=data.get("department_code"),
+        department_code=_generate_department_code(data.get("department_name")),
         department_name=data.get("department_name"),
         description=data.get("description"),
         status=data.get("status", True),
@@ -136,7 +163,9 @@ def update_department(department_id, token_response):
     if error_response:
         return error_response
     data = request.json or {}
-    for field in ["department_code", "department_name", "description", "status"]:
+    # department_code is auto-generated on create and left untouched here so
+    # existing references to it stay stable across renames.
+    for field in ["department_name", "description", "status"]:
         if field in data:
             setattr(department, field, data[field])
     try:
@@ -189,10 +218,14 @@ def create_designation(token_response):
         return jsonify({"message": "Admin privileges required"}), 403
 
     data = request.json or {}
+    department, error_response = _fetch_department(data.get("department_id"))
+    if error_response:
+        return error_response
+
     designation = Designation(
-        designation_code=data.get("designation_code"),
+        designation_code=_generate_designation_code(department, data.get("designation_name")),
         designation_name=data.get("designation_name"),
-        department_id=data.get("department_id"),
+        department_id=department.id,
         description=data.get("description"),
         status=data.get("status", True),
     )
@@ -221,7 +254,9 @@ def update_designation(designation_id, token_response):
     if error_response:
         return error_response
     data = request.json or {}
-    for field in ["designation_code", "designation_name", "department_id", "description", "status"]:
+    # designation_code is auto-generated on create and left untouched here so
+    # existing references to it stay stable across renames.
+    for field in ["designation_name", "department_id", "description", "status"]:
         if field in data:
             setattr(designation, field, data[field])
     try:
