@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
 import { useLogin } from "./useAuth";
 import { useToast } from "@/components/feedback/Toast";
 import { validateLogin } from "./authValidation";
@@ -102,18 +101,6 @@ export default function LoginPage() {
           Sign In
         </Button>
       </form>
-
-      {isAdminLogin && (
-        <p className="text-center text-sm text-slate-500 dark:text-slate-400 mt-6">
-          Don't have an account?{" "}
-          <Link
-            to="/register"
-            className="text-primary-600 dark:text-primary-400 hover:underline"
-          >
-            Register
-          </Link>
-        </p>
-      )}
     </AuthLayout>
   );
 }

@@ -111,6 +111,18 @@ export default function Topbar() {
               >
                 Edit Profile
               </button>
+              {user?.role === "admin" && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigate("/users/new");
+                    close();
+                  }}
+                  className="w-full text-left px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5"
+                >
+                  Create Profile
+                </button>
+              )}
               <div className="my-1 border-t border-slate-200 dark:border-white/10" />
               <button
                 type="button"
