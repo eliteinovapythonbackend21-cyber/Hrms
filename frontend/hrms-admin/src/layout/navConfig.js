@@ -11,14 +11,10 @@ export const navConfig = [
     roles: ["admin", ...EMPLOYEE_LIKE_ROLES],
   },
   {
-    label: "Users",
-    path: "/users",
+    label: "Admin",
+    path: "/users/admins",
     icon: "users",
     roles: ["admin"],
-    children: [
-      { label: "Admin", path: "/users/admins", icon: "users" },
-      { label: "Employee", path: "/users/employees", icon: "users" },
-    ],
   },
   {
     label: "Employees",
