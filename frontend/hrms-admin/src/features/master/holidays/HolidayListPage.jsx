@@ -35,8 +35,9 @@ export default function HolidayListPage() {
       FormComponent={HolidayForm}
       formTitle="Holiday"
       addLabel="Add Holiday"
-      actionsMode="none"
+      actionsMode="master"
       entityLabel="Holiday"
+      module="Holidays"
     />
   );
 }

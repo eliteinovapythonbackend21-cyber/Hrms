@@ -1,9 +1,9 @@
-import { Link } from "react-router-dom";
 import DataTable from "@/components/table/DataTable";
 import Badge from "@/components/ui/Badge";
 import { domainColors } from "@/theme/tokens/domainColors";
 
-export default function UserTable({ data, loading, onDeactivate, sortBy, sortDir, onSort }) {
+// Add-only: View/Edit/Deactivate removed entirely, not permission-gated.
+export default function UserTable({ data, loading, sortBy, sortDir, onSort }) {
   const roleStyle = (role) =>
     domainColors.role[role] || "bg-slate-100 text-slate-700 dark:bg-slate-500/20 dark:text-slate-300";
 
@@ -34,34 +34,6 @@ export default function UserTable({ data, loading, onDeactivate, sortBy, sortDir
         >
           {r.is_active ? "Active" : "Inactive"}
         </Badge>
-      ),
-    },
-    {
-      key: "actions",
-      label: "Actions",
-      render: (r) => (
-        <div className="flex items-center gap-2">
-          <Link
-            to={`/users/${r.id}`}
-            className="text-primary-600 hover:underline text-sm"
-          >
-            View
-          </Link>
-          <Link
-            to={`/users/${r.id}/edit`}
-            className="text-primary-600 hover:underline text-sm"
-          >
-            Edit
-          </Link>
-          {r.is_active && r.role !== "admin" && (
-            <button
-              onClick={() => onDeactivate?.(r)}
-              className="text-red-600 hover:underline text-sm"
-            >
-              Deactivate
-            </button>
-          )}
-        </div>
       ),
     },
   ];

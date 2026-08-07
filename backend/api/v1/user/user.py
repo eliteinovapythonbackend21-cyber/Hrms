@@ -47,8 +47,8 @@ def _validate_user_fields(data, require_password=False):
             errors.append("password must be at least 6 characters")
     elif data.get("password") and len(data.get("password")) < 6:
         errors.append("password must be at least 6 characters")
-    if data.get("role") and data.get("role") not in ("admin", "employee", "hr", "finance"):
-        errors.append("role must be admin, employee, hr or finance")
+    if data.get("role") and not Role.query.filter_by(name=data.get("role")).first():
+        errors.append(f"Unknown role: {data.get('role')}")
     return errors
 
 
@@ -222,10 +222,10 @@ def create_user(token_response):
             "mobile": "Mobile already exists",
         })
 
-    if data.get("employee_code"):
+    if data.get("first_name") or data.get("department_id") or data.get("designation_id"):
         employee = Employee(
             user_id=user.id,
-            employee_code=data.get("employee_code"),
+            employee_code=data.get("employee_code") or Employee.generate_next_code(),
             department_id=data.get("department_id"),
             designation_id=data.get("designation_id"),
             first_name=data.get("first_name"),

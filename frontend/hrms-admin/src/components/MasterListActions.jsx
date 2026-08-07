@@ -1,9 +1,10 @@
 import { useModulePermissions } from "@/hooks/useModulePermissions";
 
 // Row actions for full-CRUD master-data lists (Edit + Delete/Deactivate).
-// `module` gates Edit/Delete via the RolePermission matrix; admin always
-// passes. Screens under the Admin nav section are admin-only via routing,
-// so they don't need to pass `module` — the admin bypass covers them.
+// `module` gates Edit/Delete via the RolePermission matrix — including for
+// admin, which has no hardcoded bypass; it's simply seeded with full grants
+// across every category, editable like any other role from
+// Admin > Roles & Permissions.
 export default function MasterListActions({ row, onEdit, onDeactivate, module }) {
   const { canEdit, canDelete } = useModulePermissions(module);
   return (

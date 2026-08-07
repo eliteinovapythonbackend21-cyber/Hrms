@@ -1,17 +1,15 @@
-import { useState } from "react";
 import { Link } from "react-router-dom";
-import { useUsers, useDeactivateUser } from "./useUsers";
+import { useUsers } from "./useUsers";
 import UserTable from "./components/UserTable";
 import { usePagination } from "@/hooks/usePagination";
 import { useDebouncedSearch } from "@/hooks/useDebouncedSearch";
 import { useTableExport } from "@/hooks/useTableExport";
-import { useToast } from "@/components/feedback/Toast";
 import TableSearchBar from "@/components/table/TableSearchBar";
 import TablePagination from "@/components/table/TablePagination";
 import TableToolbar from "@/components/table/TableToolbar";
-import ConfirmDialog from "@/components/feedback/ConfirmDialog";
 import Button from "@/components/ui/Button";
 import { usersApi } from "@/api/users.api";
+import { useModulePermissions } from "@/hooks/useModulePermissions";
 
 const EXPORT_COLUMNS = [
   { header: "ID", accessor: (r) => r.id },
@@ -23,7 +21,6 @@ const EXPORT_COLUMNS = [
 ];
 
 export default function UserListPage({ role }) {
-  const { showToast } = useToast();
   const { params, page, perPage, setPage, setPerPage, sortBy, sortDir, toggleSort } = usePagination();
   const { value, setValue, debouncedValue } = useDebouncedSearch();
 
@@ -34,9 +31,7 @@ export default function UserListPage({ role }) {
   };
 
   const { data, isLoading, isError, isFetching, refetch } = useUsers(queryParams);
-  const deactivate = useDeactivateUser();
-
-  const [confirmUser, setConfirmUser] = useState(null);
+  const { canAdd } = useModulePermissions("Users");
 
   const { exporting, exportExcel, exportPDF } = useTableExport({
     fetchAll: usersApi.list,
@@ -45,17 +40,6 @@ export default function UserListPage({ role }) {
     filename: "users",
     title: "Users",
   });
-
-  const handleDeactivate = async () => {
-    if (!confirmUser) return;
-    try {
-      await deactivate.mutateAsync(confirmUser.id);
-      showToast("User deactivated", "success");
-      setConfirmUser(null);
-    } catch (err) {
-      showToast(err.response?.data?.message || "Failed to deactivate user", "error");
-    }
-  };
 
   return (
     <div>
@@ -70,9 +54,11 @@ export default function UserListPage({ role }) {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <TableToolbar onRefresh={refetch} refreshing={isFetching} onExportExcel={exportExcel} onExportPDF={exportPDF} exporting={exporting} />
-          <Link to="/users/new">
-            <Button className="w-full sm:w-auto">Add User</Button>
-          </Link>
+          {canAdd && (
+            <Link to="/users/new">
+              <Button className="w-full sm:w-auto">Add User</Button>
+            </Link>
+          )}
         </div>
       </div>
 
@@ -88,7 +74,6 @@ export default function UserListPage({ role }) {
         <UserTable
           data={data?.items || []}
           loading={isLoading}
-          onDeactivate={setConfirmUser}
           sortBy={sortBy}
           sortDir={sortDir}
           onSort={toggleSort}
@@ -103,16 +88,6 @@ export default function UserListPage({ role }) {
           onPerPageChange={setPerPage}
         />
       </div>
-
-      <ConfirmDialog
-        open={!!confirmUser}
-        onClose={() => setConfirmUser(null)}
-        onConfirm={handleDeactivate}
-        title="Deactivate User"
-        message={`Are you sure you want to deactivate "${confirmUser?.username}"?`}
-        confirmText="Deactivate"
-        loading={deactivate.isPending}
-      />
     </div>
   );
 }

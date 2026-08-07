@@ -1,11 +1,10 @@
 import { useState } from "react";
-import { useDepartments, useCreateDepartment, useUpdateDepartment, useDeactivateDepartment } from "./useDepartments";
+import { useDepartments, useCreateDepartment } from "./useDepartments";
 import DepartmentForm from "./DepartmentForm";
 import DataTable from "@/components/table/DataTable";
 import Badge from "@/components/ui/Badge";
 import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
-import ConfirmDialog from "@/components/feedback/ConfirmDialog";
 import { usePagination } from "@/hooks/usePagination";
 import { useDebouncedSearch } from "@/hooks/useDebouncedSearch";
 import { useTableExport } from "@/hooks/useTableExport";
@@ -14,6 +13,7 @@ import TableSearchBar from "@/components/table/TableSearchBar";
 import TablePagination from "@/components/table/TablePagination";
 import TableToolbar from "@/components/table/TableToolbar";
 import { masterApi } from "@/api/master.api";
+import { useModulePermissions } from "@/hooks/useModulePermissions";
 
 const EXPORT_COLUMNS = [
   { header: "Code", accessor: (r) => r.department_code },
@@ -22,6 +22,7 @@ const EXPORT_COLUMNS = [
   { header: "Status", accessor: (r) => (r.status ? "Active" : "Inactive") },
 ];
 
+// Add-only: Edit/Deactivate removed entirely, not permission-gated.
 export default function DepartmentListPage() {
   const { showToast } = useToast();
   const { params, page, perPage, setPage, setPerPage } = usePagination();
@@ -29,6 +30,7 @@ export default function DepartmentListPage() {
 
   const queryParams = { ...params, search: debouncedValue || undefined };
   const { data, isLoading, isError, isFetching, refetch } = useDepartments(queryParams);
+  const { canAdd } = useModulePermissions("Departments");
 
   const { exporting, exportExcel, exportPDF } = useTableExport({
     fetchAll: masterApi.listDepartments,
@@ -39,46 +41,16 @@ export default function DepartmentListPage() {
   });
 
   const createDept = useCreateDepartment();
-  const updateDept = useUpdateDepartment();
-  const deactivateDept = useDeactivateDepartment();
 
   const [modalOpen, setModalOpen] = useState(false);
-  const [editing, setEditing] = useState(null);
-  const [confirmDept, setConfirmDept] = useState(null);
-
-  const openCreate = () => {
-    setEditing(null);
-    setModalOpen(true);
-  };
-
-  const openEdit = (dept) => {
-    setEditing(dept);
-    setModalOpen(true);
-  };
 
   const handleSubmit = async (payload) => {
     try {
-      if (editing) {
-        await updateDept.mutateAsync({ id: editing.id, payload });
-        showToast("Department updated", "success");
-      } else {
-        await createDept.mutateAsync(payload);
-        showToast("Department created", "success");
-      }
+      await createDept.mutateAsync(payload);
+      showToast("Department created", "success");
       setModalOpen(false);
     } catch (err) {
       showToast(err.response?.data?.message || "Operation failed", "error");
-    }
-  };
-
-  const handleDeactivate = async () => {
-    if (!confirmDept) return;
-    try {
-      await deactivateDept.mutateAsync(confirmDept.id);
-      showToast("Department deactivated", "success");
-      setConfirmDept(null);
-    } catch (err) {
-      showToast(err.response?.data?.message || "Failed to deactivate", "error");
     }
   };
 
@@ -106,7 +78,9 @@ export default function DepartmentListPage() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <TableToolbar onRefresh={refetch} refreshing={isFetching} onExportExcel={exportExcel} onExportPDF={exportPDF} exporting={exporting} />
-          <Button onClick={openCreate} className="w-full sm:w-auto">Add Department</Button>
+          {canAdd && (
+            <Button onClick={() => setModalOpen(true)} className="w-full sm:w-auto">Add Department</Button>
+          )}
         </div>
       </div>
 
@@ -125,32 +99,22 @@ export default function DepartmentListPage() {
       <Modal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        title={editing ? "Edit Department" : "Add Department"}
+        title="Add Department"
         footer={
           <>
             <Button variant="secondary" onClick={() => setModalOpen(false)}>Cancel</Button>
-            <Button form="department-form" type="submit" isLoading={createDept.isPending || updateDept.isPending}>
-              {editing ? "Update" : "Create"}
+            <Button form="department-form" type="submit" isLoading={createDept.isPending}>
+              Create
             </Button>
           </>
         }
       >
         <DepartmentForm
-          initialData={editing || {}}
+          initialData={{}}
           onSubmit={handleSubmit}
-          loading={createDept.isPending || updateDept.isPending}
+          loading={createDept.isPending}
         />
       </Modal>
-
-      <ConfirmDialog
-        open={!!confirmDept}
-        onClose={() => setConfirmDept(null)}
-        onConfirm={handleDeactivate}
-        title="Deactivate Department"
-        message={`Are you sure you want to deactivate "${confirmDept?.department_name}"?`}
-        confirmText="Deactivate"
-        loading={deactivateDept.isPending}
-      />
     </div>
   );
 }

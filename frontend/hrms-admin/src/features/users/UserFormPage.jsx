@@ -19,14 +19,19 @@ export default function UserFormPage() {
 
   const handleSubmit = async (payload) => {
     try {
+      let createdRole = payload.role;
       if (isEdit) {
         await updateUser.mutateAsync({ id, payload });
         showToast("User updated", "success");
       } else {
-        await createUser.mutateAsync(payload);
+        const res = await createUser.mutateAsync(payload);
+        createdRole = res?.data?.data?.role || payload.role;
         showToast("User created", "success");
       }
-      navigate("/users");
+      // Land back on the list that actually contains the record just
+      // created/edited, instead of a hardcoded "/users" (which always
+      // redirects to /users/employees regardless of the account's role).
+      navigate(createdRole === "admin" ? "/users/admins" : "/users/employees");
     } catch (err) {
       showToast(err.response?.data?.message || "Operation failed", "error");
     }
@@ -51,7 +56,7 @@ export default function UserFormPage() {
             {isEdit ? `Editing user: ${user?.username}` : "Create a new user account"}
           </p>
         </div>
-        <Button variant="secondary" onClick={() => navigate("/users")} className="w-full sm:w-auto">
+        <Button variant="secondary" onClick={() => navigate(-1)} className="w-full sm:w-auto">
           Back
         </Button>
       </div>

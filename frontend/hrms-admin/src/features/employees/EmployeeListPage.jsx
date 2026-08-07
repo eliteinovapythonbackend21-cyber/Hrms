@@ -1,15 +1,12 @@
-import { useState } from "react";
 import { Link } from "react-router-dom";
-import { useEmployees, useDeactivateEmployee } from "./useEmployees";
+import { useEmployees } from "./useEmployees";
 import EmployeeTable from "./components/EmployeeTable";
 import { usePagination } from "@/hooks/usePagination";
 import { useDebouncedSearch } from "@/hooks/useDebouncedSearch";
 import { useTableExport } from "@/hooks/useTableExport";
-import { useToast } from "@/components/feedback/Toast";
 import TableSearchBar from "@/components/table/TableSearchBar";
 import TablePagination from "@/components/table/TablePagination";
 import TableToolbar from "@/components/table/TableToolbar";
-import ConfirmDialog from "@/components/feedback/ConfirmDialog";
 import Button from "@/components/ui/Button";
 import { employeesApi } from "@/api/employees.api";
 import { formatCurrency } from "@/utils/formatCurrency";
@@ -25,7 +22,6 @@ const EXPORT_COLUMNS = [
 ];
 
 export default function EmployeeListPage() {
-  const { showToast } = useToast();
   const { params, page, perPage, setPage, setPerPage, sortBy, sortDir, toggleSort } = usePagination();
   const { value, setValue, debouncedValue } = useDebouncedSearch();
 
@@ -36,8 +32,6 @@ export default function EmployeeListPage() {
 
   const { data, isLoading, isError, isFetching, refetch } = useEmployees(queryParams);
   const { canAdd } = useModulePermissions("Employees");
-  const deactivate = useDeactivateEmployee();
-  const [confirmEmployee, setConfirmEmployee] = useState(null);
 
   const { exporting, exportExcel, exportPDF } = useTableExport({
     fetchAll: employeesApi.list,
@@ -46,17 +40,6 @@ export default function EmployeeListPage() {
     filename: "employees",
     title: "Employees",
   });
-
-  const handleDeactivate = async () => {
-    if (!confirmEmployee) return;
-    try {
-      await deactivate.mutateAsync(confirmEmployee.id);
-      showToast("Employee deactivated", "success");
-      setConfirmEmployee(null);
-    } catch (err) {
-      showToast(err.response?.data?.message || "Failed to deactivate employee", "error");
-    }
-  };
 
   return (
     <div>
@@ -91,7 +74,6 @@ export default function EmployeeListPage() {
         <EmployeeTable
           data={data?.items || []}
           loading={isLoading}
-          onDeactivate={setConfirmEmployee}
           sortBy={sortBy}
           sortDir={sortDir}
           onSort={toggleSort}
@@ -106,16 +88,6 @@ export default function EmployeeListPage() {
           onPerPageChange={setPerPage}
         />
       </div>
-
-      <ConfirmDialog
-        open={!!confirmEmployee}
-        onClose={() => setConfirmEmployee(null)}
-        onConfirm={handleDeactivate}
-        title="Deactivate Employee"
-        message={`Are you sure you want to deactivate "${confirmEmployee?.first_name} ${confirmEmployee?.last_name}"?`}
-        confirmText="Deactivate"
-        loading={deactivate.isPending}
-      />
     </div>
   );
 }

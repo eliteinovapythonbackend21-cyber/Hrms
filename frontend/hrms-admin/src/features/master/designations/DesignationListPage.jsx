@@ -1,11 +1,10 @@
 import { useState } from "react";
-import { useDesignations, useCreateDesignation, useUpdateDesignation, useDeactivateDesignation } from "./useDesignations";
+import { useDesignations, useCreateDesignation } from "./useDesignations";
 import DesignationForm from "./DesignationForm";
 import DataTable from "@/components/table/DataTable";
 import Badge from "@/components/ui/Badge";
 import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
-import ConfirmDialog from "@/components/feedback/ConfirmDialog";
 import { usePagination } from "@/hooks/usePagination";
 import { useDebouncedSearch } from "@/hooks/useDebouncedSearch";
 import { useTableExport } from "@/hooks/useTableExport";
@@ -14,6 +13,7 @@ import TableSearchBar from "@/components/table/TableSearchBar";
 import TablePagination from "@/components/table/TablePagination";
 import TableToolbar from "@/components/table/TableToolbar";
 import { masterApi } from "@/api/master.api";
+import { useModulePermissions } from "@/hooks/useModulePermissions";
 
 const EXPORT_COLUMNS = [
   { header: "Code", accessor: (r) => r.designation_code },
@@ -23,6 +23,7 @@ const EXPORT_COLUMNS = [
   { header: "Status", accessor: (r) => (r.status ? "Active" : "Inactive") },
 ];
 
+// Add-only: Edit/Deactivate removed entirely, not permission-gated.
 export default function DesignationListPage() {
   const { showToast } = useToast();
   const { params, page, perPage, setPage, setPerPage } = usePagination();
@@ -30,6 +31,7 @@ export default function DesignationListPage() {
 
   const queryParams = { ...params, search: debouncedValue || undefined };
   const { data, isLoading, isError, isFetching, refetch } = useDesignations(queryParams);
+  const { canAdd } = useModulePermissions("Designations");
 
   const { exporting, exportExcel, exportPDF } = useTableExport({
     fetchAll: masterApi.listDesignations,
@@ -40,46 +42,16 @@ export default function DesignationListPage() {
   });
 
   const createDesig = useCreateDesignation();
-  const updateDesig = useUpdateDesignation();
-  const deactivateDesig = useDeactivateDesignation();
 
   const [modalOpen, setModalOpen] = useState(false);
-  const [editing, setEditing] = useState(null);
-  const [confirmDesig, setConfirmDesig] = useState(null);
-
-  const openCreate = () => {
-    setEditing(null);
-    setModalOpen(true);
-  };
-
-  const openEdit = (d) => {
-    setEditing(d);
-    setModalOpen(true);
-  };
 
   const handleSubmit = async (payload) => {
     try {
-      if (editing) {
-        await updateDesig.mutateAsync({ id: editing.id, payload });
-        showToast("Designation updated", "success");
-      } else {
-        await createDesig.mutateAsync(payload);
-        showToast("Designation created", "success");
-      }
+      await createDesig.mutateAsync(payload);
+      showToast("Designation created", "success");
       setModalOpen(false);
     } catch (err) {
       showToast(err.response?.data?.message || "Operation failed", "error");
-    }
-  };
-
-  const handleDeactivate = async () => {
-    if (!confirmDesig) return;
-    try {
-      await deactivateDesig.mutateAsync(confirmDesig.id);
-      showToast("Designation deactivated", "success");
-      setConfirmDesig(null);
-    } catch (err) {
-      showToast(err.response?.data?.message || "Failed to deactivate", "error");
     }
   };
 
@@ -108,7 +80,9 @@ export default function DesignationListPage() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <TableToolbar onRefresh={refetch} refreshing={isFetching} onExportExcel={exportExcel} onExportPDF={exportPDF} exporting={exporting} />
-          <Button onClick={openCreate} className="w-full sm:w-auto">Add Designation</Button>
+          {canAdd && (
+            <Button onClick={() => setModalOpen(true)} className="w-full sm:w-auto">Add Designation</Button>
+          )}
         </div>
       </div>
 
@@ -127,32 +101,22 @@ export default function DesignationListPage() {
       <Modal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        title={editing ? "Edit Designation" : "Add Designation"}
+        title="Add Designation"
         footer={
           <>
             <Button variant="secondary" onClick={() => setModalOpen(false)}>Cancel</Button>
-            <Button type="submit" form="designation-form" isLoading={createDesig.isPending || updateDesig.isPending}>
-              {editing ? "Update" : "Create"}
+            <Button type="submit" form="designation-form" isLoading={createDesig.isPending}>
+              Create
             </Button>
           </>
         }
       >
         <DesignationForm
-          initialData={editing || {}}
+          initialData={{}}
           onSubmit={handleSubmit}
-          loading={createDesig.isPending || updateDesig.isPending}
+          loading={createDesig.isPending}
         />
       </Modal>
-
-      <ConfirmDialog
-        open={!!confirmDesig}
-        onClose={() => setConfirmDesig(null)}
-        onConfirm={handleDeactivate}
-        title="Deactivate Designation"
-        message={`Are you sure you want to deactivate "${confirmDesig?.designation_name}"?`}
-        confirmText="Deactivate"
-        loading={deactivateDesig.isPending}
-      />
     </div>
   );
 }
