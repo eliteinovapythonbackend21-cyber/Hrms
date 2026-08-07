@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { useRoles, useCreateRole, useUpdateRole, useDeactivateRole } from "./useRoles";
 import RoleForm from "./RoleForm";
 import DataTable from "@/components/table/DataTable";
@@ -100,6 +101,7 @@ export default function RoleListPage() {
       render: (r) => (
         <div className="flex items-center gap-2">
           <button onClick={() => openEdit(r)} className="text-primary-600 hover:underline text-sm">Edit</button>
+          <Link to={`/roles/${r.id}/permissions`} className="text-primary-600 hover:underline text-sm">Permissions</Link>
           {r.is_active && (
             <button onClick={() => setConfirmRole(r)} className="text-red-600 hover:underline text-sm">Deactivate</button>
           )}

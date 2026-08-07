@@ -31,4 +31,17 @@ export const masterApi = {
     axiosClient.put(API.MASTER.LEAVE_TYPE_UPDATE(id), payload),
   deactivateLeaveType: (id) =>
     axiosClient.delete(API.MASTER.LEAVE_TYPE_DELETE(id)),
+
+  // Holidays
+  listHolidays: (params) => axiosClient.get(API.MASTER.HOLIDAYS, { params }),
+  createHoliday: (payload) => axiosClient.post(API.MASTER.HOLIDAYS, payload),
+  updateHoliday: (id, payload) => axiosClient.put(API.MASTER.HOLIDAY_UPDATE(id), payload),
+  deactivateHoliday: (id) => axiosClient.delete(API.MASTER.HOLIDAY_DELETE(id)),
+};
+
+export const holidayApi = {
+  list: masterApi.listHolidays,
+  create: masterApi.createHoliday,
+  update: masterApi.updateHoliday,
+  remove: masterApi.deactivateHoliday,
 };

@@ -95,18 +95,6 @@ export default function DepartmentListPage() {
         </Badge>
       ),
     },
-    {
-      key: "actions",
-      label: "Actions",
-      render: (r) => (
-        <div className="flex items-center gap-2">
-          <button onClick={() => openEdit(r)} className="text-primary-600 hover:underline text-sm">Edit</button>
-          {r.is_active && (
-            <button onClick={() => setConfirmDept(r)} className="text-red-600 hover:underline text-sm">Deactivate</button>
-          )}
-        </div>
-      ),
-    },
   ];
 
   return (

@@ -1,9 +1,9 @@
 from datetime import datetime, date
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, send_file
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from extensions import db
 from models import BaseUser, Employee, Leave, LeaveType
-from utils import paginate_query, apply_search_filters
+from utils import paginate_query, apply_search_filters, with_token
 
 leave_bp = Blueprint("leave_bp", __name__)
 
@@ -309,3 +309,26 @@ def delete_leave(leave_id):
     leave.is_active = False
     db.session.commit()
     return jsonify({"message": "Leave deactivated", "token_response": get_jwt()}), 200
+
+
+@leave_bp.route("/report", methods=["GET"])
+@jwt_required()
+@with_token
+def leave_report(token_response):
+    current_user = _get_current_user()
+    if not _is_admin(current_user):
+        return jsonify({"message": "Admin privileges required"}), 403
+
+    from_date_str = request.args.get("from_date")
+    to_date_str = request.args.get("to_date")
+    from_date = _parse_date(from_date_str)
+    to_date = _parse_date(to_date_str)
+    if from_date_str and from_date is None:
+        return jsonify({"message": "Invalid from_date format. Use YYYY-MM-DD."}), 400
+    if to_date_str and to_date is None:
+        return jsonify({"message": "Invalid to_date format. Use YYYY-MM-DD."}), 400
+
+    employee_id = request.args.get("employee_id")
+    workbook = Leave.generate_leave_report(from_date=from_date, to_date=to_date, employee_id=employee_id)
+    filename = f"leave_report_{from_date_str or 'all'}_{to_date_str or 'all'}.xlsx"
+    return send_file(workbook, as_attachment=True, download_name=filename, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")

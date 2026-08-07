@@ -7,4 +7,8 @@ export const rolesApi = {
   get: (id) => axiosClient.get(API.ROLES.GET(id)),
   update: (id, payload) => axiosClient.put(API.ROLES.UPDATE(id), payload),
   deactivate: (id) => axiosClient.delete(API.ROLES.DELETE(id)),
+  permissionsCatalog: () => axiosClient.get(API.ROLES.PERMISSIONS_CATALOG),
+  getRolePermissions: (id) => axiosClient.get(API.ROLES.ROLE_PERMISSIONS(id)),
+  setRolePermissions: (id, permission_ids) =>
+    axiosClient.put(API.ROLES.ROLE_PERMISSIONS(id), { permission_ids }),
 };

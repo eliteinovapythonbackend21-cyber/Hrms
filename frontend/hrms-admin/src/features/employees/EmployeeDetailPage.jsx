@@ -7,6 +7,9 @@ import Avatar from "@/components/ui/Avatar";
 import DetailList from "@/components/ui/DetailList";
 import { formatDate, formatDateTime } from "@/utils/formatDate";
 import { formatCurrency } from "@/utils/formatCurrency";
+import TabbedDetailLayout from "@/components/TabbedDetailLayout";
+import EmployeeSubList from "@/components/EmployeeSubList";
+import { employeeLifecycleApi } from "@/api/employee.api";
 
 export default function EmployeeDetailPage() {
   const { id } = useParams();
@@ -106,6 +109,98 @@ export default function EmployeeDetailPage() {
 
         <DetailList rows={infoRows} />
       </div>
+
+      <TabbedDetailLayout
+        tabs={[
+          {
+            key: "documents",
+            label: "Documents",
+            content: (
+              <EmployeeSubList
+                queryKey="employee-documents"
+                api={employeeLifecycleApi.documents}
+                employeeId={id}
+                columns={[
+                  { key: "doc_type", label: "Document Type" },
+                  { key: "file_url", label: "File", render: (r) => <a href={r.file_url} target="_blank" rel="noreferrer" className="text-primary-600 hover:underline">View</a> },
+                ]}
+                emptyText="No documents on file."
+              />
+            ),
+          },
+          {
+            key: "performance",
+            label: "Performance",
+            content: (
+              <EmployeeSubList
+                queryKey="performance"
+                api={employeeLifecycleApi.performance}
+                employeeId={id}
+                columns={[
+                  { key: "review_period", label: "Review Period" },
+                  { key: "rating", label: "Rating" },
+                  { key: "remarks", label: "Remarks", render: (r) => r.remarks || "-" },
+                ]}
+                emptyText="No performance reviews recorded."
+              />
+            ),
+          },
+          {
+            key: "training",
+            label: "Training",
+            content: (
+              <EmployeeSubList
+                queryKey="training"
+                api={employeeLifecycleApi.training}
+                employeeId={id}
+                columns={[
+                  { key: "program_name", label: "Program" },
+                  { key: "start_date", label: "Start Date" },
+                  { key: "end_date", label: "End Date", render: (r) => r.end_date || "-" },
+                  { key: "status", label: "Status" },
+                ]}
+                emptyText="No training records."
+              />
+            ),
+          },
+          {
+            key: "promotion-transfer",
+            label: "Promotion / Transfer History",
+            content: (
+              <div className="space-y-6">
+                <div>
+                  <h4 className="text-sm font-semibold text-slate-900 dark:text-white mb-2">Promotions</h4>
+                  <EmployeeSubList
+                    queryKey="promotions"
+                    api={employeeLifecycleApi.promotions}
+                    employeeId={id}
+                    columns={[
+                      { key: "from_designation_id", label: "From Designation" },
+                      { key: "to_designation_id", label: "To Designation" },
+                      { key: "effective_date", label: "Effective Date" },
+                    ]}
+                    emptyText="No promotions recorded."
+                  />
+                </div>
+                <div>
+                  <h4 className="text-sm font-semibold text-slate-900 dark:text-white mb-2">Transfers</h4>
+                  <EmployeeSubList
+                    queryKey="transfers"
+                    api={employeeLifecycleApi.transfers}
+                    employeeId={id}
+                    columns={[
+                      { key: "from_department_id", label: "From Department" },
+                      { key: "to_department_id", label: "To Department" },
+                      { key: "effective_date", label: "Effective Date" },
+                    ]}
+                    emptyText="No transfers recorded."
+                  />
+                </div>
+              </div>
+            ),
+          },
+        ]}
+      />
     </div>
   );
 }

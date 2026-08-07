@@ -23,6 +23,7 @@ export default function DesignationForm({ initialData = {}, onSubmit, loading })
     department_id: initialData.department_id || "",
     description: initialData.description || "",
     status: initialData.status !== undefined ? initialData.status : true,
+    is_admin_designation: initialData.is_admin_designation !== undefined ? initialData.is_admin_designation : false,
   });
   const [errors, setErrors] = useState({});
 
@@ -52,6 +53,12 @@ export default function DesignationForm({ initialData = {}, onSubmit, loading })
       <Input label="Designation Name" name="designation_name" value={form.designation_name} onChange={handleChange} error={errors.designation_name} required />
       <Select label="Department" name="department_id" options={deptOptions} value={form.department_id} onChange={handleChange} error={errors.department_id} required />
       <Input label="Description" name="description" value={form.description} onChange={handleChange} />
+      <div className="mb-4">
+        <label className="inline-flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+          <input type="checkbox" name="is_admin_designation" checked={form.is_admin_designation} onChange={handleChange} className="h-4 w-4" />
+          Admin designation
+        </label>
+      </div>
       <div className="mb-4">
         <label className="inline-flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
           <input type="checkbox" name="status" checked={form.status} onChange={handleChange} className="h-4 w-4" />

@@ -7,6 +7,7 @@ import LeaveStatusChart from "./components/LeaveStatusChart";
 import MyStatusSummary from "./components/MyStatusSummary";
 import RadialStat from "./components/RadialStat";
 import RecentLeaves from "./components/RecentLeaves";
+import FinanceMtdCard from "./components/FinanceMtdCard";
 import { getUser } from "@/utils/tokenHelpers";
 
 function leaveApprovalRate(breakdown) {
@@ -64,6 +65,12 @@ export default function DashboardPage() {
             </div>
           )}
           <CountsSummary stats={stats.data} loading={stats.isLoading} />
+
+          {(user?.role === "admin" || user?.role === "finance") && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+              <FinanceMtdCard />
+            </div>
+          )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
             <RadialStat

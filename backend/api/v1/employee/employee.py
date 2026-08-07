@@ -1,6 +1,6 @@
 import re
 from datetime import datetime, date
-from flask import Blueprint, request, jsonify, current_app
+from flask import Blueprint, request, jsonify, current_app, send_file
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from sqlalchemy.exc import IntegrityError
 from extensions import db
@@ -899,3 +899,22 @@ def employee_attendance(employee_id, token_response):
     query = Attendance.query.filter_by(employee_id=employee_id)
     results = paginate_query(query, request.args)
     return jsonify({"message": "Employee attendance fetched", "data": results, "token_response": token_response}), 200
+
+
+@employee_bp.route("/report", methods=["GET"])
+@jwt_required()
+@with_token
+def employee_report(token_response):
+    current_user = _get_current_user()
+    if not _is_admin(current_user):
+        return jsonify({"message": "Admin privileges required"}), 403
+
+    department_id = request.args.get("department_id", type=int)
+    designation_id = request.args.get("designation_id", type=int)
+    workbook = Employee.generate_employee_report(department_id=department_id, designation_id=designation_id)
+    return send_file(
+        workbook,
+        as_attachment=True,
+        download_name="employee_report.xlsx",
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )

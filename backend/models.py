@@ -59,12 +59,56 @@ class Role(TimestampMixin, db.Model):
     is_active = db.Column(db.Boolean, default=True)
     actions = db.Column(db.Text, nullable=True)
     users = db.relationship("BaseUser", back_populates="role_obj", cascade="all, delete-orphan")
+    permission_links = db.relationship("RolePermission", back_populates="role", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<Role {self.name}>"
 
     def to_dict(self):
         data = super().to_dict()
+        data["permissions"] = [
+            _summary(link.permission, ["id", "module", "action"])
+            for link in self.permission_links
+        ]
+        return data
+
+
+class Permission(TimestampMixin, db.Model):
+    """One row per (module, action) pair, e.g. ("Employee", "add").
+    Seeded for the six modules x four actions; see migrations for the seed."""
+
+    __tablename__ = "permissions"
+
+    id = db.Column(db.Integer, primary_key=True)
+    module = db.Column(db.String(50), nullable=False)
+    action = db.Column(db.String(20), nullable=False)
+    is_active = db.Column(db.Boolean, default=True)
+    role_links = db.relationship("RolePermission", back_populates="permission", cascade="all, delete-orphan")
+
+    __table_args__ = (db.UniqueConstraint("module", "action", name="uq_permission_module_action"),)
+
+    def to_dict(self):
+        return super().to_dict()
+
+
+class RolePermission(TimestampMixin, db.Model):
+    """Join table granting a Permission to a Role — replaces the free-form
+    Role.actions text field with a real matrix for the Roles & Permissions
+    screen. Role.actions is left in place for backward compatibility."""
+
+    __tablename__ = "role_permissions"
+
+    id = db.Column(db.Integer, primary_key=True)
+    role_id = db.Column(db.Integer, db.ForeignKey("roles.id", ondelete="CASCADE"), nullable=False)
+    permission_id = db.Column(db.Integer, db.ForeignKey("permissions.id", ondelete="CASCADE"), nullable=False)
+    role = db.relationship("Role", back_populates="permission_links")
+    permission = db.relationship("Permission", back_populates="role_links")
+
+    __table_args__ = (db.UniqueConstraint("role_id", "permission_id", name="uq_role_permission"),)
+
+    def to_dict(self):
+        data = super().to_dict()
+        data["permission"] = _summary(self.permission, ["id", "module", "action"])
         return data
 
 
@@ -145,6 +189,7 @@ class Designation(TimestampMixin, db.Model):
     description = db.Column(db.Text)
     status = db.Column(db.Boolean,default=True)
     is_active = db.Column(db.Boolean, default=True)
+    is_admin_designation = db.Column(db.Boolean, nullable=False, default=False)
     department = db.relationship("Department",back_populates="designations")
     employees = db.relationship("Employee",back_populates="designation")
 
@@ -186,6 +231,21 @@ class LeaveType(TimestampMixin, db.Model):
     def to_dict(self):
         data = super().to_dict()
         return data
+
+
+class Holiday(TimestampMixin, db.Model):
+    """Single-branch business — no branch_id FK (see implementation_plan.md
+    decision log). Organization master, full CRUD."""
+
+    __tablename__ = "holidays"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    holiday_date = db.Column(db.Date, nullable=False)
+    is_active = db.Column(db.Boolean, default=True)
+
+    def to_dict(self):
+        return super().to_dict()
 
 
 class Employee(TimestampMixin, db.Model):
@@ -251,6 +311,29 @@ class Employee(TimestampMixin, db.Model):
             if suffix.isdigit():
                 max_seq = max(max_seq, int(suffix))
         return f"{prefix}{max_seq + 1:03d}"
+
+    @classmethod
+    def generate_employee_report(cls, department_id=None, designation_id=None):
+        query = cls.query
+        if department_id is not None:
+            query = query.filter(cls.department_id == department_id)
+        if designation_id is not None:
+            query = query.filter(cls.designation_id == designation_id)
+        query = query.order_by(cls.id)
+
+        rows = []
+        for employee in query.all():
+            rows.append([
+                employee.employee_code,
+                f"{employee.first_name or ''} {employee.last_name or ''}".strip(),
+                employee.department.department_name if employee.department else "",
+                employee.designation.designation_name if employee.designation else "",
+                employee.joining_date.isoformat() if employee.joining_date else "",
+                float(employee.salary or 0),
+                "Active" if employee.is_active else "Inactive",
+            ])
+        headers = ["Employee Code", "Name", "Department", "Designation", "Joining Date", "Salary", "Status"]
+        return Attendance._create_workbook("Employee Report", headers, rows)
 
 
 class Attendance(TimestampMixin, db.Model):
@@ -476,6 +559,33 @@ class Leave(TimestampMixin, db.Model):
         data["leave_type"] = _summary(self.leave_type, ["id", "name"]) if self.leave_type else None
         return data
 
+    @classmethod
+    def generate_leave_report(cls, from_date=None, to_date=None, employee_id=None):
+        query = cls.query.join(Employee)
+        if employee_id is not None:
+            query = query.filter(cls.employee_id == employee_id)
+        if from_date and to_date:
+            query = query.filter(cls.from_date <= to_date, cls.to_date >= from_date)
+        elif from_date:
+            query = query.filter(cls.to_date >= from_date)
+        elif to_date:
+            query = query.filter(cls.from_date <= to_date)
+        query = query.order_by(cls.from_date, cls.employee_id)
+
+        rows = []
+        for leave in query.all():
+            rows.append([
+                leave.employee_id,
+                f"{leave.employee.first_name or ''} {leave.employee.last_name or ''}".strip(),
+                leave.leave_type.name if leave.leave_type else "",
+                leave.from_date.isoformat() if leave.from_date else "",
+                leave.to_date.isoformat() if leave.to_date else "",
+                leave.total_days or 0,
+                leave.status,
+            ])
+        headers = ["Employee ID", "Employee Name", "Leave Type", "From Date", "To Date", "Total Days", "Status"]
+        return Attendance._create_workbook("Leave Report", headers, rows)
+
 
 class NetworkStatus(TimestampMixin, db.Model):
 
@@ -516,6 +626,488 @@ class AuditLog(TimestampMixin, db.Model):
     def to_dict(self):
         data = super().to_dict()
         data["user"] = _summary(self.user, ["id", "username", "email", "role"])
+        return data
+
+
+# ===========================================================================
+# Phase 2 — Employee lifecycle (add-only lists; soft-delete via is_active)
+# ===========================================================================
+
+class EmployeeDocument(TimestampMixin, db.Model):
+    __tablename__ = "employee_documents"
+
+    id = db.Column(db.Integer, primary_key=True)
+    employee_id = db.Column(db.Integer, db.ForeignKey("employees.id"), nullable=False)
+    doc_type = db.Column(db.String(50), nullable=False)
+    file_url = db.Column(db.String(255), nullable=False)
+    is_active = db.Column(db.Boolean, default=True)
+    employee = db.relationship("Employee")
+
+    def to_dict(self):
+        data = super().to_dict()
+        data["employee"] = _summary(self.employee, ["id", "employee_code", "first_name", "last_name"])
+        return data
+
+
+class EmployeePermission(TimestampMixin, db.Model):
+    """Short-leave / gate-pass request — distinct from Role/RolePermission."""
+    __tablename__ = "employee_permissions"
+
+    id = db.Column(db.Integer, primary_key=True)
+    employee_id = db.Column(db.Integer, db.ForeignKey("employees.id"), nullable=False)
+    permission_date = db.Column(db.Date, nullable=False)
+    from_time = db.Column(db.Time, nullable=False)
+    to_time = db.Column(db.Time, nullable=False)
+    reason = db.Column(db.Text)
+    status = db.Column(db.String(20), default="Pending")
+    is_active = db.Column(db.Boolean, default=True)
+    employee = db.relationship("Employee")
+
+    def to_dict(self):
+        data = super().to_dict()
+        data["employee"] = _summary(self.employee, ["id", "employee_code", "first_name", "last_name"])
+        return data
+
+
+class Overtime(TimestampMixin, db.Model):
+    __tablename__ = "overtime"
+
+    id = db.Column(db.Integer, primary_key=True)
+    employee_id = db.Column(db.Integer, db.ForeignKey("employees.id"), nullable=False)
+    overtime_date = db.Column(db.Date, nullable=False)
+    hours = db.Column(db.Numeric(4, 2), nullable=False)
+    status = db.Column(db.String(20), default="Pending")
+    is_active = db.Column(db.Boolean, default=True)
+    employee = db.relationship("Employee")
+
+    def to_dict(self):
+        data = super().to_dict()
+        data["employee"] = _summary(self.employee, ["id", "employee_code", "first_name", "last_name"])
+        return data
+
+
+class Payroll(TimestampMixin, db.Model):
+    __tablename__ = "payroll"
+
+    id = db.Column(db.Integer, primary_key=True)
+    employee_id = db.Column(db.Integer, db.ForeignKey("employees.id"), nullable=False)
+    pay_month = db.Column(db.String(7), nullable=False)
+    gross_salary = db.Column(db.Numeric(12, 2), default=0)
+    deductions = db.Column(db.Numeric(12, 2), default=0)
+    net_salary = db.Column(db.Numeric(12, 2), default=0)
+    status = db.Column(db.String(20), default="Draft")
+    is_active = db.Column(db.Boolean, default=True)
+    employee = db.relationship("Employee")
+
+    def to_dict(self):
+        data = super().to_dict()
+        data["employee"] = _summary(self.employee, ["id", "employee_code", "first_name", "last_name"])
+        return data
+
+    @classmethod
+    def generate_payroll_report(cls, from_month=None, to_month=None, employee_id=None):
+        query = cls.query.join(Employee)
+        if employee_id is not None:
+            query = query.filter(cls.employee_id == employee_id)
+        if from_month:
+            query = query.filter(cls.pay_month >= from_month)
+        if to_month:
+            query = query.filter(cls.pay_month <= to_month)
+        query = query.order_by(cls.pay_month, cls.employee_id)
+
+        rows = []
+        for payroll in query.all():
+            rows.append([
+                payroll.employee_id,
+                f"{payroll.employee.first_name or ''} {payroll.employee.last_name or ''}".strip(),
+                payroll.pay_month,
+                float(payroll.gross_salary or 0),
+                float(payroll.deductions or 0),
+                float(payroll.net_salary or 0),
+                payroll.status,
+            ])
+        headers = ["Employee ID", "Employee Name", "Pay Month", "Gross Salary", "Deductions", "Net Salary", "Status"]
+        return Attendance._create_workbook("Payroll Report", headers, rows)
+
+
+class Performance(TimestampMixin, db.Model):
+    __tablename__ = "performance_reviews"
+
+    id = db.Column(db.Integer, primary_key=True)
+    employee_id = db.Column(db.Integer, db.ForeignKey("employees.id"), nullable=False)
+    review_period = db.Column(db.String(20), nullable=False)
+    rating = db.Column(db.Numeric(3, 1))
+    remarks = db.Column(db.Text)
+    is_active = db.Column(db.Boolean, default=True)
+    employee = db.relationship("Employee")
+
+    def to_dict(self):
+        data = super().to_dict()
+        data["employee"] = _summary(self.employee, ["id", "employee_code", "first_name", "last_name"])
+        return data
+
+
+class Training(TimestampMixin, db.Model):
+    __tablename__ = "trainings"
+
+    id = db.Column(db.Integer, primary_key=True)
+    employee_id = db.Column(db.Integer, db.ForeignKey("employees.id"), nullable=False)
+    program_name = db.Column(db.String(150), nullable=False)
+    start_date = db.Column(db.Date)
+    end_date = db.Column(db.Date)
+    status = db.Column(db.String(20), default="Scheduled")
+    is_active = db.Column(db.Boolean, default=True)
+    employee = db.relationship("Employee")
+
+    def to_dict(self):
+        data = super().to_dict()
+        data["employee"] = _summary(self.employee, ["id", "employee_code", "first_name", "last_name"])
+        return data
+
+
+class Promotion(TimestampMixin, db.Model):
+    __tablename__ = "promotions"
+
+    id = db.Column(db.Integer, primary_key=True)
+    employee_id = db.Column(db.Integer, db.ForeignKey("employees.id"), nullable=False)
+    from_designation_id = db.Column(db.Integer, db.ForeignKey("designations.id"), nullable=False)
+    to_designation_id = db.Column(db.Integer, db.ForeignKey("designations.id"), nullable=False)
+    effective_date = db.Column(db.Date, nullable=False)
+    remarks = db.Column(db.Text)
+    is_active = db.Column(db.Boolean, default=True)
+    employee = db.relationship("Employee")
+    from_designation = db.relationship("Designation", foreign_keys=[from_designation_id])
+    to_designation = db.relationship("Designation", foreign_keys=[to_designation_id])
+
+    def to_dict(self):
+        data = super().to_dict()
+        data["employee"] = _summary(self.employee, ["id", "employee_code", "first_name", "last_name"])
+        data["from_designation"] = _summary(self.from_designation, ["id", "designation_name"])
+        data["to_designation"] = _summary(self.to_designation, ["id", "designation_name"])
+        return data
+
+
+class Transfer(TimestampMixin, db.Model):
+    __tablename__ = "transfers"
+
+    id = db.Column(db.Integer, primary_key=True)
+    employee_id = db.Column(db.Integer, db.ForeignKey("employees.id"), nullable=False)
+    from_department_id = db.Column(db.Integer, db.ForeignKey("departments.id"))
+    to_department_id = db.Column(db.Integer, db.ForeignKey("departments.id"), nullable=False)
+    effective_date = db.Column(db.Date, nullable=False)
+    remarks = db.Column(db.Text)
+    is_active = db.Column(db.Boolean, default=True)
+    employee = db.relationship("Employee")
+    from_department = db.relationship("Department", foreign_keys=[from_department_id])
+    to_department = db.relationship("Department", foreign_keys=[to_department_id])
+
+    def to_dict(self):
+        data = super().to_dict()
+        data["employee"] = _summary(self.employee, ["id", "employee_code", "first_name", "last_name"])
+        data["from_department"] = _summary(self.from_department, ["id", "department_name"])
+        data["to_department"] = _summary(self.to_department, ["id", "department_name"])
+        return data
+
+
+class Resignation(TimestampMixin, db.Model):
+    __tablename__ = "resignations"
+
+    id = db.Column(db.Integer, primary_key=True)
+    employee_id = db.Column(db.Integer, db.ForeignKey("employees.id"), nullable=False)
+    notice_date = db.Column(db.Date, nullable=False)
+    last_working_date = db.Column(db.Date, nullable=False)
+    reason = db.Column(db.Text)
+    status = db.Column(db.String(20), default="Pending")
+    is_active = db.Column(db.Boolean, default=True)
+    employee = db.relationship("Employee")
+
+    def to_dict(self):
+        data = super().to_dict()
+        data["employee"] = _summary(self.employee, ["id", "employee_code", "first_name", "last_name"])
+        return data
+
+
+class ExitManagement(TimestampMixin, db.Model):
+    __tablename__ = "exit_management"
+
+    id = db.Column(db.Integer, primary_key=True)
+    resignation_id = db.Column(db.Integer, db.ForeignKey("resignations.id"), nullable=False)
+    clearance_status = db.Column(db.String(20), default="Pending")
+    exit_date = db.Column(db.Date)
+    remarks = db.Column(db.Text)
+    is_active = db.Column(db.Boolean, default=True)
+    resignation = db.relationship("Resignation")
+
+    def to_dict(self):
+        data = super().to_dict()
+        data["resignation"] = _summary(self.resignation, ["id", "employee_id", "status", "last_working_date"])
+        return data
+
+
+# ===========================================================================
+# Phase 3 — CRM
+# ===========================================================================
+
+class Lead(TimestampMixin, db.Model):
+    __tablename__ = "leads"
+
+    id = db.Column(db.Integer, primary_key=True)
+    lead_name = db.Column(db.String(150), nullable=False)
+    contact_number = db.Column(db.String(15))
+    email = db.Column(db.String(150))
+    source = db.Column(db.String(50))
+    status = db.Column(db.String(20), default="New")
+    assigned_to = db.Column(db.Integer, db.ForeignKey("employees.id"))
+    is_active = db.Column(db.Boolean, default=True)
+    assignee = db.relationship("Employee")
+    customers = db.relationship("Customer", back_populates="lead")
+
+    def to_dict(self):
+        data = super().to_dict()
+        data["assignee"] = _summary(self.assignee, ["id", "employee_code", "first_name", "last_name"])
+        return data
+
+
+class Customer(TimestampMixin, db.Model):
+    __tablename__ = "customers"
+
+    id = db.Column(db.Integer, primary_key=True)
+    lead_id = db.Column(db.Integer, db.ForeignKey("leads.id"), nullable=True)
+    customer_name = db.Column(db.String(150), nullable=False)
+    contact_number = db.Column(db.String(15))
+    email = db.Column(db.String(150))
+    address = db.Column(db.Text)
+    is_active = db.Column(db.Boolean, default=True)
+    lead = db.relationship("Lead", back_populates="customers")
+
+    def to_dict(self):
+        data = super().to_dict()
+        data["lead"] = _summary(self.lead, ["id", "lead_name", "status"])
+        return data
+
+
+class FollowUp(TimestampMixin, db.Model):
+    __tablename__ = "follow_ups"
+
+    id = db.Column(db.Integer, primary_key=True)
+    customer_id = db.Column(db.Integer, db.ForeignKey("customers.id"), nullable=False)
+    follow_up_date = db.Column(db.DateTime, nullable=False)
+    notes = db.Column(db.Text)
+    is_active = db.Column(db.Boolean, default=True)
+    customer = db.relationship("Customer")
+
+    def to_dict(self):
+        data = super().to_dict()
+        data["customer"] = _summary(self.customer, ["id", "customer_name"])
+        return data
+
+
+class Meeting(TimestampMixin, db.Model):
+    __tablename__ = "meetings"
+
+    id = db.Column(db.Integer, primary_key=True)
+    customer_id = db.Column(db.Integer, db.ForeignKey("customers.id"), nullable=False)
+    meeting_date = db.Column(db.DateTime, nullable=False)
+    notes = db.Column(db.Text)
+    is_active = db.Column(db.Boolean, default=True)
+    customer = db.relationship("Customer")
+
+    def to_dict(self):
+        data = super().to_dict()
+        data["customer"] = _summary(self.customer, ["id", "customer_name"])
+        return data
+
+
+class Quotation(TimestampMixin, db.Model):
+    __tablename__ = "quotations"
+
+    id = db.Column(db.Integer, primary_key=True)
+    customer_id = db.Column(db.Integer, db.ForeignKey("customers.id"), nullable=False)
+    quotation_number = db.Column(db.String(30), unique=True)
+    amount = db.Column(db.Numeric(12, 2), nullable=False)
+    status = db.Column(db.String(20), default="Draft")
+    is_active = db.Column(db.Boolean, default=True)
+    customer = db.relationship("Customer")
+
+    def to_dict(self):
+        data = super().to_dict()
+        data["customer"] = _summary(self.customer, ["id", "customer_name"])
+        return data
+
+
+class Invoice(TimestampMixin, db.Model):
+    __tablename__ = "invoices"
+
+    id = db.Column(db.Integer, primary_key=True)
+    quotation_id = db.Column(db.Integer, db.ForeignKey("quotations.id"), nullable=True)
+    customer_id = db.Column(db.Integer, db.ForeignKey("customers.id"), nullable=False)
+    invoice_number = db.Column(db.String(30), unique=True)
+    amount = db.Column(db.Numeric(12, 2), nullable=False)
+    due_date = db.Column(db.Date)
+    status = db.Column(db.String(20), default="Unpaid")
+    is_active = db.Column(db.Boolean, default=True)
+    customer = db.relationship("Customer")
+    payments = db.relationship("Payment", back_populates="invoice", cascade="all, delete-orphan")
+
+    def to_dict(self):
+        data = super().to_dict()
+        data["customer"] = _summary(self.customer, ["id", "customer_name"])
+        data["paid_amount"] = float(sum((p.amount or 0) for p in self.payments))
+        return data
+
+    @classmethod
+    def generate_crm_report(cls, from_date=None, to_date=None):
+        query = Lead.query
+        rows = []
+        for lead in query.order_by(Lead.id).all():
+            rows.append([lead.id, lead.lead_name, lead.status, lead.source or "", "Lead", "", ""])
+
+        invoice_query = cls.query
+        if from_date and to_date:
+            invoice_query = invoice_query.filter(cls.due_date.between(from_date, to_date))
+        for invoice in invoice_query.order_by(cls.id).all():
+            paid = sum((p.amount or 0) for p in invoice.payments)
+            rows.append([
+                invoice.id,
+                invoice.customer.customer_name if invoice.customer else "",
+                invoice.status,
+                "",
+                "Invoice",
+                float(invoice.amount or 0),
+                float(paid),
+            ])
+        headers = ["ID", "Name", "Status", "Source", "Record Type", "Amount", "Paid Amount"]
+        return Attendance._create_workbook("CRM Report", headers, rows)
+
+
+class Payment(TimestampMixin, db.Model):
+    __tablename__ = "payments"
+
+    id = db.Column(db.Integer, primary_key=True)
+    invoice_id = db.Column(db.Integer, db.ForeignKey("invoices.id"), nullable=False)
+    amount = db.Column(db.Numeric(12, 2), nullable=False)
+    payment_date = db.Column(db.Date, nullable=False)
+    mode = db.Column(db.String(30))
+    is_active = db.Column(db.Boolean, default=True)
+    invoice = db.relationship("Invoice", back_populates="payments")
+
+    def to_dict(self):
+        data = super().to_dict()
+        data["invoice"] = _summary(self.invoice, ["id", "invoice_number", "amount", "status"])
+        return data
+
+
+class SupportTicket(TimestampMixin, db.Model):
+    __tablename__ = "support_tickets"
+
+    id = db.Column(db.Integer, primary_key=True)
+    customer_id = db.Column(db.Integer, db.ForeignKey("customers.id"), nullable=False)
+    subject = db.Column(db.String(150), nullable=False)
+    description = db.Column(db.Text)
+    status = db.Column(db.String(20), default="Open")
+    is_active = db.Column(db.Boolean, default=True)
+    customer = db.relationship("Customer")
+
+    def to_dict(self):
+        data = super().to_dict()
+        data["customer"] = _summary(self.customer, ["id", "customer_name"])
+        return data
+
+
+# ===========================================================================
+# Phase 4 — Finance
+# ===========================================================================
+
+class Account(TimestampMixin, db.Model):
+    __tablename__ = "accounts"
+
+    id = db.Column(db.Integer, primary_key=True)
+    account_name = db.Column(db.String(100), nullable=False)
+    account_type = db.Column(db.String(30))
+    balance = db.Column(db.Numeric(14, 2), default=0)
+    is_active = db.Column(db.Boolean, default=True)
+
+    def to_dict(self):
+        return super().to_dict()
+
+
+class Vendor(TimestampMixin, db.Model):
+    __tablename__ = "vendors"
+
+    id = db.Column(db.Integer, primary_key=True)
+    vendor_name = db.Column(db.String(150), nullable=False)
+    contact_number = db.Column(db.String(15))
+    gstin = db.Column(db.String(20))
+    is_active = db.Column(db.Boolean, default=True)
+
+    def to_dict(self):
+        return super().to_dict()
+
+
+class Expense(TimestampMixin, db.Model):
+    __tablename__ = "expenses"
+
+    id = db.Column(db.Integer, primary_key=True)
+    account_id = db.Column(db.Integer, db.ForeignKey("accounts.id"), nullable=False)
+    vendor_id = db.Column(db.Integer, db.ForeignKey("vendors.id"), nullable=True)
+    category = db.Column(db.String(50))
+    amount = db.Column(db.Numeric(12, 2), nullable=False)
+    expense_date = db.Column(db.Date, nullable=False)
+    is_active = db.Column(db.Boolean, default=True)
+    account = db.relationship("Account")
+    vendor = db.relationship("Vendor")
+
+    def to_dict(self):
+        data = super().to_dict()
+        data["account"] = _summary(self.account, ["id", "account_name"])
+        data["vendor"] = _summary(self.vendor, ["id", "vendor_name"]) if self.vendor else None
+        return data
+
+    @classmethod
+    def generate_finance_report(cls, from_date=None, to_date=None):
+        rows = []
+        expense_query = cls.query
+        if from_date and to_date:
+            expense_query = expense_query.filter(cls.expense_date.between(from_date, to_date))
+        for expense in expense_query.order_by(cls.expense_date).all():
+            rows.append([
+                expense.expense_date.isoformat(),
+                "Expense",
+                expense.category or "",
+                float(expense.amount or 0),
+                expense.account.account_name if expense.account else "",
+            ])
+
+        income_query = Income.query
+        if from_date and to_date:
+            income_query = income_query.filter(Income.income_date.between(from_date, to_date))
+        for income in income_query.order_by(Income.income_date).all():
+            rows.append([
+                income.income_date.isoformat(),
+                "Income",
+                income.source or "",
+                float(income.amount or 0),
+                income.account.account_name if income.account else "",
+            ])
+
+        headers = ["Date", "Type", "Category / Source", "Amount", "Account"]
+        return Attendance._create_workbook("Finance Report", headers, rows)
+
+
+class Income(TimestampMixin, db.Model):
+    __tablename__ = "income"
+
+    id = db.Column(db.Integer, primary_key=True)
+    account_id = db.Column(db.Integer, db.ForeignKey("accounts.id"), nullable=False)
+    source = db.Column(db.String(100))
+    amount = db.Column(db.Numeric(12, 2), nullable=False)
+    income_date = db.Column(db.Date, nullable=False)
+    is_active = db.Column(db.Boolean, default=True)
+    account = db.relationship("Account")
+
+    def to_dict(self):
+        data = super().to_dict()
+        data["account"] = _summary(self.account, ["id", "account_name"])
         return data
 
 

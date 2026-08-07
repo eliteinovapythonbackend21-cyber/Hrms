@@ -2,8 +2,12 @@ import { Link } from "react-router-dom";
 import DataTable from "@/components/table/DataTable";
 import Badge from "@/components/ui/Badge";
 import { formatCurrency } from "@/utils/formatCurrency";
+import { useModulePermissions } from "@/hooks/useModulePermissions";
 
 export default function EmployeeTable({ data, loading, onDeactivate, sortBy, sortDir, onSort }) {
+  // Edit/Deactivate are gated by the Employee-module RolePermission grant
+  // (configured under Admin > Roles & Permissions); admin always passes.
+  const { canEdit, canDelete } = useModulePermissions("Employees");
   const columns = [
     { key: "employee_code", label: "Code", sortable: true },
     {
@@ -52,16 +56,18 @@ export default function EmployeeTable({ data, loading, onDeactivate, sortBy, sor
           <Link to={`/employees/${r.id}`} className="text-primary-600 hover:underline text-sm">
             View
           </Link>
-          <Link to={`/employees/${r.id}/edit`} className="text-primary-600 hover:underline text-sm">
-            Edit
-          </Link>
+          {canEdit && (
+            <Link to={`/employees/${r.id}/edit`} className="text-primary-600 hover:underline text-sm">
+              Edit
+            </Link>
+          )}
           <Link to={`/employees/${r.id}/salary`} className="text-primary-600 hover:underline text-sm">
             Salary
           </Link>
           <Link to={`/employees/${r.id}/payslip`} className="text-primary-600 hover:underline text-sm">
             Payslip
           </Link>
-          {r.is_active && (
+          {r.is_active && canDelete && (
             <button
               onClick={() => onDeactivate?.(r)}
               className="text-red-600 hover:underline text-sm"

@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from sqlalchemy.exc import IntegrityError
 from extensions import db
-from models import BaseUser, Role
+from models import BaseUser, Permission, Role, RolePermission
 from utils import paginate_query, apply_search_filters
 
 role_bp = Blueprint("role_bp", __name__)
@@ -131,3 +131,63 @@ def delete_role(role_id):
     role.is_active = False
     db.session.commit()
     return jsonify({"message": "Role deactivated"}), 200
+
+
+@role_bp.route("/permissions/catalog", methods=["GET"])
+@jwt_required()
+def list_permission_catalog():
+    """All seeded Permission rows (module x action) — used to render the
+    Roles & Permissions matrix columns (Frame 05 of the wireframe)."""
+    permissions = Permission.query.order_by(Permission.module, Permission.action).all()
+    return jsonify({"message": "Permissions fetched", "data": [p.to_dict() for p in permissions]}), 200
+
+
+@role_bp.route("/<int:role_id>/permissions", methods=["GET"])
+@jwt_required()
+def get_role_permissions(role_id):
+    role, error_response = _fetch_role(role_id)
+    if error_response:
+        return error_response
+    granted_ids = [link.permission_id for link in role.permission_links]
+    return jsonify({
+        "message": "Role permissions fetched",
+        "data": {"role_id": role.id, "permission_ids": granted_ids},
+    }), 200
+
+
+@role_bp.route("/<int:role_id>/permissions", methods=["PUT"])
+@jwt_required()
+def set_role_permissions(role_id):
+    """Replaces the role's permission matrix wholesale with the given list of
+    permission ids — the frontend sends the full checked set on every save."""
+    current_user = _get_current_user()
+    if not _is_admin(current_user):
+        return jsonify({"message": "Admin privileges required"}), 403
+
+    role, error_response = _fetch_role(role_id)
+    if error_response:
+        return error_response
+
+    data = request.json or {}
+    permission_ids = data.get("permission_ids")
+    if not isinstance(permission_ids, list):
+        return jsonify({"message": "permission_ids (list) is required"}), 400
+
+    valid_ids = {
+        row.id for row in Permission.query.filter(Permission.id.in_(permission_ids)).all()
+    }
+    unknown_ids = set(permission_ids) - valid_ids
+    if unknown_ids:
+        return jsonify({"message": f"Unknown permission ids: {sorted(unknown_ids)}"}), 400
+
+    RolePermission.query.filter_by(role_id=role.id).delete()
+    for permission_id in valid_ids:
+        db.session.add(RolePermission(role_id=role.id, permission_id=permission_id))
+
+    try:
+        db.session.commit()
+    except IntegrityError as exc:
+        db.session.rollback()
+        return jsonify({"message": "Database integrity error"}), 400
+
+    return jsonify({"message": "Role permissions updated", "data": role.to_dict()}), 200

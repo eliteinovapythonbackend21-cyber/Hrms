@@ -13,6 +13,7 @@ import ConfirmDialog from "@/components/feedback/ConfirmDialog";
 import Button from "@/components/ui/Button";
 import { employeesApi } from "@/api/employees.api";
 import { formatCurrency } from "@/utils/formatCurrency";
+import { useModulePermissions } from "@/hooks/useModulePermissions";
 
 const EXPORT_COLUMNS = [
   { header: "Code", accessor: (r) => r.employee_code },
@@ -34,6 +35,7 @@ export default function EmployeeListPage() {
   };
 
   const { data, isLoading, isError, isFetching, refetch } = useEmployees(queryParams);
+  const { canAdd } = useModulePermissions("Employees");
   const deactivate = useDeactivateEmployee();
   const [confirmEmployee, setConfirmEmployee] = useState(null);
 
@@ -67,9 +69,11 @@ export default function EmployeeListPage() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <TableToolbar onRefresh={refetch} refreshing={isFetching} onExportExcel={exportExcel} onExportPDF={exportPDF} exporting={exporting} />
-          <Link to="/employees/new">
-            <Button className="w-full sm:w-auto">Add Employee</Button>
-          </Link>
+          {canAdd && (
+            <Link to="/employees/new">
+              <Button className="w-full sm:w-auto">Add Employee</Button>
+            </Link>
+          )}
         </div>
       </div>
 
