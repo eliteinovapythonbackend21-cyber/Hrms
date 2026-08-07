@@ -3,7 +3,11 @@ import DataTable from "@/components/table/DataTable";
 import LeaveStatusBadge from "./LeaveStatusBadge";
 import { formatDate } from "@/utils/formatDate";
 
-export default function LeaveTable({ data, loading, onDeactivate, isAdmin, sortBy, sortDir, onSort }) {
+// Leaves is an add-only transactional list — no Edit/Delete, only Add
+// (Request Leave) + the Approvals workflow action for admin. Edit/Delete
+// provisioning lives exclusively under Admin > Roles & Permissions for the
+// screens that support it; Leaves isn't one of them.
+export default function LeaveTable({ data, loading, isAdmin, sortBy, sortDir, onSort }) {
   const columns = [
     {
       key: "employee",
@@ -26,31 +30,14 @@ export default function LeaveTable({ data, loading, onDeactivate, isAdmin, sortB
     {
       key: "actions",
       label: "Actions",
-      render: (r) => (
-        <div className="flex items-center gap-2">
-          <Link to={`/leaves/${r.id}/edit`} className="text-primary-600 hover:underline text-sm">
-            Edit
+      render: (r) =>
+        isAdmin && r.status === "Pending" ? (
+          <Link to="/leaves/approvals" className="text-green-600 hover:underline text-sm">
+            Review
           </Link>
-          {isAdmin && r.status === "Pending" && (
-            <>
-              <Link
-                to={`/leaves/approvals`}
-                className="text-green-600 hover:underline text-sm"
-              >
-                Review
-              </Link>
-            </>
-          )}
-          {r.is_active && (
-            <button
-              onClick={() => onDeactivate?.(r)}
-              className="text-red-600 hover:underline text-sm"
-            >
-              Delete
-            </button>
-          )}
-        </div>
-      ),
+        ) : (
+          "-"
+        ),
     },
   ];
 

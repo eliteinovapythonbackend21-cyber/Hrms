@@ -1,17 +1,15 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { useLeaves, useDeactivateLeave } from "./useLeaves";
+import { useLeaves } from "./useLeaves";
 import LeaveTable from "./components/LeaveTable";
 import { usePagination } from "@/hooks/usePagination";
 import { useDebouncedSearch } from "@/hooks/useDebouncedSearch";
 import { useTableExport } from "@/hooks/useTableExport";
-import { useToast } from "@/components/feedback/Toast";
 import TablePagination from "@/components/table/TablePagination";
 import TableSearchBar from "@/components/table/TableSearchBar";
 import TableToolbar from "@/components/table/TableToolbar";
 import Select from "@/components/ui/Select";
-import ConfirmDialog from "@/components/feedback/ConfirmDialog";
 import Button from "@/components/ui/Button";
 import { getUser } from "@/utils/tokenHelpers";
 import { masterApi } from "@/api/master.api";
@@ -29,7 +27,6 @@ const EXPORT_COLUMNS = [
 ];
 
 export default function LeaveListPage() {
-  const { showToast } = useToast();
   const { params, page, perPage, setPage, setPerPage, sortBy, sortDir, toggleSort } = usePagination();
   const { value: search, setValue: setSearch, debouncedValue: debouncedSearch } = useDebouncedSearch();
   const [leaveTypeFilter, setLeaveTypeFilter] = useState("");
@@ -48,8 +45,6 @@ export default function LeaveListPage() {
   };
 
   const { data, isLoading, isError, isFetching, refetch } = useLeaves(queryParams);
-  const deactivate = useDeactivateLeave();
-  const [confirmLeave, setConfirmLeave] = useState(null);
 
   const { exporting, exportExcel, exportPDF } = useTableExport({
     fetchAll: leavesApi.list,
@@ -58,17 +53,6 @@ export default function LeaveListPage() {
     filename: "leaves",
     title: "Leaves",
   });
-
-  const handleDeactivate = async () => {
-    if (!confirmLeave) return;
-    try {
-      await deactivate.mutateAsync(confirmLeave.id);
-      showToast("Leave deleted", "success");
-      setConfirmLeave(null);
-    } catch (err) {
-      showToast(err.response?.data?.message || "Failed to delete leave", "error");
-    }
-  };
 
   return (
     <div>
@@ -114,7 +98,6 @@ export default function LeaveListPage() {
         <LeaveTable
           data={data?.items || []}
           loading={isLoading}
-          onDeactivate={setConfirmLeave}
           isAdmin={isAdmin}
           sortBy={sortBy}
           sortDir={sortDir}
@@ -129,16 +112,6 @@ export default function LeaveListPage() {
           onPerPageChange={setPerPage}
         />
       </div>
-
-      <ConfirmDialog
-        open={!!confirmLeave}
-        onClose={() => setConfirmLeave(null)}
-        onConfirm={handleDeactivate}
-        title="Delete Leave"
-        message="Are you sure you want to delete this leave request?"
-        confirmText="Delete"
-        loading={deactivate.isPending}
-      />
     </div>
   );
 }

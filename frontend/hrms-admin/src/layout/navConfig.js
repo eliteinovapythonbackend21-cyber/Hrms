@@ -28,6 +28,7 @@ export const navConfig = [
       { label: "Departments", path: "/master/departments", icon: "department" },
       { label: "Designations", path: "/master/designations", icon: "designation" },
       { label: "Holidays", path: "/master/holidays", icon: "holiday" },
+      { label: "Leave Types", path: "/master/leave-types", icon: "leaveType" },
       { label: "Roles & Permissions", path: "/roles", icon: "roles" },
     ],
   },
@@ -71,10 +72,6 @@ export const navConfig = [
     path: "/leaves",
     icon: "leaves",
     roles: ["admin", ...EMPLOYEE_LIKE_ROLES],
-    children: [
-      { label: "Leave Type", path: "/master/leave-types", icon: "leaveType", roles: ["admin"] },
-      { label: "Leave", path: "/leaves", icon: "leaves" },
-    ],
   },
   {
     label: "Network Logs",
