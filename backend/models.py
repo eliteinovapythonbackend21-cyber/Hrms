@@ -58,6 +58,10 @@ class Role(TimestampMixin, db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), nullable=False, unique=True, index=True)
+    # Master category this role belongs to (Admin / HR / Employee / Finance) —
+    # drives the master/sub-master grouping on the Roles screen. Free-form
+    # roles created under a sub-master category inherit it automatically.
+    category = db.Column(db.String(20), nullable=False, default="HR", server_default="HR")
     is_active = db.Column(db.Boolean, default=True)
     actions = db.Column(db.Text, nullable=True)
     users = db.relationship("BaseUser", back_populates="role_obj", cascade="all, delete-orphan")

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useRoles, useCreateRole, useUpdateRole, useDeactivateRole } from "./useRoles";
 import RoleForm from "./RoleForm";
@@ -7,32 +7,41 @@ import Badge from "@/components/ui/Badge";
 import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
 import ConfirmDialog from "@/components/feedback/ConfirmDialog";
-import { usePagination } from "@/hooks/usePagination";
 import { useDebouncedSearch } from "@/hooks/useDebouncedSearch";
 import { useTableExport } from "@/hooks/useTableExport";
 import { useToast } from "@/components/feedback/Toast";
 import TableSearchBar from "@/components/table/TableSearchBar";
-import TablePagination from "@/components/table/TablePagination";
 import TableToolbar from "@/components/table/TableToolbar";
 import { rolesApi } from "@/api/roles.api";
 
 const EXPORT_COLUMNS = [
   { header: "ID", accessor: (r) => r.id },
   { header: "Name", accessor: (r) => r.name },
+  { header: "Category", accessor: (r) => r.category },
   { header: "Status", accessor: (r) => (r.is_active ? "Active" : "Inactive") },
 ];
 
+// Master categories shown up front — driven by the backend `roles.category`
+// column (Admin/HR/Employee/Finance), not name-matching, so custom roles
+// created under a sub-master category are grouped correctly too.
+const ROLE_CATEGORIES = [
+  { key: "Admin", label: "Admin", description: "Full system access" },
+  { key: "HR", label: "HR", description: "HR team and its sub-roles" },
+  { key: "Employee", label: "Employee", description: "Employee self-service" },
+  { key: "Finance", label: "Finance", description: "Accounts, expenses & vendors" },
+];
+
+const QUERY_PARAMS = { per_page: 100 };
+
 export default function RoleListPage() {
   const { showToast } = useToast();
-  const { params, page, perPage, setPage, setPerPage } = usePagination();
   const { value, setValue, debouncedValue } = useDebouncedSearch();
 
-  const queryParams = { ...params, search: debouncedValue || undefined };
-  const { data, isLoading, isError, isFetching, refetch } = useRoles(queryParams);
+  const { data, isLoading, isError, isFetching, refetch } = useRoles(QUERY_PARAMS);
 
   const { exporting, exportExcel, exportPDF } = useTableExport({
     fetchAll: rolesApi.list,
-    queryParams,
+    queryParams: QUERY_PARAMS,
     exportColumns: EXPORT_COLUMNS,
     filename: "roles",
     title: "Roles",
@@ -45,6 +54,28 @@ export default function RoleListPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [confirmRole, setConfirmRole] = useState(null);
+  const [activeCategory, setActiveCategory] = useState(null);
+
+  const allRoles = data?.items || [];
+  const category = ROLE_CATEGORIES.find((c) => c.key === activeCategory) || null;
+
+  const categoryCounts = useMemo(() => {
+    const counts = {};
+    ROLE_CATEGORIES.forEach((cat) => {
+      counts[cat.key] = allRoles.filter((r) => r.category === cat.key).length;
+    });
+    return counts;
+  }, [allRoles]);
+
+  const scopedRoles = useMemo(() => {
+    if (!category) return [];
+    let rows = allRoles.filter((r) => r.category === category.key);
+    if (debouncedValue) {
+      const q = debouncedValue.toLowerCase();
+      rows = rows.filter((r) => r.name.toLowerCase().includes(q));
+    }
+    return rows;
+  }, [allRoles, category, debouncedValue]);
 
   const openCreate = () => {
     setEditing(null);
@@ -54,6 +85,16 @@ export default function RoleListPage() {
   const openEdit = (r) => {
     setEditing(r);
     setModalOpen(true);
+  };
+
+  const openCategory = (key) => {
+    setActiveCategory(key);
+    setValue("");
+  };
+
+  const backToCategories = () => {
+    setActiveCategory(null);
+    setValue("");
   };
 
   const handleSubmit = async (payload) => {
@@ -85,6 +126,7 @@ export default function RoleListPage() {
   const columns = [
     { key: "id", label: "ID" },
     { key: "name", label: "Name" },
+    { key: "category", label: "Category" },
     { key: "actions", label: "Actions", render: (r) => r.actions || "-" },
     {
       key: "is_active",
@@ -114,8 +156,20 @@ export default function RoleListPage() {
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Roles</h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Manage roles</p>
+          {category ? (
+            <>
+              <button onClick={backToCategories} className="text-sm text-primary-600 hover:underline mb-1">
+                ← Categories
+              </button>
+              <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{category.label} Roles</h1>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{category.description}</p>
+            </>
+          ) : (
+            <>
+              <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Roles</h1>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Select a category to manage its roles</p>
+            </>
+          )}
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <TableToolbar onRefresh={refetch} refreshing={isFetching} onExportExcel={exportExcel} onExportPDF={exportPDF} exporting={exporting} />
@@ -123,17 +177,32 @@ export default function RoleListPage() {
         </div>
       </div>
 
-      <div className="card">
-        <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-          <TableSearchBar value={value} onChange={setValue} placeholder="Search roles..." />
+      {isError && <div className="mb-4 text-red-600 dark:text-red-400">Failed to load roles.</div>}
+
+      {!category ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {ROLE_CATEGORIES.map((cat) => (
+            <button
+              key={cat.key}
+              onClick={() => openCategory(cat.key)}
+              className="card p-5 text-left border border-transparent hover:border-primary-500 dark:hover:border-primary-400 transition-colors"
+            >
+              <p className="text-lg font-semibold text-slate-900 dark:text-white">{cat.label}</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{cat.description}</p>
+              <p className="text-xs text-slate-400 dark:text-slate-500 mt-3">
+                {isLoading ? "…" : `${categoryCounts[cat.key] || 0} role${(categoryCounts[cat.key] || 0) === 1 ? "" : "s"}`}
+              </p>
+            </button>
+          ))}
         </div>
-        {isError && <div className="p-4 text-red-600 dark:text-red-400">Failed to load roles.</div>}
-        <DataTable columns={columns} data={data?.items || []} loading={isLoading} />
-        <TablePagination
-          page={page} pages={data?.pages || 1} total={data?.total || 0}
-          perPage={perPage} onPageChange={setPage} onPerPageChange={setPerPage}
-        />
-      </div>
+      ) : (
+        <div className="card">
+          <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+            <TableSearchBar value={value} onChange={setValue} placeholder={`Search ${category.label.toLowerCase()} roles...`} />
+          </div>
+          <DataTable columns={columns} data={scopedRoles} loading={isLoading} />
+        </div>
+      )}
 
       <Modal
         open={modalOpen}
@@ -152,6 +221,7 @@ export default function RoleListPage() {
           initialData={editing || {}}
           onSubmit={handleSubmit}
           loading={createRole.isPending || updateRole.isPending}
+          lockedCategory={!editing && category ? category.label : null}
         />
       </Modal>
 

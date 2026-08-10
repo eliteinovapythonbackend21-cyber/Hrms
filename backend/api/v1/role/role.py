@@ -7,6 +7,8 @@ from utils import paginate_query, apply_search_filters
 
 role_bp = Blueprint("role_bp", __name__)
 
+ROLE_CATEGORIES = {"Admin", "HR", "Employee", "Finance"}
+
 
 def _get_current_user():
     user_id = int(get_jwt_identity())
@@ -38,11 +40,16 @@ def create_role():
     if not name:
         return jsonify({"message": "Role name is required"}), 400
 
+    category = (data.get("category") or "HR").strip()
+    if category not in ROLE_CATEGORIES:
+        return jsonify({"message": f"category must be one of {sorted(ROLE_CATEGORIES)}"}), 400
+
     if Role.query.filter_by(name=name).first():
         return jsonify({"message": "Role already exists"}), 409
 
     role = Role(
         name=name,
+        category=category,
         is_active=data.get("is_active", True),
         actions=data.get("actions", ""),
     )
@@ -100,6 +107,12 @@ def update_role(role_id):
         if Role.query.filter(Role.id != role_id, Role.name == name).first():
             return jsonify({"message": "Role already exists"}), 409
         role.name = name
+
+    if "category" in data:
+        category = (data.get("category") or "").strip()
+        if category not in ROLE_CATEGORIES:
+            return jsonify({"message": f"category must be one of {sorted(ROLE_CATEGORIES)}"}), 400
+        role.category = category
 
     if "is_active" in data:
         role.is_active = data.get("is_active")

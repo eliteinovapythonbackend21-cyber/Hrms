@@ -16,6 +16,10 @@ export const HR_SUB_ROLES = [
 
 export const ROLES = ["admin", "employee", "finance", ...HR_SUB_ROLES];
 
+// The 4 master categories a Role belongs to (backend `roles.category` column).
+export const ROLE_CATEGORIES = ["Admin", "HR", "Employee", "Finance"];
+export const ROLE_CATEGORY_OPTIONS = ROLE_CATEGORIES.map((c) => ({ value: c, label: c }));
+
 export const ROLE_OPTIONS = ROLES.map((name) => ({ id: name, name, label: name }));
 
 // Legacy alias — some older code imported ROLE_MAP as a plain role-name
