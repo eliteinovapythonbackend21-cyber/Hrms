@@ -14,5 +14,6 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     MAX_CONTENT_LENGTH = 5 * 1024 * 1024
     ALLOWED_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "gif"}
+    ALLOWED_DOCUMENT_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "pdf"}
     CLOUDINARY_URL = os.getenv("CLOUDINARY_URL")
     CORS_ORIGINS = [o.strip() for o in os.getenv("CORS_ORIGINS", "").split(",") if o.strip()]

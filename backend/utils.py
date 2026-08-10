@@ -61,13 +61,21 @@ def allowed_file_extension(filename, allowed_extensions):
 
 
 def handle_image_upload(file, allowed_extensions):
+    return handle_upload(file, allowed_extensions, folder="hrms/profile_pictures", resource_type="image")
+
+
+def handle_document_upload(file, allowed_extensions):
+    return handle_upload(file, allowed_extensions, folder="hrms/employee_documents", resource_type="auto")
+
+
+def handle_upload(file, allowed_extensions, folder, resource_type="auto"):
     if not file or file.filename == "":
         return None
 
     if not allowed_file_extension(file.filename, allowed_extensions):
         raise ValueError("File type not allowed")
 
-    result = cloudinary.uploader.upload(file, folder="hrms/profile_pictures")
+    result = cloudinary.uploader.upload(file, folder=folder, resource_type=resource_type)
 
     return {
         "url": result["secure_url"],

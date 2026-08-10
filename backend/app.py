@@ -1,4 +1,6 @@
 import os
+from urllib.parse import urlparse
+
 from flask import Flask
 
 if os.name == "nt":
@@ -16,7 +18,15 @@ app = Flask(__name__)
 
 app.config.from_object(Config)
 
-cloudinary.config(cloudinary_url=app.config["CLOUDINARY_URL"])
+# cloudinary.config(cloudinary_url=...) only stores the raw string on this SDK
+# version — cloud_name/api_key/api_secret are otherwise left as None. Parse it
+# ourselves so uploads (profile pictures, employee documents) actually work.
+_cloudinary_url = urlparse(app.config["CLOUDINARY_URL"] or "")
+cloudinary.config(
+    cloud_name=_cloudinary_url.hostname,
+    api_key=_cloudinary_url.username,
+    api_secret=_cloudinary_url.password,
+)
 
 # Default dev origins, plus anything set via CORS_ORIGINS (comma-separated) in production
 DEFAULT_ORIGINS = ["http://localhost:5173", "http://127.0.0.1:5173"]

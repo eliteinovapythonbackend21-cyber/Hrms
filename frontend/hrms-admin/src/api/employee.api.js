@@ -1,13 +1,22 @@
 import axiosClient from "./axiosClient";
 import { API } from "./endpoints";
 import { createCrudApi } from "@/utils/crudFactory";
+import { toFormData } from "@/utils/validators";
 
 const L = API.EMPLOYEE_LIFECYCLE;
 
 // Employee lifecycle sub-modules — all create/list/delete only (no PUT on
 // the backend, register_crud_blueprint(editable=False)).
 export const employeeLifecycleApi = {
-  documents: createCrudApi({ listUrl: L.DOCUMENTS, itemUrl: L.DOCUMENTS_ITEM }),
+  documents: {
+    ...createCrudApi({ listUrl: L.DOCUMENTS, itemUrl: L.DOCUMENTS_ITEM }),
+    // Multipart (document file upload) — Content-Type must be left unset so
+    // the browser adds the multipart boundary itself.
+    create: (payload) =>
+      axiosClient.post(L.DOCUMENTS, toFormData(payload), {
+        headers: { "Content-Type": undefined },
+      }),
+  },
   permissions: createCrudApi({ listUrl: L.PERMISSIONS, itemUrl: L.PERMISSIONS_ITEM }),
   overtime: createCrudApi({ listUrl: L.OVERTIME, itemUrl: L.OVERTIME_ITEM }),
   payroll: {
