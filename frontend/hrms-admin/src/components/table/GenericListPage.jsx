@@ -40,8 +40,12 @@ export default function GenericListPage({
   module = null,
 }) {
   const { showToast } = useToast();
-  const { canAdd } = useModulePermissions(module);
+  const { canAdd, canView, loading: permsLoading } = useModulePermissions(module);
   const addAllowed = module ? canAdd : true;
+  // Unlike Add/Edit/Delete (row-level buttons), a missing "view" grant means
+  // the whole module is off-limits — including for the admin role, since
+  // Admin > Roles & Permissions can now revoke it just like any other role.
+  const viewDenied = module ? !permsLoading && !canView : false;
   const { params, page, perPage, setPage, setPerPage } = usePagination();
   const { value, setValue, debouncedValue } = useDebouncedSearch();
 
@@ -119,6 +123,20 @@ export default function GenericListPage({
         };
 
   const allColumns = actionsColumn ? [...columns, actionsColumn] : columns;
+
+  if (viewDenied) {
+    return (
+      <div>
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{title}</h1>
+          {subtitle && <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{subtitle}</p>}
+        </div>
+        <div className="card p-10 text-center text-slate-500 dark:text-slate-400">
+          You don't have permission to view this module.
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
