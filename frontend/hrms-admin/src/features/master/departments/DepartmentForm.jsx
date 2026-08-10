@@ -48,7 +48,7 @@ export default function DepartmentForm({ initialData = {}, onSubmit, loading, on
           Cancel
         </Button>
         <Button type="submit" isLoading={loading}>
-          {isEdit ? "Update" : "Create"}
+          {isEdit ? "Update" : "Update"}
         </Button>
       </div>
     </form>
