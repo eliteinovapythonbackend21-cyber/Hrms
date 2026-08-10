@@ -1,4 +1,4 @@
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, time, timedelta
 from decimal import Decimal
 from io import BytesIO
 
@@ -28,6 +28,8 @@ class TimestampMixin(object):
             if isinstance(value, datetime):
                 data[column.name] = value.isoformat()
             elif isinstance(value, date):
+                data[column.name] = value.isoformat()
+            elif isinstance(value, time):
                 data[column.name] = value.isoformat()
             elif isinstance(value, Decimal):
                 data[column.name] = float(value)
