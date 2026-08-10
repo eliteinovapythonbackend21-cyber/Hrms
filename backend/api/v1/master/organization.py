@@ -11,7 +11,7 @@ organization_bp = register_crud_blueprint(
     create_fields=["name", "holiday_date", "is_active"],
     search_fields=["name"],
     url_prefix_singular="holiday",
-    editable=False,
-    deletable=False,
+    editable=True,
+    deletable=True,
     admin_only=True,
 )

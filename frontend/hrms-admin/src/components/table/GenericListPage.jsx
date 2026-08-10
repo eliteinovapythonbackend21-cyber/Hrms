@@ -169,22 +169,14 @@ export default function GenericListPage({
           open={modalOpen}
           onClose={() => setModalOpen(false)}
           title={editing ? `Edit ${formTitle}` : `Add ${formTitle}`}
-          footer={
-            <>
-              <Button variant="secondary" onClick={() => setModalOpen(false)}>
-                Cancel
-              </Button>
-              <Button form={`${filename}-form`} type="submit" isLoading={createMutation?.isPending || updateMutation?.isPending}>
-                {editing ? "Update" : "Create"}
-              </Button>
-            </>
-          }
         >
           <FormComponent
             formId={`${filename}-form`}
             initialData={editing || autoOpenCreateWith || {}}
             onSubmit={handleSubmit}
             loading={createMutation?.isPending || updateMutation?.isPending}
+            onCancel={() => setModalOpen(false)}
+            isEdit={!!editing}
           />
         </Modal>
       )}

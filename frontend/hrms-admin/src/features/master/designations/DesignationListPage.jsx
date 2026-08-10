@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { useDesignations, useCreateDesignation } from "./useDesignations";
+import { useDesignations, useCreateDesignation, useUpdateDesignation, useDeactivateDesignation } from "./useDesignations";
 import DesignationForm from "./DesignationForm";
 import DataTable from "@/components/table/DataTable";
 import Badge from "@/components/ui/Badge";
 import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
+import ConfirmDialog from "@/components/feedback/ConfirmDialog";
 import { usePagination } from "@/hooks/usePagination";
 import { useDebouncedSearch } from "@/hooks/useDebouncedSearch";
 import { useTableExport } from "@/hooks/useTableExport";
@@ -31,7 +32,7 @@ export default function DesignationListPage() {
 
   const queryParams = { ...params, search: debouncedValue || undefined };
   const { data, isLoading, isError, isFetching, refetch } = useDesignations(queryParams);
-  const { canAdd } = useModulePermissions("Designations");
+  const { canAdd ,canEdit, canDelete } = useModulePermissions("Designations");
 
   const { exporting, exportExcel, exportPDF } = useTableExport({
     fetchAll: masterApi.listDesignations,
@@ -42,18 +43,51 @@ export default function DesignationListPage() {
   });
 
   const createDesig = useCreateDesignation();
+  const updateDesig = useUpdateDesignation();
+  const deactivateDesig = useDeactivateDesignation();
+
 
   const [modalOpen, setModalOpen] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [confirmRow, setConfirmRow] = useState(null);
+
+  const openAdd = () => {
+    setEditing(null);
+    setModalOpen(true);
+  };
+
+  const openEdit = (row) => {
+    setEditing(row);
+    setModalOpen(true);
+  };
+
 
   const handleSubmit = async (payload) => {
     try {
-      await createDesig.mutateAsync(payload);
-      showToast("Designation created", "success");
+      if (editing) {
+        await updateDesig.mutateAsync({ id: editing.id, payload });
+        showToast("Designation updated", "success");
+      } else {
+        await createDesig.mutateAsync(payload);
+        showToast("Designation created", "success");
+      }
       setModalOpen(false);
+      setEditing(null);
     } catch (err) {
       showToast(err.response?.data?.message || "Operation failed", "error");
     }
   };
+  
+  const handleDeactivate = async () => {
+    try {
+      await deactivateDesig.mutateAsync(confirmRow.id);
+      showToast("Designation deactivated", "success");
+      setConfirmRow(null);
+    } catch (err) {
+      showToast(err.response?.data?.message || "Operation failed", "error");
+    }
+  };
+
 
   const columns = [
     { key: "designation_code", label: "Code" },
@@ -64,9 +98,17 @@ export default function DesignationListPage() {
       key: "status",
       label: "Status",
       render: (r) => (
-        <Badge className={r.status ? "bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300" : "bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300"}>
-          {r.status ? "Active" : "Inactive"}
-        </Badge>
+        <div className="flex items-center gap-3">
+          <Badge className={r.status ? "bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300" : "bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300"}>
+            {r.status ? "Active" : "Inactive"}
+          </Badge>
+          {canEdit && (
+            <button onClick={() => openEdit(r)} className="text-primary-600 hover:underline text-sm">Edit</button>
+          )}
+          {r.status && canDelete && (
+            <button onClick={() => setConfirmRow(r)} className="text-red-600 hover:underline text-sm">Deactivate</button>
+          )}
+        </div>
       ),
     },
   ];
@@ -100,23 +142,27 @@ export default function DesignationListPage() {
 
       <Modal
         open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        title="Add Designation"
-        footer={
-          <>
-            <Button variant="secondary" onClick={() => setModalOpen(false)}>Cancel</Button>
-            <Button type="submit" form="designation-form" isLoading={createDesig.isPending}>
-              Create
-            </Button>
-          </>
-        }
+        onClose={() => { setModalOpen(false); setEditing(null); }}
+        title={editing ? "Edit Designation" : "Add Designation"}
       >
         <DesignationForm
-          initialData={{}}
+          initialData={editing || {}}
           onSubmit={handleSubmit}
-          loading={createDesig.isPending}
+          loading={createDesig.isPending || updateDesig.isPending}
+          onCancel={() => { setModalOpen(false); setEditing(null); }}
+          isEdit={!!editing}
         />
       </Modal>
+      
+      <ConfirmDialog
+        open={!!confirmRow}
+        onClose={() => setConfirmRow(null)}
+        onConfirm={handleDeactivate}
+        title="Deactivate Designation"
+        message="Are you sure you want to deactivate this designation?"
+        confirmText="Deactivate"
+        loading={deactivateDesig.isPending}
+      />  
     </div>
   );
 }

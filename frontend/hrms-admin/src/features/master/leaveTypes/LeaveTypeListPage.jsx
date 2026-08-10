@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { useLeaveTypes, useCreateLeaveType } from "./useLeaveTypes";
+import { useLeaveTypes, useCreateLeaveType, useUpdateLeaveType, useDeactivateLeaveType } from "./useLeaveTypes";
 import LeaveTypeForm from "./LeaveTypeForm";
 import DataTable from "@/components/table/DataTable";
 import Badge from "@/components/ui/Badge";
 import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
+import ConfirmDialog from "@/components/feedback/ConfirmDialog";
 import { usePagination } from "@/hooks/usePagination";
 import { useDebouncedSearch } from "@/hooks/useDebouncedSearch";
 import { useTableExport } from "@/hooks/useTableExport";
@@ -29,7 +30,7 @@ export default function LeaveTypeListPage() {
 
   const queryParams = { ...params, search: debouncedValue || undefined };
   const { data, isLoading, isError, isFetching, refetch } = useLeaveTypes(queryParams);
-  const { canAdd } = useModulePermissions("Leave Types");
+  const { canAdd , canEdit , canDelete } = useModulePermissions("Leave Types");
 
   const { exporting, exportExcel, exportPDF } = useTableExport({
     fetchAll: masterApi.listLeaveTypes,
@@ -40,29 +41,69 @@ export default function LeaveTypeListPage() {
   });
 
   const createLT = useCreateLeaveType();
+  const updateLT = useUpdateLeaveType();
+  const deactivateLT = useDeactivateLeaveType();
 
   const [modalOpen, setModalOpen] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [confirmRow, setConfirmRow] = useState(null);
 
+  const openAdd = () => {
+    setEditing(null);
+    setModalOpen(true);
+  };
+
+  const openEdit = (row) => {
+    setEditing(row);
+    setModalOpen(true);
+  };
+
+  
   const handleSubmit = async (payload) => {
     try {
-      await createLT.mutateAsync(payload);
-      showToast("Leave type created", "success");
+      if (editing) {
+        await updateLT.mutateAsync({ id: editing.id, payload });
+        showToast("Leave Type updated", "success");
+      } else {
+        await createLT.mutateAsync(payload);
+        showToast("Leave Type created", "success");
+      }
       setModalOpen(false);
+      setEditing(null);
     } catch (err) {
       showToast(err.response?.data?.message || "Operation failed", "error");
     }
   };
 
+
+  const handleDeactivate = async () => {
+      try {
+        await deactivateLT.mutateAsync(confirmRow.id);
+        showToast("LeaveType deactivated", "success");
+        setConfirmRow(null);
+      } catch (err) {
+        showToast(err.response?.data?.message || "Operation failed", "error");
+      }
+    };
+
   const columns = [
     { key: "id", label: "ID" },
     { key: "name", label: "Name" },
     {
-      key: "is_active",
+      key: "status",
       label: "Status",
       render: (r) => (
-        <Badge className={r.is_active ? "bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300" : "bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300"}>
-          {r.is_active ? "Active" : "Inactive"}
-        </Badge>
+        <div className="flex items-center gap-3">
+          <Badge className={r.is_active ? "bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300" : "bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300"}>
+            {r.is_active ? "Active" : "Inactive"}
+          </Badge>
+          {canEdit && (
+            <button onClick={() => openEdit(r)} className="text-primary-600 hover:underline text-sm">Edit</button>
+          )}
+          {r.is_active && canDelete && (
+            <button onClick={() => setConfirmRow(r)} className="text-red-600 hover:underline text-sm">Deactivate</button>
+          )}
+        </div>
       ),
     },
   ];
@@ -96,23 +137,28 @@ export default function LeaveTypeListPage() {
 
       <Modal
         open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        title="Add Leave Type"
-        footer={
-          <>
-            <Button variant="secondary" onClick={() => setModalOpen(false)}>Cancel</Button>
-            <Button type="submit" form="leavetype-form" isLoading={createLT.isPending}>
-              Create
-            </Button>
-          </>
-        }
+        onClose={() => { setModalOpen(false); setEditing(null); }}
+        title={editing ? "Edit LeaveType" : "Add LeaveType"}
       >
         <LeaveTypeForm
-          initialData={{}}
+          initialData={editing || {}}
           onSubmit={handleSubmit}
-          loading={createLT.isPending}
+          loading={createLT.isPending || updateLT.isPending}
+          onCancel={() => { setModalOpen(false); setEditing(null); }}
+          isEdit={!!editing}
         />
       </Modal>
+      
+      <ConfirmDialog
+        open={!!confirmRow}
+        onClose={() => setConfirmRow(null)}
+        onConfirm={handleDeactivate}
+        title="Deactivate LeaveType"
+        message="Are you sure you want to deactivate this LeaveType?"
+        confirmText="Deactivate"
+        loading={deactivateLT.isPending}
+      />  
     </div>
   );
 }
+      

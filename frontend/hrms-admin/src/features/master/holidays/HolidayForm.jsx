@@ -6,7 +6,7 @@ const FIELDS = [
   { name: "is_active", label: "Active", type: "checkbox", defaultValue: true },
 ];
 
-export default function HolidayForm({ formId = "holiday-form", initialData, onSubmit, loading }) {
+export default function HolidayForm({ formId = "holidays-form", initialData, onSubmit, loading, onCancel, isEdit }) {
   return (
     <GenericForm
       formId={formId}
@@ -14,6 +14,8 @@ export default function HolidayForm({ formId = "holiday-form", initialData, onSu
       initialData={initialData}
       onSubmit={onSubmit}
       loading={loading}
+      onCancel={onCancel}
+      isEdit={isEdit}
     />
   );
 }

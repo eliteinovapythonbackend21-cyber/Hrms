@@ -1,13 +1,14 @@
 import { useState } from "react";
 import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
+import Button from "@/components/ui/Button";
 import { isRequired } from "@/utils/validators";
 
 // Config-driven form shared by the create-only transactional features
 // (employee lifecycle / CRM / finance). `fields`:
 //   { name, label, type: "text"|"number"|"date"|"select"|"checkbox"|"textarea",
 //     required, options, placeholder, defaultValue }
-export default function GenericForm({ formId, fields, initialData = {}, onSubmit, loading, readOnlyBanner }) {
+export default function GenericForm({ formId, fields, initialData = {}, onSubmit, loading, readOnlyBanner, onCancel, isEdit }) {
   const buildInitial = () => {
     const obj = {};
     fields.forEach((f) => {
@@ -117,6 +118,16 @@ export default function GenericForm({ formId, fields, initialData = {}, onSubmit
           />
         );
       })}
+      <div className="flex justify-end gap-2 mt-6">
+        {onCancel && (
+          <Button type="button" variant="secondary" onClick={onCancel}>
+            Cancel
+          </Button>
+        )}
+        <Button type="submit" isLoading={loading}>
+          {isEdit ? "Update" : "Create"}
+        </Button>
+      </div>
     </form>
   );
 }

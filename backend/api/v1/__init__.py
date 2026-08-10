@@ -16,7 +16,7 @@ blueprints = [
     (user_bp, "/users"),
     (employee_bp, "/employees"),
     (master_bp, ""),
-    (organization_bp, ""),
+    (organization_bp, "/organization"),
     (attendance_bp, "/attendance"),
     (network_bp, "/network"),
     (auth_bp, "/auth"),

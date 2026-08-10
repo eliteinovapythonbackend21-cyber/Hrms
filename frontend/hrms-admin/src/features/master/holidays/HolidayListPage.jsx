@@ -9,7 +9,7 @@ const COLUMNS = [
   { key: "name", label: "Name" },
   { key: "holiday_date", label: "Date", render: (r) => formatDate(r.holiday_date) },
   {
-    key: "is_active",
+    key: "status",
     label: "Status",
     render: (r) => (
       <Badge className={r.is_active ? "bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300" : "bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300"}>

@@ -151,18 +151,64 @@ def create_department(token_response):
     return jsonify({"message": "Department created", "data": department.to_dict(), "token_response": token_response}), 201
 
 
+# @master_bp.route("/departments/<int:department_id>", methods=["PUT"])
+# @jwt_required()
+# @with_token
+# def update_department(department_id, token_response):
+#     return jsonify({"message": "Editing is not permitted for this resource"}), 405
+
+
+# @master_bp.route("/departments/<int:department_id>", methods=["DELETE"])
+# @jwt_required()
+# @with_token
+# def delete_department(department_id, token_response):
+#     return jsonify({"message": "Deleting is not permitted for this resource"}), 405
+
+
 @master_bp.route("/departments/<int:department_id>", methods=["PUT"])
 @jwt_required()
 @with_token
 def update_department(department_id, token_response):
-    return jsonify({"message": "Editing is not permitted for this resource"}), 405
+    current_user = _get_current_user()
+    if not _is_admin(current_user):
+        return jsonify({"message": "Admin privileges required"}), 403
+
+    department, error_response = _fetch_department(department_id)
+    if error_response:
+        return error_response
+    data = request.json or {}
+    # department_code is auto-generated on create and left untouched here so
+    # existing references to it stay stable across renames.
+    for field in ["department_name", "description", "status"]:
+        if field in data:
+            setattr(department, field, data[field])
+    try:
+        db.session.commit()
+    except IntegrityError as exc:
+        return _handle_integrity_error(exc, {
+            "departments_department_code_key": "Department code already exists",
+            "department_code": "Department code already exists",
+            "departments_department_name_key": "Department name already exists",
+            "department_name": "Department name already exists",
+        })
+    return jsonify({"message": "Department updated", "data": department.to_dict(), "token_response": token_response}), 200
 
 
 @master_bp.route("/departments/<int:department_id>", methods=["DELETE"])
 @jwt_required()
 @with_token
 def delete_department(department_id, token_response):
-    return jsonify({"message": "Deleting is not permitted for this resource"}), 405
+    current_user = _get_current_user()
+    if not _is_admin(current_user):
+        return jsonify({"message": "Admin privileges required"}), 403
+
+    department, error_response = _fetch_department(department_id)
+    if error_response:
+        return error_response
+    department.is_active = False
+    db.session.commit()
+    return jsonify({"message": "Department deactivated", "token_response": token_response}), 200
+
 
 
 @master_bp.route("/designations", methods=["GET"])
@@ -211,18 +257,64 @@ def create_designation(token_response):
     return jsonify({"message": "Designation created", "data": designation.to_dict(), "token_response": token_response}), 201
 
 
+# @master_bp.route("/designations/<int:designation_id>", methods=["PUT"])
+# @jwt_required()
+# @with_token
+# def update_designation(designation_id, token_response):
+#     return jsonify({"message": "Editing is not permitted for this resource"}), 405
+
+
+# @master_bp.route("/designations/<int:designation_id>", methods=["DELETE"])
+# @jwt_required()
+# @with_token
+# def delete_designation(designation_id, token_response):
+#     return jsonify({"message": "Deleting is not permitted for this resource"}), 405
+
 @master_bp.route("/designations/<int:designation_id>", methods=["PUT"])
 @jwt_required()
 @with_token
 def update_designation(designation_id, token_response):
-    return jsonify({"message": "Editing is not permitted for this resource"}), 405
+    current_user = _get_current_user()
+    if not _is_admin(current_user):
+        return jsonify({"message": "Admin privileges required"}), 403
+
+    designation, error_response = _fetch_designation(designation_id)
+    if error_response:
+        return error_response
+    data = request.json or {}
+    # designation_code is auto-generated on create and left untouched here so
+    # existing references to it stay stable across renames.
+    for field in ["designation_name", "department_id", "description", "status"]:
+        if field in data:
+            setattr(designation, field, data[field])
+    try:
+        db.session.commit()
+    except IntegrityError as exc:
+        return _handle_integrity_error(exc, {
+            "designations_designation_code_key": "Designation code already exists",
+            "designation_code": "Designation code already exists",
+            "uq_designation_department": "Designation name already exists for this department",
+            "designation_name": "Designation name already exists for this department",
+        })
+    return jsonify({"message": "Designation updated", "data": designation.to_dict(), "token_response": token_response}), 200
 
 
 @master_bp.route("/designations/<int:designation_id>", methods=["DELETE"])
 @jwt_required()
 @with_token
 def delete_designation(designation_id, token_response):
-    return jsonify({"message": "Deleting is not permitted for this resource"}), 405
+    current_user = _get_current_user()
+    if not _is_admin(current_user):
+        return jsonify({"message": "Admin privileges required"}), 403
+
+    designation, error_response = _fetch_designation(designation_id)
+    if error_response:
+        return error_response
+    designation.is_active = False
+    db.session.commit()
+    return jsonify({"message": "Designation deactivated", "token_response": token_response}), 200
+
+
 
 
 @master_bp.route("/leave-types", methods=["GET"])

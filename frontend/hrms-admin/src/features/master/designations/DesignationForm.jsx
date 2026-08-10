@@ -2,8 +2,10 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
+import Button from "@/components/ui/Button";
 import { masterApi } from "@/api/master.api";
 import { isRequired } from "@/utils/validators";
+
 
 const validateDesignation = (data) => {
   const errors = {};
@@ -12,7 +14,7 @@ const validateDesignation = (data) => {
   return errors;
 };
 
-export default function DesignationForm({ initialData = {}, onSubmit, loading }) {
+export default function DesignationForm({ initialData = {}, onSubmit, loading, onCancel, isEdit }) {
   const { data: departments } = useQuery({
     queryKey: ["departments", { page: 1, per_page: 100 }],
     queryFn: async () => (await masterApi.listDepartments({ page: 1, per_page: 100 })).data.data,
@@ -64,6 +66,14 @@ export default function DesignationForm({ initialData = {}, onSubmit, loading })
           <input type="checkbox" name="status" checked={form.status} onChange={handleChange} className="h-4 w-4" />
           Active
         </label>
+      </div>
+      <div className="flex justify-end gap-2 mt-6">
+        <Button type="button" variant="secondary" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button type="submit" isLoading={loading}>
+          {isEdit ? "Update" : "Create"}
+        </Button>
       </div>
     </form>
   );
