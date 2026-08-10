@@ -22,7 +22,7 @@ export const navConfig = [
     icon: "users",
     roles: ["admin"],
     children: [
-      { label: "Users", path: "/users/admins", icon: "users" },
+      { label: "Admins", path: "/users/admins", icon: "users" },
       { label: "Company", path: "/master/company", icon: "department" },
       { label: "Branches", path: "/master/branches", icon: "department" },
       { label: "Departments", path: "/master/departments", icon: "department" },

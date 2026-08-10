@@ -1,12 +1,11 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { useRoles, useCreateRole, useUpdateRole, useDeactivateRole } from "./useRoles";
+import { useRoles, useCreateRole } from "./useRoles";
 import RoleForm from "./RoleForm";
 import DataTable from "@/components/table/DataTable";
 import Badge from "@/components/ui/Badge";
 import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
-import ConfirmDialog from "@/components/feedback/ConfirmDialog";
 import { useDebouncedSearch } from "@/hooks/useDebouncedSearch";
 import { useTableExport } from "@/hooks/useTableExport";
 import { useToast } from "@/components/feedback/Toast";
@@ -48,12 +47,8 @@ export default function RoleListPage() {
   });
 
   const createRole = useCreateRole();
-  const updateRole = useUpdateRole();
-  const deactivateRole = useDeactivateRole();
 
   const [modalOpen, setModalOpen] = useState(false);
-  const [editing, setEditing] = useState(null);
-  const [confirmRole, setConfirmRole] = useState(null);
   const [activeCategory, setActiveCategory] = useState(null);
 
   const allRoles = data?.items || [];
@@ -78,12 +73,6 @@ export default function RoleListPage() {
   }, [allRoles, category, debouncedValue]);
 
   const openCreate = () => {
-    setEditing(null);
-    setModalOpen(true);
-  };
-
-  const openEdit = (r) => {
-    setEditing(r);
     setModalOpen(true);
   };
 
@@ -99,27 +88,11 @@ export default function RoleListPage() {
 
   const handleSubmit = async (payload) => {
     try {
-      if (editing) {
-        await updateRole.mutateAsync({ id: editing.id, payload });
-        showToast("Role updated", "success");
-      } else {
-        await createRole.mutateAsync(payload);
-        showToast("Role created", "success");
-      }
+      await createRole.mutateAsync(payload);
+      showToast("Role created", "success");
       setModalOpen(false);
     } catch (err) {
       showToast(err.response?.data?.message || "Operation failed", "error");
-    }
-  };
-
-  const handleDeactivate = async () => {
-    if (!confirmRole) return;
-    try {
-      await deactivateRole.mutateAsync(confirmRole.id);
-      showToast("Role deactivated", "success");
-      setConfirmRole(null);
-    } catch (err) {
-      showToast(err.response?.data?.message || "Failed to deactivate", "error");
     }
   };
 
@@ -141,13 +114,7 @@ export default function RoleListPage() {
       key: "ops",
       label: "Actions",
       render: (r) => (
-        <div className="flex items-center gap-2">
-          <button onClick={() => openEdit(r)} className="text-primary-600 hover:underline text-sm">Edit</button>
-          <Link to={`/roles/${r.id}/permissions`} className="text-primary-600 hover:underline text-sm">Permissions</Link>
-          {r.is_active && (
-            <button onClick={() => setConfirmRole(r)} className="text-red-600 hover:underline text-sm">Deactivate</button>
-          )}
-        </div>
+        <Link to={`/roles/${r.id}/permissions`} className="text-primary-600 hover:underline text-sm">Permissions</Link>
       ),
     },
   ];
@@ -207,33 +174,22 @@ export default function RoleListPage() {
       <Modal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        title={editing ? "Edit Role" : "Add Role"}
+        title="Add Role"
         footer={
           <>
             <Button variant="secondary" onClick={() => setModalOpen(false)}>Cancel</Button>
-            <Button type="submit" form="role-form" isLoading={createRole.isPending || updateRole.isPending}>
-              {editing ? "Update" : "Create"}
+            <Button type="submit" form="role-form" isLoading={createRole.isPending}>
+              Create
             </Button>
           </>
         }
       >
         <RoleForm
-          initialData={editing || {}}
           onSubmit={handleSubmit}
-          loading={createRole.isPending || updateRole.isPending}
-          lockedCategory={!editing && category ? category.label : null}
+          loading={createRole.isPending}
+          lockedCategory={category ? category.label : null}
         />
       </Modal>
-
-      <ConfirmDialog
-        open={!!confirmRole}
-        onClose={() => setConfirmRole(null)}
-        onConfirm={handleDeactivate}
-        title="Deactivate Role"
-        message={`Are you sure you want to deactivate "${confirmRole?.name}"?`}
-        confirmText="Deactivate"
-        loading={deactivateRole.isPending}
-      />
     </div>
   );
 }
