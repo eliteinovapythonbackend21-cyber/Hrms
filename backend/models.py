@@ -192,12 +192,32 @@ class Designation(TimestampMixin, db.Model):
         ),
         nullable=False
     )
+    # Self-referential FK for sub-designations, e.g. IT > Backend > Python/Java.
+    # NULL means this is a top-level designation.
+    parent_designation_id = db.Column(
+        db.Integer,
+        db.ForeignKey(
+            "designations.id",
+            ondelete="CASCADE"
+        ),
+        nullable=True
+    )
     description = db.Column(db.Text)
     status = db.Column(db.Boolean,default=True)
     is_active = db.Column(db.Boolean, default=True)
     is_admin_designation = db.Column(db.Boolean, nullable=False, default=False)
     department = db.relationship("Department",back_populates="designations")
     employees = db.relationship("Employee",back_populates="designation")
+    parent_designation = db.relationship(
+        "Designation",
+        remote_side=[id],
+        back_populates="sub_designations"
+    )
+    sub_designations = db.relationship(
+        "Designation",
+        back_populates="parent_designation",
+        cascade="all, delete-orphan"
+    )
 
     __table_args__ = (
 
@@ -1115,5 +1135,3 @@ class Income(TimestampMixin, db.Model):
         data = super().to_dict()
         data["account"] = _summary(self.account, ["id", "account_name"])
         return data
-
-

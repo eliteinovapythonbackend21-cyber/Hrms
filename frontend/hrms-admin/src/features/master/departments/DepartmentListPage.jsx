@@ -20,7 +20,7 @@ const EXPORT_COLUMNS = [
   { header: "Code", accessor: (r) => r.department_code },
   { header: "Name", accessor: (r) => r.department_name },
   { header: "Description", accessor: (r) => r.description },
-  { header: "Status", accessor: (r) => (r.status ? "Active" : "Inactive") },
+  { header: "Status", accessor: (r) => (r.is_active ? "Active" : "Inactive") },
 ];
 
 export default function DepartmentListPage() {
@@ -93,13 +93,13 @@ export default function DepartmentListPage() {
       label: "Status",
       render: (r) => (
         <div className="flex items-center gap-3">
-          <Badge className={r.status ? "bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300" : "bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300"}>
-            {r.status ? "Active" : "Inactive"}
+          <Badge className={r.is_active ? "bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300" : "bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300"}>
+            {r.is_active ? "Active" : "Inactive"}
           </Badge>
           {canEdit && (
             <button onClick={() => openEdit(r)} className="text-primary-600 hover:underline text-sm">Edit</button>
           )}
-          {r.status && canDelete && (
+          {r.is_active && canDelete && (
             <button onClick={() => setConfirmRow(r)} className="text-red-600 hover:underline text-sm">Deactivate</button>
           )}
         </div>
@@ -127,7 +127,7 @@ export default function DepartmentListPage() {
           <TableSearchBar value={value} onChange={setValue} placeholder="Search departments..." />
         </div>
         {isError && <div className="p-4 text-red-600 dark:text-red-400">Failed to load departments.</div>}
-        <DataTable columns={columns} data={data?.items || []} loading={isLoading} />
+        <DataTable columns={columns} data={(data?.items || []).filter((r) => r.is_active)} loading={isLoading} />
         <TablePagination
           page={page} pages={data?.pages || 1} total={data?.total || 0}
           perPage={perPage} onPageChange={setPage} onPerPageChange={setPerPage}

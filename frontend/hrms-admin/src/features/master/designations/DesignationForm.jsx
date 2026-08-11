@@ -42,7 +42,14 @@ export default function DesignationForm({ initialData = {}, onSubmit, loading, o
     onSubmit(form);
   };
 
-  const deptOptions = (departments?.items || []).map((d) => ({
+  // const deptOptions = (departments?.items || []).map((d) => ({
+  //   value: d.id,
+  //   label: d.department_name,
+  // }));
+
+  const deptOptions = (departments?.items || [])
+  .filter((d) => d.is_active)
+  .map((d) => ({
     value: d.id,
     label: d.department_name,
   }));

@@ -118,7 +118,7 @@ def list_departments(token_response):
     current_user = _get_current_user()
     if not _is_admin(current_user):
         return jsonify({"message": "Admin privileges required"}), 403
-    query = Department.query
+    query = Department.query.filter_by(is_active=True)
     query = apply_search_filters(query, request.args, ["department_name", "department_code"])
     return jsonify({"message": "Departments fetched", "data": paginate_query(query, request.args), "token_response": token_response}), 200
 
@@ -218,11 +218,9 @@ def list_designations(token_response):
     current_user = _get_current_user()
     if not _is_admin(current_user):
         return jsonify({"message": "Admin privileges required"}), 403
-
-    query = Designation.query
+    query = Designation.query.filter_by(is_active=True)
     query = apply_search_filters(query, request.args, ["designation_name", "designation_code"])
     return jsonify({"message": "Designations fetched", "data": paginate_query(query, request.args), "token_response": token_response}), 200
-
 
 @master_bp.route("/designations", methods=["POST"])
 @jwt_required()
