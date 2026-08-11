@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
+import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
+import { isRequired } from "@/utils/validators";
 
 const initialForm = {
   name: "",
@@ -15,16 +17,28 @@ const initialForm = {
   status: true,
 };
 
+const validateCompany = (data) => {
+  const errors = {};
+
+  if (!isRequired(data.name)) {
+    errors.name = "Company name is required";
+  }
+
+  return errors;
+};
+
 export default function CompanyForm({
-  initialData,
+  initialData = {},
   onSubmit,
+  loading = false,
   onCancel,
-  isSubmitting = false,
+  isEdit = false,
 }) {
   const [form, setForm] = useState(initialForm);
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
-    if (initialData) {
+    if (initialData && Object.keys(initialData).length > 0) {
       setForm({
         name: initialData.name || "",
         code: initialData.code || "",
@@ -37,13 +51,15 @@ export default function CompanyForm({
         country: initialData.country || "",
         pincode: initialData.pincode || "",
         status:
-          typeof initialData.status === "boolean"
+          initialData.status !== undefined
             ? initialData.status
             : true,
       });
     } else {
       setForm(initialForm);
     }
+
+    setErrors({});
   }, [initialData]);
 
   const handleChange = (e) => {
@@ -53,20 +69,48 @@ export default function CompanyForm({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
+
+    if (errors[name]) {
+      setErrors((prev) => ({
+        ...prev,
+        [name]: "",
+      }));
+    }
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
 
+    const validationErrors = validateCompany(form);
+
+    setErrors(validationErrors);
+
+    if (Object.keys(validationErrors).length > 0) {
+      return;
+    }
+
     onSubmit({
       ...form,
       name: form.name.trim(),
       code: form.code.trim() || undefined,
+      email: form.email.trim() || undefined,
+      phone: form.phone.trim() || undefined,
+      website: form.website.trim() || undefined,
+      address: form.address.trim() || undefined,
+      city: form.city.trim() || undefined,
+      state: form.state.trim() || undefined,
+      country: form.country.trim() || undefined,
+      pincode: form.pincode.trim() || undefined,
     });
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form
+      id="company-form"
+      onSubmit={handleSubmit}
+      className="space-y-6"
+    >
+      {/* Company Information */}
       <div>
         <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
           Company Information
@@ -77,79 +121,49 @@ export default function CompanyForm({
         </p>
       </div>
 
+      {/* Company Fields */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium mb-1">
-            Company Name *
-          </label>
+        <Input
+          label="Company Name"
+          name="name"
+          value={form.name}
+          onChange={handleChange}
+          error={errors.name}
+          required
+        />
 
-          <input
-            type="text"
-            name="name"
-            value={form.name}
-            onChange={handleChange}
-            required
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 dark:bg-slate-800 dark:border-slate-600"
-            placeholder="Enter company name"
-          />
-        </div>
+        <Input
+          label="Company Code"
+          name="code"
+          value={form.code}
+          onChange={handleChange}
+          placeholder="Auto generated if empty"
+        />
 
-        <div>
-          <label className="block text-sm font-medium mb-1">
-            Company Code
-          </label>
+        <Input
+          label="Email"
+          name="email"
+          type="email"
+          value={form.email}
+          onChange={handleChange}
+          placeholder="company@example.com"
+        />
 
-          <input
-            type="text"
-            name="code"
-            value={form.code}
-            onChange={handleChange}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 dark:bg-slate-800 dark:border-slate-600"
-            placeholder="Auto generated if empty"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-1">
-            Email
-          </label>
-
-          <input
-            type="email"
-            name="email"
-            value={form.email}
-            onChange={handleChange}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 dark:bg-slate-800 dark:border-slate-600"
-            placeholder="company@example.com"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-1">
-            Phone
-          </label>
-
-          <input
-            type="text"
-            name="phone"
-            value={form.phone}
-            onChange={handleChange}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 dark:bg-slate-800 dark:border-slate-600"
-            placeholder="Phone number"
-          />
-        </div>
+        <Input
+          label="Phone"
+          name="phone"
+          value={form.phone}
+          onChange={handleChange}
+          placeholder="Phone number"
+        />
 
         <div className="md:col-span-2">
-          <label className="block text-sm font-medium mb-1">
-            Website
-          </label>
-
-          <input
-            type="url"
+          <Input
+            label="Website"
             name="website"
+            type="url"
             value={form.website}
             onChange={handleChange}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 dark:bg-slate-800 dark:border-slate-600"
             placeholder="https://example.com"
           />
         </div>
@@ -169,77 +183,52 @@ export default function CompanyForm({
           />
         </div>
 
-        <div>
-          <label className="block text-sm font-medium mb-1">
-            City
-          </label>
-
-          <input
-            type="text"
-            name="city"
-            value={form.city}
-            onChange={handleChange}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 dark:bg-slate-800 dark:border-slate-600"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-1">
-            State
-          </label>
-
-          <input
-            type="text"
-            name="state"
-            value={form.state}
-            onChange={handleChange}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 dark:bg-slate-800 dark:border-slate-600"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-1">
-            Country
-          </label>
-
-          <input
-            type="text"
-            name="country"
-            value={form.country}
-            onChange={handleChange}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 dark:bg-slate-800 dark:border-slate-600"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-1">
-            Pincode
-          </label>
-
-          <input
-            type="text"
-            name="pincode"
-            value={form.pincode}
-            onChange={handleChange}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 dark:bg-slate-800 dark:border-slate-600"
-          />
-        </div>
-      </div>
-
-      <label className="flex items-center gap-2">
-        <input
-          type="checkbox"
-          name="status"
-          checked={form.status}
+        <Input
+          label="City"
+          name="city"
+          value={form.city}
           onChange={handleChange}
         />
 
-        <span className="text-sm font-medium">
-          Active
-        </span>
-      </label>
+        <Input
+          label="State"
+          name="state"
+          value={form.state}
+          onChange={handleChange}
+        />
 
-      <div className="flex justify-end gap-3">
+        <Input
+          label="Country"
+          name="country"
+          value={form.country}
+          onChange={handleChange}
+        />
+
+        <Input
+          label="Pincode"
+          name="pincode"
+          value={form.pincode}
+          onChange={handleChange}
+        />
+      </div>
+
+      {/* Status */}
+      <div className="mb-4">
+        <label className="inline-flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+          <input
+            type="checkbox"
+            name="status"
+            checked={form.status}
+            onChange={handleChange}
+            className="h-4 w-4"
+          />
+
+          Active
+        </label>
+      </div>
+
+      {/* Buttons */}
+      <div className="flex justify-end gap-2 mt-6">
         <Button
           type="button"
           variant="secondary"
@@ -250,13 +239,9 @@ export default function CompanyForm({
 
         <Button
           type="submit"
-          disabled={isSubmitting}
+          isLoading={loading}
         >
-          {isSubmitting
-            ? "Saving..."
-            : initialData
-              ? "Update Company"
-              : "Create Company"}
+          {isEdit ? "Update" : "Create"}
         </Button>
       </div>
     </form>

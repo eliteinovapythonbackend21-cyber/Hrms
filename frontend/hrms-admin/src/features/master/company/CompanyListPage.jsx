@@ -1,4 +1,5 @@
 import { useState } from "react";
+
 import {
   useCompanies,
   useCreateCompany,
@@ -40,107 +41,142 @@ export default function CompanyListPage() {
 
   const companies = data?.items || data?.data || [];
 
+  // =========================
+  // ADD COMPANY
+  // =========================
   const handleAdd = () => {
     setSelectedCompany(null);
     setModalOpen(true);
   };
 
+  // =========================
+  // EDIT COMPANY
+  // =========================
   const handleEdit = (company) => {
     setSelectedCompany(company);
     setModalOpen(true);
   };
 
+  // =========================
+  // CLOSE FORM
+  // =========================
+  const handleCloseModal = () => {
+    setModalOpen(false);
+    setSelectedCompany(null);
+  };
+
+  // =========================
+  // SUBMIT COMPANY
+  // =========================
+  const handleSubmit = async (payload) => {
+    try {
+      if (selectedCompany) {
+        await updateCompany.mutateAsync({
+          id: selectedCompany.id,
+          payload,
+        });
+      } else {
+        await createCompany.mutateAsync(payload);
+      }
+
+      handleCloseModal();
+    } catch (err) {
+      console.error("Company save failed:", err);
+    }
+  };
+
+  // =========================
+  // DELETE COMPANY
+  // =========================
   const handleDelete = (company) => {
     setCompanyToDelete(company);
     setDeleteOpen(true);
   };
 
-  const handleSubmit = async (payload) => {
-    if (selectedCompany) {
-      await updateCompany.mutateAsync({
-        id: selectedCompany.id,
-        payload,
-      });
-    } else {
-      await createCompany.mutateAsync(payload);
-    }
-
-    setModalOpen(false);
-    setSelectedCompany(null);
-  };
-
+  // =========================
+  // CONFIRM DELETE
+  // =========================
   const confirmDelete = async () => {
     if (!companyToDelete) return;
 
-    await deactivateCompany.mutateAsync(
-      companyToDelete.id
-    );
+    try {
+      await deactivateCompany.mutateAsync(companyToDelete.id);
 
-    setDeleteOpen(false);
-    setCompanyToDelete(null);
+      setDeleteOpen(false);
+      setCompanyToDelete(null);
+    } catch (err) {
+      console.error("Company deactivate failed:", err);
+    }
   };
 
+  // =========================
+  // TABLE COLUMNS
+  // =========================
   const columns = [
     {
       header: "Company",
       accessorKey: "name",
     },
+
     {
       header: "Code",
       accessorKey: "code",
     },
+
     {
       header: "Email",
       accessorKey: "email",
     },
+
     {
       header: "Phone",
       accessorKey: "phone",
     },
+
     {
       header: "Branches",
-      cell: ({ row }) => (
-        <span>
-          {row.original.branches?.length || 0}
-        </span>
-      ),
+      cell: ({ row }) => {
+        const branches = row.original.branches;
+
+        return (
+          <span>
+            {Array.isArray(branches) ? branches.length : 0}
+          </span>
+        );
+      },
     },
+
     {
       header: "Status",
-      cell: ({ row }) => (
-        <Badge
-          variant={
-            row.original.status
-              ? "success"
-              : "secondary"
-          }
-        >
-          {row.original.status
-            ? "Active"
-            : "Inactive"}
-        </Badge>
-      ),
+      cell: ({ row }) => {
+        const isActive = row.original.status;
+
+        return (
+          <Badge variant={isActive ? "success" : "secondary"}>
+            {isActive ? "Active" : "Inactive"}
+          </Badge>
+        );
+      },
     },
+
     {
       header: "Actions",
       cell: ({ row }) => (
         <div className="flex gap-2">
           <Button
+            type="button"
             size="sm"
             variant="secondary"
-            onClick={() =>
-              handleEdit(row.original)
-            }
+            onClick={() => handleEdit(row.original)}
           >
             Edit
           </Button>
 
           <Button
+            type="button"
             size="sm"
             variant="danger"
-            onClick={() =>
-              handleDelete(row.original)
-            }
+            onClick={() => handleDelete(row.original)}
           >
             Delete
           </Button>
@@ -149,34 +185,55 @@ export default function CompanyListPage() {
     },
   ];
 
+  // =========================
+  // ERROR
+  // =========================
   if (isError) {
     return (
-      <div className="text-red-500">
-        {error?.response?.data?.message ||
-          "Failed to load companies"}
+      <div className="p-6">
+        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-600">
+          <h2 className="font-semibold">
+            Failed to load companies
+          </h2>
+
+          <p className="mt-1 text-sm">
+            {error?.response?.data?.message ||
+              error?.message ||
+              "Unable to load companies."}
+          </p>
+        </div>
       </div>
     );
   }
 
+  // =========================
+  // PAGE
+  // =========================
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
+    <div className="space-y-6">
+      {/* HEADER */}
+      <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
             Company
           </h1>
 
-          <p className="text-sm text-slate-500 mt-1">
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
             Manage companies and their branches.
           </p>
         </div>
 
-        <Button onClick={handleAdd}>
+        {/* ADD COMPANY BUTTON */}
+        <Button
+          type="button"
+          onClick={handleAdd}
+        >
           Add Company
         </Button>
       </div>
 
-      <div className="mb-4">
+      {/* SEARCH */}
+      <div>
         <input
           type="text"
           value={search}
@@ -185,10 +242,11 @@ export default function CompanyListPage() {
             setPage(1);
           }}
           placeholder="Search companies..."
-          className="w-full md:w-80 rounded-lg border border-slate-300 px-3 py-2 dark:bg-slate-800 dark:border-slate-600"
+          className="w-full rounded-lg border border-slate-300 px-3 py-2 md:w-80 dark:border-slate-600 dark:bg-slate-800"
         />
       </div>
 
+      {/* TABLE */}
       <DataTable
         columns={columns}
         data={companies}
@@ -198,25 +256,16 @@ export default function CompanyListPage() {
         pagination={data}
       />
 
+      {/* ADD / EDIT COMPANY MODAL */}
       <Modal
         isOpen={modalOpen}
-        onClose={() => {
-          setModalOpen(false);
-          setSelectedCompany(null);
-        }}
-        title={
-          selectedCompany
-            ? "Edit Company"
-            : "Add Company"
-        }
+        onClose={handleCloseModal}
+        title={selectedCompany ? "Edit Company" : "Add Company"}
       >
         <CompanyForm
           initialData={selectedCompany}
           onSubmit={handleSubmit}
-          onCancel={() => {
-            setModalOpen(false);
-            setSelectedCompany(null);
-          }}
+          onCancel={handleCloseModal}
           isSubmitting={
             createCompany.isPending ||
             updateCompany.isPending
@@ -224,6 +273,7 @@ export default function CompanyListPage() {
         />
       </Modal>
 
+      {/* DELETE CONFIRMATION */}
       <ConfirmDialog
         isOpen={deleteOpen}
         onClose={() => {
