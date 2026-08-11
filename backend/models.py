@@ -274,6 +274,119 @@ class Holiday(TimestampMixin, db.Model):
         return super().to_dict()
 
 
+class Company(TimestampMixin, db.Model):
+
+    __tablename__ = "companies"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(150), nullable=False, unique=True)
+    code = db.Column(db.String(50), nullable=False, unique=True)
+    email = db.Column(db.String(150))
+    phone = db.Column(db.String(30))
+    website = db.Column(db.String(255))
+    address = db.Column(db.Text)
+    city = db.Column(db.String(100))
+    state = db.Column(db.String(100))
+    country = db.Column(db.String(100))
+    pincode = db.Column(db.String(20))
+    status = db.Column(db.Boolean, default=True)
+    is_active = db.Column(db.Boolean, default=True)
+
+    branches = db.relationship(
+        "Branch",
+        back_populates="company",
+        cascade="all, delete-orphan"
+    )
+
+    def __repr__(self):
+        return self.name
+
+    def to_dict(self):
+        data = super().to_dict()
+
+        data["branches"] = [
+            {
+                "id": branch.id,
+                "name": branch.name,
+                "code": branch.code,
+                "email": branch.email,
+                "phone": branch.phone,
+                "address": branch.address,
+                "city": branch.city,
+                "state": branch.state,
+                "country": branch.country,
+                "pincode": branch.pincode,
+                "status": branch.status,
+                "is_active": branch.is_active,
+            }
+            for branch in self.branches
+            if branch.is_active
+        ]
+
+        return data
+
+
+class Branch(TimestampMixin, db.Model):
+    
+    __tablename__ = "branches"
+
+    id = db.Column(db.Integer, primary_key=True)
+    company_id = db.Column(
+        db.Integer,
+        db.ForeignKey("companies.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True
+    )
+    name = db.Column(db.String(150), nullable=False)
+    code = db.Column(db.String(50), nullable=False)
+    email = db.Column(db.String(150))
+    phone = db.Column(db.String(30))
+    address = db.Column(db.Text)
+    city = db.Column(db.String(100))
+    state = db.Column(db.String(100))
+    country = db.Column(db.String(100))
+    pincode = db.Column(db.String(20))
+    status = db.Column(db.Boolean, default=True)
+    is_active = db.Column(db.Boolean, default=True)
+
+    company = db.relationship(
+        "Company",
+        back_populates="branches"
+    )
+
+    __table_args__ = (
+        db.UniqueConstraint(
+            "company_id",
+            "code",
+            name="uq_branch_company_code"
+        ),
+        db.UniqueConstraint(
+            "company_id",
+            "name",
+            name="uq_branch_company_name"
+        ),
+    )
+
+    def __repr__(self):
+        return self.name
+
+    def to_dict(self):
+        data = super().to_dict()
+
+        data["company"] = (
+            {
+                "id": self.company.id,
+                "name": self.company.name,
+                "code": self.company.code,
+            }
+            if self.company
+            else None
+        )
+
+        return data
+
+
+
 class Employee(TimestampMixin, db.Model):
 
     __tablename__ = "employees"

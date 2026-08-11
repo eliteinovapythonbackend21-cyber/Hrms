@@ -2,6 +2,44 @@ import axiosClient from "./axiosClient";
 import { API } from "./endpoints";
 
 export const masterApi = {
+
+   // Companies
+  listCompanies: (params) =>
+    axiosClient.get(API.MASTER.COMPANIES, { params }),
+  getCompany: (id) =>
+    axiosClient.get(API.MASTER.COMPANY_GET(id)),
+  createCompany: (payload) =>
+    axiosClient.post(API.MASTER.COMPANIES, payload),
+  updateCompany: (id, payload) =>
+    axiosClient.put(API.MASTER.COMPANY_UPDATE(id), payload),
+  deactivateCompany: (id) =>
+    axiosClient.delete(API.MASTER.COMPANY_DELETE(id)),
+
+   // Branches
+  listBranches: (params) =>
+    axiosClient.get(API.MASTER.BRANCHES, { params }),
+  getBranch: (id) =>
+    axiosClient.get(API.MASTER.BRANCH_GET(id)),
+  listCompanyBranches: (companyId, params) =>
+    axiosClient.get(
+      API.MASTER.COMPANY_BRANCHES(companyId),
+      { params }
+    ),
+  createBranch: (companyId, payload) =>
+    axiosClient.post(
+      API.MASTER.COMPANY_BRANCHES(companyId),
+      payload
+    ),
+  updateBranch: (id, payload) =>
+    axiosClient.put(
+      API.MASTER.BRANCH_UPDATE(id),
+      payload
+    ),
+  deactivateBranch: (id) =>
+    axiosClient.delete(
+      API.MASTER.BRANCH_DELETE(id)
+    ),
+
   // Departments
   listDepartments: (params) =>
     axiosClient.get(API.MASTER.DEPARTMENTS, { params }),

@@ -4,7 +4,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from sqlalchemy.exc import IntegrityError
 from extensions import db
-from models import BaseUser, Department, Designation, LeaveType
+from models import BaseUser, Department, Designation, LeaveType, Company, Branch
 from utils import paginate_query, apply_search_filters
 
 master_bp = Blueprint("master_bp", __name__)
@@ -109,6 +109,69 @@ def with_token(func):
         return func(*args, token_response=token, **kwargs)
 
     return wrapper
+
+
+def _fetch_company(company_id):
+    if company_id is None:
+        return None, (jsonify({"message": "company_id is required"}), 400)
+    try:
+        company_id = int(company_id)
+    except (TypeError, ValueError):
+        return None, (jsonify({"message": "Invalid company_id"}), 400)
+
+    company = Company.query.get(company_id)
+    if not company:
+        return None, (
+            jsonify({"message": "Company not found for the provided id"}),
+            404,
+        )
+    return company, None
+
+
+def _fetch_branch(branch_id):
+    if branch_id is None:
+        return None, (jsonify({"message": "branch_id is required"}), 400)
+    try:
+        branch_id = int(branch_id)
+    except (TypeError, ValueError):
+        return None, (jsonify({"message": "Invalid branch_id"}), 400)
+
+    branch = Branch.query.get(branch_id)
+    if not branch:
+        return None, (
+            jsonify({"message": "Branch not found for the provided id"}),
+            404,
+        )
+
+    return branch, None
+
+
+def _generate_company_code(company_name):
+    base = _initials(company_name)
+    code = base
+    suffix = 1
+    while Company.query.filter_by(code=code).first():
+        code = f"{base}{suffix}"
+        suffix += 1
+
+    return code
+
+
+def _generate_branch_code(company, branch_name):
+    base = f"{company.code}-{_initials(branch_name)}"
+
+    code = base
+    suffix = 1
+
+    while Branch.query.filter_by(
+        company_id=company.id,
+        code=code
+    ).first():
+        code = f"{base}{suffix}"
+        suffix += 1
+
+    return code
+
 
 
 @master_bp.route("/departments", methods=["GET"])
@@ -312,6 +375,409 @@ def delete_designation(designation_id, token_response):
     db.session.commit()
     return jsonify({"message": "Designation deactivated", "token_response": token_response}), 200
 
+
+@master_bp.route("/companies", methods=["GET"])
+@jwt_required()
+@with_token
+def list_companies(token_response):
+    current_user = _get_current_user()
+    if not _is_admin(current_user):
+        return jsonify({"message": "Admin privileges required"}), 403
+
+    query = Company.query.filter_by(is_active=True)
+    query = apply_search_filters(
+        query,
+        request.args,
+        ["name", "code", "email", "phone"]
+    )
+
+    return jsonify({
+        "message": "Companies fetched",
+        "data": paginate_query(query, request.args),
+        "token_response": token_response,
+    }), 200
+
+
+@master_bp.route("/companies/<int:company_id>", methods=["GET"])
+@jwt_required()
+@with_token
+def get_company(company_id, token_response):
+    current_user = _get_current_user()
+    if not _is_admin(current_user):
+        return jsonify({"message": "Admin privileges required"}), 403
+
+    company, error_response = _fetch_company(company_id)
+    if error_response:
+        return error_response
+
+    return jsonify({
+        "message": "Company fetched",
+        "data": company.to_dict(),
+        "token_response": token_response,
+    }), 200
+
+
+@master_bp.route("/companies", methods=["POST"])
+@jwt_required()
+@with_token
+def create_company(token_response):
+    current_user = _get_current_user()
+
+    if not _is_admin(current_user):
+        return jsonify({"message": "Admin privileges required"}), 403
+
+    data = request.json or {}
+    name = (data.get("name") or "").strip()
+
+    if not name:
+        return jsonify({
+            "message": "Company name is required"
+        }), 400
+
+    company = Company(
+        name=name,
+        code=data.get("code") or _generate_company_code(name),
+        email=data.get("email"),
+        phone=data.get("phone"),
+        website=data.get("website"),
+        address=data.get("address"),
+        city=data.get("city"),
+        state=data.get("state"),
+        country=data.get("country"),
+        pincode=data.get("pincode"),
+        status=data.get("status", True),
+        is_active=True,
+    )
+
+    db.session.add(company)
+    try:
+        db.session.commit()
+
+    except IntegrityError as exc:
+        return _handle_integrity_error(exc, {
+            "companies_name_key": "Company name already exists",
+            "companies_code_key": "Company code already exists",
+            "company_name": "Company name already exists",
+            "company_code": "Company code already exists",
+        })
+    return jsonify({
+        "message": "Company created",
+        "data": company.to_dict(),
+        "token_response": token_response,
+    }), 201
+
+
+
+@master_bp.route("/companies/<int:company_id>", methods=["PUT"])
+@jwt_required()
+@with_token
+def update_company(company_id, token_response):
+    current_user = _get_current_user()
+
+    if not _is_admin(current_user):
+        return jsonify({"message": "Admin privileges required"}), 403
+    company, error_response = _fetch_company(company_id)
+    if error_response:
+        return error_response
+
+    data = request.json or {}
+    fields = [
+        "name",
+        "code",
+        "email",
+        "phone",
+        "website",
+        "address",
+        "city",
+        "state",
+        "country",
+        "pincode",
+        "status",
+    ]
+    for field in fields:
+        if field in data:
+            setattr(company, field, data[field])
+
+    try:
+        db.session.commit()
+
+    except IntegrityError as exc:
+        return _handle_integrity_error(exc, {
+            "companies_name_key": "Company name already exists",
+            "companies_code_key": "Company code already exists",
+            "company_name": "Company name already exists",
+            "company_code": "Company code already exists",
+        })
+
+    return jsonify({
+        "message": "Company updated",
+        "data": company.to_dict(),
+        "token_response": token_response,
+    }), 200
+
+
+@master_bp.route("/companies/<int:company_id>", methods=["DELETE"])
+@jwt_required()
+@with_token
+def delete_company(company_id, token_response):
+    current_user = _get_current_user()
+
+    if not _is_admin(current_user):
+        return jsonify({"message": "Admin privileges required"}), 403
+
+    company, error_response = _fetch_company(company_id)
+
+    if error_response:
+        return error_response
+    company.is_active = False
+    for branch in company.branches:
+        branch.is_active = False
+
+    db.session.commit()
+
+    return jsonify({
+        "message": "Company deactivated",
+        "token_response": token_response,
+    }), 200
+
+
+
+
+
+
+
+@master_bp.route("/branches", methods=["GET"])
+@jwt_required()
+@with_token
+def list_branches(token_response):
+    current_user = _get_current_user()
+
+    if not _is_admin(current_user):
+        return jsonify({"message": "Admin privileges required"}), 403
+
+    query = Branch.query.filter_by(is_active=True)
+    company_id = request.args.get("company_id")
+
+    if company_id:
+        try:
+            company_id = int(company_id)
+        except (TypeError, ValueError):
+            return jsonify({
+                "message": "Invalid company_id"
+            }), 400
+
+        query = query.filter(
+            Branch.company_id == company_id
+        )
+
+    query = apply_search_filters(
+        query,
+        request.args,
+        ["name", "code", "email", "phone"]
+    )
+
+    return jsonify({
+        "message": "Branches fetched",
+        "data": paginate_query(query, request.args),
+        "token_response": token_response,
+    }), 200
+
+
+@master_bp.route("/branches/<int:branch_id>", methods=["GET"])
+@jwt_required()
+@with_token
+def get_branch(branch_id, token_response):
+    current_user = _get_current_user()
+    if not _is_admin(current_user):
+        return jsonify({"message": "Admin privileges required"}), 403
+
+    branch, error_response = _fetch_branch(branch_id)
+
+    if error_response:
+        return error_response
+
+    return jsonify({
+        "message": "Branch fetched",
+        "data": branch.to_dict(),
+        "token_response": token_response,
+    }), 200
+
+
+@master_bp.route("/companies/<int:company_id>/branches", methods=["GET"])
+@jwt_required()
+@with_token
+def list_company_branches(company_id, token_response):
+    current_user = _get_current_user()
+    if not _is_admin(current_user):
+        return jsonify({"message": "Admin privileges required"}), 403
+
+    company, error_response = _fetch_company(company_id)
+
+    if error_response:
+        return error_response
+
+    query = Branch.query.filter_by(
+        company_id=company.id,
+        is_active=True,
+    )
+
+    query = apply_search_filters(
+        query,
+        request.args,
+        ["name", "code", "email", "phone"]
+    )
+
+    return jsonify({
+        "message": "Company branches fetched",
+        "data": paginate_query(query, request.args),
+        "token_response": token_response,
+    }), 200
+
+
+@master_bp.route("/companies/<int:company_id>/branches", methods=["POST"])
+@jwt_required()
+@with_token
+def create_branch(company_id, token_response):
+    current_user = _get_current_user()
+    if not _is_admin(current_user):
+        return jsonify({"message": "Admin privileges required"}), 403
+
+    company, error_response = _fetch_company(company_id)
+
+    if error_response:
+        return error_response
+
+    data = request.json or {}
+    name = (data.get("name") or "").strip()
+
+    if not name:
+        return jsonify({
+            "message": "Branch name is required"
+        }), 400
+
+    branch = Branch(
+        company_id=company.id,
+        name=name,
+        code=data.get("code") or _generate_branch_code(
+            company,
+            name
+        ),
+        email=data.get("email"),
+        phone=data.get("phone"),
+        address=data.get("address"),
+        city=data.get("city"),
+        state=data.get("state"),
+        country=data.get("country"),
+        pincode=data.get("pincode"),
+        status=data.get("status", True),
+        is_active=True,
+    )
+
+    db.session.add(branch)
+
+    try:
+        db.session.commit()
+    except IntegrityError as exc:
+        return _handle_integrity_error(exc, {
+            "uq_branch_company_code":
+                "Branch code already exists for this company",
+            "uq_branch_company_name":
+                "Branch name already exists for this company",
+            "branches_company_id_code_key":
+                "Branch code already exists for this company",
+            "branches_company_id_name_key":
+                "Branch name already exists for this company",
+        })
+
+    return jsonify({
+        "message": "Branch created",
+        "data": branch.to_dict(),
+        "token_response": token_response,
+    }), 201
+
+
+@master_bp.route("/branches/<int:branch_id>", methods=["PUT"])
+@jwt_required()
+@with_token
+def update_branch(branch_id, token_response):
+    current_user = _get_current_user()
+    if not _is_admin(current_user):
+        return jsonify({"message": "Admin privileges required"}), 403
+    branch, error_response = _fetch_branch(branch_id)
+
+    if error_response:
+        return error_response
+    data = request.json or {}
+
+    fields = [
+        "name",
+        "code",
+        "email",
+        "phone",
+        "address",
+        "city",
+        "state",
+        "country",
+        "pincode",
+        "status",
+    ]
+
+    for field in fields:
+        if field in data:
+            setattr(branch, field, data[field])
+
+    if "company_id" in data:
+        company, error_response = _fetch_company(
+            data.get("company_id")
+        )
+
+        if error_response:
+            return error_response
+
+        branch.company_id = company.id
+
+    try:
+        db.session.commit()
+
+    except IntegrityError as exc:
+        return _handle_integrity_error(exc, {
+            "uq_branch_company_code":
+                "Branch code already exists for this company",
+            "uq_branch_company_name":
+                "Branch name already exists for this company",
+            "branches_company_id_code_key":
+                "Branch code already exists for this company",
+            "branches_company_id_name_key":
+                "Branch name already exists for this company",
+        })
+
+    return jsonify({
+        "message": "Branch updated",
+        "data": branch.to_dict(),
+        "token_response": token_response,
+    }), 200
+
+
+@master_bp.route("/branches/<int:branch_id>", methods=["DELETE"])
+@jwt_required()
+@with_token
+def delete_branch(branch_id, token_response):
+    current_user = _get_current_user()
+    if not _is_admin(current_user):
+        return jsonify({"message": "Admin privileges required"}), 403
+
+    branch, error_response = _fetch_branch(branch_id)
+
+    if error_response:
+        return error_response
+
+    branch.is_active = False
+    db.session.commit()
+
+    return jsonify({
+        "message": "Branch deactivated",
+        "token_response": token_response,
+    }), 200
 
 
 

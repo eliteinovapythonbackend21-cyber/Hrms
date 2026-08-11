@@ -34,11 +34,13 @@ import LeaveFormPage from "@/features/leaves/LeaveFormPage";
 import LeaveApprovalsPage from "@/features/leaves/LeaveApprovalsPage";
 
 // Master
+import CompanyListPage from "@/features/master/company/CompanyListPage";
+import BranchListPage from "@/features/master/branches/BranchListPage";
 import DepartmentListPage from "@/features/master/departments/DepartmentListPage";
 import DesignationListPage from "@/features/master/designations/DesignationListPage";
 import LeaveTypeListPage from "@/features/master/leaveTypes/LeaveTypeListPage";
 import HolidayListPage from "@/features/master/holidays/HolidayListPage";
-import ComingSoonPage from "@/features/master/ComingSoonPage";
+// import ComingSoonPage from "@/features/master/ComingSoonPage";
 
 // Network
 import NetworkLogPage from "@/features/network/NetworkLogPage";
@@ -124,8 +126,8 @@ export default function AppRouter() {
         <Route path="/leaves/approvals" element={<RoleGuard><LeaveApprovalsPage /></RoleGuard>} />
 
         {/* Master */}
-        <Route path="/master/company" element={<RoleGuard><ComingSoonPage title="Company" /></RoleGuard>} />
-        <Route path="/master/branches" element={<RoleGuard><ComingSoonPage title="Branches" /></RoleGuard>} />
+        <Route path="/master/company" element={<RoleGuard><CompanyListPage /></RoleGuard>} />
+        <Route path="/master/branches" element={<RoleGuard><BranchListPage  /></RoleGuard>} />
         <Route path="/master/departments" element={<RoleGuard><DepartmentListPage /></RoleGuard>} />
         <Route path="/master/designations" element={<RoleGuard><DesignationListPage /></RoleGuard>} />
         <Route path="/master/leave-types" element={<RoleGuard><LeaveTypeListPage /></RoleGuard>} />
