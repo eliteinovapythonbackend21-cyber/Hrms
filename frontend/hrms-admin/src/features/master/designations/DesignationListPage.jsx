@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
 
 import {
   useDesignations,
@@ -9,161 +8,184 @@ import {
 } from "./useDesignations";
 
 import DesignationForm from "./DesignationForm";
+
 import Badge from "@/components/ui/Badge";
 import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
 import ConfirmDialog from "@/components/feedback/ConfirmDialog";
-
-import { usePagination } from "@/hooks/usePagination";
-import { useDebouncedSearch } from "@/hooks/useDebouncedSearch";
-import { useTableExport } from "@/hooks/useTableExport";
 import { useToast } from "@/components/feedback/Toast";
-
-import TableSearchBar from "@/components/table/TableSearchBar";
-import TablePagination from "@/components/table/TablePagination";
-import TableToolbar from "@/components/table/TableToolbar";
-
-import { masterApi } from "@/api/master.api";
-import { useModulePermissions } from "@/hooks/useModulePermissions";
-
-
-const EXPORT_COLUMNS = [
-  { header: "Code", accessor: (r) => r.designation_code },
-  { header: "Name", accessor: (r) => r.designation_name },
-  { header: "Company", accessor: (r) => r.department?.company?.name },
-  { header: "Branch", accessor: (r) => r.department?.branch?.name },
-  { header: "Department", accessor: (r) => r.department?.department_name },
-  { header: "Description", accessor: (r) => r.description },
-  {
-    header: "Status",
-    accessor: (r) => (r.is_active ? "Active" : "Inactive"),
-  },
-];
-
 
 export default function DesignationListPage() {
   const { showToast } = useToast();
-  const queryClient = useQueryClient();
 
-  const {
-    params,
-    page,
-    perPage,
-    setPage,
-    setPerPage,
-  } = usePagination();
-
-  const {
-    value,
-    setValue,
-    debouncedValue,
-  } = useDebouncedSearch();
-
-
-  const queryParams = {
-    ...params,
-    search: debouncedValue || undefined,
-  };
-
-
-  const {
-    data,
-    isLoading,
-    isError,
-    isFetching,
-    refetch,
-  } = useDesignations(queryParams);
-
-
-  const {
-    canAdd,
-    canEdit,
-    canDelete,
-  } = useModulePermissions("Designations");
-
-
-  const {
-    exporting,
-    exportExcel,
-    exportPDF,
-  } = useTableExport({
-    fetchAll: masterApi.listDesignations,
-    queryParams,
-    exportColumns: EXPORT_COLUMNS,
-    filename: "designations",
-    title: "Designations",
-  });
-
-
-  const createDesig = useCreateDesignation();
-  const updateDesig = useUpdateDesignation();
-  const deactivateDesig = useDeactivateDesignation();
-
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
 
   const [modalOpen, setModalOpen] = useState(false);
-  const [editing, setEditing] = useState(null);
-  const [confirmRow, setConfirmRow] = useState(null);
+  const [selectedDesignation, setSelectedDesignation] = useState(null);
+
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [designationToDelete, setDesignationToDelete] = useState(null);
 
   const [blockedInfo, setBlockedInfo] = useState(null);
 
   const [statusFilter, setStatusFilter] = useState("active");
 
+  const {
+    data,
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useDesignations({
+    page,
+    search,
+  });
 
-  const designations = data?.items || [];
+  const createDesignation = useCreateDesignation();
+  const updateDesignation = useUpdateDesignation();
+  const deactivateDesignation = useDeactivateDesignation();
 
+  const designations = data?.items || data?.data || [];
 
   const activeDesignations = designations.filter(
     (designation) => designation.is_active
   );
 
-
   const inactiveDesignations = designations.filter(
     (designation) => !designation.is_active
   );
 
-
-  const filteredDesignations = designations.filter(
-    (designation) => {
-      if (statusFilter === "active") {
-        return designation.is_active;
-      }
-
-      if (statusFilter === "inactive") {
-        return !designation.is_active;
-      }
-
-      return true;
+  const filteredDesignations = designations.filter((designation) => {
+    if (statusFilter === "active") {
+      return designation.is_active;
     }
-  );
 
+    if (statusFilter === "inactive") {
+      return !designation.is_active;
+    }
 
-  const openAdd = () => {
-    setEditing(null);
+    return true;
+  });
 
-    queryClient.invalidateQueries({
-      queryKey: ["departments"],
-    });
+  /* =========================================================
+     HELPERS
+  ========================================================= */
 
+  const getDepartment = (designation) => {
+    return (
+      designation?.department ||
+      designation?.department_details ||
+      null
+    );
+  };
+
+  const getCompany = (designation) => {
+    const department = getDepartment(designation);
+
+    return (
+      designation?.company ||
+      designation?.company_details ||
+      department?.company ||
+      department?.company_details ||
+      null
+    );
+  };
+
+  const getBranch = (designation) => {
+    const department = getDepartment(designation);
+    const company = getCompany(designation);
+
+    return (
+      designation?.branch ||
+      designation?.branch_details ||
+      department?.branch ||
+      department?.branch_details ||
+      company?.branch ||
+      company?.branch_details ||
+      null
+    );
+  };
+
+  const getCompanyName = (designation) => {
+    const company = getCompany(designation);
+
+    return (
+      company?.name ||
+      designation?.company_name ||
+      designation?.company?.name ||
+      "-"
+    );
+  };
+
+  const getBranchName = (designation) => {
+    const branch = getBranch(designation);
+
+    return (
+      branch?.name ||
+      designation?.branch_name ||
+      designation?.branch?.name ||
+      "-"
+    );
+  };
+
+  const getDepartmentName = (designation) => {
+    const department = getDepartment(designation);
+
+    return (
+      department?.department_name ||
+      department?.name ||
+      designation?.department_name ||
+      "-"
+    );
+  };
+
+  const getDepartmentCode = (designation) => {
+    const department = getDepartment(designation);
+
+    return (
+      department?.department_code ||
+      designation?.department_code ||
+      "-"
+    );
+  };
+
+  const getEmployeeCount = (designation) => {
+    if (Array.isArray(designation?.employees)) {
+      return designation.employees.length;
+    }
+
+    if (typeof designation?.employee_count === "number") {
+      return designation.employee_count;
+    }
+
+    return 0;
+  };
+
+  /* =========================================================
+     ADD / EDIT
+  ========================================================= */
+
+  const handleAdd = () => {
+    setSelectedDesignation(null);
     setModalOpen(true);
   };
 
-
-  const openEdit = (row) => {
-    setEditing(row);
-
-    queryClient.invalidateQueries({
-      queryKey: ["departments"],
-    });
-
+  const handleEdit = (designation) => {
+    setSelectedDesignation(designation);
     setModalOpen(true);
   };
 
+  const handleCloseModal = () => {
+    setModalOpen(false);
+    setSelectedDesignation(null);
+  };
 
   const handleSubmit = async (payload) => {
     try {
-      if (editing) {
-        await updateDesig.mutateAsync({
-          id: editing.id,
+      if (selectedDesignation) {
+        await updateDesignation.mutateAsync({
+          id: selectedDesignation.id,
           payload,
         });
 
@@ -172,7 +194,7 @@ export default function DesignationListPage() {
           "success"
         );
       } else {
-        await createDesig.mutateAsync(payload);
+        await createDesignation.mutateAsync(payload);
 
         showToast(
           "Designation created successfully",
@@ -180,13 +202,7 @@ export default function DesignationListPage() {
         );
       }
 
-      setModalOpen(false);
-      setEditing(null);
-
-      queryClient.invalidateQueries({
-        queryKey: ["designations"],
-      });
-
+      handleCloseModal();
       refetch();
     } catch (err) {
       showToast(
@@ -197,11 +213,21 @@ export default function DesignationListPage() {
     }
   };
 
+  /* =========================================================
+     DELETE / DEACTIVATE
+  ========================================================= */
 
-  const handleDeactivate = async () => {
+  const handleDelete = (designation) => {
+    setDesignationToDelete(designation);
+    setDeleteOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!designationToDelete) return;
+
     try {
-      await deactivateDesig.mutateAsync(
-        confirmRow.id
+      await deactivateDesignation.mutateAsync(
+        designationToDelete.id
       );
 
       showToast(
@@ -209,20 +235,20 @@ export default function DesignationListPage() {
         "success"
       );
 
-      setConfirmRow(null);
-
-      queryClient.invalidateQueries({
-        queryKey: ["designations"],
-      });
+      setDeleteOpen(false);
+      setDesignationToDelete(null);
 
       refetch();
     } catch (err) {
       if (err.response?.status === 409) {
-        setConfirmRow(null);
+        setDeleteOpen(false);
+
         setBlockedInfo({
-          name: confirmRow?.designation_name,
-          message: err.response?.data?.message,
+          name: designationToDelete?.designation_name,
+          message:
+            err.response?.data?.message,
         });
+
         return;
       }
 
@@ -234,22 +260,23 @@ export default function DesignationListPage() {
     }
   };
 
+  /* =========================================================
+     REACTIVATE
+  ========================================================= */
 
   const handleReactivate = async (designation) => {
     try {
-      await updateDesig.mutateAsync({
+      await updateDesignation.mutateAsync({
         id: designation.id,
-        payload: { is_active: true },
+        payload: {
+          is_active: true,
+        },
       });
 
       showToast(
         "Designation reactivated successfully",
         "success"
       );
-
-      queryClient.invalidateQueries({
-        queryKey: ["designations"],
-      });
 
       refetch();
     } catch (err) {
@@ -261,13 +288,16 @@ export default function DesignationListPage() {
     }
   };
 
+  /* =========================================================
+     STATUS BADGE
+  ========================================================= */
 
   const statusBadge = (isActive) => (
     <Badge
       className={
         isActive
-          ? "inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300"
-          : "inline-flex items-center gap-1.5 rounded-full bg-red-50 px-2.5 py-1 text-xs text-red-700 dark:bg-red-500/10 dark:text-red-300"
+          ? "inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-medium text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300"
+          : "inline-flex items-center gap-1.5 rounded-full bg-red-50 px-2 py-1 text-[10px] font-medium text-red-700 dark:bg-red-500/10 dark:text-red-300"
       }
     >
       <span
@@ -277,163 +307,221 @@ export default function DesignationListPage() {
             : "h-1.5 w-1.5 rounded-full bg-red-500"
         }
       />
+
       {isActive ? "Active" : "Inactive"}
     </Badge>
   );
 
+  /* =========================================================
+     ERROR
+  ========================================================= */
+
+  if (isError) {
+    return (
+      <div className="p-6">
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-600 dark:border-red-900/40 dark:bg-red-950/20 dark:text-red-400">
+          <h2 className="font-semibold">
+            Failed to load designations
+          </h2>
+
+          <p className="mt-1 text-sm">
+            {error?.response?.data?.message ||
+              error?.message ||
+              "Unable to load designations."}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-5">
 
-
       {/* =====================================================
-          PAGE HEADER
-      ====================================================== */}
+          HEADER
+      ===================================================== */}
 
       <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+        <div className="flex items-center gap-3">
 
-        <div>
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary-600 text-white shadow-sm">
+            <span className="text-lg font-bold">
+              D
+            </span>
+          </div>
 
-          <div className="flex items-center gap-3">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+              Designations
+            </h1>
 
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-600 text-white shadow-sm">
-              <span className="font-bold">
+            <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
+              Manage designations across companies, branches and departments
+            </p>
+          </div>
+
+        </div>
+
+        <Button
+          type="button"
+          onClick={handleAdd}
+          className="h-10 w-full px-4 sm:w-auto"
+        >
+          <span className="mr-1.5 text-lg">
+            +
+          </span>
+
+          Add Designation
+        </Button>
+      </div>
+
+      {/* =====================================================
+          STAT CARDS
+      ===================================================== */}
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+
+        {/* TOTAL */}
+
+        <div className="h-[110px] rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition hover:shadow-md dark:border-slate-700 dark:bg-slate-900">
+          <div className="flex h-full items-center justify-between">
+
+            <div className="min-w-0">
+
+              <p className="truncate text-xs font-medium text-slate-500 dark:text-slate-400">
+                Total Designations
+              </p>
+
+              <p className="mt-1 text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+                {designations.length}
+              </p>
+
+              <p className="mt-0.5 truncate text-[11px] text-slate-400">
+                Current page
+              </p>
+
+            </div>
+
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
+              <span className="text-sm font-bold">
                 D
               </span>
             </div>
 
-            <div>
-
-              <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-                Designations
-              </h1>
-
-              <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
-                Manage designations across companies, branches, and departments
-              </p>
-
-            </div>
-
-          </div>
-
-        </div>
-
-
-        <div className="flex flex-wrap items-center gap-2">
-
-          <TableToolbar
-            onRefresh={refetch}
-            refreshing={isFetching}
-            onExportExcel={exportExcel}
-            onExportPDF={exportPDF}
-            exporting={exporting}
-          />
-
-          {canAdd && (
-            <Button
-              onClick={openAdd}
-              className="h-10 w-full px-4 sm:w-auto"
-            >
-              <span className="mr-1.5 text-lg">
-                +
-              </span>
-
-              Add Designation
-            </Button>
-          )}
-
-        </div>
-
-      </div>
-
-
-      {/* =====================================================
-          COMPACT STAT CARDS
-      ====================================================== */}
-
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-
-        <div className="h-[110px] rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition hover:shadow-md dark:border-slate-700 dark:bg-slate-900">
-          <div className="flex h-full items-center justify-between">
-            <div className="min-w-0">
-              <p className="truncate text-xs font-medium text-slate-500 dark:text-slate-400">
-                Total Designations
-              </p>
-              <p className="mt-1 text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-                {designations.length}
-              </p>
-              <p className="mt-0.5 truncate text-[11px] text-slate-400">
-                Current page
-              </p>
-            </div>
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
-              <span className="text-sm font-bold">D</span>
-            </div>
           </div>
         </div>
+
+        {/* ACTIVE */}
 
         <div className="h-[110px] rounded-xl border border-emerald-100 bg-white px-4 py-3 shadow-sm transition hover:shadow-md dark:border-emerald-900/30 dark:bg-slate-900">
           <div className="flex h-full items-center justify-between">
+
             <div className="min-w-0">
+
               <p className="truncate text-xs font-medium text-slate-500 dark:text-slate-400">
                 Active Designations
               </p>
+
               <p className="mt-1 text-2xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400">
                 {activeDesignations.length}
               </p>
+
               <p className="mt-0.5 truncate text-[11px] text-slate-400">
                 Currently active
               </p>
+
             </div>
+
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-50 dark:bg-emerald-500/10">
               <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
             </div>
+
           </div>
         </div>
 
+        {/* INACTIVE */}
+
         <div className="h-[110px] rounded-xl border border-red-100 bg-white px-4 py-3 shadow-sm transition hover:shadow-md dark:border-red-900/30 dark:bg-slate-900">
           <div className="flex h-full items-center justify-between">
+
             <div className="min-w-0">
+
               <p className="truncate text-xs font-medium text-slate-500 dark:text-slate-400">
                 Inactive Designations
               </p>
+
               <p className="mt-1 text-2xl font-bold tracking-tight text-red-600 dark:text-red-400">
                 {inactiveDesignations.length}
               </p>
+
               <p className="mt-0.5 truncate text-[11px] text-slate-400">
                 Deactivated designations
               </p>
+
             </div>
+
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-50 dark:bg-red-500/10">
               <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
             </div>
+
           </div>
         </div>
 
       </div>
 
-
       {/* =====================================================
-          SEARCH + STATUS FILTER
-      ====================================================== */}
+          SEARCH + FILTER
+      ===================================================== */}
 
       <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-900">
 
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
 
-          <div className="w-full lg:max-w-sm">
-            <TableSearchBar
-              value={value}
-              onChange={setValue}
+          {/* SEARCH */}
+
+          <div className="relative w-full lg:max-w-sm">
+
+            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth="1.8"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M21 21l-4.35-4.35m2.35-5.65a8 8 0 11-16 0 8 8 0 0116 0z"
+                />
+              </svg>
+
+            </span>
+
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
               placeholder="Search designations..."
+              className="h-10 w-full rounded-lg border border-slate-300 bg-white pl-9 pr-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
             />
+
           </div>
+
+          {/* FILTER */}
 
           <div className="flex w-fit items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
 
             <button
               type="button"
-              onClick={() => setStatusFilter("active")}
+              onClick={() =>
+                setStatusFilter("active")
+              }
               className={`rounded-md px-3 py-1.5 text-xs font-medium transition ${
                 statusFilter === "active"
                   ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
@@ -445,7 +533,9 @@ export default function DesignationListPage() {
 
             <button
               type="button"
-              onClick={() => setStatusFilter("inactive")}
+              onClick={() =>
+                setStatusFilter("inactive")
+              }
               className={`rounded-md px-3 py-1.5 text-xs font-medium transition ${
                 statusFilter === "inactive"
                   ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
@@ -457,7 +547,9 @@ export default function DesignationListPage() {
 
             <button
               type="button"
-              onClick={() => setStatusFilter("all")}
+              onClick={() =>
+                setStatusFilter("all")
+              }
               className={`rounded-md px-3 py-1.5 text-xs font-medium transition ${
                 statusFilter === "all"
                   ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
@@ -470,239 +562,680 @@ export default function DesignationListPage() {
           </div>
 
         </div>
-
       </div>
 
-
       {/* =====================================================
-          ERROR
-      ====================================================== */}
+          LOADING
+      ===================================================== */}
 
-      {isError && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-600 dark:border-red-900/40 dark:bg-red-500/10 dark:text-red-400">
-          <p className="font-medium">Failed to load designations.</p>
-          <p className="mt-1 text-xs opacity-80">
-            Please refresh the page and try again.
-          </p>
-        </div>
-      )}
-
-
-      {/* =====================================================
-          CARD GRID
-      ====================================================== */}
-
-      {!isError && isLoading && (
+      {isLoading && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+
           {Array.from({ length: 6 }).map((_, i) => (
             <div
               key={i}
-              className="h-[210px] animate-pulse rounded-xl border border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-800"
+              className="h-[330px] animate-pulse rounded-2xl border border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-800"
             />
           ))}
+
         </div>
       )}
 
-      {!isError && !isLoading && filteredDesignations.length > 0 && (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {filteredDesignations.map((desig) => {
-            const firstLetter =
-              desig.designation_name?.charAt(0)?.toUpperCase() || "D";
+      {/* =====================================================
+          DESIGNATION CARDS
+      ===================================================== */}
 
-            return (
-              <div
-                key={desig.id}
-                className="flex flex-col rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:shadow-md dark:border-slate-700 dark:bg-slate-900"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex min-w-0 items-center gap-2">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
-                      <span className="text-sm font-bold">
-                        {firstLetter}
+      {!isLoading &&
+        filteredDesignations.length > 0 && (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+
+            {filteredDesignations.map((designation) => {
+
+              const firstLetter =
+                designation.designation_name
+                  ?.charAt(0)
+                  ?.toUpperCase() || "D";
+
+              const companyName =
+                getCompanyName(designation);
+
+              const branchName =
+                getBranchName(designation);
+
+              const departmentName =
+                getDepartmentName(designation);
+
+              const departmentCode =
+                getDepartmentCode(designation);
+
+              const employeeCount =
+                getEmployeeCount(designation);
+
+              return (
+                <div
+                  key={designation.id}
+                  className={`group relative overflow-hidden rounded-2xl border bg-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg dark:bg-slate-900 ${
+                    designation.is_active
+                      ? "border-slate-200 hover:border-primary-200 dark:border-slate-700 dark:hover:border-primary-500/40"
+                      : "border-red-100 bg-red-50/20 dark:border-red-900/30 dark:bg-red-950/10"
+                  }`}
+                >
+
+                  {/* TOP ACCENT */}
+
+                  <div
+                    className={`absolute inset-x-0 top-0 h-0.5 ${
+                      designation.is_active
+                        ? "bg-primary-600"
+                        : "bg-red-500"
+                    }`}
+                  />
+
+                  <div className="p-4">
+
+                    {/* =================================================
+                        DESIGNATION HEADER
+                    ================================================= */}
+
+                    <div className="flex items-start justify-between gap-2.5">
+
+                      <div className="flex min-w-0 items-center gap-2.5">
+
+                        {/* AVATAR */}
+
+                        <div
+                          className={`relative flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-base font-bold shadow-sm ${
+                            designation.is_active
+                              ? "bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400"
+                              : "bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400"
+                          }`}
+                        >
+                          {firstLetter}
+
+                          <span
+                            className={`absolute -bottom-1 -right-1 h-3 w-3 rounded-full border-2 border-white dark:border-slate-900 ${
+                              designation.is_active
+                                ? "bg-emerald-500"
+                                : "bg-red-500"
+                            }`}
+                          />
+
+                        </div>
+
+                        {/* NAME */}
+
+                        <div className="min-w-0">
+
+                          <h3
+                            title={
+                              designation.designation_name
+                            }
+                            className="truncate text-sm font-semibold text-slate-900 dark:text-white"
+                          >
+                            {designation.designation_name ||
+                              "Unnamed Designation"}
+                          </h3>
+
+                          <div className="mt-0.5 flex items-center gap-1">
+
+                            <span className="text-[9px] font-medium uppercase tracking-wide text-slate-400">
+                              Code
+                            </span>
+
+                            <span className="truncate font-mono text-[11px] font-medium text-slate-600 dark:text-slate-300">
+                              {designation.designation_code ||
+                                "-"}
+                            </span>
+
+                          </div>
+
+                        </div>
+
+                      </div>
+
+                      {/* STATUS */}
+
+                      <div className="shrink-0">
+                        {statusBadge(
+                          designation.is_active
+                        )}
+                      </div>
+
+                    </div>
+
+                    {/* DIVIDER */}
+
+                    <div className="my-3 border-t border-slate-100 dark:border-slate-800" />
+
+                    {/* =================================================
+                        COMPANY
+                    ================================================= */}
+
+                    <div className="space-y-2">
+
+                      <div className="flex items-center gap-2.5">
+
+                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
+
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-3.5 w-3.5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth="1.8"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M3 21h18M5 21V5a2 2 0 012-2h10a2 2 0 012 2v16M9 7h2M9 11h2M9 15h2M15 7h2M15 11h2M15 15h2"
+                            />
+                          </svg>
+
+                        </div>
+
+                        <div className="min-w-0 flex-1">
+
+                          <p className="text-[9px] font-medium uppercase tracking-wide text-slate-400">
+                            Company
+                          </p>
+
+                          <p
+                            title={companyName}
+                            className="truncate text-[11px] font-semibold text-slate-700 dark:text-slate-200"
+                          >
+                            {companyName}
+                          </p>
+
+                        </div>
+
+                      </div>
+
+                      {/* =================================================
+                          BRANCH
+                      ================================================= */}
+
+                      <div className="flex items-center gap-2.5">
+
+                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-3.5 w-3.5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth="1.8"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M3 21h18M5 21V5a2 2 0 012-2h10a2 2 0 012 2v16"
+                            />
+
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M9 7h2M9 11h2M15 7h2M15 11h2"
+                            />
+                          </svg>
+
+                        </div>
+
+                        <div className="min-w-0 flex-1">
+
+                          <p className="text-[9px] font-medium uppercase tracking-wide text-slate-400">
+                            Branch
+                          </p>
+
+                          <p
+                            title={branchName}
+                            className="truncate text-[11px] font-medium text-slate-700 dark:text-slate-200"
+                          >
+                            {branchName}
+                          </p>
+
+                        </div>
+
+                      </div>
+
+                      {/* =================================================
+                          DEPARTMENT
+                      ================================================= */}
+
+                      <div className="flex items-center gap-2.5">
+
+                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-3.5 w-3.5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth="1.8"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M4 6h16M4 12h16M4 18h16"
+                            />
+                          </svg>
+
+                        </div>
+
+                        <div className="min-w-0 flex-1">
+
+                          <p className="text-[9px] font-medium uppercase tracking-wide text-slate-400">
+                            Department
+                          </p>
+
+                          <div className="flex min-w-0 items-center gap-1.5">
+
+                            <p
+                              title={departmentName}
+                              className="truncate text-[11px] font-semibold text-slate-700 dark:text-slate-200"
+                            >
+                              {departmentName}
+                            </p>
+
+                            {departmentCode !== "-" && (
+                              <span className="shrink-0 rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[9px] text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                                {departmentCode}
+                              </span>
+                            )}
+
+                          </div>
+
+                        </div>
+
+                      </div>
+
+                    </div>
+
+                    {/* =================================================
+                        EMPLOYEE SUMMARY
+                    ================================================= */}
+
+                    <div className="mt-3 rounded-lg border border-slate-100 bg-slate-50/70 px-3 py-2 dark:border-slate-800 dark:bg-slate-800/50">
+
+                      <div className="flex items-center justify-between">
+
+                        <div className="flex items-center gap-2">
+
+                          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
+
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-3.5 w-3.5"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                              strokeWidth="1.8"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"
+                              />
+
+                              <circle
+                                cx="9"
+                                cy="7"
+                                r="4"
+                              />
+
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M22 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"
+                              />
+                            </svg>
+
+                          </div>
+
+                          <div>
+
+                            <p className="text-[9px] font-medium uppercase tracking-wide text-slate-400">
+                              Employees
+                            </p>
+
+                            <p className="text-xs font-semibold text-slate-800 dark:text-white">
+
+                              {employeeCount}
+
+                              <span className="font-normal text-slate-400">
+                                {" "}
+                                {employeeCount === 1
+                                  ? "Employee"
+                                  : "Employees"}
+                              </span>
+
+                            </p>
+
+                          </div>
+
+                        </div>
+
+                        <div className="flex h-7 min-w-7 items-center justify-center rounded-md bg-white px-2 text-[11px] font-bold text-primary-600 shadow-sm dark:bg-slate-900 dark:text-primary-400">
+                          {employeeCount}
+                        </div>
+
+                      </div>
+
+                    </div>
+
+                    {/* =================================================
+                        ACTIONS
+                    ================================================= */}
+
+                    <div className="mt-3 flex items-center gap-2">
+
+                      {/* EDIT */}
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleEdit(designation)
+                        }
+                        className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] font-semibold text-slate-700 transition-all hover:border-primary-200 hover:bg-primary-50 hover:text-primary-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-primary-500/40 dark:hover:bg-primary-500/10 dark:hover:text-primary-400"
+                      >
+
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-3.5 w-3.5"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth="1.8"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M16.862 4.487l1.687-1.688a2.121 2.121 0 013 3l-9.9 9.9-4.137 1.034 1.034-4.137 9.9-9.9z"
+                          />
+
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M19 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6"
+                          />
+                        </svg>
+
+                        Edit
+
+                      </button>
+
+                      {/* DEACTIVATE / REACTIVATE */}
+
+                      {designation.is_active ? (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleDelete(
+                              designation
+                            )
+                          }
+                          className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-2 text-[11px] font-semibold text-red-600 transition-all hover:bg-red-50 dark:border-red-900/40 dark:bg-slate-800 dark:text-red-400 dark:hover:bg-red-500/10"
+                        >
+
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-3.5 w-3.5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth="1.8"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M18 6L6 18M6 6l12 12"
+                            />
+                          </svg>
+
+                          Deactivate
+
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleReactivate(
+                              designation
+                            )
+                          }
+                          disabled={
+                            updateDesignation.isPending
+                          }
+                          className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-emerald-200 bg-white px-3 py-2 text-[11px] font-semibold text-emerald-600 transition-all hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-emerald-900/40 dark:bg-slate-800 dark:text-emerald-400 dark:hover:bg-emerald-500/10"
+                        >
+
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-3.5 w-3.5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth="1.8"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M4 12a8 8 0 018-8 8.5 8.5 0 017 4"
+                            />
+
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M20 4v5h-5"
+                            />
+
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M20 12a8 8 0 01-8 8 8.5 8.5 0 01-7-4"
+                            />
+
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M4 20v-5h5"
+                            />
+                          </svg>
+
+                          Reactivate
+
+                        </button>
+                      )}
+
+                    </div>
+
+                  </div>
+
+                  {/* =================================================
+                      BOTTOM STATUS STRIP
+                  ================================================= */}
+
+                  <div
+                    className={`border-t px-4 py-2 ${
+                      designation.is_active
+                        ? "border-slate-100 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-800/30"
+                        : "border-red-100 bg-red-50/50 dark:border-red-900/20 dark:bg-red-950/20"
+                    }`}
+                  >
+
+                    <div className="flex items-center justify-between">
+
+                      <span className="text-[9px] font-medium uppercase tracking-wider text-slate-400">
+                        Designation Status
                       </span>
-                    </div>
-                    <div className="min-w-0">
-                      <p className="truncate font-semibold text-slate-800 dark:text-white">
-                        {desig.designation_name}
-                      </p>
-                      <p className="truncate font-mono text-xs text-slate-500 dark:text-slate-400">
-                        {desig.designation_code || "-"}
-                      </p>
-                    </div>
-                  </div>
 
-                  {statusBadge(desig.is_active)}
-                </div>
-
-                <div className="mt-3 space-y-1.5 border-t border-slate-100 pt-3 text-xs dark:border-slate-800">
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-400">Company</span>
-                    <span className="truncate font-medium text-slate-700 dark:text-slate-200">
-                      {desig.department?.company?.name || "-"}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-400">Branch</span>
-                    <span className="truncate font-medium text-slate-700 dark:text-slate-200">
-                      {desig.department?.branch?.name || "-"}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-400">Department</span>
-                    <span className="truncate font-medium text-slate-700 dark:text-slate-200">
-                      {desig.department?.department_name || "-"}
-                    </span>
-                  </div>
-                  {desig.is_admin_designation && (
-                    <span className="mt-1 inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-700 dark:bg-amber-500/10 dark:text-amber-300">
-                      Admin designation
-                    </span>
-                  )}
-                </div>
-
-                <div className="mt-4 flex items-center gap-2 border-t border-slate-100 pt-3 dark:border-slate-800">
-                  {canEdit && (
-                    <button
-                      type="button"
-                      onClick={() => openEdit(desig)}
-                      className="flex-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-primary-600 transition hover:bg-primary-50 dark:border-slate-700 dark:bg-slate-800 dark:text-primary-400 dark:hover:bg-primary-500/10"
-                    >
-                      Edit
-                    </button>
-                  )}
-
-                  {desig.is_active ? (
-                    canDelete && (
-                      <button
-                        type="button"
-                        onClick={() => setConfirmRow(desig)}
-                        className="flex-1 rounded-lg border border-red-200 bg-white px-2.5 py-1.5 text-xs font-medium text-red-600 transition hover:bg-red-50 dark:border-red-900/50 dark:bg-slate-800 dark:text-red-400 dark:hover:bg-red-500/10"
+                      <span
+                        className={`flex items-center gap-1.5 text-[10px] font-semibold ${
+                          designation.is_active
+                            ? "text-emerald-600 dark:text-emerald-400"
+                            : "text-red-600 dark:text-red-400"
+                        }`}
                       >
-                        Deactivate
-                      </button>
-                    )
-                  ) : (
-                    canEdit && (
-                      <button
-                        type="button"
-                        onClick={() => handleReactivate(desig)}
-                        disabled={updateDesig.isPending}
-                        className="flex-1 rounded-lg border border-emerald-200 bg-white px-2.5 py-1.5 text-xs font-medium text-emerald-600 transition hover:bg-emerald-50 disabled:opacity-50 dark:border-emerald-900/50 dark:bg-slate-800 dark:text-emerald-400 dark:hover:bg-emerald-500/10"
-                      >
-                        Reactivate
-                      </button>
-                    )
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
 
+                        <span
+                          className={`h-1.5 w-1.5 rounded-full ${
+                            designation.is_active
+                              ? "bg-emerald-500"
+                              : "bg-red-500"
+                          }`}
+                        />
+
+                        {designation.is_active
+                          ? "Operational"
+                          : "Deactivated"}
+
+                      </span>
+
+                    </div>
+
+                  </div>
+
+                </div>
+              );
+            })}
+
+          </div>
+        )}
 
       {/* =====================================================
           EMPTY STATE
-      ====================================================== */}
+      ===================================================== */}
 
-      {!isLoading && !isError && filteredDesignations.length === 0 && (
-        <div className="flex min-h-[260px] flex-col items-center justify-center rounded-xl border border-slate-200 bg-white px-6 py-10 text-center dark:border-slate-700 dark:bg-slate-900">
-          <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800">
-            <span className="text-xl font-bold text-slate-400">D</span>
-          </div>
+      {!isLoading &&
+        filteredDesignations.length === 0 && (
+          <div className="flex min-h-[260px] flex-col items-center justify-center rounded-xl border border-slate-200 bg-white px-6 py-10 text-center shadow-sm dark:border-slate-700 dark:bg-slate-900">
 
-          <h3 className="mt-4 text-sm font-semibold text-slate-800 dark:text-white">
-            No designations found
-          </h3>
+            <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800">
+              <span className="text-xl font-bold text-slate-400">
+                D
+              </span>
+            </div>
 
-          <p className="mt-1 max-w-sm text-xs text-slate-500 dark:text-slate-400">
-            No designations match your current search or status filter.
-          </p>
+            <h3 className="mt-4 text-sm font-semibold text-slate-800 dark:text-white">
+              No designations found
+            </h3>
 
-          {canAdd && (
+            <p className="mt-1 max-w-sm text-xs text-slate-500 dark:text-slate-400">
+              No designations match your current search or
+              status filter.
+            </p>
+
             <Button
-              onClick={openAdd}
+              onClick={handleAdd}
               className="mt-4 h-9 px-4 text-sm"
             >
               + Add Designation
             </Button>
-          )}
-        </div>
-      )}
 
+          </div>
+        )}
 
       {/* =====================================================
           PAGINATION
-      ====================================================== */}
+      ===================================================== */}
 
-      <div className="rounded-xl border border-slate-200 bg-white px-2 dark:border-slate-700 dark:bg-slate-900">
-        <TablePagination
-          page={page}
-          pages={data?.pages || 1}
-          total={data?.total || 0}
-          perPage={perPage}
-          onPageChange={setPage}
-          onPerPageChange={setPerPage}
-        />
+      <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
+
+        <span>
+          Page {page}
+        </span>
+
+        <div className="flex gap-2">
+
+          <button
+            type="button"
+            disabled={page <= 1}
+            onClick={() =>
+              setPage((p) =>
+                Math.max(1, p - 1)
+              )
+            }
+            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium transition hover:bg-slate-50 disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700"
+          >
+            Previous
+          </button>
+
+          <button
+            type="button"
+            disabled={
+              data?.pages
+                ? page >= data.pages
+                : false
+            }
+            onClick={() =>
+              setPage((p) => p + 1)
+            }
+            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium transition hover:bg-slate-50 disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700"
+          >
+            Next
+          </button>
+
+        </div>
+
       </div>
 
-
       {/* =====================================================
-          DESIGNATION MODAL
-      ====================================================== */}
+          ADD / EDIT DESIGNATION MODAL
+      ===================================================== */}
 
       <Modal
         open={modalOpen}
-        onClose={() => {
-          setModalOpen(false);
-          setEditing(null);
-        }}
+        onClose={handleCloseModal}
         title={
-          editing
+          selectedDesignation
             ? "Edit Designation"
             : "Add Designation"
         }
       >
 
         <DesignationForm
-          initialData={editing || {}}
-          onSubmit={handleSubmit}
-          loading={
-            createDesig.isPending ||
-            updateDesig.isPending
+          initialData={
+            selectedDesignation || {}
           }
-          onCancel={() => {
-            setModalOpen(false);
-            setEditing(null);
-          }}
-          isEdit={!!editing}
+          isEdit={!!selectedDesignation}
+          onSubmit={handleSubmit}
+          onCancel={handleCloseModal}
+          loading={
+            createDesignation.isPending ||
+            updateDesignation.isPending
+          }
         />
 
       </Modal>
 
-
       {/* =====================================================
           DEACTIVATE CONFIRMATION
-      ====================================================== */}
+      ===================================================== */}
 
       <ConfirmDialog
-        open={!!confirmRow}
-        onClose={() => setConfirmRow(null)}
-        onConfirm={handleDeactivate}
+        open={deleteOpen}
+        onClose={() => {
+          setDeleteOpen(false);
+          setDesignationToDelete(null);
+        }}
+        onConfirm={confirmDelete}
         title="Deactivate Designation"
         message={
-          confirmRow
-            ? `Are you sure you want to deactivate "${confirmRow.designation_name}"?`
+          designationToDelete
+            ? `Are you sure you want to deactivate "${designationToDelete.designation_name}"?`
             : "Are you sure you want to deactivate this designation?"
         }
         confirmText="Deactivate"
-        loading={deactivateDesig.isPending}
+        loading={
+          deactivateDesignation.isPending
+        }
       />
 
-
       {/* =====================================================
-          BLOCKED — has active employees
-      ====================================================== */}
+          BLOCKED DEACTIVATION
+      ===================================================== */}
 
       <ConfirmDialog
         open={!!blockedInfo}
@@ -712,8 +1245,8 @@ export default function DesignationListPage() {
         message={
           blockedInfo?.message ||
           (blockedInfo?.name
-            ? `"${blockedInfo.name}" still has active employees assigned to it. Reassign or deactivate those first.`
-            : "This designation still has active employees assigned to it. Reassign or deactivate those first.")
+            ? `"${blockedInfo.name}" cannot be deactivated because it still has active employees or related records.`
+            : "This designation cannot be deactivated because it still has active records linked to it.")
         }
         confirmText="OK, Got It"
         confirmVariant="secondary"
