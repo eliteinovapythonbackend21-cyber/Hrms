@@ -15,7 +15,10 @@ const MONTH_NAMES = [
   "July", "August", "September", "October", "November", "December",
 ];
 
-const COMPANY_NAME = "HRMS";
+// Fallback only — real company name comes from payslip.employee.company.
+// Used if that's ever missing (e.g. an employee whose department has no
+// company assigned yet).
+const FALLBACK_COMPANY_NAME = "HRMS";
 const HEADER_COLOR = [143, 168, 150];
 const LINE_COLOR = [90, 110, 96];
 
@@ -26,6 +29,7 @@ export function downloadPayslipPdf(payslip) {
   const employeeName = `${employee.first_name || ""} ${employee.last_name || ""}`.trim();
   const periodLabel = `${MONTH_NAMES[period.month - 1]} ${period.year}`;
   const issueDate = new Date().toLocaleDateString();
+  const companyName = employee.company || FALLBACK_COMPANY_NAME;
 
   // Header band
   doc.setFillColor(...HEADER_COLOR);
@@ -36,7 +40,11 @@ export function downloadPayslipPdf(payslip) {
   doc.text("PAYROLL SLIP", pageWidth / 2, 16, { align: "center" });
   doc.setFontSize(11);
   doc.setFont(undefined, "normal");
-  doc.text(COMPANY_NAME, pageWidth / 2, 24, { align: "center" });
+  doc.text(companyName, pageWidth / 2, 24, { align: "center" });
+  if (employee.branch) {
+    doc.setFontSize(9);
+    doc.text(employee.branch, pageWidth / 2, 29, { align: "center" });
+  }
 
   doc.setTextColor(20, 20, 20);
 
@@ -53,6 +61,7 @@ export function downloadPayslipPdf(payslip) {
     `Employee Code: ${employee.employee_code || "-"}`,
     `Designation: ${employee.designation || "-"}`,
     `Department: ${employee.department || "-"}`,
+    `Branch: ${employee.branch || "-"}`,
     `Bank Account: ${employee.account_number || "-"}`,
   ];
   infoLines.forEach((line) => {

@@ -601,6 +601,16 @@ def get_employee_payslip(employee_id, token_response):
             "email": employee.user.email if employee.user else None,
             "department": employee.department.department_name if employee.department else None,
             "designation": employee.designation.designation_name if employee.designation else None,
+            "company": (
+                employee.department.company.name
+                if employee.department and employee.department.company
+                else None
+            ),
+            "branch": (
+                employee.department.branch.name
+                if employee.department and employee.department.branch
+                else None
+            ),
             "pf_number": employee.pf_number,
             "esi_number": employee.esi_number,
             "account_number": employee.account_number,

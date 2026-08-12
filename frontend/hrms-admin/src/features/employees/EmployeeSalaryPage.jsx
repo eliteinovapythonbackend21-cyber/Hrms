@@ -9,6 +9,13 @@ import { formatCurrency } from "@/utils/formatCurrency";
 import { useState } from "react";
 import { getUser } from "@/utils/tokenHelpers";
 
+// Module identity: sky — matches the rest of the Employee module
+// (list, detail, payslip pages).
+const SKY = {
+  icon: "bg-sky-600",
+  badge: "bg-sky-50 text-sky-700 dark:bg-sky-500/10 dark:text-sky-400",
+};
+
 export default function EmployeeSalaryPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -55,43 +62,86 @@ export default function EmployeeSalaryPage() {
   }
 
   return (
-    <div className="max-w-lg mx-auto">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-          Employee Salary
-        </h1>
+    <div className="mx-auto max-w-lg space-y-5">
+      {/* HEADER */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3">
+          <div className={`flex h-10 w-10 items-center justify-center rounded-xl text-white shadow-sm ${SKY.icon}`}>
+            <span className="font-bold">E</span>
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+              Employee Salary
+            </h1>
+            <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
+              {salaryData.employee_code}
+            </p>
+          </div>
+        </div>
         <Button variant="secondary" onClick={() => navigate("/employees")} className="w-full sm:w-auto">
           Back
         </Button>
       </div>
 
-      <div className="card p-6 mb-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-          <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-4">
-            <p className="text-sm text-slate-500 dark:text-slate-400">Employee Code</p>
-            <p className="text-lg font-semibold text-slate-900 dark:text-white">
-              {salaryData.employee_code}
-            </p>
-          </div>
-          <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-4">
-            <p className="text-sm text-slate-500 dark:text-slate-400">Current Salary</p>
-            <p className="text-lg font-semibold text-primary-600 dark:text-primary-400">
-              {formatCurrency(salaryData.salary)}
-            </p>
+      {/* STAT CARDS */}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                Employee Code
+              </p>
+              <p className="mt-1 font-mono text-lg font-semibold text-slate-900 dark:text-white">
+                {salaryData.employee_code}
+              </p>
+            </div>
+            <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${SKY.badge}`}>
+              <span className="text-sm font-bold">E</span>
+            </div>
           </div>
         </div>
 
+        <div className="rounded-xl border border-emerald-100 bg-white p-4 shadow-sm dark:border-emerald-900/30 dark:bg-slate-900">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                Current Salary
+              </p>
+              <p className="mt-1 text-lg font-semibold text-emerald-600 dark:text-emerald-400">
+                {formatCurrency(salaryData.salary)}
+              </p>
+            </div>
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-50 dark:bg-emerald-500/10">
+              <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ADMIN ACTION CARD */}
+      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900">
         {isAdmin ? (
-          <SalaryEditForm
-            initialSalary={salaryData.salary}
-            onSubmit={handleUpdate}
-            onReset={() => setConfirmReset(true)}
-            loading={updateSalary.isPending}
-          />
+          <>
+            <h3 className="mb-4 text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
+              Update Salary
+            </h3>
+            <SalaryEditForm
+              initialSalary={salaryData.salary}
+              onSubmit={handleUpdate}
+              onReset={() => setConfirmReset(true)}
+              loading={updateSalary.isPending}
+            />
+          </>
         ) : (
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            Only an admin can update or reset salary figures.
-          </p>
+          <div className="flex items-start gap-3 rounded-lg bg-slate-50 p-4 dark:bg-slate-800">
+            <svg viewBox="0 0 20 20" fill="none" className="mt-0.5 h-5 w-5 shrink-0 text-slate-400">
+              <circle cx="10" cy="10" r="7.5" stroke="currentColor" strokeWidth="1.3" />
+              <path d="M10 9v4.5M10 6.5v.01" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+            </svg>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              Only an admin can update or reset salary figures.
+            </p>
+          </div>
         )}
       </div>
 
