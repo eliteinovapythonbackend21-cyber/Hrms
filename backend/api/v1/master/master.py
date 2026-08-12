@@ -4,7 +4,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from sqlalchemy.exc import IntegrityError
 from extensions import db
-from models import BaseUser, Department, Designation, LeaveType, Company, Branch
+from models import BaseUser, Department, Designation, LeaveType, Company, Branch, Employee
 from utils import paginate_query, apply_search_filters
 
 master_bp = Blueprint("master_bp", __name__)
@@ -173,6 +173,9 @@ def _generate_branch_code(company, branch_name):
     return code
 
 
+# =========================================================================
+# DEPARTMENTS
+# =========================================================================
 
 @master_bp.route("/departments", methods=["GET"])
 @jwt_required()
@@ -181,9 +184,69 @@ def list_departments(token_response):
     current_user = _get_current_user()
     if not _is_admin(current_user):
         return jsonify({"message": "Admin privileges required"}), 403
-    query = Department.query.filter_by(is_active=True)
+
+    query = Department.query
+
+    is_active_param = request.args.get("is_active")
+    if is_active_param is not None:
+        query = query.filter(
+            Department.is_active == (is_active_param.lower() == "true")
+        )
+
+    company_id = request.args.get("company_id")
+    if company_id:
+        try:
+            company_id = int(company_id)
+        except (TypeError, ValueError):
+            return jsonify({"message": "Invalid company_id"}), 400
+        query = query.filter(Department.company_id == company_id)
+
+    branch_id = request.args.get("branch_id")
+    if branch_id:
+        try:
+            branch_id = int(branch_id)
+        except (TypeError, ValueError):
+            return jsonify({"message": "Invalid branch_id"}), 400
+        query = query.filter(Department.branch_id == branch_id)
+
     query = apply_search_filters(query, request.args, ["department_name", "department_code"])
-    return jsonify({"message": "Departments fetched", "data": paginate_query(query, request.args), "token_response": token_response}), 200
+    return jsonify({
+        "message": "Departments fetched",
+        "data": paginate_query(query, request.args),
+        "token_response": token_response,
+    }), 200
+
+
+def _validate_company_and_branch(data):
+    """Shared validation for create/update: both required, and the
+    branch must actually belong to the given company. Returns
+    (company_id, branch_id, error_response). error_response is None
+    on success."""
+
+    company_id = data.get("company_id")
+    branch_id = data.get("branch_id")
+
+    if not company_id:
+        return None, None, (jsonify({"message": "Company is required"}), 400)
+
+    if not branch_id:
+        return None, None, (jsonify({"message": "Branch is required"}), 400)
+
+    company = Company.query.filter_by(id=company_id, is_active=True).first()
+    if not company:
+        return None, None, (jsonify({"message": "Company not found"}), 404)
+
+    branch = Branch.query.filter_by(id=branch_id, is_active=True).first()
+    if not branch:
+        return None, None, (jsonify({"message": "Branch not found"}), 404)
+
+    if branch.company_id != company.id:
+        return None, None, (
+            jsonify({"message": "Selected branch does not belong to the selected company"}),
+            400,
+        )
+
+    return company_id, branch_id, None
 
 
 @master_bp.route("/departments", methods=["POST"])
@@ -195,9 +258,16 @@ def create_department(token_response):
         return jsonify({"message": "Admin privileges required"}), 403
 
     data = request.json or {}
+
+    company_id, branch_id, error_response = _validate_company_and_branch(data)
+    if error_response:
+        return error_response
+
     department = Department(
         department_code=_generate_department_code(data.get("department_name")),
         department_name=data.get("department_name"),
+        company_id=company_id,
+        branch_id=branch_id,
         description=data.get("description"),
         status=data.get("status", True),
     )
@@ -211,21 +281,11 @@ def create_department(token_response):
             "departments_department_name_key": "Department name already exists",
             "department_name": "Department name already exists",
         })
-    return jsonify({"message": "Department created", "data": department.to_dict(), "token_response": token_response}), 201
-
-
-# @master_bp.route("/departments/<int:department_id>", methods=["PUT"])
-# @jwt_required()
-# @with_token
-# def update_department(department_id, token_response):
-#     return jsonify({"message": "Editing is not permitted for this resource"}), 405
-
-
-# @master_bp.route("/departments/<int:department_id>", methods=["DELETE"])
-# @jwt_required()
-# @with_token
-# def delete_department(department_id, token_response):
-#     return jsonify({"message": "Deleting is not permitted for this resource"}), 405
+    return jsonify({
+        "message": "Department created",
+        "data": department.to_dict(),
+        "token_response": token_response,
+    }), 201
 
 
 @master_bp.route("/departments/<int:department_id>", methods=["PUT"])
@@ -239,12 +299,28 @@ def update_department(department_id, token_response):
     department, error_response = _fetch_department(department_id)
     if error_response:
         return error_response
+
     data = request.json or {}
+
+    if "company_id" in data or "branch_id" in data:
+        merged = {
+            "company_id": data.get("company_id", department.company_id),
+            "branch_id": data.get("branch_id", department.branch_id),
+        }
+        company_id, branch_id, validation_error = _validate_company_and_branch(merged)
+        if validation_error:
+            return validation_error
+        department.company_id = company_id
+        department.branch_id = branch_id
+
     # department_code is auto-generated on create and left untouched here so
     # existing references to it stay stable across renames.
-    for field in ["department_name", "description", "status"]:
+    # is_active is included here so a PUT can reactivate a deactivated
+    # department, same as Leave Type already does.
+    for field in ["department_name", "description", "status", "is_active"]:
         if field in data:
             setattr(department, field, data[field])
+
     try:
         db.session.commit()
     except IntegrityError as exc:
@@ -254,7 +330,11 @@ def update_department(department_id, token_response):
             "departments_department_name_key": "Department name already exists",
             "department_name": "Department name already exists",
         })
-    return jsonify({"message": "Department updated", "data": department.to_dict(), "token_response": token_response}), 200
+    return jsonify({
+        "message": "Department updated",
+        "data": department.to_dict(),
+        "token_response": token_response,
+    }), 200
 
 
 @master_bp.route("/departments/<int:department_id>", methods=["DELETE"])
@@ -268,11 +348,46 @@ def delete_department(department_id, token_response):
     department, error_response = _fetch_department(department_id)
     if error_response:
         return error_response
+
+    active_designation_count = Designation.query.filter_by(
+        department_id=department.id,
+        is_active=True,
+    ).count()
+
+    active_employee_count = Employee.query.filter_by(
+        department_id=department.id,
+        is_active=True,
+    ).count()
+
+    if active_designation_count > 0 or active_employee_count > 0:
+        parts = []
+        if active_designation_count > 0:
+            parts.append(f"{active_designation_count} active designation(s)")
+        if active_employee_count > 0:
+            parts.append(f"{active_employee_count} active employee(s)")
+
+        return jsonify({
+            "message": (
+                f"This department has {', '.join(parts)} linked to it. "
+                "Deactivate or reassign those first before deactivating "
+                "the department."
+            ),
+            "code": "HAS_ACTIVE_CHILDREN",
+            "active_designation_count": active_designation_count,
+            "active_employee_count": active_employee_count,
+        }), 409
+
     department.is_active = False
     db.session.commit()
-    return jsonify({"message": "Department deactivated", "token_response": token_response}), 200
+    return jsonify({
+        "message": "Department deactivated",
+        "token_response": token_response,
+    }), 200
 
 
+# =========================================================================
+# DESIGNATIONS
+# =========================================================================
 
 @master_bp.route("/designations", methods=["GET"])
 @jwt_required()
@@ -281,9 +396,29 @@ def list_designations(token_response):
     current_user = _get_current_user()
     if not _is_admin(current_user):
         return jsonify({"message": "Admin privileges required"}), 403
-    query = Designation.query.filter_by(is_active=True)
+
+    # Was: Designation.query.filter_by(is_active=True) — same bug as
+    # departments/companies/branches had: deactivated rows were never
+    # returned at all, so the Inactive/All tabs could never show them.
+    query = Designation.query
+
+    is_active_param = request.args.get("is_active")
+    if is_active_param is not None:
+        query = query.filter(
+            Designation.is_active == (is_active_param.lower() == "true")
+        )
+
+    department_id = request.args.get("department_id")
+    if department_id:
+        try:
+            department_id = int(department_id)
+        except (TypeError, ValueError):
+            return jsonify({"message": "Invalid department_id"}), 400
+        query = query.filter(Designation.department_id == department_id)
+
     query = apply_search_filters(query, request.args, ["designation_name", "designation_code"])
     return jsonify({"message": "Designations fetched", "data": paginate_query(query, request.args), "token_response": token_response}), 200
+
 
 @master_bp.route("/designations", methods=["POST"])
 @jwt_required()
@@ -318,19 +453,6 @@ def create_designation(token_response):
     return jsonify({"message": "Designation created", "data": designation.to_dict(), "token_response": token_response}), 201
 
 
-# @master_bp.route("/designations/<int:designation_id>", methods=["PUT"])
-# @jwt_required()
-# @with_token
-# def update_designation(designation_id, token_response):
-#     return jsonify({"message": "Editing is not permitted for this resource"}), 405
-
-
-# @master_bp.route("/designations/<int:designation_id>", methods=["DELETE"])
-# @jwt_required()
-# @with_token
-# def delete_designation(designation_id, token_response):
-#     return jsonify({"message": "Deleting is not permitted for this resource"}), 405
-
 @master_bp.route("/designations/<int:designation_id>", methods=["PUT"])
 @jwt_required()
 @with_token
@@ -343,9 +465,9 @@ def update_designation(designation_id, token_response):
     if error_response:
         return error_response
     data = request.json or {}
-    # designation_code is auto-generated on create and left untouched here so
-    # existing references to it stay stable across renames.
-    for field in ["designation_name", "department_id", "description", "status"]:
+    # designation_code is auto-generated on create and left untouched here.
+    # is_active added so a PUT can reactivate a deactivated designation.
+    for field in ["designation_name", "department_id", "description", "status", "is_active"]:
         if field in data:
             setattr(designation, field, data[field])
     try:
@@ -371,10 +493,31 @@ def delete_designation(designation_id, token_response):
     designation, error_response = _fetch_designation(designation_id)
     if error_response:
         return error_response
+
+    active_employee_count = Employee.query.filter_by(
+        designation_id=designation.id,
+        is_active=True,
+    ).count()
+
+    if active_employee_count > 0:
+        return jsonify({
+            "message": (
+                f"This designation has {active_employee_count} active "
+                "employee(s) assigned to it. Reassign or deactivate those "
+                "employees before deactivating the designation."
+            ),
+            "code": "HAS_ACTIVE_CHILDREN",
+            "active_employee_count": active_employee_count,
+        }), 409
+
     designation.is_active = False
     db.session.commit()
     return jsonify({"message": "Designation deactivated", "token_response": token_response}), 200
 
+
+# =========================================================================
+# COMPANIES
+# =========================================================================
 
 @master_bp.route("/companies", methods=["GET"])
 @jwt_required()
@@ -384,7 +527,14 @@ def list_companies(token_response):
     if not _is_admin(current_user):
         return jsonify({"message": "Admin privileges required"}), 403
 
-    query = Company.query.filter_by(is_active=True)
+    query = Company.query
+
+    is_active_param = request.args.get("is_active")
+    if is_active_param is not None:
+        query = query.filter(
+            Company.is_active == (is_active_param.lower() == "true")
+        )
+
     query = apply_search_filters(
         query,
         request.args,
@@ -467,7 +617,6 @@ def create_company(token_response):
     }), 201
 
 
-
 @master_bp.route("/companies/<int:company_id>", methods=["PUT"])
 @jwt_required()
 @with_token
@@ -481,6 +630,8 @@ def update_company(company_id, token_response):
         return error_response
 
     data = request.json or {}
+    # is_active added so a PUT can reactivate a deactivated company —
+    # same pattern Leave Type already used.
     fields = [
         "name",
         "code",
@@ -493,6 +644,7 @@ def update_company(company_id, token_response):
         "country",
         "pincode",
         "status",
+        "is_active",
     ]
     for field in fields:
         if field in data:
@@ -529,10 +681,41 @@ def delete_company(company_id, token_response):
 
     if error_response:
         return error_response
-    company.is_active = False
-    for branch in company.branches:
-        branch.is_active = False
 
+    # Was: silently cascaded by force-deactivating every branch under
+    # this company. That's exactly the "gets deleted, can't get it back"
+    # behavior being reported — a branch losing its own independent
+    # active/inactive state as a side effect of deactivating its company,
+    # with no way to tell that's what happened. Block instead, and make
+    # the admin clear child records deliberately, one level at a time.
+    active_branch_count = Branch.query.filter_by(
+        company_id=company.id,
+        is_active=True,
+    ).count()
+
+    active_department_count = Department.query.filter_by(
+        company_id=company.id,
+        is_active=True,
+    ).count()
+
+    if active_branch_count > 0 or active_department_count > 0:
+        parts = []
+        if active_branch_count > 0:
+            parts.append(f"{active_branch_count} active branch(es)")
+        if active_department_count > 0:
+            parts.append(f"{active_department_count} active department(s)")
+
+        return jsonify({
+            "message": (
+                f"This company has {', '.join(parts)} linked to it. "
+                "Deactivate those first before deactivating the company."
+            ),
+            "code": "HAS_ACTIVE_CHILDREN",
+            "active_branch_count": active_branch_count,
+            "active_department_count": active_department_count,
+        }), 409
+
+    company.is_active = False
     db.session.commit()
 
     return jsonify({
@@ -541,10 +724,9 @@ def delete_company(company_id, token_response):
     }), 200
 
 
-
-
-
-
+# =========================================================================
+# BRANCHES
+# =========================================================================
 
 @master_bp.route("/branches", methods=["GET"])
 @jwt_required()
@@ -555,7 +737,14 @@ def list_branches(token_response):
     if not _is_admin(current_user):
         return jsonify({"message": "Admin privileges required"}), 403
 
-    query = Branch.query.filter_by(is_active=True)
+    query = Branch.query
+
+    is_active_param = request.args.get("is_active")
+    if is_active_param is not None:
+        query = query.filter(
+            Branch.is_active == (is_active_param.lower() == "true")
+        )
+
     company_id = request.args.get("company_id")
 
     if company_id:
@@ -616,10 +805,13 @@ def list_company_branches(company_id, token_response):
     if error_response:
         return error_response
 
-    query = Branch.query.filter_by(
-        company_id=company.id,
-        is_active=True,
-    )
+    query = Branch.query.filter_by(company_id=company.id)
+
+    is_active_param = request.args.get("is_active")
+    if is_active_param is not None:
+        query = query.filter(
+            Branch.is_active == (is_active_param.lower() == "true")
+        )
 
     query = apply_search_filters(
         query,
@@ -709,6 +901,7 @@ def update_branch(branch_id, token_response):
         return error_response
     data = request.json or {}
 
+    # is_active added so a PUT can reactivate a deactivated branch.
     fields = [
         "name",
         "code",
@@ -720,6 +913,7 @@ def update_branch(branch_id, token_response):
         "country",
         "pincode",
         "status",
+        "is_active",
     ]
 
     for field in fields:
@@ -771,6 +965,22 @@ def delete_branch(branch_id, token_response):
     if error_response:
         return error_response
 
+    active_department_count = Department.query.filter_by(
+        branch_id=branch.id,
+        is_active=True,
+    ).count()
+
+    if active_department_count > 0:
+        return jsonify({
+            "message": (
+                f"This branch has {active_department_count} active "
+                "department(s) linked to it. Deactivate those first "
+                "before deactivating the branch."
+            ),
+            "code": "HAS_ACTIVE_CHILDREN",
+            "active_department_count": active_department_count,
+        }), 409
+
     branch.is_active = False
     db.session.commit()
 
@@ -780,6 +990,9 @@ def delete_branch(branch_id, token_response):
     }), 200
 
 
+# =========================================================================
+# LEAVE TYPES (unchanged — reference pattern the others now match)
+# =========================================================================
 
 @master_bp.route("/leave-types", methods=["GET"])
 @jwt_required()
@@ -789,9 +1002,6 @@ def list_leave_types(token_response):
     if not current_user:
         return jsonify({"message": "Invalid token"}), 401
 
-    # Every authenticated user (not just admins) needs to read leave types —
-    # employees pick from this list on the Request Leave form and the leave
-    # list filter.
     query = LeaveType.query
     if request.args.get("is_active") is not None:
         query = query.filter(LeaveType.is_active == (request.args.get("is_active").lower() in {"true", "1", "yes"}))

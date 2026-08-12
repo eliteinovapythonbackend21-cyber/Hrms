@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import Button from "@/components/ui/Button";
+import { masterApi } from "@/api/master.api";
 
 const initialForm = {
+  company_id: "",
   name: "",
   code: "",
   email: "",
@@ -21,10 +24,34 @@ export default function BranchForm({
   isSubmitting = false,
 }) {
   const [form, setForm] = useState(initialForm);
+  const [errors, setErrors] = useState({});
+
+  // Dedicated, active-only company fetch — deliberately separate from
+  // whatever BranchListPage uses for its "All Companies" filter dropdown.
+  // That filter dropdown is allowed to show inactive companies (so you can
+  // still filter branches by one you deactivated); this form must NOT,
+  // since you shouldn't be able to create a branch under a dead company.
+  const { data: companiesData } = useQuery({
+    queryKey: ["companies-dropdown"],
+    queryFn: async () =>
+      (
+        await masterApi.listCompanies({
+          page: 1,
+          per_page: 100,
+          is_active: true,
+        })
+      ).data.data,
+  });
+
+  const companyOptions = (companiesData?.items || []).filter(
+    (c) => c.status
+  );
 
   useEffect(() => {
     if (initialData) {
       setForm({
+        company_id:
+          initialData.company_id ?? initialData.company?.id ?? "",
         name: initialData.name || "",
         code: initialData.code || "",
         email: initialData.email || "",
@@ -42,6 +69,8 @@ export default function BranchForm({
     } else {
       setForm(initialForm);
     }
+
+    setErrors({});
   }, [initialData]);
 
   const handleChange = (e) => {
@@ -51,13 +80,36 @@ export default function BranchForm({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
+
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: undefined }));
+    }
+  };
+
+  const validate = () => {
+    const nextErrors = {};
+
+    if (!form.company_id) {
+      nextErrors.company_id = "Company is required";
+    }
+
+    if (!form.name.trim()) {
+      nextErrors.name = "Branch name is required";
+    }
+
+    setErrors(nextErrors);
+
+    return Object.keys(nextErrors).length === 0;
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
 
+    if (!validate()) return;
+
     onSubmit({
       ...form,
+      company_id: Number(form.company_id),
       name: form.name.trim(),
       code: form.code.trim() || undefined,
     });
@@ -76,6 +128,37 @@ export default function BranchForm({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="md:col-span-2">
+          <label className="block text-sm font-medium mb-1">
+            Company *
+          </label>
+
+          <select
+            name="company_id"
+            value={form.company_id}
+            onChange={handleChange}
+            className={`w-full rounded-lg border px-3 py-2 dark:bg-slate-800 ${
+              errors.company_id
+                ? "border-red-400"
+                : "border-slate-300 dark:border-slate-600"
+            }`}
+          >
+            <option value="">Select a company</option>
+
+            {companyOptions.map((company) => (
+              <option key={company.id} value={company.id}>
+                {company.name}
+              </option>
+            ))}
+          </select>
+
+          {errors.company_id && (
+            <p className="mt-1 text-xs text-red-500">
+              {errors.company_id}
+            </p>
+          )}
+        </div>
+
         <div>
           <label className="block text-sm font-medium mb-1">
             Branch Name *
@@ -86,10 +169,17 @@ export default function BranchForm({
             name="name"
             value={form.name}
             onChange={handleChange}
-            required
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 dark:bg-slate-800 dark:border-slate-600"
+            className={`w-full rounded-lg border px-3 py-2 dark:bg-slate-800 ${
+              errors.name
+                ? "border-red-400"
+                : "border-slate-300 dark:border-slate-600"
+            }`}
             placeholder="Enter branch name"
           />
+
+          {errors.name && (
+            <p className="mt-1 text-xs text-red-500">{errors.name}</p>
+          )}
         </div>
 
         <div>

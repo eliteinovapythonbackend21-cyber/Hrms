@@ -37,6 +37,16 @@ export default function CompanyForm({
   const [form, setForm] = useState(initialForm);
   const [errors, setErrors] = useState({});
 
+  // Branches already saved against this company (edit mode only).
+  // Shown read-only here — manage/remove them from the Branches page.
+  const existingBranches = initialData?.branches || [];
+
+  // New branch names queued up to create right after this company
+  // is saved.
+  const [branchNames, setBranchNames] = useState([]);
+  const [branchInput, setBranchInput] = useState("");
+  const [branchError, setBranchError] = useState("");
+
   useEffect(() => {
     if (initialData && Object.keys(initialData).length > 0) {
       setForm({
@@ -60,6 +70,9 @@ export default function CompanyForm({
     }
 
     setErrors({});
+    setBranchNames([]);
+    setBranchInput("");
+    setBranchError("");
   }, [initialData]);
 
   const handleChange = (e) => {
@@ -76,6 +89,40 @@ export default function CompanyForm({
         [name]: "",
       }));
     }
+  };
+
+  const handleAddBranch = () => {
+    const name = branchInput.trim();
+
+    if (!name) return;
+
+    const alreadyQueued = branchNames.some(
+      (b) => b.toLowerCase() === name.toLowerCase()
+    );
+
+    const alreadyExists = existingBranches.some(
+      (b) => b.name?.toLowerCase() === name.toLowerCase()
+    );
+
+    if (alreadyQueued || alreadyExists) {
+      setBranchError("That branch name is already added");
+      return;
+    }
+
+    setBranchNames((prev) => [...prev, name]);
+    setBranchInput("");
+    setBranchError("");
+  };
+
+  const handleBranchKeyDown = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleAddBranch();
+    }
+  };
+
+  const handleRemoveBranch = (index) => {
+    setBranchNames((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmit = (e) => {
@@ -101,6 +148,7 @@ export default function CompanyForm({
       state: form.state.trim() || undefined,
       country: form.country.trim() || undefined,
       pincode: form.pincode.trim() || undefined,
+      branch_names: branchNames,
     });
   };
 
@@ -212,6 +260,82 @@ export default function CompanyForm({
         />
       </div>
 
+      {/* Branches */}
+      <div className="rounded-lg border border-slate-200 p-3 dark:border-slate-700">
+        <label className="mb-1 block text-sm font-medium">
+          Branches
+        </label>
+
+        <p className="mb-2 text-xs text-slate-500 dark:text-slate-400">
+          {isEdit
+            ? "Add extra branch names here — they'll be created for this company as soon as you save."
+            : "Optional. Add one or more branch names — each will be created automatically right after the company is saved."}
+        </p>
+
+        {existingBranches.length > 0 && (
+          <div className="mb-3">
+            <p className="mb-1 text-xs font-medium text-slate-500 dark:text-slate-400">
+              Existing branches
+            </p>
+
+            <div className="flex flex-wrap gap-1.5">
+              {existingBranches.map((b) => (
+                <span
+                  key={b.id}
+                  className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+                >
+                  {b.name}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={branchInput}
+            onChange={(e) => setBranchInput(e.target.value)}
+            onKeyDown={handleBranchKeyDown}
+            placeholder="e.g. Chennai Branch"
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800"
+          />
+
+          <button
+            type="button"
+            onClick={handleAddBranch}
+            className="shrink-0 rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"
+          >
+            + Add
+          </button>
+        </div>
+
+        {branchError && (
+          <p className="mt-1 text-xs text-red-500">{branchError}</p>
+        )}
+
+        {branchNames.length > 0 && (
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {branchNames.map((name, index) => (
+              <span
+                key={`${name}-${index}`}
+                className="inline-flex items-center gap-1.5 rounded-full bg-primary-50 px-2.5 py-1 text-xs text-primary-700 dark:bg-primary-500/10 dark:text-primary-300"
+              >
+                {name}
+                <button
+                  type="button"
+                  onClick={() => handleRemoveBranch(index)}
+                  aria-label={`Remove ${name}`}
+                  className="text-primary-500 hover:text-primary-700 dark:hover:text-primary-100"
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+
       {/* Status */}
       <div className="mb-4">
         <label className="inline-flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
@@ -241,7 +365,7 @@ export default function CompanyForm({
           type="submit"
           isLoading={loading}
         >
-          {isEdit ? "Update" : "Create"}
+          {isEdit ? "Update Company" : "Create Company"}
         </Button>
       </div>
     </form>

@@ -151,28 +151,57 @@ class Department(TimestampMixin, db.Model):
 
     __tablename__ = "departments"
 
-    id = db.Column(db.Integer,primary_key=True)
-    department_code = db.Column(db.String(20),nullable=False,unique=True)
-    department_name = db.Column(db.String(100),nullable=False,unique=True)
+    id = db.Column(db.Integer, primary_key=True)
+    department_code = db.Column(db.String(20), nullable=False, unique=True)
+    department_name = db.Column(db.String(100), nullable=False, unique=True)
+    company_id = db.Column(
+        db.Integer,
+        db.ForeignKey("companies.id"),
+        nullable=True,
+        index=True,
+    )
+    branch_id = db.Column(
+        db.Integer,
+        db.ForeignKey("branches.id"),
+        nullable=True,
+        index=True,
+    )
     description = db.Column(db.Text)
-    status = db.Column(db.Boolean,default=True)
+    status = db.Column(db.Boolean, default=True)
     is_active = db.Column(db.Boolean, default=True)
-    employees = db.relationship("Employee",back_populates="department")
-    designations = db.relationship("Designation",back_populates="department")
+    company = db.relationship("Company", back_populates="departments")
+    branch = db.relationship("Branch", back_populates="departments")
+    employees = db.relationship("Employee", back_populates="department")
+    designations = db.relationship("Designation", back_populates="department")
 
     def __repr__(self):
         return self.department_name
 
     def to_dict(self):
         data = super().to_dict()
+        data["company"] = (
+            {"id": self.company.id, "name": self.company.name, "code": self.company.code}
+            if self.company
+            else None
+        )
+
+        data["branch"] = (
+            {"id": self.branch.id, "name": self.branch.name, "code": self.branch.code}
+            if self.branch
+            else None
+        )
+
         data["employees"] = [
             _summary(employee, ["id", "employee_code", "first_name", "last_name"])
             for employee in self.employees
         ]
+
         data["designations"] = [
             _summary(designation, ["id", "designation_name", "designation_code"])
             for designation in self.designations
+            if designation.is_active
         ]
+
         return data
 
 
@@ -234,7 +263,25 @@ class Designation(TimestampMixin, db.Model):
 
     def to_dict(self):
         data = super().to_dict()
-        data["department"] = _summary(self.department, ["id", "department_name", "department_code"])
+        data["department"] = (
+            {
+                "id": self.department.id,
+                "department_name": self.department.department_name,
+                "department_code": self.department.department_code,
+                "company": (
+                    {"id": self.department.company.id, "name": self.department.company.name}
+                    if self.department.company
+                    else None
+                ),
+                "branch": (
+                    {"id": self.department.branch.id, "name": self.department.branch.name}
+                    if self.department.branch
+                    else None
+                ),
+            }
+            if self.department
+            else None
+        )
         data["employees"] = [
             _summary(employee, ["id", "employee_code", "first_name", "last_name"])
             for employee in self.employees
@@ -298,6 +345,11 @@ class Company(TimestampMixin, db.Model):
         cascade="all, delete-orphan"
     )
 
+    departments = db.relationship(
+        "Department",
+        back_populates="company",
+    )
+
     def __repr__(self):
         return self.name
 
@@ -352,6 +404,11 @@ class Branch(TimestampMixin, db.Model):
     company = db.relationship(
         "Company",
         back_populates="branches"
+    )
+
+    departments = db.relationship(
+        "Department",
+        back_populates="branch",
     )
 
     __table_args__ = (
