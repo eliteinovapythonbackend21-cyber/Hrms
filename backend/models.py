@@ -484,7 +484,25 @@ class Employee(TimestampMixin, db.Model):
     def to_dict(self):
         data = super().to_dict()
         data["user"] = _summary(self.user, ["id", "username", "email", "role"]) if self.user else None
-        data["department"] = _summary(self.department, ["id", "department_name", "department_code"])
+        data["department"] = (
+            {
+                "id": self.department.id,
+                "department_name": self.department.department_name,
+                "department_code": self.department.department_code,
+                "company": (
+                    {"id": self.department.company.id, "name": self.department.company.name}
+                    if self.department.company
+                    else None
+                ),
+                "branch": (
+                    {"id": self.department.branch.id, "name": self.department.branch.name}
+                    if self.department.branch
+                    else None
+                ),
+            }
+            if self.department
+            else None
+        )
         data["designation"] = _summary(self.designation, ["id", "designation_name", "designation_code"])
         data["attendance_count"] = len(self.attendances) if self.attendances is not None else 0
         data["leave_count"] = len(self.leaves) if self.leaves is not None else 0
