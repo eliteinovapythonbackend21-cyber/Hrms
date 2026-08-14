@@ -130,6 +130,7 @@ export default function AppRouter() {
         <Route path="/master/branches" element={<RoleGuard><BranchListPage  /></RoleGuard>} />
         <Route path="/master/departments" element={<RoleGuard><DepartmentListPage /></RoleGuard>} />
         <Route path="/master/designations" element={<RoleGuard><DesignationListPage /></RoleGuard>} />
+        <Route path="/master/employees" element={<RoleGuard><EmployeeListPage /></RoleGuard>} />
         <Route path="/leave-types" element={<RoleGuard><LeaveTypeListPage /></RoleGuard>} />
         <Route path="/holidays" element={<RoleGuard><HolidayListPage /></RoleGuard>} />
 
