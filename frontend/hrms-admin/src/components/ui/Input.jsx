@@ -4,6 +4,7 @@ export default function Input({
   required,
   className = "",
   icon,
+  rightIcon,
   ...props
 }) {
   return (
@@ -21,9 +22,14 @@ export default function Input({
           </span>
         )}
         <input
-          className={`input ${icon ? "pl-10" : ""} ${error ? "border-red-500" : ""} ${className}`}
+          className={`input ${icon ? "pl-10" : ""} ${rightIcon ? "pr-10" : ""} ${error ? "border-red-500" : ""} ${className}`}
           {...props}
         />
+        {rightIcon && (
+          <span className="absolute inset-y-0 right-0 flex items-center pr-3">
+            {rightIcon}
+          </span>
+        )}
       </div>
       {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
     </div>

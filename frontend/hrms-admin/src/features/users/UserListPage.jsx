@@ -270,7 +270,7 @@ export default function UserListPage({ role }) {
             onClick={openAdd}
             className="w-full sm:w-auto"
           >
-            Add User
+            Add Admin
           </Button>
         )}
       </div>
