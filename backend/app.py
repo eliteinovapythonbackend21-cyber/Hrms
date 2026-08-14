@@ -29,7 +29,7 @@ cloudinary.config(
 )
 
 # Default dev origins, plus anything set via CORS_ORIGINS (comma-separated) in production
-DEFAULT_ORIGINS = ["http://localhost:5173", "http://127.0.0.1:5173"]
+DEFAULT_ORIGINS = ["http://localhost:5173", "http://127.0.0.1:5173", "https://hrms-frontend-rosy-nine.vercel.app"]
 CORS(app, resources={r"/api/*": {"origins": DEFAULT_ORIGINS + app.config["CORS_ORIGINS"]}}, supports_credentials=True)
 
 db.init_app(app)

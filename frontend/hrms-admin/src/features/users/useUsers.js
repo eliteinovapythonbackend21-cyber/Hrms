@@ -6,67 +6,102 @@ import {
 
 import { usersApi } from "@/api/users.api";
 
-
 /*
-|--------------------------------------------------------------------------
-| Get Users
-|--------------------------------------------------------------------------
-*/
+ * ============================================================
+ * GET USERS
+ * ============================================================
+ *
+ * This is used by:
+ *
+ * /users/admins
+ *
+ * and
+ *
+ * /users/employees
+ *
+ * UserListPage sends:
+ *
+ * {
+ *   role: "admin"
+ * }
+ *
+ * or:
+ *
+ * {
+ *   role: "employee"
+ * }
+ *
+ * The role is included in the React Query key so that
+ * Admin and Employee records remain separate cached queries.
+ */
 export function useUsers(params = {}) {
   return useQuery({
     queryKey: ["users", params],
 
     queryFn: async () => {
-      const res = await usersApi.list(params);
+      const response = await usersApi.list(params);
 
-      return res.data.data;
+      return response.data.data;
     },
-
-    keepPreviousData: true,
   });
 }
 
-
 /*
-|--------------------------------------------------------------------------
-| Get Single User
-|--------------------------------------------------------------------------
-*/
+ * ============================================================
+ * GET SINGLE USER
+ * ============================================================
+ *
+ * Used by UserFormPage when editing:
+ *
+ * /users/:id/edit
+ *
+ * Example:
+ *
+ * /users/10/edit
+ *
+ * The request will only execute when an id exists.
+ */
 export function useUser(id) {
   return useQuery({
     queryKey: ["user", id],
 
     queryFn: async () => {
-      const res = await usersApi.get(id);
+      const response = await usersApi.get(id);
 
-      return res.data.data;
+      return response.data.data;
     },
 
     enabled: Boolean(id),
   });
 }
 
-
 /*
-|--------------------------------------------------------------------------
-| Create User
-|--------------------------------------------------------------------------
-*/
+ * ============================================================
+ * CREATE USER
+ * ============================================================
+ *
+ * Used by:
+ *
+ * UserFormPage
+ *
+ * After creating a user, all cached user-list queries
+ * are invalidated.
+ *
+ * This includes:
+ *
+ * ["users", { role: "admin" }]
+ *
+ * ["users", { role: "employee" }]
+ */
 export function useCreateUser() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (payload) =>
-      usersApi.create(payload),
+    mutationFn: async (payload) => {
+      return usersApi.create(payload);
+    },
 
     onSuccess: () => {
-      /*
-       * Refresh all user lists:
-       *
-       * /users/admins
-       * /users/employees
-       * /users
-       */
       queryClient.invalidateQueries({
         queryKey: ["users"],
       });
@@ -74,54 +109,76 @@ export function useCreateUser() {
   });
 }
 
-
 /*
-|--------------------------------------------------------------------------
-| Update User
-|--------------------------------------------------------------------------
-*/
+ * ============================================================
+ * UPDATE USER
+ * ============================================================
+ *
+ * Used by:
+ *
+ * /users/:id/edit
+ *
+ * After updating, all user-list queries are refreshed.
+ */
 export function useUpdateUser() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, payload }) =>
-      usersApi.update(id, payload),
+    mutationFn: async ({ id, payload }) => {
+      return usersApi.update(id, payload);
+    },
 
     onSuccess: (_, variables) => {
       /*
-       * Refresh user lists.
+       * Refresh all user lists.
        */
       queryClient.invalidateQueries({
         queryKey: ["users"],
       });
 
       /*
-       * Refresh edited user's details.
+       * Refresh the specific user's cached data.
        */
-      queryClient.invalidateQueries({
-        queryKey: ["user", variables.id],
-      });
+      if (variables?.id) {
+        queryClient.invalidateQueries({
+          queryKey: ["user", variables.id],
+        });
+      }
     },
   });
 }
 
-
 /*
-|--------------------------------------------------------------------------
-| Deactivate User
-|--------------------------------------------------------------------------
-*/
+ * ============================================================
+ * DEACTIVATE USER
+ * ============================================================
+ *
+ * Used from UserListPage.
+ */
 export function useDeactivateUser() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id) =>
-      usersApi.deactivate(id),
+    mutationFn: async (id) => {
+      return usersApi.deactivate(id);
+    },
 
-    onSuccess: () => {
+    onSuccess: (_, id) => {
+      /*
+       * Refresh Admin and Employee user lists.
+       */
       queryClient.invalidateQueries({
         queryKey: ["users"],
       });
+
+      /*
+       * Refresh the individual user's cached data.
+       */
+      if (id) {
+        queryClient.invalidateQueries({
+          queryKey: ["user", id],
+        });
+      }
     },
   });
 }

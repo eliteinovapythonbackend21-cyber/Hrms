@@ -23,14 +23,30 @@ import { usersApi } from "@/api/users.api";
 import { useModulePermissions } from "@/hooks/useModulePermissions";
 
 const EXPORT_COLUMNS = [
-  { header: "ID", accessor: (r) => r.id },
-  { header: "Username", accessor: (r) => r.username },
-  { header: "Email", accessor: (r) => r.email },
-  { header: "Mobile", accessor: (r) => r.mobile },
-  { header: "Role", accessor: (r) => r.role },
+  {
+    header: "ID",
+    accessor: (r) => r.id,
+  },
+  {
+    header: "Username",
+    accessor: (r) => r.username,
+  },
+  {
+    header: "Email",
+    accessor: (r) => r.email,
+  },
+  {
+    header: "Mobile",
+    accessor: (r) => r.mobile,
+  },
+  {
+    header: "Role",
+    accessor: (r) => r.role,
+  },
   {
     header: "Status",
-    accessor: (r) => (r.is_active ? "Active" : "Inactive"),
+    accessor: (r) =>
+      r.is_active ? "Active" : "Inactive",
   },
 ];
 
@@ -53,18 +69,18 @@ export default function UserListPage({ role }) {
   } = useDebouncedSearch();
 
   /*
-   * Keep the role-specific list URL.
+   * IMPORTANT
    *
-   * Admin    -> /users/admins
-   * Employee -> /users/employees
+   * Keep role in the API request.
+   *
+   * Admin:
+   * /users/admins
+   * role = admin
+   *
+   * Employee:
+   * /users/employees
+   * role = employee
    */
-  const listPath =
-    role === "admin"
-      ? "/users/admins"
-      : role === "employee"
-      ? "/users/employees"
-      : "/users";
-
   const queryParams = {
     ...params,
     search: debouncedValue || undefined,
@@ -83,12 +99,16 @@ export default function UserListPage({ role }) {
     canDelete,
   } = useModulePermissions("Users");
 
-  useTableExport({
+  const {
+    exporting,
+    exportExcel,
+    exportPDF,
+  } = useTableExport({
     fetchAll: usersApi.list,
     queryParams,
     exportColumns: EXPORT_COLUMNS,
-    filename: "users",
-    title: "Users",
+    filename: role === "admin" ? "admins" : "employees",
+    title: role === "admin" ? "Admins" : "Employees",
   });
 
   const deactivateUser = useDeactivateUser();
@@ -96,24 +116,35 @@ export default function UserListPage({ role }) {
   const [confirmRow, setConfirmRow] = useState(null);
 
   /*
-   * Open Add User and remember which list opened the form.
+   * ADD USER
+   *
+   * Store the current role in navigation state.
+   *
+   * Admin -> Add User
+   * state.role = admin
+   *
+   * Employee -> Add User
+   * state.role = employee
    */
   const openAdd = () => {
-    navigate("/users/add", {
+    navigate("/users/new", {
       state: {
-        from: listPath,
         role,
       },
     });
   };
 
   /*
-   * Open Edit User and remember which list opened the form.
+   * EDIT USER
+   *
+   * Store the current list role.
+   *
+   * This allows UserFormPage to know which
+   * list the user came from.
    */
   const openEdit = (row) => {
     navigate(`/users/${row.id}/edit`, {
       state: {
-        from: listPath,
         role,
       },
     });
@@ -125,12 +156,16 @@ export default function UserListPage({ role }) {
     try {
       await deactivateUser.mutateAsync(confirmRow.id);
 
-      showToast("User deactivated", "success");
+      showToast(
+        "User deactivated",
+        "success"
+      );
 
       setConfirmRow(null);
     } catch (err) {
       showToast(
-        err.response?.data?.message || "Operation failed",
+        err.response?.data?.message ||
+          "Operation failed",
         "error"
       );
     }
@@ -141,25 +176,31 @@ export default function UserListPage({ role }) {
       key: "id",
       label: "ID",
     },
+
     {
       key: "username",
       label: "Username",
     },
+
     {
       key: "email",
       label: "Email",
     },
+
     {
       key: "mobile",
       label: "Mobile",
     },
+
     {
       key: "role",
       label: "Role",
     },
+
     {
       key: "status",
       label: "Status",
+
       render: (r) => (
         <div className="flex items-center gap-3">
           <Badge
@@ -169,7 +210,9 @@ export default function UserListPage({ role }) {
                 : "bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300"
             }
           >
-            {r.is_active ? "Active" : "Inactive"}
+            {r.is_active
+              ? "Active"
+              : "Inactive"}
           </Badge>
 
           {canEdit && (
@@ -185,7 +228,9 @@ export default function UserListPage({ role }) {
           {r.is_active && canDelete && (
             <button
               type="button"
-              onClick={() => setConfirmRow(r)}
+              onClick={() =>
+                setConfirmRow(r)
+              }
               className="text-red-600 hover:underline text-sm"
             >
               Deactivate
@@ -198,7 +243,8 @@ export default function UserListPage({ role }) {
 
   return (
     <div>
-      {/* Page Header */}
+      {/* PAGE HEADER */}
+
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">
@@ -220,6 +266,7 @@ export default function UserListPage({ role }) {
 
         {canAdd && (
           <Button
+            type="button"
             onClick={openAdd}
             className="w-full sm:w-auto"
           >
@@ -228,7 +275,8 @@ export default function UserListPage({ role }) {
         )}
       </div>
 
-      {/* User Table */}
+      {/* USER TABLE */}
+
       <div className="card">
         <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
           <TableSearchBar
@@ -260,15 +308,20 @@ export default function UserListPage({ role }) {
         />
       </div>
 
-      {/* Deactivate Confirmation */}
+      {/* DEACTIVATE CONFIRMATION */}
+
       <ConfirmDialog
         open={!!confirmRow}
-        onClose={() => setConfirmRow(null)}
+        onClose={() =>
+          setConfirmRow(null)
+        }
         onConfirm={handleDeactivate}
         title="Deactivate User"
         message="Are you sure you want to deactivate this user?"
         confirmText="Deactivate"
-        loading={deactivateUser.isPending}
+        loading={
+          deactivateUser.isPending
+        }
       />
     </div>
   );
