@@ -8,6 +8,9 @@ import {
   useDeactivateDepartment,
 } from "./useDepartments";
 
+import { useCompanies } from "@/features/master/company/useCompanies";
+import { useCompanyBranches } from "@/features/master/branches/useBranches";
+
 import DepartmentForm from "./DepartmentForm";
 
 import Badge from "@/components/ui/Badge";
@@ -86,9 +89,44 @@ export default function DepartmentListPage() {
   } = useDebouncedSearch();
 
 
+  /* =========================================================
+     COMPANY / BRANCH FILTER (cascading, same select style as
+     the Branches page's Company filter)
+  ========================================================= */
+
+  const [companyFilterId, setCompanyFilterId] = useState("");
+  const [branchFilterId, setBranchFilterId] = useState("");
+
+  const { data: companyData } = useCompanies({
+    page: 1,
+    per_page: 100,
+  });
+
+  const { data: branchData } = useCompanyBranches(
+    companyFilterId,
+    { page: 1, per_page: 100 }
+  );
+
+  const companies = companyData?.items || companyData?.data || [];
+  const filterBranches = branchData?.items || branchData?.data || [];
+
+  const handleCompanyFilterChange = (e) => {
+    setCompanyFilterId(e.target.value);
+    setBranchFilterId(""); // branch is scoped to company, reset it
+    setPage(1);
+  };
+
+  const handleBranchFilterChange = (e) => {
+    setBranchFilterId(e.target.value);
+    setPage(1);
+  };
+
+
   const queryParams = {
     ...params,
     search: debouncedValue || undefined,
+    company_id: companyFilterId || undefined,
+    branch_id: branchFilterId || undefined,
   };
 
 
@@ -553,20 +591,63 @@ export default function DepartmentListPage() {
 
 
       {/* =====================================================
-          SEARCH + STATUS
+          SEARCH + COMPANY/BRANCH FILTER + STATUS
       ===================================================== */}
 
       <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-900">
 
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
 
-          <div className="w-full lg:max-w-sm">
+          <div className="flex w-full flex-col gap-2.5 sm:flex-row lg:max-w-3xl">
 
-            <TableSearchBar
-              value={value}
-              onChange={setValue}
-              placeholder="Search departments..."
-            />
+            <div className="w-full sm:max-w-xs">
+              <TableSearchBar
+                value={value}
+                onChange={setValue}
+                placeholder="Search departments..."
+              />
+            </div>
+
+            {/* COMPANY */}
+            <select
+              value={companyFilterId}
+              onChange={handleCompanyFilterChange}
+              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 sm:max-w-xs dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+            >
+              <option value="">
+                All Companies
+              </option>
+
+              {companies.map((company) => (
+                <option
+                  key={company.id}
+                  value={company.id}
+                >
+                  {company.name}
+                </option>
+              ))}
+            </select>
+
+            {/* BRANCH (scoped to selected company) */}
+            <select
+              value={branchFilterId}
+              onChange={handleBranchFilterChange}
+              disabled={!companyFilterId}
+              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 disabled:cursor-not-allowed disabled:opacity-50 sm:max-w-xs dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+            >
+              <option value="">
+                {companyFilterId ? "All Branches" : "Select a company first"}
+              </option>
+
+              {filterBranches.map((branch) => (
+                <option
+                  key={branch.id}
+                  value={branch.id}
+                >
+                  {branch.name}
+                </option>
+              ))}
+            </select>
 
           </div>
 
@@ -1185,7 +1266,7 @@ export default function DepartmentListPage() {
             </h3>
 
             <p className="mt-1 max-w-sm text-xs text-slate-500 dark:text-slate-400">
-              No departments match your current search or status filter.
+              No departments match your current search, company, branch, or status filter.
             </p>
 
             {canAdd && (

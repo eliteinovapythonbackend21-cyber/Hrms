@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 
 import {
   useDesignations,
@@ -6,6 +7,10 @@ import {
   useUpdateDesignation,
   useDeactivateDesignation,
 } from "./useDesignations";
+
+import { useCompanies } from "@/features/master/company/useCompanies";
+import { useCompanyBranches } from "@/features/master/branches/useBranches";
+import { masterApi } from "@/api/master.api";
 
 import DesignationForm from "./DesignationForm";
 
@@ -31,6 +36,62 @@ export default function DesignationListPage() {
 
   const [statusFilter, setStatusFilter] = useState("active");
 
+  /* =========================================================
+     COMPANY / BRANCH / DEPARTMENT FILTER (cascading, same
+     select style as the Branches page's Company filter)
+  ========================================================= */
+
+  const [companyFilterId, setCompanyFilterId] = useState("");
+  const [branchFilterId, setBranchFilterId] = useState("");
+  const [departmentFilterId, setDepartmentFilterId] = useState("");
+
+  const { data: companyData } = useCompanies({
+    page: 1,
+    per_page: 100,
+    is_active: true,
+  });
+
+  const { data: branchData } = useCompanyBranches(
+    companyFilterId,
+    { page: 1, per_page: 100, is_active: true }
+  );
+
+  const { data: departmentData } = useQuery({
+    queryKey: ["departments-filter", branchFilterId],
+    queryFn: async () =>
+      (
+        await masterApi.listDepartments({
+          branch_id: branchFilterId,
+          page: 1,
+          per_page: 100,
+          is_active: true,
+        })
+      ).data.data,
+    enabled: !!branchFilterId,
+  });
+
+  const filterCompanies = companyData?.items || companyData?.data || [];
+  const filterBranches = branchData?.items || branchData?.data || [];
+  const filterDepartments = departmentData?.items || [];
+
+  const handleCompanyFilterChange = (e) => {
+    setCompanyFilterId(e.target.value);
+    setBranchFilterId("");
+    setDepartmentFilterId("");
+    setPage(1);
+  };
+
+  const handleBranchFilterChange = (e) => {
+    setBranchFilterId(e.target.value);
+    setDepartmentFilterId("");
+    setPage(1);
+  };
+
+  const handleDepartmentFilterChange = (e) => {
+    setDepartmentFilterId(e.target.value);
+    setPage(1);
+  };
+
   const {
     data,
     isLoading,
@@ -40,6 +101,7 @@ export default function DesignationListPage() {
   } = useDesignations({
     page,
     search,
+    department_id: departmentFilterId || undefined,
   });
 
   const createDesignation = useCreateDesignation();
@@ -470,50 +532,105 @@ export default function DesignationListPage() {
       </div>
 
       {/* =====================================================
-          SEARCH + FILTER
+          SEARCH + COMPANY/BRANCH/DEPARTMENT FILTER + STATUS
       ===================================================== */}
 
       <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-900">
 
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
 
-          {/* SEARCH */}
+          <div className="flex w-full flex-col gap-2.5 sm:flex-row xl:max-w-4xl">
 
-          <div className="relative w-full lg:max-w-sm">
+            {/* SEARCH */}
 
-            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+            <div className="relative w-full sm:max-w-xs">
 
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-4 w-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth="1.8"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M21 21l-4.35-4.35m2.35-5.65a8 8 0 11-16 0 8 8 0 0116 0z"
-                />
-              </svg>
+              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
 
-            </span>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M21 21l-4.35-4.35m2.35-5.65a8 8 0 11-16 0 8 8 0 0116 0z"
+                  />
+                </svg>
 
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setPage(1);
-              }}
-              placeholder="Search designations..."
-              className="h-10 w-full rounded-lg border border-slate-300 bg-white pl-9 pr-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
-            />
+              </span>
+
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setPage(1);
+                }}
+                placeholder="Search designations..."
+                className="h-10 w-full rounded-lg border border-slate-300 bg-white pl-9 pr-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+              />
+
+            </div>
+
+            {/* COMPANY */}
+            <select
+              value={companyFilterId}
+              onChange={handleCompanyFilterChange}
+              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 sm:max-w-xs dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+            >
+              <option value="">All Companies</option>
+
+              {filterCompanies.map((company) => (
+                <option key={company.id} value={company.id}>
+                  {company.name}
+                </option>
+              ))}
+            </select>
+
+            {/* BRANCH (scoped to company) */}
+            <select
+              value={branchFilterId}
+              onChange={handleBranchFilterChange}
+              disabled={!companyFilterId}
+              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 disabled:cursor-not-allowed disabled:opacity-50 sm:max-w-xs dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+            >
+              <option value="">
+                {companyFilterId ? "All Branches" : "Select a company first"}
+              </option>
+
+              {filterBranches.map((branch) => (
+                <option key={branch.id} value={branch.id}>
+                  {branch.name}
+                </option>
+              ))}
+            </select>
+
+            {/* DEPARTMENT (scoped to branch) */}
+            <select
+              value={departmentFilterId}
+              onChange={handleDepartmentFilterChange}
+              disabled={!branchFilterId}
+              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 disabled:cursor-not-allowed disabled:opacity-50 sm:max-w-xs dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+            >
+              <option value="">
+                {branchFilterId ? "All Departments" : "Select a branch first"}
+              </option>
+
+              {filterDepartments.map((department) => (
+                <option key={department.id} value={department.id}>
+                  {department.department_name}
+                </option>
+              ))}
+            </select>
 
           </div>
 
-          {/* FILTER */}
+          {/* STATUS FILTER */}
 
           <div className="flex w-fit items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
 
@@ -1123,8 +1240,7 @@ export default function DesignationListPage() {
             </h3>
 
             <p className="mt-1 max-w-sm text-xs text-slate-500 dark:text-slate-400">
-              No designations match your current search or
-              status filter.
+              No designations match your current search, company, branch, department, or status filter.
             </p>
 
             <Button

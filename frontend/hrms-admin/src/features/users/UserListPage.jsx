@@ -52,6 +52,19 @@ export default function UserListPage({ role }) {
     debouncedValue,
   } = useDebouncedSearch();
 
+  /*
+   * Keep the role-specific list URL.
+   *
+   * Admin    -> /users/admins
+   * Employee -> /users/employees
+   */
+  const listPath =
+    role === "admin"
+      ? "/users/admins"
+      : role === "employee"
+      ? "/users/employees"
+      : "/users";
+
   const queryParams = {
     ...params,
     search: debouncedValue || undefined,
@@ -70,11 +83,7 @@ export default function UserListPage({ role }) {
     canDelete,
   } = useModulePermissions("Users");
 
-  const {
-    exporting,
-    exportExcel,
-    exportPDF,
-  } = useTableExport({
+  useTableExport({
     fetchAll: usersApi.list,
     queryParams,
     exportColumns: EXPORT_COLUMNS,
@@ -86,12 +95,28 @@ export default function UserListPage({ role }) {
 
   const [confirmRow, setConfirmRow] = useState(null);
 
+  /*
+   * Open Add User and remember which list opened the form.
+   */
   const openAdd = () => {
-    navigate("/users/add");
+    navigate("/users/add", {
+      state: {
+        from: listPath,
+        role,
+      },
+    });
   };
 
+  /*
+   * Open Edit User and remember which list opened the form.
+   */
   const openEdit = (row) => {
-    navigate(`/users/${row.id}/edit`);
+    navigate(`/users/${row.id}/edit`, {
+      state: {
+        from: listPath,
+        role,
+      },
+    });
   };
 
   const handleDeactivate = async () => {
@@ -149,6 +174,7 @@ export default function UserListPage({ role }) {
 
           {canEdit && (
             <button
+              type="button"
               onClick={() => openEdit(r)}
               className="text-primary-600 hover:underline text-sm"
             >
@@ -158,6 +184,7 @@ export default function UserListPage({ role }) {
 
           {r.is_active && canDelete && (
             <button
+              type="button"
               onClick={() => setConfirmRow(r)}
               className="text-red-600 hover:underline text-sm"
             >

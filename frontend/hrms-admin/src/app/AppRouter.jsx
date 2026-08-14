@@ -38,8 +38,8 @@ import CompanyListPage from "@/features/master/company/CompanyListPage";
 import BranchListPage from "@/features/master/branches/BranchListPage";
 import DepartmentListPage from "@/features/master/departments/DepartmentListPage";
 import DesignationListPage from "@/features/master/designations/DesignationListPage";
-import LeaveTypeListPage from "@/features/master/leaveTypes/LeaveTypeListPage";
-import HolidayListPage from "@/features/master/holidays/HolidayListPage";
+import LeaveTypeListPage from "@/features/leaveTypes/LeaveTypeListPage";
+import HolidayListPage from "@/features/holidays/HolidayListPage";
 // import ComingSoonPage from "@/features/master/ComingSoonPage";
 
 // Network
@@ -130,8 +130,8 @@ export default function AppRouter() {
         <Route path="/master/branches" element={<RoleGuard><BranchListPage  /></RoleGuard>} />
         <Route path="/master/departments" element={<RoleGuard><DepartmentListPage /></RoleGuard>} />
         <Route path="/master/designations" element={<RoleGuard><DesignationListPage /></RoleGuard>} />
-        <Route path="/master/leave-types" element={<RoleGuard><LeaveTypeListPage /></RoleGuard>} />
-        <Route path="/master/holidays" element={<RoleGuard><HolidayListPage /></RoleGuard>} />
+        <Route path="/leave-types" element={<RoleGuard><LeaveTypeListPage /></RoleGuard>} />
+        <Route path="/holidays" element={<RoleGuard><HolidayListPage /></RoleGuard>} />
 
         {/* HR — users filtered by HR sub-role */}
         <Route path="/users/hr/:roleSlug" element={<RoleGuard><HrRoleUserListPage /></RoleGuard>} />

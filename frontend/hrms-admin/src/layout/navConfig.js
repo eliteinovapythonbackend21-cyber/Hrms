@@ -27,11 +27,23 @@ export const navConfig = [
       { label: "Branches", path: "/master/branches", icon: "department" },
       { label: "Departments", path: "/master/departments", icon: "department" },
       { label: "Designations", path: "/master/designations", icon: "designation" },
-      { label: "Holidays", path: "/master/holidays", icon: "holiday" },
-      { label: "Leave Types", path: "/master/leave-types", icon: "leaveType" },
       { label: "Roles & Permissions", path: "/roles", icon: "roles" },
     ],
   },
+  
+  {
+    label: "Leave Types",
+    path: "/leave-types",
+    icon: "leaveType",
+    roles: ["admin", ...EMPLOYEE_LIKE_ROLES],
+  },
+  {
+    label: "Holidays",
+    path: "/holidays",
+    icon: "holiday",
+    roles: ["admin", ...EMPLOYEE_LIKE_ROLES],
+  },
+
   {
     label: "Employees",
     path: "/employees",
