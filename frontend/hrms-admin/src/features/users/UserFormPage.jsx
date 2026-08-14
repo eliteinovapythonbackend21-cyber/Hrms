@@ -6,6 +6,11 @@ import LoadingSpinner from "@/components/feedback/LoadingSpinner";
 import Button from "@/components/ui/Button";
 import { getUser } from "@/utils/tokenHelpers";
 
+// Module identity: indigo — matches UserProfilePage.
+const INDIGO = {
+  icon: "bg-indigo-600",
+};
+
 export default function UserFormPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -46,22 +51,30 @@ export default function UserFormPage() {
   }
 
   return (
-    <div className="max-w-lg mx-auto">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-            {isEdit ? "Edit User" : "Add User"}
-          </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            {isEdit ? `Editing user: ${user?.username}` : "Create a new user account"}
-          </p>
+    <div className="mx-auto max-w-lg space-y-5">
+      {/* HEADER */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3">
+          <div className={`flex h-10 w-10 items-center justify-center rounded-xl text-white shadow-sm ${INDIGO.icon}`}>
+            <span className="font-bold">U</span>
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+              {isEdit ? "Edit User" : "Add User"}
+            </h1>
+            <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
+              {isEdit ? `Editing user: ${user?.username}` : "Create a new user account"}
+            </p>
+          </div>
         </div>
+
         <Button variant="secondary" onClick={() => navigate(-1)} className="w-full sm:w-auto">
           Back
         </Button>
       </div>
 
-      <div className="card p-6">
+      {/* FORM CARD */}
+      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900">
         <UserForm
           initialData={user || {}}
           onSubmit={handleSubmit}
