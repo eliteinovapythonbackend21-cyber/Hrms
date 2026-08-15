@@ -1,13 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { leavesApi } from "@/api/leaves.api";
 
-export function useLeaves(params) {
+export function useLeaves(params, options = {}) {
   return useQuery({
     queryKey: ["leaves", params],
     queryFn: async () => {
       const res = await leavesApi.list(params);
       return res.data.data;
     },
+    enabled: options.enabled ?? true,
   });
 }
 

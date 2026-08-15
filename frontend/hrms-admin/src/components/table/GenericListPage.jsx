@@ -68,6 +68,8 @@ export default function GenericListPage({
   const [editing, setEditing] = useState(null);
   const [confirmRow, setConfirmRow] = useState(null);
 
+  const isSaving = createMutation?.isPending || updateMutation?.isPending;
+
   const openCreate = () => {
     setEditing(null);
     setModalOpen(true);
@@ -78,6 +80,9 @@ export default function GenericListPage({
   };
 
   const handleSubmit = async (payload) => {
+    // Guard against duplicate submits (double-click, or a submit button
+    // that fires again before the mutation's isPending flag re-renders).
+    if (isSaving) return;
     try {
       if (editing && updateMutation) {
         await updateMutation.mutateAsync({ id: editing.id, payload });
@@ -169,12 +174,22 @@ export default function GenericListPage({
           open={modalOpen}
           onClose={() => setModalOpen(false)}
           title={editing ? `Edit ${formTitle}` : `Add ${formTitle}`}
+          footer={
+            <>
+              <Button variant="secondary" onClick={() => setModalOpen(false)} disabled={isSaving}>
+                Cancel
+              </Button>
+              <Button type="submit" form={`${filename}-form`} loading={isSaving} disabled={isSaving}>
+                {isSaving ? "Submitting..." : editing ? "Save" : "Submit"}
+              </Button>
+            </>
+          }
         >
           <FormComponent
             formId={`${filename}-form`}
             initialData={editing || autoOpenCreateWith || {}}
             onSubmit={handleSubmit}
-            loading={createMutation?.isPending || updateMutation?.isPending}
+            loading={isSaving}
             onCancel={() => setModalOpen(false)}
             isEdit={!!editing}
           />

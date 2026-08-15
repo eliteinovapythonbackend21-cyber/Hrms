@@ -32,7 +32,7 @@ const ACCENT = {
   badge: "bg-sky-50 text-sky-700 dark:bg-sky-500/10 dark:text-sky-400",
 };
 
-export default function EmployeeListPage() {
+export default function EmployeeListPage({ restricted = false }) {
   const { params, page, perPage, setPage, setPerPage, sortBy, sortDir, toggleSort } = usePagination();
   const { value, setValue, debouncedValue } = useDebouncedSearch();
 
@@ -235,6 +235,7 @@ export default function EmployeeListPage() {
             sortBy={sortBy}
             sortDir={sortDir}
             onSort={toggleSort}
+            restricted={restricted}
           />
         )}
 
@@ -250,6 +251,7 @@ export default function EmployeeListPage() {
           />
         </div>
       </div>
+
     </div>
   );
 }

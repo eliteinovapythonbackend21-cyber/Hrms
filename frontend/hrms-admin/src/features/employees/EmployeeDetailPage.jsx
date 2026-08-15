@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useEmployee } from "./useEmployees";
 import LoadingSpinner from "@/components/feedback/LoadingSpinner";
 import Button from "@/components/ui/Button";
@@ -112,6 +112,8 @@ function HierarchyTrail({ company, branch, department, designation }) {
 export default function EmployeeDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const restricted = searchParams.get("restricted") === "1";
   const { data: employee, isLoading, isError } = useEmployee(id);
 
   if (isLoading) {
@@ -187,22 +189,24 @@ export default function EmployeeDetailPage() {
               )}
             </div>
 
-            <div className="mt-5 grid grid-cols-2 gap-2">
-              <Button
-                variant="secondary"
-                onClick={() => navigate(`/employees/${id}/edit`)}
-                className="w-full text-sm"
-              >
-                Edit
-              </Button>
-              <Button
-                variant="secondary"
-                onClick={() => navigate(`/employees/${id}/payslip`)}
-                className="w-full text-sm"
-              >
-                Payslip
-              </Button>
-            </div>
+            {!restricted && (
+              <div className="mt-5 grid grid-cols-2 gap-2">
+                <Button
+                  variant="secondary"
+                  onClick={() => navigate(`/employees/${id}/edit`)}
+                  className="w-full text-sm"
+                >
+                  Edit
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={() => navigate(`/employees/${id}/payslip`)}
+                  className="w-full text-sm"
+                >
+                  Payslip
+                </Button>
+              </div>
+            )}
           </div>
 
           {/* ORGANIZATION HIERARCHY */}
@@ -257,137 +261,143 @@ export default function EmployeeDetailPage() {
             </div>
           </div>
 
-          {/* EMPLOYMENT */}
-          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-            <h3 className="mb-4 text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
-              Employment
-            </h3>
+          {/* EMPLOYMENT — hidden entirely on the restricted (/employees) view */}
+          {!restricted && (
+            <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+              <h3 className="mb-4 text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
+                Employment
+              </h3>
 
-            {/* Compensation visual — salary vs allowance as a proportion
-                bar, not just two numbers sitting next to each other */}
-            {totalComp > 0 && (
-              <div className="mb-5 rounded-lg border border-slate-100 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-800/60">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="font-semibold text-slate-800 dark:text-white">
-                    {formatCurrency(totalComp)}
-                  </span>
-                  <span className="text-xs text-slate-400">total monthly compensation</span>
-                </div>
-
-                <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
-                  <div
-                    className={`h-full ${SKY.bar}`}
-                    style={{ width: `${salaryPct}%` }}
-                  />
-                </div>
-
-                <div className="mt-2 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
-                  <span>Salary · {formatCurrency(salary)}</span>
-                  <span>Allowance · {formatCurrency(allowance)}</span>
-                </div>
-              </div>
-            )}
-
-            <div className="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
-              <Field icon={<CalendarIcon />} label="Joining Date" value={formatDate(employee.joining_date)} />
-              <Field icon={<CalendarIcon />} label="Record Created" value={formatDateTime(employee.created_at)} />
-              <Field icon={<CardIcon />} label="PF Number" value={employee.pf_number} mono />
-              <Field icon={<CardIcon />} label="ESI Number" value={employee.esi_number} mono />
-              <Field icon={<CardIcon />} label="Bank Account No." value={employee.account_number} mono />
-            </div>
-          </div>
-
-          <TabbedDetailLayout
-            tabs={[
-              {
-                key: "documents",
-                label: "Documents",
-                content: (
-                  <EmployeeSubList
-                    queryKey="employee-documents"
-                    api={employeeLifecycleApi.documents}
-                    employeeId={id}
-                    columns={[
-                      { key: "doc_type", label: "Document Type" },
-                      { key: "file_url", label: "File", render: (r) => <a href={r.file_url} target="_blank" rel="noreferrer" className="text-primary-600 hover:underline">View</a> },
-                    ]}
-                    emptyText="No documents on file."
-                  />
-                ),
-              },
-              {
-                key: "performance",
-                label: "Performance",
-                content: (
-                  <EmployeeSubList
-                    queryKey="performance"
-                    api={employeeLifecycleApi.performance}
-                    employeeId={id}
-                    columns={[
-                      { key: "review_period", label: "Review Period" },
-                      { key: "rating", label: "Rating" },
-                      { key: "remarks", label: "Remarks", render: (r) => r.remarks || "-" },
-                    ]}
-                    emptyText="No performance reviews recorded."
-                  />
-                ),
-              },
-              {
-                key: "training",
-                label: "Training",
-                content: (
-                  <EmployeeSubList
-                    queryKey="training"
-                    api={employeeLifecycleApi.training}
-                    employeeId={id}
-                    columns={[
-                      { key: "program_name", label: "Program" },
-                      { key: "start_date", label: "Start Date" },
-                      { key: "end_date", label: "End Date", render: (r) => r.end_date || "-" },
-                      { key: "status", label: "Status" },
-                    ]}
-                    emptyText="No training records."
-                  />
-                ),
-              },
-              {
-                key: "promotion-transfer",
-                label: "Promotion / Transfer History",
-                content: (
-                  <div className="space-y-6">
-                    <div>
-                      <h4 className="text-sm font-semibold text-slate-900 dark:text-white mb-2">Promotions</h4>
-                      <EmployeeSubList
-                        queryKey="promotions"
-                        api={employeeLifecycleApi.promotions}
-                        employeeId={id}
-                        columns={[
-                          { key: "from_designation_id", label: "From Designation" },
-                          { key: "to_designation_id", label: "To Designation" },
-                          { key: "effective_date", label: "Effective Date" },
-                        ]}
-                        emptyText="No promotions recorded."
-                      />
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-semibold text-slate-900 dark:text-white mb-2">Transfers</h4>
-                      <EmployeeSubList
-                        queryKey="transfers"
-                        api={employeeLifecycleApi.transfers}
-                        employeeId={id}
-                        columns={[
-                          { key: "from_department_id", label: "From Department" },
-                          { key: "to_department_id", label: "To Department" },
-                          { key: "effective_date", label: "Effective Date" },
-                        ]}
-                        emptyText="No transfers recorded."
-                      />
-                    </div>
+              {/* Compensation visual — salary vs allowance as a proportion
+                  bar, not just two numbers sitting next to each other */}
+              {totalComp > 0 && (
+                <div className="mb-5 rounded-lg border border-slate-100 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-800/60">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-semibold text-slate-800 dark:text-white">
+                      {formatCurrency(totalComp)}
+                    </span>
+                    <span className="text-xs text-slate-400">total monthly compensation</span>
                   </div>
-                ),
-              },
-            ]}
-          />
+
+                  <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
+                    <div
+                      className={`h-full ${SKY.bar}`}
+                      style={{ width: `${salaryPct}%` }}
+                    />
+                  </div>
+
+                  <div className="mt-2 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+                    <span>Salary · {formatCurrency(salary)}</span>
+                    <span>Allowance · {formatCurrency(allowance)}</span>
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
+                <Field icon={<CalendarIcon />} label="Joining Date" value={formatDate(employee.joining_date)} />
+                <Field icon={<CalendarIcon />} label="Record Created" value={formatDateTime(employee.created_at)} />
+                <Field icon={<CardIcon />} label="PF Number" value={employee.pf_number} mono />
+                <Field icon={<CardIcon />} label="ESI Number" value={employee.esi_number} mono />
+                <Field icon={<CardIcon />} label="Bank Account No." value={employee.account_number} mono />
+              </div>
+            </div>
+          )}
+
+          {/* TABS — Documents / Performance / Training / Promotion-Transfer
+              hidden entirely on the restricted (/employees) view */}
+          {!restricted && (
+            <TabbedDetailLayout
+              tabs={[
+                {
+                  key: "documents",
+                  label: "Documents",
+                  content: (
+                    <EmployeeSubList
+                      queryKey="employee-documents"
+                      api={employeeLifecycleApi.documents}
+                      employeeId={id}
+                      columns={[
+                        { key: "doc_type", label: "Document Type" },
+                        { key: "file_url", label: "File", render: (r) => <a href={r.file_url} target="_blank" rel="noreferrer" className="text-primary-600 hover:underline">View</a> },
+                      ]}
+                      emptyText="No documents on file."
+                    />
+                  ),
+                },
+                {
+                  key: "performance",
+                  label: "Performance",
+                  content: (
+                    <EmployeeSubList
+                      queryKey="performance"
+                      api={employeeLifecycleApi.performance}
+                      employeeId={id}
+                      columns={[
+                        { key: "review_period", label: "Review Period" },
+                        { key: "rating", label: "Rating" },
+                        { key: "remarks", label: "Remarks", render: (r) => r.remarks || "-" },
+                      ]}
+                      emptyText="No performance reviews recorded."
+                    />
+                  ),
+                },
+                {
+                  key: "training",
+                  label: "Training",
+                  content: (
+                    <EmployeeSubList
+                      queryKey="training"
+                      api={employeeLifecycleApi.training}
+                      employeeId={id}
+                      columns={[
+                        { key: "program_name", label: "Program" },
+                        { key: "start_date", label: "Start Date" },
+                        { key: "end_date", label: "End Date", render: (r) => r.end_date || "-" },
+                        { key: "status", label: "Status" },
+                      ]}
+                      emptyText="No training records."
+                    />
+                  ),
+                },
+                {
+                  key: "promotion-transfer",
+                  label: "Promotion / Transfer History",
+                  content: (
+                    <div className="space-y-6">
+                      <div>
+                        <h4 className="text-sm font-semibold text-slate-900 dark:text-white mb-2">Promotions</h4>
+                        <EmployeeSubList
+                          queryKey="promotions"
+                          api={employeeLifecycleApi.promotions}
+                          employeeId={id}
+                          columns={[
+                            { key: "from_designation_id", label: "From Designation" },
+                            { key: "to_designation_id", label: "To Designation" },
+                            { key: "effective_date", label: "Effective Date" },
+                          ]}
+                          emptyText="No promotions recorded."
+                        />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-semibold text-slate-900 dark:text-white mb-2">Transfers</h4>
+                        <EmployeeSubList
+                          queryKey="transfers"
+                          api={employeeLifecycleApi.transfers}
+                          employeeId={id}
+                          columns={[
+                            { key: "from_department_id", label: "From Department" },
+                            { key: "to_department_id", label: "To Department" },
+                            { key: "effective_date", label: "Effective Date" },
+                          ]}
+                          emptyText="No transfers recorded."
+                        />
+                      </div>
+                    </div>
+                  ),
+                },
+              ]}
+            />
+          )}
         </div>
       </div>
     </div>

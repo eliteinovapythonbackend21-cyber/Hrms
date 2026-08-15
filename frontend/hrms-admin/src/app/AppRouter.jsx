@@ -107,7 +107,7 @@ export default function AppRouter() {
         <Route path="/users/:id" element={<RoleGuard><UserProfilePage /></RoleGuard>} />
 
         {/* Employees */}
-        <Route path="/employees" element={<RoleGuard><EmployeeListPage /></RoleGuard>} />
+        <Route path="/employees" element={<RoleGuard><EmployeeListPage restricted /></RoleGuard>} />
         <Route path="/employees/new" element={<RoleGuard><EmployeeFormPage /></RoleGuard>} />
         <Route path="/employees/:id" element={<RoleGuard><EmployeeDetailPage /></RoleGuard>} />
         <Route path="/employees/:id/edit" element={<RoleGuard><EmployeeFormPage /></RoleGuard>} />

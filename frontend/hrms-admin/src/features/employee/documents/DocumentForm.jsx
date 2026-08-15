@@ -7,6 +7,12 @@ import { isRequired } from "@/utils/validators";
 const ALLOWED_TYPES = ["image/png", "image/jpeg", "image/gif", "application/pdf"];
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
+const DOCUMENT_TYPE_OPTIONS = [
+  { value: "Aadhaar", label: "Aadhaar" },
+  { value: "Bank Details", label: "Bank Details" },
+  { value: "Experience Certificate", label: "Experience Certificate" },
+];
+
 export default function DocumentForm({ formId = "employee-documents-form", initialData, onSubmit, loading }) {
   const employeeOptions = useEmployeeOptions();
   const [form, setForm] = useState({
@@ -62,6 +68,7 @@ export default function DocumentForm({ formId = "employee-documents-form", initi
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (loading) return; // block re-entry while a create/update is already in flight
     const errs = {};
     if (!isRequired(form.employee_id)) errs.employee_id = "Employee is required";
     if (!isRequired(form.doc_type)) errs.doc_type = "Document Type is required";
@@ -82,14 +89,14 @@ export default function DocumentForm({ formId = "employee-documents-form", initi
         error={errors.employee_id}
         required
       />
-      <Input
+      <Select
         label="Document Type"
         name="doc_type"
         value={form.doc_type}
         onChange={handleChange}
+        options={DOCUMENT_TYPE_OPTIONS}
         error={errors.doc_type}
         required
-        placeholder="e.g. Aadhaar, PAN, Resume"
       />
 
       <div className="mb-4">

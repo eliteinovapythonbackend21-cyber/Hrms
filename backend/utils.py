@@ -1,6 +1,7 @@
 from functools import wraps
 
 import cloudinary.uploader
+import cloudinary.utils
 from flask import jsonify, request
 from flask_jwt_extended import get_jwt, get_jwt_identity, jwt_required
 from sqlalchemy import or_
@@ -65,22 +66,66 @@ def handle_image_upload(file, allowed_extensions):
 
 
 def handle_document_upload(file, allowed_extensions):
-    return handle_upload(file, allowed_extensions, folder="hrms/employee_documents", resource_type="auto")
+    # type="authenticated" — required for PDFs: Cloudinary blocks public
+    # (type="upload") delivery of PDF/ZIP files account-wide as a security
+    # default, so a plain public URL 401s no matter what. Authenticated
+    # delivery means callers need a signed URL (see signed_document_url
+    # below) generated per-request instead of a static public link —
+    # appropriate here anyway since these are Aadhaar/Bank Details docs.
+    return handle_upload(
+        file,
+        allowed_extensions,
+        folder="hrms/employee_documents",
+        resource_type="auto",
+        type="authenticated",
+    )
 
 
-def handle_upload(file, allowed_extensions, folder, resource_type="auto"):
+def handle_upload(file, allowed_extensions, folder, resource_type="auto", type="upload"):
     if not file or file.filename == "":
         return None
 
     if not allowed_file_extension(file.filename, allowed_extensions):
         raise ValueError("File type not allowed")
 
-    result = cloudinary.uploader.upload(file, folder=folder, resource_type=resource_type)
+    result = cloudinary.uploader.upload(file, folder=folder, resource_type=resource_type, type=type)
 
     return {
         "url": result["secure_url"],
         "public_id": result["public_id"],
+        # Needed to regenerate signed URLs later and to know which
+        # cloudinary_url(resource_type=...) to pass — Cloudinary classifies
+        # PDFs uploaded with resource_type="auto" as "image", not "raw".
+        "resource_type": result["resource_type"],
+        "delivery_type": type,
     }
+
+
+def signed_document_url(public_id, resource_type="image", delivery_type="authenticated", expires_in=300):
+    """Generates a short-lived signed URL for an authenticated-delivery
+    Cloudinary asset. Call this at serialization time (not at upload time)
+    so the URL returned to the frontend is always fresh — a URL signed at
+    upload time would go stale and 401 the moment it expires.
+
+    expires_in: seconds the URL stays valid for (default 5 minutes — long
+    enough to load a preview/download, short enough to limit exposure if
+    the URL leaks, e.g. via browser history or a shared screenshot).
+    """
+    if delivery_type != "authenticated":
+        # Public (type="upload") assets — e.g. profile pictures — don't need
+        # signing; the stored secure_url already works directly.
+        return cloudinary.utils.cloudinary_url(public_id, resource_type=resource_type, type=delivery_type, secure=True)[0]
+
+    import time
+    url, _ = cloudinary.utils.cloudinary_url(
+        public_id,
+        resource_type=resource_type,
+        type="authenticated",
+        sign_url=True,
+        secure=True,
+        auth_token={"duration": expires_in, "start_time": int(time.time())},
+    )
+    return url
 
 
 def parse_datetime(date_str, time_str):
