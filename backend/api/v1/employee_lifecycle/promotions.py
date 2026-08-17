@@ -4,8 +4,8 @@ from utils import register_crud_blueprint
 promotions_bp = register_crud_blueprint(
     "promotions_bp",
     Promotion,
-    create_fields=["employee_id", "from_designation_id", "to_designation_id", "effective_date", "remarks", "is_active"],
-    search_fields=["remarks"],
+    create_fields=["employee_id", "from_designation_id", "to_designation_id", "effective_date", "reason", "remarks", "is_active"],
+    search_fields=["remarks", "reason",],
     url_prefix_singular="",
     # Editable/deletable now enabled — register_crud_blueprint already
     # implements PUT (update_item) and DELETE (soft-delete via

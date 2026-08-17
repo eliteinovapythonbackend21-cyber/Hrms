@@ -1,133 +1,412 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Input from "@/components/ui/Input";
-import Select from "@/components/ui/Select";
 import Button from "@/components/ui/Button";
 import { isRequired } from "@/utils/validators";
 
-// Config-driven form shared by the create-only transactional features
-// (employee lifecycle / CRM / finance). `fields`:
-//   { name, label, type: "text"|"number"|"date"|"select"|"checkbox"|"textarea",
-//     required, options, placeholder, defaultValue }
-export default function GenericForm({ formId, fields, initialData = {}, onSubmit, loading, readOnlyBanner, onCancel, isEdit }) {
+function CustomSelect({
+  label,
+  name,
+  value,
+  onChange,
+  options = [],
+  error,
+  required,
+  disabled,
+  placeholder = "Select an option",
+}) {
+  const [open, setOpen] = useState(false);
+  const wrapperRef = useRef(null);
+
+  useEffect(() => {
+    const handleOutsideClick = (event) => {
+      if (
+        wrapperRef.current &&
+        !wrapperRef.current.contains(event.target)
+      ) {
+        setOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleOutsideClick);
+
+    return () => {
+      document.removeEventListener(
+        "mousedown",
+        handleOutsideClick
+      );
+    };
+  }, []);
+
+  const selectedOption = options.find(
+    (option) => String(option.value) === String(value)
+  );
+
+  const handleSelect = (option) => {
+    onChange({
+      target: {
+        name,
+        value: option.value,
+        type: "select",
+      },
+    });
+
+    setOpen(false);
+  };
+
+  return (
+    <div className="relative mb-4" ref={wrapperRef}>
+      <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
+        {label}
+        {required && (
+          <span className="ml-1 text-red-500">*</span>
+        )}
+      </label>
+
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => {
+          if (!disabled) {
+            setOpen((prev) => !prev);
+          }
+        }}
+        className={`flex h-10 w-full items-center justify-between rounded-lg border bg-white px-3 text-left text-sm outline-none transition
+          ${
+            error
+              ? "border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-500/10"
+              : "border-slate-300 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10"
+          }
+          ${
+            disabled
+              ? "cursor-not-allowed bg-slate-100 text-slate-400 dark:bg-slate-800"
+              : "cursor-pointer"
+          }
+          dark:border-slate-600 dark:bg-slate-800 dark:text-white
+        `}
+      >
+        <span
+          className={
+            selectedOption
+              ? "truncate text-slate-800 dark:text-white"
+              : "truncate text-slate-400 dark:text-slate-500"
+          }
+        >
+          {selectedOption?.label || placeholder}
+        </span>
+
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className={`ml-2 h-4 w-4 shrink-0 text-slate-400 transition-transform ${
+            open ? "rotate-180" : ""
+          }`}
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2}
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M6 9l6 6 6-6"
+          />
+        </svg>
+      </button>
+
+      {open && !disabled && (
+        <div className="absolute left-0 z-[100] mt-1 max-h-60 w-full overflow-y-auto rounded-lg border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-700 dark:bg-slate-800">
+          {options.length === 0 ? (
+            <div className="px-3 py-2 text-sm text-slate-400">
+              No options available
+            </div>
+          ) : (
+            options.map((option) => {
+              const isSelected =
+                String(option.value) === String(value);
+
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => handleSelect(option)}
+                  className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm transition
+                    ${
+                      isSelected
+                        ? "bg-primary-50 text-primary-700 dark:bg-primary-500/10 dark:text-primary-400"
+                        : "text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-700"
+                    }
+                  `}
+                >
+                  <span className="truncate">
+                    {option.label}
+                  </span>
+
+                  {isSelected && (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="ml-2 h-4 w-4 shrink-0 text-primary-600"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M5 12l4 4L19 7"
+                      />
+                    </svg>
+                  )}
+                </button>
+              );
+            })
+          )}
+        </div>
+      )}
+
+      {error && (
+        <p className="mt-1 text-xs text-red-500">
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
+// Config-driven form shared by create/edit transactional features.
+// fields:
+// {
+//   name,
+//   label,
+//   type: "text" | "number" | "date" | "select" | "checkbox" | "textarea",
+//   required,
+//   options,
+//   placeholder,
+//   defaultValue,
+//   disabled
+// }
+export default function GenericForm({
+  formId,
+  fields,
+  initialData = {},
+  onSubmit,
+  loading,
+  readOnlyBanner,
+  onCancel,
+  isEdit,
+}) {
   const buildInitial = () => {
     const obj = {};
-    fields.forEach((f) => {
-      if (f.type === "checkbox") {
-        obj[f.name] = initialData[f.name] !== undefined ? initialData[f.name] : f.defaultValue ?? true;
+
+    fields.forEach((field) => {
+      if (field.type === "checkbox") {
+        obj[field.name] =
+          initialData[field.name] !== undefined
+            ? initialData[field.name]
+            : field.defaultValue ?? true;
       } else {
-        obj[f.name] = initialData[f.name] !== undefined && initialData[f.name] !== null ? initialData[f.name] : f.defaultValue ?? "";
+        obj[field.name] =
+          initialData[field.name] !== undefined &&
+          initialData[field.name] !== null
+            ? initialData[field.name]
+            : field.defaultValue ?? "";
       }
     });
+
     return obj;
   };
 
   const [form, setForm] = useState(buildInitial);
   const [errors, setErrors] = useState({});
 
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setForm((prev) => ({ ...prev, [name]: type === "checkbox" ? checked : value }));
+  const handleChange = (event) => {
+    const {
+      name,
+      value,
+      type,
+      checked,
+    } = event.target;
+
+    setForm((prev) => ({
+      ...prev,
+      [name]:
+        type === "checkbox" ? checked : value,
+    }));
+
+    // Clear the field error immediately after user changes it.
+    if (errors[name]) {
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next[name];
+        return next;
+      });
+    }
   };
 
   const validate = () => {
     const errs = {};
-    fields.forEach((f) => {
-      if (f.required && !isRequired(form[f.name])) {
-        errs[f.name] = `${f.label} is required`;
+
+    fields.forEach((field) => {
+      if (
+        field.required &&
+        !isRequired(form[field.name])
+      ) {
+        errs[field.name] =
+          `${field.label} is required`;
       }
     });
+
     return errs;
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const handleSubmit = (event) => {
+    event.preventDefault();
+
     const errs = validate();
+
     setErrors(errs);
-    if (Object.keys(errs).length > 0) return;
+
+    if (Object.keys(errs).length > 0) {
+      return;
+    }
+
     onSubmit(form);
   };
 
   return (
-    <form id={formId} onSubmit={handleSubmit}>
+    <form
+      id={formId}
+      onSubmit={handleSubmit}
+      className="relative"
+    >
       {readOnlyBanner && (
-        <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">{readOnlyBanner}</p>
+        <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">
+          {readOnlyBanner}
+        </p>
       )}
-      {fields.map((f) => {
-        if (f.type === "select") {
+
+      {fields.map((field) => {
+        if (field.type === "select") {
           return (
-            <Select
-              key={f.name}
-              label={f.label}
-              name={f.name}
-              value={form[f.name]}
+            <CustomSelect
+              key={field.name}
+              label={field.label}
+              name={field.name}
+              value={form[field.name]}
               onChange={handleChange}
-              options={f.options || []}
-              error={errors[f.name]}
-              required={f.required}
-              disabled={f.disabled}
+              options={field.options || []}
+              error={errors[field.name]}
+              required={field.required}
+              disabled={field.disabled}
+              placeholder={
+                field.placeholder ||
+                `Select ${field.label}`
+              }
             />
           );
         }
-        if (f.type === "checkbox") {
+
+        if (field.type === "checkbox") {
           return (
-            <div className="mb-4" key={f.name}>
+            <div
+              className="mb-4"
+              key={field.name}
+            >
               <label className="inline-flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
                 <input
                   type="checkbox"
-                  name={f.name}
-                  checked={!!form[f.name]}
+                  name={field.name}
+                  checked={!!form[field.name]}
                   onChange={handleChange}
+                  disabled={field.disabled}
                   className="h-4 w-4"
                 />
-                {f.label}
+
+                {field.label}
               </label>
+
+              {errors[field.name] && (
+                <p className="mt-1 text-xs text-red-500">
+                  {errors[field.name]}
+                </p>
+              )}
             </div>
           );
         }
-        if (f.type === "textarea") {
+
+        if (field.type === "textarea") {
           return (
-            <div className="mb-4" key={f.name}>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                {f.label}
-                {f.required && <span className="text-red-500 ml-1">*</span>}
+            <div
+              className="mb-4"
+              key={field.name}
+            >
+              <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
+                {field.label}
+
+                {field.required && (
+                  <span className="ml-1 text-red-500">
+                    *
+                  </span>
+                )}
               </label>
+
               <textarea
-                name={f.name}
-                value={form[f.name]}
+                name={field.name}
+                value={form[field.name]}
                 onChange={handleChange}
                 rows={3}
-                className={`input ${errors[f.name] ? "border-red-500" : ""}`}
-                placeholder={f.placeholder}
+                className={`input ${
+                  errors[field.name]
+                    ? "border-red-500"
+                    : ""
+                }`}
+                placeholder={field.placeholder}
+                disabled={field.disabled}
               />
-              {errors[f.name] && <p className="mt-1 text-xs text-red-500">{errors[f.name]}</p>}
+
+              {errors[field.name] && (
+                <p className="mt-1 text-xs text-red-500">
+                  {errors[field.name]}
+                </p>
+              )}
             </div>
           );
         }
+
         return (
           <Input
-            key={f.name}
-            label={f.label}
-            name={f.name}
-            type={f.type || "text"}
-            value={form[f.name]}
+            key={field.name}
+            label={field.label}
+            name={field.name}
+            type={field.type || "text"}
+            value={form[field.name]}
             onChange={handleChange}
-            error={errors[f.name]}
-            required={f.required}
-            placeholder={f.placeholder}
-            disabled={f.disabled}
+            error={errors[field.name]}
+            required={field.required}
+            placeholder={field.placeholder}
+            disabled={field.disabled}
           />
         );
       })}
-      <div className="flex justify-end gap-2 mt-6">
+
+      <div className="mt-6 flex justify-end gap-2">
         {onCancel && (
-          <Button type="button" variant="secondary" onClick={onCancel}>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={onCancel}
+          >
             Cancel
           </Button>
         )}
-        <Button type="submit" isLoading={loading}>
+
+        <Button
+          type="submit"
+          isLoading={loading}
+        >
           {isEdit ? "Update" : "Create"}
         </Button>
       </div>
     </form>
   );
 }
+

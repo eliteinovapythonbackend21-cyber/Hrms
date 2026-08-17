@@ -1,15 +1,158 @@
 import GenericForm from "@/components/form/GenericForm";
-import { useEmployeeOptions, useDesignationOptions } from "@/hooks/useLookupOptions";
+import {
+  useEmployeeOptions,
+  useDesignationOptions,
+} from "@/hooks/useLookupOptions";
 
-export default function PromotionForm({ formId = "promotions-form", initialData, onSubmit, loading }) {
+const PROMOTION_REASON_OPTIONS = [
+  {
+    value: "Performance Improvement",
+    label: "Performance Improvement",
+  },
+  {
+    value: "Outstanding Performance",
+    label: "Outstanding Performance",
+  },
+  {
+    value: "Consistent High Performance",
+    label: "Consistent High Performance",
+  },
+  {
+    value: "Achievement of Targets",
+    label: "Achievement of Targets",
+  },
+  {
+    value: "Increased Responsibilities",
+    label: "Increased Responsibilities",
+  },
+  {
+    value: "Leadership Skills",
+    label: "Leadership Skills",
+  },
+  {
+    value: "Skill Enhancement",
+    label: "Skill Enhancement",
+  },
+  {
+    value: "Additional Qualifications",
+    label: "Additional Qualifications",
+  },
+  {
+    value: "Experience / Tenure",
+    label: "Experience / Tenure",
+  },
+  {
+    value: "Career Growth",
+    label: "Career Growth",
+  },
+  {
+    value: "Role Expansion",
+    label: "Role Expansion",
+  },
+  {
+    value: "Successful Project Completion",
+    label: "Successful Project Completion",
+  },
+  {
+    value: "Business Requirements",
+    label: "Business Requirements",
+  },
+  {
+    value: "Critical Role / Business Need",
+    label: "Critical Role / Business Need",
+  },
+  {
+    value: "Succession Planning",
+    label: "Succession Planning",
+  },
+  {
+    value: "Internal Career Progression",
+    label: "Internal Career Progression",
+  },
+  {
+    value: "Recognition / Merit",
+    label: "Recognition / Merit",
+  },
+  {
+    value: "Promotion After Performance Review",
+    label: "Promotion After Performance Review",
+  },
+  {
+    value: "Promotion After Probation",
+    label: "Promotion After Probation",
+  },
+  {
+    value: "Other",
+    label: "Other",
+  },
+];
+
+export default function PromotionForm({
+  formId = "promotions-form",
+  initialData,
+  onSubmit,
+  loading,
+}) {
   const employeeOptions = useEmployeeOptions();
   const designationOptions = useDesignationOptions();
+
   const fields = [
-    { name: "employee_id", label: "Employee", type: "select", options: employeeOptions, required: true },
-    { name: "from_designation_id", label: "From Designation", type: "select", options: designationOptions, required: true },
-    { name: "to_designation_id", label: "To Designation", type: "select", options: designationOptions, required: true },
-    { name: "effective_date", label: "Effective Date", type: "date", required: true },
-    { name: "remarks", label: "Remarks", type: "textarea" },
+    {
+      name: "employee_id",
+      label: "Employee",
+      type: "select",
+      options: employeeOptions,
+      required: true,
+    },
+
+    {
+      name: "from_designation_id",
+      label: "From Designation",
+      type: "select",
+      options: designationOptions,
+      required: true,
+    },
+
+    {
+      name: "to_designation_id",
+      label: "To Designation",
+      type: "select",
+      options: designationOptions,
+      required: true,
+    },
+
+    {
+      name: "reason",
+      label: "Promotion Reason",
+      type: "select",
+      options: PROMOTION_REASON_OPTIONS,
+      required: true,
+    },
+
+    {
+      name: "effective_date",
+      label: "Effective Date",
+      type: "date",
+      required: true,
+    },
+
+    {
+      name: "remarks",
+      label: "Remarks",
+      type: "textarea",
+    },
   ];
-  return <GenericForm formId={formId} fields={fields} initialData={initialData} onSubmit={onSubmit} loading={loading} />;
+
+  return (
+    <GenericForm
+      formId={formId}
+      fields={fields}
+      initialData={{
+        reason: "Other",
+        ...initialData,
+      }}
+      onSubmit={onSubmit}
+      loading={loading}
+    />
+  );
 }
