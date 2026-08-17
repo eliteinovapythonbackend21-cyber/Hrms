@@ -95,19 +95,6 @@ function formatDuration(startDate, endDate) {
   return parts.length > 0 ? parts.join(" ") : "0 days";
 }
 
-const BranchDetail = ({ branch, tone }) => {
-  const badgeTones = {
-    from: "bg-slate-50 text-slate-700 ring-slate-500/20 dark:bg-slate-700/60 dark:text-slate-300 dark:ring-slate-400/20",
-    to: "bg-sky-50 text-sky-700 ring-sky-600/20 dark:bg-sky-500/10 dark:text-sky-400 dark:ring-sky-400/30",
-  };
-  if (!branch) return <span className="text-xs text-slate-400">-</span>;
-  return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset ${badgeTones[tone]}`}>
-      {branch.name || "-"}
-    </span>
-  );
-};
-
 const DepartmentDetail = ({ dept, tone }) => {
   const badgeTones = {
     from: "bg-slate-50 text-slate-700 ring-slate-500/20 dark:bg-slate-700/60 dark:text-slate-300 dark:ring-slate-400/20",
@@ -153,7 +140,7 @@ const CARD_PAGE_SIZE = 6;
 export default function TransferListPage() {
   const { showToast } = useToast();
 
-  const { data: allData, isLoading, isError, refetch } = useTransfers({ page: 1, per_page: 1000 });
+  const { data: allData, isLoading, isFetching, isError, refetch } = useTransfers({ page: 1, per_page: 1000 });
   const allTransfers = allData?.items || [];
 
   const { data: employeesData } = useQuery({
@@ -367,7 +354,7 @@ export default function TransferListPage() {
           <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">Employee transfer history</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <TableToolbar onRefresh={refetch} refreshing={isLoading} onExportExcel={exportExcel} onExportPDF={exportPDF} exporting={exporting} />
+          <TableToolbar onRefresh={refetch} refreshing={isFetching} onExportExcel={exportExcel} onExportPDF={exportPDF} exporting={exporting} />
           <Button type="button" onClick={handleAdd} className="h-10 w-full px-4 sm:w-auto">
             <span className="mr-1.5 text-lg">+</span>
             Add Transfer
@@ -571,11 +558,6 @@ export default function TransferListPage() {
                         <div key={t.id} className="overflow-hidden rounded-lg border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800/60">
                           <div className="px-2.5 py-2">
                             <div className="flex flex-wrap items-center gap-1.5">
-                              <BranchDetail branch={fromDept?.branch} tone="from" />
-                              <ArrowIcon />
-                              <BranchDetail branch={toDept?.branch} tone="to" />
-                            </div>
-                            <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                               <DepartmentDetail dept={fromDept} tone="from" />
                               <ArrowIcon />
                               <DepartmentDetail dept={toDept} tone="to" />

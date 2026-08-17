@@ -46,6 +46,9 @@ export const employeeLifecycleApi = {
     // spread does not include a working update() by default.
     update: (id, payload) => axiosClient.put(L.TRANSFERS_ITEM(id), payload),
   },
-  resignations: createCrudApi({ listUrl: L.RESIGNATIONS, itemUrl: L.RESIGNATIONS_ITEM }),
+  resignations: {
+    ...createCrudApi({ listUrl: L.RESIGNATIONS, itemUrl: L.RESIGNATIONS_ITEM }),
+    update: (id, payload) => axiosClient.put(L.RESIGNATIONS_ITEM(id), payload),
+  },
   exitManagement: createCrudApi({ listUrl: L.EXIT_MANAGEMENT, itemUrl: L.EXIT_MANAGEMENT_ITEM }),
 };
