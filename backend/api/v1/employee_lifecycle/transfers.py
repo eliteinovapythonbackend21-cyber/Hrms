@@ -7,7 +7,7 @@ transfers_bp = register_crud_blueprint(
     create_fields=["employee_id", "from_department_id", "to_department_id", "effective_date", "remarks", "is_active"],
     search_fields=["remarks"],
     url_prefix_singular="",
-    editable=False,
-    deletable=False,
+    editable=True,
+    deletable=True,
     allowed_roles=["admin", "HR", "HR Director", "HR Manager", "HR Executive"],
 )

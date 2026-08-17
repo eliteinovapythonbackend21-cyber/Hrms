@@ -40,7 +40,12 @@ export const employeeLifecycleApi = {
     // with a generic client-side error instead of a real server response.
     update: (id, payload) => axiosClient.put(L.PROMOTIONS_ITEM(id), payload),
   },
-  transfers: createCrudApi({ listUrl: L.TRANSFERS, itemUrl: L.TRANSFERS_ITEM }),
+  transfers: {
+    ...createCrudApi({ listUrl: L.TRANSFERS, itemUrl: L.TRANSFERS_ITEM }),
+    // Same fix as promotions.update above — createCrudApi()'s generic
+    // spread does not include a working update() by default.
+    update: (id, payload) => axiosClient.put(L.TRANSFERS_ITEM(id), payload),
+  },
   resignations: createCrudApi({ listUrl: L.RESIGNATIONS, itemUrl: L.RESIGNATIONS_ITEM }),
   exitManagement: createCrudApi({ listUrl: L.EXIT_MANAGEMENT, itemUrl: L.EXIT_MANAGEMENT_ITEM }),
 };
