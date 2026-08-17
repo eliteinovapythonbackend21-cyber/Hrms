@@ -182,6 +182,7 @@ export default function ResignationListPage() {
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all"); // Pending/Approved/Rejected/all
+  const [activeFilter, setActiveFilter] = useState("active"); // active/inactive/all (soft-delete)
   const [viewMode, setViewMode] = useState("table"); // "table" | "card"
   const [page, setPage] = useState(1);
 
@@ -205,7 +206,8 @@ export default function ResignationListPage() {
   const filtered = useMemo(() => {
     return allResignations
       .filter((r) => {
-        if (r.is_active === false) return false; // soft-deleted records never shown here
+        if (activeFilter === "active" && r.is_active === false) return false;
+        if (activeFilter === "inactive" && r.is_active !== false) return false;
         if (statusFilter !== "all" && (r.status || "Pending") !== statusFilter) return false;
 
         const emp = employeeMap[r.employee_id];
@@ -222,7 +224,7 @@ export default function ResignationListPage() {
         return true;
       })
       .sort((a, b) => new Date(b.notice_date) - new Date(a.notice_date));
-  }, [allResignations, statusFilter, search, employeeMap, filterCompanyId, filterBranchId, filterDepartmentId, filterDesignationId]);
+  }, [allResignations, statusFilter, activeFilter, search, employeeMap, filterCompanyId, filterBranchId, filterDepartmentId, filterDesignationId]);
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -253,6 +255,16 @@ export default function ResignationListPage() {
       await deactivateMutation.mutateAsync(deleteTarget.id);
       showToast("Resignation deactivated", "success");
       setDeleteTarget(null);
+      refetch();
+    } catch (err) {
+      showToast(err.response?.data?.message || "Operation failed", "error");
+    }
+  };
+
+  const handleReactivate = async (r) => {
+    try {
+      await updateMutation.mutateAsync({ id: r.id, payload: { is_active: true } });
+      showToast("Resignation reactivated", "success");
       refetch();
     } catch (err) {
       showToast(err.response?.data?.message || "Operation failed", "error");
@@ -374,6 +386,21 @@ export default function ResignationListPage() {
               ))}
             </div>
           </div>
+
+          <div className="flex justify-end">
+            <div className="flex w-fit items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
+              {["active", "inactive", "all"].map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => { setActiveFilter(s); setPage(1); }}
+                  className={`rounded-md px-3 py-1.5 text-xs font-medium capitalize transition ${activeFilter === s ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white" : "text-slate-500 hover:text-slate-700 dark:text-slate-400"}`}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -457,11 +484,19 @@ export default function ResignationListPage() {
                             <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a2.121 2.121 0 013 3l-9.9 9.9-4.137 1.034 1.034-4.137 9.9-9.9z" />
                           </svg>
                         </TableIconButton>
-                        <TableIconButton title="Delete" onClick={() => setDeleteTarget(r)} tone="red">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 7h12M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m2 0v12a2 2 0 01-2 2H8a2 2 0 01-2-2V7h12z" />
-                          </svg>
-                        </TableIconButton>
+                        {r.is_active !== false ? (
+                          <TableIconButton title="Delete" onClick={() => setDeleteTarget(r)} tone="red">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M6 7h12M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m2 0v12a2 2 0 01-2 2H8a2 2 0 01-2-2V7h12z" />
+                            </svg>
+                          </TableIconButton>
+                        ) : (
+                          <TableIconButton title="Reactivate" onClick={() => handleReactivate(r)} disabled={updateMutation.isPending} tone="emerald">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M4 12a8 8 0 018-8 8.5 8.5 0 017 4M20 4v5h-5M20 12a8 8 0 01-8 8 8.5 8.5 0 01-7-4M4 20v-5h5" />
+                            </svg>
+                          </TableIconButton>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -532,9 +567,15 @@ export default function ResignationListPage() {
                     <button type="button" onClick={() => handleEdit(r)} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] font-semibold text-slate-700 transition-all hover:border-primary-200 hover:bg-primary-50 hover:text-primary-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-primary-500/40 dark:hover:bg-primary-500/10 dark:hover:text-primary-400">
                       Edit
                     </button>
-                    <button type="button" onClick={() => setDeleteTarget(r)} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-2 text-[11px] font-semibold text-red-600 transition-all hover:bg-red-50 dark:border-red-900/40 dark:bg-slate-800 dark:text-red-400 dark:hover:bg-red-500/10">
-                      Deactivate
-                    </button>
+                    {r.is_active !== false ? (
+                      <button type="button" onClick={() => setDeleteTarget(r)} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-2 text-[11px] font-semibold text-red-600 transition-all hover:bg-red-50 dark:border-red-900/40 dark:bg-slate-800 dark:text-red-400 dark:hover:bg-red-500/10">
+                        Deactivate
+                      </button>
+                    ) : (
+                      <button type="button" onClick={() => handleReactivate(r)} disabled={updateMutation.isPending} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-emerald-200 bg-white px-3 py-2 text-[11px] font-semibold text-emerald-600 transition-all hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-emerald-900/40 dark:bg-slate-800 dark:text-emerald-400 dark:hover:bg-emerald-500/10">
+                        Reactivate
+                      </button>
+                    )}
                   </div>
 
                   {status === "Approved" && (
