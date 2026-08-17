@@ -650,18 +650,12 @@ export default function PromotionListPage() {
         </div>
       </div>
 
-      {/* ADD / EDIT MODAL */}
-      <Modal
-        open={modalOpen}
-        onClose={closeModal}
-        title={editing ? "Edit Promotion" : "Add Promotion"}
-        footer={
-          <>
-            <Button variant="secondary" onClick={closeModal} disabled={isSaving}>Cancel</Button>
-            <Button type="submit" form="promotions-form" loading={isSaving} disabled={isSaving}>{editing ? "Save" : "Submit"}</Button>
-          </>
-        }
-      >
+      {/* ADD / EDIT MODAL — no custom footer here: GenericForm (used by
+          PromotionForm) renders its own submit/cancel button internally,
+          unlike DocumentForm which has none. Adding a second footer button
+          bound to the same form id was redundant and could double-trigger
+          submission. */}
+      <Modal open={modalOpen} onClose={closeModal} title={editing ? "Edit Promotion" : "Add Promotion"}>
         <PromotionForm formId="promotions-form" initialData={editing || {}} onSubmit={handleSubmit} loading={isSaving} />
       </Modal>
 
