@@ -7,7 +7,11 @@ promotions_bp = register_crud_blueprint(
     create_fields=["employee_id", "from_designation_id", "to_designation_id", "effective_date", "remarks", "is_active"],
     search_fields=["remarks"],
     url_prefix_singular="",
-    editable=False,
-    deletable=False,
+    # Editable/deletable now enabled — register_crud_blueprint already
+    # implements PUT (update_item) and DELETE (soft-delete via
+    # is_active=False) generically, so no custom blueprint code is needed
+    # here, unlike documents_bp.py (which needed multipart file handling).
+    editable=True,
+    deletable=True,
     allowed_roles=["admin", "HR", "HR Director", "HR Manager", "HR Executive"],
 )

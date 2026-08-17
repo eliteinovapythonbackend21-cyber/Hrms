@@ -2,19 +2,19 @@ import { useEffect, useState } from "react";
 import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
 import { useEmployeeOptions } from "@/hooks/useLookupOptions";
+import { getDocumentTypeOptions } from "./useDocuments";
 import { isRequired } from "@/utils/validators";
 
 const ALLOWED_TYPES = ["image/png", "image/jpeg", "image/gif", "application/pdf"];
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
-const DOCUMENT_TYPE_OPTIONS = [
-  { value: "Aadhaar", label: "Aadhaar" },
-  { value: "Bank Details", label: "Bank Details" },
-  { value: "Experience Certificate", label: "Experience Certificate" },
-];
-
-export default function DocumentForm({ formId = "employee-documents-form", initialData, onSubmit, loading }) {
+export default function DocumentForm({ formId = "employee-documents-form", initialData, onSubmit, loading, isEdit, lockEmployee }) {
   const employeeOptions = useEmployeeOptions();
+  // Reads from the shared documentTypes module (base + any custom types
+  // added from the list page's "+" control) — this form only consumes the
+  // list, it doesn't add to it.
+  const documentTypeOptions = getDocumentTypeOptions();
+
   const [form, setForm] = useState({
     employee_id: initialData?.employee_id || "",
     doc_type: initialData?.doc_type || "",
@@ -64,15 +64,18 @@ export default function DocumentForm({ formId = "employee-documents-form", initi
 
   const handlePreview = () => {
     if (previewUrl) window.open(previewUrl, "_blank", "noopener,noreferrer");
+    else if (initialData?.file_url) window.open(initialData.file_url, "_blank", "noopener,noreferrer");
   };
+
+  const hasExistingFile = isEdit && !!initialData?.file_url;
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (loading) return; // block re-entry while a create/update is already in flight
+    if (loading) return;
     const errs = {};
     if (!isRequired(form.employee_id)) errs.employee_id = "Employee is required";
     if (!isRequired(form.doc_type)) errs.doc_type = "Document Type is required";
-    if (!file) errs.file = "File is required";
+    if (!file && !hasExistingFile) errs.file = "File is required";
     setErrors(errs);
     if (Object.keys(errs).length > 0) return;
     onSubmit({ ...form, file });
@@ -88,13 +91,14 @@ export default function DocumentForm({ formId = "employee-documents-form", initi
         options={employeeOptions}
         error={errors.employee_id}
         required
+        disabled={lockEmployee}
       />
       <Select
         label="Document Type"
         name="doc_type"
         value={form.doc_type}
         onChange={handleChange}
-        options={DOCUMENT_TYPE_OPTIONS}
+        options={documentTypeOptions}
         error={errors.doc_type}
         required
       />
@@ -102,7 +106,7 @@ export default function DocumentForm({ formId = "employee-documents-form", initi
       <div className="mb-4">
         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
           File
-          <span className="text-red-500 ml-1">*</span>
+          {!hasExistingFile && <span className="text-red-500 ml-1">*</span>}
         </label>
 
         {!file ? (
@@ -116,7 +120,9 @@ export default function DocumentForm({ formId = "employee-documents-form", initi
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 9l5-5 5 5M12 4v12" />
             </svg>
-            <span className="text-sm text-slate-600 dark:text-slate-300">Click to upload an image or PDF</span>
+            <span className="text-sm text-slate-600 dark:text-slate-300">
+              {hasExistingFile ? "Click to replace the current file" : "Click to upload an image or PDF"}
+            </span>
             <span className="text-xs text-slate-400 dark:text-slate-500">PNG, JPG, GIF or PDF, up to 5 MB</span>
             <input
               type="file"
@@ -164,6 +170,15 @@ export default function DocumentForm({ formId = "employee-documents-form", initi
               Remove
             </button>
           </div>
+        )}
+        {hasExistingFile && !file && (
+          <p className="mt-1 text-xs text-slate-400">
+            Keeping the current file.{" "}
+            <button type="button" onClick={handlePreview} className="text-primary-600 hover:underline">
+              View it
+            </button>
+            .
+          </p>
         )}
         {errors.file && <p className="mt-1 text-xs text-red-500">{errors.file}</p>}
       </div>

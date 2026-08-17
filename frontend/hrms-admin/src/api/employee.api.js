@@ -16,6 +16,15 @@ export const employeeLifecycleApi = {
       axiosClient.post(L.DOCUMENTS, toFormData(payload), {
         headers: { "Content-Type": undefined },
       }),
+    // Edit needs the same multipart treatment as create — the generic
+    // update() from createCrudApi sends plain JSON, which silently breaks
+    // (or gets rejected) once `payload.file` is a File object or null. See
+    // documents/documents_bp.py's update_document: it reads
+    // request.form/request.files, i.e. expects multipart, same as create.
+    update: (id, payload) =>
+      axiosClient.put(L.DOCUMENTS_ITEM(id), toFormData(payload), {
+        headers: { "Content-Type": undefined },
+      }),
   },
   permissions: createCrudApi({ listUrl: L.PERMISSIONS, itemUrl: L.PERMISSIONS_ITEM }),
   overtime: createCrudApi({ listUrl: L.OVERTIME, itemUrl: L.OVERTIME_ITEM }),
