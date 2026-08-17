@@ -19,7 +19,9 @@ import Avatar from "@/components/ui/Avatar";
 import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
 import ConfirmDialog from "@/components/feedback/ConfirmDialog";
+import TableToolbar from "@/components/table/TableToolbar";
 import { useToast } from "@/components/feedback/Toast";
+import { useTableExport } from "@/hooks/useTableExport";
 
 const getExtension = (url = "") => url.split("?")[0].split(".").pop()?.toLowerCase() || "";
 const isImage = (url) => ["png", "jpg", "jpeg", "gif"].includes(getExtension(url));
@@ -42,9 +44,8 @@ const DocTypeBadge = ({ type }) => (
 );
 
 // Small "+" trigger placed right next to a Document Type badge — used in
-// both card view and table view. Opens the shared "Add Document Type"
-// modal rather than an inline popover, since it needs to work reliably
-// anchored inside a <td> as well as a card.
+// both card view and table view. Opens Add Document with that row's
+// employee already selected and locked.
 const AddTypeTrigger = ({ onClick }) => (
   <button
     type="button"
@@ -171,10 +172,17 @@ function EmployeeDetailsModal({ employee, onClose }) {
   );
 }
 
-
-
 const PAGE_SIZE = 9;
 const TABLE_PAGE_SIZE = 10;
+
+// Plain field labels for Excel/PDF export — reflects raw underlying data
+// rather than the badges/icons built for on-screen display.
+const EXPORT_COLUMNS = [
+  { key: "employee_id", label: "Employee ID" },
+  { key: "doc_type", label: "Document Type" },
+  { key: "file_url", label: "File URL" },
+  { key: "is_active", label: "Active" },
+];
 
 const TableIconButton = ({ onClick, title, disabled, tone = "primary", children }) => {
   const tones = {
@@ -200,7 +208,7 @@ const TableIconButton = ({ onClick, title, disabled, tone = "primary", children 
 export default function DocumentListPage() {
   const { showToast } = useToast();
 
-  const { data, isLoading, isError, refetch } = useCrudList(
+  const { data, isLoading, isFetching, isError, refetch } = useCrudList(
     "employee-documents-raw",
     employeeLifecycleApi.documents,
     { page: 1, per_page: 1000 }
@@ -250,6 +258,14 @@ export default function DocumentListPage() {
   const [statusFilter, setStatusFilter] = useState("active");
   const [viewMode, setViewMode] = useState("card"); // "card" | "table"
   const [page, setPage] = useState(1);
+
+  const { exporting, exportExcel, exportPDF } = useTableExport({
+    fetchAll: employeeLifecycleApi.documents.list,
+    queryParams: { search: search || undefined },
+    exportColumns: EXPORT_COLUMNS,
+    filename: "employee-documents",
+    title: "Employee Documents",
+  });
 
   const [documentTypeOptions, setDocumentTypeOptions] = useState(getDocumentTypeOptions());
 
@@ -426,10 +442,13 @@ export default function DocumentListPage() {
             <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">Documents uploaded per employee</p>
           </div>
         </div>
-        <Button type="button" onClick={handleAdd} className="h-10 w-full px-4 sm:w-auto">
-          <span className="mr-1.5 text-lg">+</span>
-          Add Document
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <TableToolbar onRefresh={refetch} refreshing={isFetching} onExportExcel={exportExcel} onExportPDF={exportPDF} exporting={exporting} />
+          <Button type="button" onClick={handleAdd} className="h-10 w-full px-4 sm:w-auto">
+            <span className="mr-1.5 text-lg">+</span>
+            Add Document
+          </Button>
+        </div>
       </div>
 
       {/* STAT CARDS */}

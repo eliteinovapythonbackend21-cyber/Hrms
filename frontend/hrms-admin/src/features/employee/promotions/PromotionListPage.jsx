@@ -5,8 +5,11 @@ import Avatar from "@/components/ui/Avatar";
 import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
 import ConfirmDialog from "@/components/feedback/ConfirmDialog";
+import TableToolbar from "@/components/table/TableToolbar";
 import { useToast } from "@/components/feedback/Toast";
+import { useTableExport } from "@/hooks/useTableExport";
 
+import { employeeLifecycleApi } from "@/api/employee.api";
 import { employeesApi } from "@/api/employees.api";
 import { masterApi } from "@/api/master.api";
 import { useCompanies } from "@/features/master/company/useCompanies";
@@ -144,13 +147,25 @@ const TableIconButton = ({ onClick, title, disabled, tone = "primary", children 
 
 const PAGE_SIZE = 10;
 
+// Plain field labels for Excel/PDF export — separate from the table's
+// visual columns since export should reflect raw underlying data (IDs,
+// dates), not the badges/tenure calculations built for on-screen display.
+const EXPORT_COLUMNS = [
+  { key: "employee_id", label: "Employee ID" },
+  { key: "from_designation_id", label: "From Designation" },
+  { key: "to_designation_id", label: "To Designation" },
+  { key: "effective_date", label: "Effective Date" },
+  { key: "remarks", label: "Remarks" },
+  { key: "is_active", label: "Active" },
+];
+
 export default function PromotionListPage() {
   const { showToast } = useToast();
 
   // Full (unpaginated) dataset — used for: the stat cards, filtering, and
   // building each employee's promotion timeline (needed to compute "time
   // in previous role" / "time in new role" per row).
-  const { data: allData, isLoading, isError, refetch } = usePromotions({ page: 1, per_page: 1000 });
+  const { data: allData, isLoading, isFetching, isError, refetch } = usePromotions({ page: 1, per_page: 1000 });
   const allPromotions = allData?.items || [];
 
   const { data: employeesData } = useQuery({
@@ -213,6 +228,14 @@ export default function PromotionListPage() {
   const [statusFilter, setStatusFilter] = useState("active");
   const [viewMode, setViewMode] = useState("table"); // "table" | "card"
   const [page, setPage] = useState(1);
+
+  const { exporting, exportExcel, exportPDF } = useTableExport({
+    fetchAll: employeeLifecycleApi.promotions.list,
+    queryParams: { search: search || undefined },
+    exportColumns: EXPORT_COLUMNS,
+    filename: "promotions",
+    title: "Promotions",
+  });
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -351,10 +374,13 @@ export default function PromotionListPage() {
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Promotions</h1>
           <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">Employee promotion history</p>
         </div>
-        <Button type="button" onClick={handleAdd} className="h-10 w-full px-4 sm:w-auto">
-          <span className="mr-1.5 text-lg">+</span>
-          Add Promotion
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <TableToolbar onRefresh={refetch} refreshing={isFetching} onExportExcel={exportExcel} onExportPDF={exportPDF} exporting={exporting} />
+          <Button type="button" onClick={handleAdd} className="h-10 w-full px-4 sm:w-auto">
+            <span className="mr-1.5 text-lg">+</span>
+            Add Promotion
+          </Button>
+        </div>
       </div>
 
       {/* STAT CARDS */}
