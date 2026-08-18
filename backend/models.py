@@ -1034,13 +1034,43 @@ class Resignation(TimestampMixin, db.Model):
     notice_date = db.Column(db.Date, nullable=False)
     last_working_date = db.Column(db.Date, nullable=False)
     reason = db.Column(db.Text)
+    accomplishments = db.Column(db.Text)
+    previous_company_id = db.Column(db.Integer,db.ForeignKey("companies.id"),nullable=True)
+    previous_branch_id = db.Column(db.Integer,db.ForeignKey("branches.id"),nullable=True)
+    previous_department_id = db.Column(db.Integer,db.ForeignKey("departments.id"),nullable=True)
+    previous_designation_id = db.Column(db.Integer,db.ForeignKey("designations.id"),nullable=True)
     status = db.Column(db.String(20), default="Pending")
     is_active = db.Column(db.Boolean, default=True)
     employee = db.relationship("Employee")
+    previous_company = db.relationship("Company",foreign_keys=[previous_company_id])
+    previous_branch = db.relationship("Branch",foreign_keys=[previous_branch_id])
+    previous_department = db.relationship("Department",foreign_keys=[previous_department_id])
+    previous_designation = db.relationship("Designation",foreign_keys=[previous_designation_id])
+
 
     def to_dict(self):
         data = super().to_dict()
-        data["employee"] = _summary(self.employee, ["id", "employee_code", "first_name", "last_name"])
+
+        data["employee"] = _summary(self.employee,["id","employee_code","first_name","last_name",],)
+        data["previous_organization"] = {
+            "company": _summary(
+                self.previous_company,
+                ["id", "name"]
+            ),
+            "branch": _summary(
+                self.previous_branch,
+                ["id", "name"]
+            ),
+            "department": _summary(
+                self.previous_department,
+                ["id", "department_name", "name"]
+            ),
+            "designation": _summary(
+                self.previous_designation,
+                ["id", "designation_name", "name"]
+            ),
+        }
+
         return data
 
 

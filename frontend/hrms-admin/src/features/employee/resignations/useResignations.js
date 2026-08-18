@@ -1,8 +1,46 @@
 import { employeeLifecycleApi } from "@/api/employee.api";
-import { useCrudList, useCrudCreate, useCrudUpdate, useCrudRemove } from "@/hooks/useCrudResource";
+
+import {
+  useCrudList,
+  useCrudCreate,
+  useCrudUpdate,
+  useCrudRemove,
+} from "@/hooks/useCrudResource";
 
 const api = employeeLifecycleApi.resignations;
-export const useResignations = (params) => useCrudList("resignations", api, params);
-export const useCreateResignation = () => useCrudCreate("resignations", api);
-export const useUpdateResignation = () => useCrudUpdate("resignations", api);
-export const useDeactivateResignation = () => useCrudRemove("resignations", api);
+
+/**
+ * Resignation list
+ */
+export const useResignations = (params = {}) => {
+  return useCrudList("resignations", api, params);
+};
+
+/**
+ * Create resignation
+ */
+export const useCreateResignation = () => {
+  return useCrudCreate("resignations", api);
+};
+
+/**
+ * Update resignation
+ *
+ * Used for:
+ * - editing resignation details
+ * - approving resignation
+ * - rejecting resignation
+ * - reactivating deactivated resignation
+ */
+export const useUpdateResignation = () => {
+  return useCrudUpdate("resignations", api);
+};
+
+/**
+ * Deactivate resignation
+ *
+ * This performs the existing soft-delete behavior.
+ */
+export const useDeactivateResignation = () => {
+  return useCrudRemove("resignations", api);
+};
