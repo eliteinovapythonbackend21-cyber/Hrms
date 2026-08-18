@@ -1030,44 +1030,122 @@ class Resignation(TimestampMixin, db.Model):
     __tablename__ = "resignations"
 
     id = db.Column(db.Integer, primary_key=True)
-    employee_id = db.Column(db.Integer, db.ForeignKey("employees.id"), nullable=False)
+
+    employee_id = db.Column(
+        db.Integer,
+        db.ForeignKey("employees.id"),
+        nullable=False,
+    )
+
     notice_date = db.Column(db.Date, nullable=False)
     last_working_date = db.Column(db.Date, nullable=False)
+
     reason = db.Column(db.Text)
     accomplishments = db.Column(db.Text)
-    previous_company_id = db.Column(db.Integer,db.ForeignKey("companies.id"),nullable=True)
-    previous_branch_id = db.Column(db.Integer,db.ForeignKey("branches.id"),nullable=True)
-    previous_department_id = db.Column(db.Integer,db.ForeignKey("departments.id"),nullable=True)
-    previous_designation_id = db.Column(db.Integer,db.ForeignKey("designations.id"),nullable=True)
-    status = db.Column(db.String(20), default="Pending")
-    is_active = db.Column(db.Boolean, default=True)
-    employee = db.relationship("Employee")
-    previous_company = db.relationship("Company",foreign_keys=[previous_company_id])
-    previous_branch = db.relationship("Branch",foreign_keys=[previous_branch_id])
-    previous_department = db.relationship("Department",foreign_keys=[previous_department_id])
-    previous_designation = db.relationship("Designation",foreign_keys=[previous_designation_id])
 
+    # Previous organization details
+    previous_company_id = db.Column(
+        db.Integer,
+        db.ForeignKey("companies.id"),
+        nullable=True,
+    )
+
+    previous_branch_id = db.Column(
+        db.Integer,
+        db.ForeignKey("branches.id"),
+        nullable=True,
+    )
+
+    previous_department_id = db.Column(
+        db.Integer,
+        db.ForeignKey("departments.id"),
+        nullable=True,
+    )
+
+    previous_designation_id = db.Column(
+        db.Integer,
+        db.ForeignKey("designations.id"),
+        nullable=True,
+    )
+
+    status = db.Column(
+        db.String(20),
+        default="Pending",
+    )
+
+    is_active = db.Column(
+        db.Boolean,
+        default=True,
+    )
+
+    # Employee
+    employee = db.relationship(
+        "Employee",
+        foreign_keys=[employee_id],
+    )
+
+    # Previous organization
+    previous_company = db.relationship(
+        "Company",
+        foreign_keys=[previous_company_id],
+    )
+
+    previous_branch = db.relationship(
+        "Branch",
+        foreign_keys=[previous_branch_id],
+    )
+
+    previous_department = db.relationship(
+        "Department",
+        foreign_keys=[previous_department_id],
+    )
+
+    previous_designation = db.relationship(
+        "Designation",
+        foreign_keys=[previous_designation_id],
+    )
 
     def to_dict(self):
         data = super().to_dict()
 
-        data["employee"] = _summary(self.employee,["id","employee_code","first_name","last_name",],)
+        data["employee"] = _summary(
+            self.employee,
+            [
+                "id",
+                "employee_code",
+                "first_name",
+                "last_name",
+            ],
+        )
+
         data["previous_organization"] = {
             "company": _summary(
                 self.previous_company,
-                ["id", "name"]
+                [
+                    "id",
+                    "name",
+                ],
             ),
             "branch": _summary(
                 self.previous_branch,
-                ["id", "name"]
+                [
+                    "id",
+                    "name",
+                ],
             ),
             "department": _summary(
                 self.previous_department,
-                ["id", "department_name", "name"]
+                [
+                    "id",
+                    "department_name",
+                ],
             ),
             "designation": _summary(
                 self.previous_designation,
-                ["id", "designation_name", "name"]
+                [
+                    "id",
+                    "designation_name",
+                ],
             ),
         }
 
