@@ -1254,7 +1254,7 @@ export default function ResignationListPage() {
         /* ---------------------------------------------------------------- */
         /* TABLE                                                             */
         /* ---------------------------------------------------------------- */
-        <div className="min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <div className="min-w-0 overflow-x-auto overflow-y-visible rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
           <table className="w-full table-fixed text-left text-sm">
             <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-400">
               <tr>
@@ -1293,7 +1293,7 @@ export default function ResignationListPage() {
             </thead>
 
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {paged.map((resignation) => {
+              {paged.map((resignation, rowIndex) => {
                 const employee =
                   employeeMap[
                     resignation.employee_id
@@ -1320,6 +1320,11 @@ export default function ResignationListPage() {
                     resignation.notice_date,
                     resignation.last_working_date
                   );
+
+                // Rows near the top of the visible page don't have enough
+                // room to show the tooltip above the cell, so flip it to
+                // open downwards for the first couple of rows instead.
+                const openBelow = rowIndex < 2;
 
                 return (
                   <tr
@@ -1418,7 +1423,13 @@ export default function ResignationListPage() {
                         </p>
 
                         {resignation.accomplishments && (
-                          <div className="pointer-events-none absolute bottom-full left-0 z-50 mb-2 hidden w-[280px] rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-600 opacity-0 shadow-xl transition-all group-hover:block group-hover:opacity-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+                          <div
+                            className={`pointer-events-none absolute right-0 z-50 hidden max-h-64 w-[280px] overflow-y-auto rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-600 opacity-0 shadow-xl transition-all group-hover:pointer-events-auto group-hover:block group-hover:opacity-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 ${
+                              openBelow
+                                ? "top-full mt-2"
+                                : "bottom-full mb-2"
+                            }`}
+                          >
                             <p className="mb-1 text-[9px] font-semibold uppercase tracking-wide text-slate-400">
                               Overall Records /
                               Accomplishments

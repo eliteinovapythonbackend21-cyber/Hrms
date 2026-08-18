@@ -9,9 +9,9 @@ import Avatar from "@/components/ui/Avatar";
 import ThemeToggle from "@/theme/ThemeToggle";
 import logoMark from "@/assets/logo-mark.svg";
 
-const Icon = ({ name }) => {
+const Icon = ({ name, className = "h-5 w-5" }) => {
   const icons = {
-    dashboard: "M3 12l9-9 9 9M5 10v10h14V10",
+    dashboard: "M3 10.5 12 3l9 7.5M5 9.5V20a1 1 0 001 1h4v-6h4v6h4a1 1 0 001-1V9.5",
     users: "M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4-4m4 4a4 4 0 10-4-4",
     employees: "M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4-4m4 4a4 4 0 10-4-4",
     attendance: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4",
@@ -30,91 +30,164 @@ const Icon = ({ name }) => {
     collapse: "M15 19l-7-7 7-7",
     expand: "M9 5l7 7-7 7",
   };
+
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      className="h-5 w-5"
+      className={className}
       fill="none"
       viewBox="0 0 24 24"
       stroke="currentColor"
       strokeWidth={1.8}
     >
-      <path strokeLinecap="round" strokeLinejoin="round" d={icons[name] || icons.dashboard} />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d={icons[name] || icons.dashboard}
+      />
     </svg>
   );
 };
 
 const navItemClass = (collapsed) => ({ isActive }) =>
-  `group flex items-center gap-3 rounded-md text-sm font-bold transition-colors border-l-2 ${
-    collapsed ? "justify-center px-2 py-2.5 lg:mx-1" : "px-3 py-2"
-  } ${
+  [
+    "group relative flex items-center gap-3 rounded-xl text-sm transition-all duration-200",
+    "border border-transparent",
+    collapsed
+      ? "justify-center px-2 py-3 lg:mx-1"
+      : "px-3.5 py-2.5",
     isActive
-      ? "bg-primary-500/10 text-primary-600 border-primary-500 dark:text-primary-300 dark:border-primary-400"
-      : "text-slate-600 dark:text-slate-300 border-transparent hover:bg-slate-100 dark:hover:bg-white/5"
-  }`;
+      ? [
+          "bg-gradient-to-r from-primary-500/15 via-primary-500/8 to-transparent",
+          "text-primary-700 dark:text-primary-300",
+          "border-primary-500/20 dark:border-primary-400/10",
+          "shadow-sm shadow-primary-500/5",
+        ].join(" ")
+      : [
+          "text-slate-600 dark:text-slate-300",
+          "hover:bg-slate-100/90 dark:hover:bg-white/[0.055]",
+          "hover:text-slate-900 dark:hover:text-white",
+        ].join(" "),
+  ].join(" ");
 
 function SubNav({ item, closeSidebar, collapsed, userRole }) {
   const location = useLocation();
-  const children = item.children.filter((c) => !c.roles || c.roles.includes(userRole));
-  const childActive = children.some((c) => location.pathname.startsWith(c.path));
+
+  const children = item.children.filter(
+    (child) => !child.roles || child.roles.includes(userRole)
+  );
+
+  const childActive = children.some((child) =>
+    location.pathname.startsWith(child.path)
+  );
+
   const [open, setOpen] = useState(childActive);
 
-  if (children.length === 0) return null;
+  if (!children.length) return null;
 
   if (collapsed) {
-    // No room for an inline flyout in the icon rail — jump straight to the
-    // first (role-visible) child (e.g. Master Data -> Departments) instead.
     return (
       <NavLink
         to={children[0].path}
         onClick={closeSidebar}
         title={item.label}
-        className={navItemClass(true)({ isActive: childActive })}
+        className={navItemClass(true)({
+          isActive: childActive,
+        })}
       >
+        {childActive && (
+          <span className="absolute left-0 top-2 bottom-2 w-0.5 rounded-full bg-primary-500" />
+        )}
+
         <Icon name={item.icon} />
       </NavLink>
     );
   }
 
   return (
-    <div>
+    <div className="relative">
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
-        className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-bold transition-colors border-l-2 ${
+        className={[
+          "w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl",
+          "text-sm transition-all duration-200 border border-transparent",
           childActive
-            ? "text-primary-600 dark:text-primary-300 border-primary-500 dark:border-primary-400"
-            : "text-slate-600 dark:text-slate-300 border-transparent hover:bg-slate-100 dark:hover:bg-white/5"
-        }`}
+            ? "text-primary-700 dark:text-primary-300 bg-primary-500/8"
+            : "text-slate-600 dark:text-slate-300 hover:bg-slate-100/90 dark:hover:bg-white/[0.055]",
+        ].join(" ")}
       >
-        <Icon name={item.icon} />
-        <span className="flex-1 text-left">{item.label}</span>
+        <span
+          className={[
+            "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg",
+            childActive
+              ? "bg-primary-500/15 text-primary-600 dark:text-primary-300"
+              : "bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-slate-400",
+          ].join(" ")}
+        >
+          <Icon name={item.icon} className="h-[18px] w-[18px]" />
+        </span>
+
+        <span className="flex-1 text-left font-medium">
+          {item.label}
+        </span>
+
         <svg
-          className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`}
+          className={`h-4 w-4 transition-transform duration-200 ${
+            open ? "rotate-180" : ""
+          }`}
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
           strokeWidth={2}
         >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M19 9l-7 7-7-7"
+          />
         </svg>
       </button>
-      {open && (
-        <div className="mt-1 ml-4 pl-4 border-l border-slate-200 dark:border-white/10 space-y-1">
-          {children.map((child) => (
-            <NavLink key={child.path} to={child.path} onClick={closeSidebar} className={navItemClass(false)}>
-              <Icon name={child.icon} />
-              {child.label}
-            </NavLink>
-          ))}
+
+      <div
+        className={[
+          "grid transition-all duration-200",
+          open
+            ? "grid-rows-[1fr] opacity-100"
+            : "grid-rows-[0fr] opacity-0",
+        ].join(" ")}
+      >
+        <div className="overflow-hidden">
+          <div className="mt-1.5 ml-5 pl-5 border-l border-slate-200 dark:border-white/10 space-y-1">
+            {children.map((child) => (
+              <NavLink
+                key={child.path}
+                to={child.path}
+                onClick={closeSidebar}
+                className={navItemClass(false)}
+              >
+                <Icon
+                  name={child.icon}
+                  className="h-[17px] w-[17px] shrink-0"
+                />
+                <span>{child.label}</span>
+              </NavLink>
+            ))}
+          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }
 
 export default function Sidebar() {
-  const { sidebarOpen, closeSidebar, sidebarCollapsed, toggleSidebarCollapsed } = useUI();
+  const {
+    sidebarOpen,
+    closeSidebar,
+    sidebarCollapsed,
+    toggleSidebarCollapsed,
+  } = useUI();
+
   const user = getUser();
   const currentUser = useCurrentUser();
 
@@ -126,31 +199,86 @@ export default function Sidebar() {
     <>
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-30 lg:hidden"
+          className="fixed inset-0 bg-slate-950/50 backdrop-blur-sm z-30 lg:hidden"
           onClick={closeSidebar}
           aria-hidden="true"
         />
       )}
+
       <aside
-        className={`fixed lg:static inset-y-0 left-0 z-40 w-64 ${sidebarCollapsed ? "lg:w-[4.5rem]" : "lg:w-64"} bg-white dark:bg-white/[0.03] dark:backdrop-blur-xl border-r border-slate-200 dark:border-white/10 transform transition-all duration-200 flex flex-col ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-        }`}
+        className={[
+          "fixed lg:static inset-y-0 left-0 z-40",
+          "w-64",
+          sidebarCollapsed ? "lg:w-[4.75rem]" : "lg:w-64",
+          "bg-white/95 dark:bg-[#08090d]/95",
+          "backdrop-blur-2xl",
+          "border-r border-slate-200/80 dark:border-white/[0.08]",
+          "transform transition-all duration-300 ease-out",
+          "flex flex-col",
+          sidebarOpen
+            ? "translate-x-0"
+            : "-translate-x-full lg:translate-x-0",
+        ].join(" ")}
       >
-        <div className={`h-16 flex items-center gap-2.5 border-b border-slate-200 dark:border-white/10 shrink-0 ${sidebarCollapsed ? "lg:justify-center px-4 lg:px-0" : "px-4"}`}>
-          <img src={logoMark} alt="" className="h-9 w-9 shrink-0" />
-          <div className={`leading-tight ${sidebarCollapsed ? "lg:hidden" : ""}`}>
-            <p className="text-base font-bold text-slate-900 dark:text-white tracking-tight">
+        {/* BRAND */}
+        <div
+          className={[
+            "h-16 flex items-center gap-3",
+            "border-b border-slate-200/80 dark:border-white/[0.08]",
+            "shrink-0",
+            sidebarCollapsed
+              ? "lg:justify-center px-4 lg:px-0"
+              : "px-4",
+          ].join(" ")}
+        >
+          <div className="relative shrink-0">
+            <div className="absolute inset-0 rounded-xl bg-primary-500/20 blur-md" />
+            <div className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-white dark:bg-white/[0.06] border border-slate-200 dark:border-white/10 shadow-sm">
+              <img
+                src={logoMark}
+                alt="HRMS"
+                className="h-7 w-7"
+              />
+            </div>
+          </div>
+
+          <div
+            className={`leading-tight ${
+              sidebarCollapsed ? "lg:hidden" : ""
+            }`}
+          >
+            <p className="text-[15px] font-bold tracking-tight text-slate-900 dark:text-white">
               HRMS
             </p>
-            <p className="text-[11px] font-medium text-primary-600 dark:text-primary-400 uppercase tracking-wider">
-              Admin Panel
-            </p>
+
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <span className="h-1.5 w-1.5 rounded-full bg-primary-500" />
+              <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-[0.16em]">
+                Workspace
+              </p>
+            </div>
           </div>
         </div>
-        <nav className="flex-1 p-3 space-y-1 overflow-y-auto overflow-x-hidden">
+
+        {/* NAVIGATION */}
+        <nav className="flex-1 p-3 space-y-1 overflow-y-auto overflow-x-hidden scrollbar-thin">
+          {!sidebarCollapsed && (
+            <div className="px-3 pb-2 pt-1">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400 dark:text-slate-600">
+                Main Menu
+              </p>
+            </div>
+          )}
+
           {filteredNav.map((item) =>
             item.children ? (
-              <SubNav key={item.path} item={item} closeSidebar={closeSidebar} collapsed={sidebarCollapsed} userRole={user?.role} />
+              <SubNav
+                key={item.path}
+                item={item}
+                closeSidebar={closeSidebar}
+                collapsed={sidebarCollapsed}
+                userRole={user?.role}
+              />
             ) : (
               <NavLink
                 key={item.path}
@@ -159,37 +287,104 @@ export default function Sidebar() {
                 title={sidebarCollapsed ? item.label : undefined}
                 className={navItemClass(sidebarCollapsed)}
               >
-                <Icon name={item.icon} />
-                <span className={sidebarCollapsed ? "lg:hidden" : ""}>{item.label}</span>
+                {({ isActive }) => (
+                  <>
+                    {isActive && (
+                      <span className="absolute left-0 top-2 bottom-2 w-0.5 rounded-full bg-primary-500" />
+                    )}
+
+                    <span
+                      className={[
+                        "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-all",
+                        isActive
+                          ? "bg-primary-500/15 text-primary-600 dark:text-primary-300"
+                          : "text-slate-500 dark:text-slate-400 group-hover:bg-slate-200/70 dark:group-hover:bg-white/5",
+                      ].join(" ")}
+                    >
+                      <Icon
+                        name={item.icon}
+                        className="h-[18px] w-[18px]"
+                      />
+                    </span>
+
+                    <span
+                      className={
+                        sidebarCollapsed ? "lg:hidden font-medium" : "font-medium"
+                      }
+                    >
+                      {item.label}
+                    </span>
+                  </>
+                )}
               </NavLink>
             )
           )}
         </nav>
-        <div className={`shrink-0 border-t border-slate-200 dark:border-white/10 flex items-center gap-2.5 ${sidebarCollapsed ? "justify-center px-2 py-3" : "px-4 py-3"}`}>
-          <Avatar
-            name={currentUser?.username}
-            src={resolveUploadUrl(currentUser?.profile_picture?.url)}
-            size="sm"
-          />
-          <div className={`min-w-0 leading-tight ${sidebarCollapsed ? "lg:hidden" : ""}`}>
-            <p className="text-sm font-bold text-slate-700 dark:text-slate-200 truncate">
-              {currentUser?.username || "User"}
-            </p>
-            <p className="text-xs text-slate-500 dark:text-slate-400 capitalize truncate">
-              {currentUser?.role}
-            </p>
+
+        {/* USER AREA */}
+        <div className="shrink-0 border-t border-slate-200/80 dark:border-white/[0.08] p-3">
+          <div
+            className={[
+              "rounded-xl",
+              "bg-slate-50 dark:bg-white/[0.035]",
+              "border border-slate-200/70 dark:border-white/[0.06]",
+              "p-2",
+              "flex items-center gap-2.5",
+              sidebarCollapsed ? "lg:justify-center" : "",
+            ].join(" ")}
+          >
+            <div className="relative shrink-0">
+              <Avatar
+                name={currentUser?.username}
+                src={resolveUploadUrl(
+                  currentUser?.profile_picture?.url
+                )}
+                size="sm"
+              />
+              <span className="absolute -right-0.5 -bottom-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500 border-2 border-white dark:border-[#0b0c10]" />
+            </div>
+
+            <div
+              className={`min-w-0 leading-tight ${
+                sidebarCollapsed ? "lg:hidden" : ""
+              }`}
+            >
+              <p className="text-xs font-semibold text-slate-800 dark:text-slate-100 truncate">
+                {currentUser?.username || "User"}
+              </p>
+
+              <p className="text-[10px] text-slate-500 dark:text-slate-500 capitalize truncate mt-0.5">
+                {currentUser?.role || "Member"}
+              </p>
+            </div>
           </div>
         </div>
+
+        {/* COLLAPSE */}
         <button
           type="button"
           onClick={toggleSidebarCollapsed}
-          title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-          className="hidden lg:flex items-center justify-center gap-2 h-11 border-t border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 shrink-0"
+          title={
+            sidebarCollapsed
+              ? "Expand sidebar"
+              : "Collapse sidebar"
+          }
+          className="hidden lg:flex items-center justify-center gap-2 h-11 border-t border-slate-200/80 dark:border-white/[0.08] text-slate-500 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-300 hover:bg-slate-50 dark:hover:bg-white/[0.035] transition-colors shrink-0"
         >
-          <Icon name={sidebarCollapsed ? "expand" : "collapse"} />
-          {!sidebarCollapsed && <span className="text-xs font-medium">Collapse</span>}
+          <Icon
+            name={sidebarCollapsed ? "expand" : "collapse"}
+            className="h-[18px] w-[18px]"
+          />
+
+          {!sidebarCollapsed && (
+            <span className="text-[11px] font-medium">
+              Collapse sidebar
+            </span>
+          )}
         </button>
-        <div className="shrink-0 border-t border-slate-200 dark:border-white/10 px-3 py-2.5">
+
+        {/* THEME */}
+        <div className="shrink-0 border-t border-slate-200/80 dark:border-white/[0.08] px-3 py-2.5">
           <ThemeToggle collapsed={sidebarCollapsed} />
         </div>
       </aside>

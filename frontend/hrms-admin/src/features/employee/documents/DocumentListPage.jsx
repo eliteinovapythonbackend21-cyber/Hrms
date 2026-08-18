@@ -41,7 +41,7 @@ const isPdf = (url) => getExtension(url) === "pdf";
 const DocTypeIcon = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
-    className="h-3 w-3"
+    className="h-2.5 w-2.5"
     fill="none"
     viewBox="0 0 24 24"
     stroke="currentColor"
@@ -56,7 +56,7 @@ const DocTypeIcon = () => (
 );
 
 const DocTypeBadge = ({ type }) => (
-  <span className="inline-flex items-center gap-1.5 rounded-full bg-primary-50 px-2.5 py-1 text-xs font-medium text-primary-700 ring-1 ring-inset ring-primary-600/20 dark:bg-primary-500/10 dark:text-primary-400 dark:ring-primary-400/30">
+  <span className="inline-flex items-center gap-1 rounded-full bg-primary-50 px-2 py-0.5 text-[11px] font-medium text-primary-700 ring-1 ring-inset ring-primary-600/20 dark:bg-primary-500/10 dark:text-primary-400 dark:ring-primary-400/30">
     <DocTypeIcon />
     {type || "Document"}
   </span>
@@ -66,13 +66,13 @@ const DocTypeBadge = ({ type }) => (
 /* FILE ICON                                                                   */
 /* -------------------------------------------------------------------------- */
 
-const FileTypeIcon = ({ size = "h-8 w-8" }) => (
+const FileTypeIcon = ({ size = "h-7 w-7" }) => (
   <div
     className={`flex ${size} shrink-0 items-center justify-center rounded-md bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-300`}
   >
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      className="h-4 w-4"
+      className="h-3.5 w-3.5"
       fill="none"
       viewBox="0 0 24 24"
       stroke="currentColor"
@@ -126,19 +126,19 @@ const buildFilename = (row, url, contentType) => {
 
 function StatCard({ icon, value, label }) {
   return (
-    <div className="h-[100px] rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition hover:shadow-md dark:border-slate-700 dark:bg-slate-900">
+    <div className="h-[76px] rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 shadow-sm transition hover:shadow-md dark:border-slate-700 dark:bg-slate-900">
       <div className="flex h-full items-center justify-between">
         <div className="min-w-0">
-          <p className="truncate text-xs font-medium text-slate-500 dark:text-slate-400">
+          <p className="truncate text-[11px] font-medium text-slate-500 dark:text-slate-400">
             {label}
           </p>
 
-          <p className="mt-1 text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+          <p className="mt-0.5 text-xl font-bold tracking-tight text-slate-900 dark:text-white">
             {value}
           </p>
         </div>
 
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
           {icon}
         </div>
       </div>
@@ -175,7 +175,7 @@ const HierarchyTrail = ({
     <div className="flex flex-wrap items-center gap-1">
       {steps.map((step, i) => (
         <div key={i} className="flex items-center gap-1">
-          <span className="rounded-full bg-sky-50 px-2 py-0.5 text-[10px] font-medium text-sky-700 dark:bg-sky-500/10 dark:text-sky-400">
+          <span className="rounded-full bg-sky-50 px-1.5 py-0.5 text-[10px] font-medium text-sky-700 dark:bg-sky-500/10 dark:text-sky-400">
             {step}
           </span>
 
@@ -209,7 +209,7 @@ function DocumentsOverview({ docs }) {
         {docs.slice(0, 6).map((d) => (
           <span
             key={d.id}
-            className={`h-2 w-2 rounded-full ${
+            className={`h-1.5 w-1.5 rounded-full ${
               d.is_active !== false
                 ? "bg-primary-500"
                 : "bg-slate-300 dark:bg-slate-600"
@@ -224,12 +224,12 @@ function DocumentsOverview({ docs }) {
         )}
       </div>
 
-      <div className="pointer-events-none invisible absolute left-0 top-full z-20 mt-2 w-56 rounded-lg border border-slate-200 bg-white p-2 opacity-0 shadow-lg transition-opacity duration-150 group-hover/docs:visible group-hover/docs:opacity-100 dark:border-slate-700 dark:bg-slate-800">
+      <div className="pointer-events-none invisible absolute left-0 top-full z-20 mt-2 w-52 rounded-lg border border-slate-200 bg-white p-2 opacity-0 shadow-lg transition-opacity duration-150 group-hover/docs:visible group-hover/docs:opacity-100 dark:border-slate-700 dark:bg-slate-800">
         <p className="mb-1.5 px-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
           {docs.length} document{docs.length !== 1 ? "s" : ""}
         </p>
 
-        <div className="max-h-48 space-y-1 overflow-y-auto">
+        <div className="max-h-44 space-y-0.5 overflow-y-auto">
           {docs.map((d) => (
             <div
               key={d.id}
@@ -372,7 +372,7 @@ const TableIconButton = ({
       disabled={disabled}
       title={title}
       aria-label={title}
-      className={`flex h-8 w-8 items-center justify-center rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${tones[tone]}`}
+      className={`flex h-7 w-7 items-center justify-center rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${tones[tone]}`}
     >
       {children}
     </button>
@@ -859,22 +859,22 @@ export default function DocumentListPage() {
   /* ------------------------------------------------------------------------ */
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       {/* HEADER */}
-      <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+      <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary-600 text-white shadow-sm">
-            <span className="text-lg font-bold">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-600 text-white shadow-sm">
+            <span className="text-base font-bold">
               D
             </span>
           </div>
 
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+            <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
               Employee Documents
             </h1>
 
-            <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
+            <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
               Documents uploaded per employee
             </p>
           </div>
@@ -892,9 +892,9 @@ export default function DocumentListPage() {
           <Button
             type="button"
             onClick={handleAdd}
-            className="h-10 w-full px-4 sm:w-auto"
+            className="h-9 w-full px-3.5 text-sm sm:w-auto"
           >
-            <span className="mr-1.5 text-lg">
+            <span className="mr-1.5 text-base">
               +
             </span>
             Add Document
@@ -903,7 +903,7 @@ export default function DocumentListPage() {
       </div>
 
       {/* STAT CARDS */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-4">
         <StatCard
           icon={
             <svg
@@ -996,15 +996,15 @@ export default function DocumentListPage() {
       </div>
 
       {/* FILTERS */}
-      <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-        <div className="flex flex-col gap-3">
-          <div className="flex flex-col gap-2.5 lg:flex-row lg:flex-wrap">
+      <div className="rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <div className="flex flex-col gap-2.5">
+          <div className="flex flex-col gap-2 lg:flex-row lg:flex-wrap">
             {/* SEARCH */}
             <div className="relative w-full sm:max-w-xs">
               <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  className="h-4 w-4"
+                  className="h-3.5 w-3.5"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -1026,7 +1026,7 @@ export default function DocumentListPage() {
                   setPage(1);
                 }}
                 placeholder="Search by employee or document type..."
-                className="h-10 w-full rounded-lg border border-slate-300 bg-white pl-9 pr-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                className="h-9 w-full rounded-lg border border-slate-300 bg-white pl-8 pr-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
               />
             </div>
 
@@ -1040,7 +1040,7 @@ export default function DocumentListPage() {
                 setFilterBranchId("");
                 setPage(1);
               }}
-              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 sm:max-w-[180px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+              className="h-9 w-full rounded-lg border border-slate-300 bg-white px-2.5 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 sm:max-w-[170px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
             >
               <option value="">
                 All Companies
@@ -1065,7 +1065,7 @@ export default function DocumentListPage() {
                 );
                 setPage(1);
               }}
-              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 sm:max-w-[180px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+              className="h-9 w-full rounded-lg border border-slate-300 bg-white px-2.5 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 sm:max-w-[170px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
             >
               <option value="">
                 All Branches
@@ -1090,7 +1090,7 @@ export default function DocumentListPage() {
                 );
                 setPage(1);
               }}
-              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 sm:max-w-[180px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+              className="h-9 w-full rounded-lg border border-slate-300 bg-white px-2.5 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 sm:max-w-[170px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
             >
               <option value="">
                 All Departments
@@ -1115,7 +1115,7 @@ export default function DocumentListPage() {
                 );
                 setPage(1);
               }}
-              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 sm:max-w-[180px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+              className="h-9 w-full rounded-lg border border-slate-300 bg-white px-2.5 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 sm:max-w-[170px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
             >
               <option value="">
                 All Designations
@@ -1134,14 +1134,14 @@ export default function DocumentListPage() {
 
           <div className="flex flex-wrap items-center justify-between gap-2">
             {/* VIEW MODE */}
-            <div className="flex w-fit items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
+            <div className="flex w-fit items-center rounded-lg bg-slate-100 p-0.5 dark:bg-slate-800">
               <button
                 type="button"
                 onClick={() => {
                   setViewMode("table");
                   setPage(1);
                 }}
-                className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition ${
+                className={`flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition ${
                   viewMode === "table"
                     ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
                     : "text-slate-500 hover:text-slate-700 dark:text-slate-400"
@@ -1173,7 +1173,7 @@ export default function DocumentListPage() {
                   setViewMode("card");
                   setPage(1);
                 }}
-                className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition ${
+                className={`flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition ${
                   viewMode === "card"
                     ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
                     : "text-slate-500 hover:text-slate-700 dark:text-slate-400"
@@ -1221,7 +1221,7 @@ export default function DocumentListPage() {
             </div>
 
             {/* STATUS */}
-            <div className="flex w-fit items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
+            <div className="flex w-fit items-center rounded-lg bg-slate-100 p-0.5 dark:bg-slate-800">
               {[
                 "active",
                 "inactive",
@@ -1234,7 +1234,7 @@ export default function DocumentListPage() {
                     setStatusFilter(s);
                     setPage(1);
                   }}
-                  className={`rounded-md px-3 py-1.5 text-xs font-medium capitalize transition ${
+                  className={`rounded-md px-2.5 py-1.5 text-xs font-medium capitalize transition ${
                     statusFilter === s
                       ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
                       : "text-slate-500 hover:text-slate-700 dark:text-slate-400"
@@ -1250,12 +1250,12 @@ export default function DocumentListPage() {
 
       {/* LOADING */}
       {isLoading && (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {Array.from({ length: 6 }).map(
             (_, i) => (
               <div
                 key={i}
-                className="h-[280px] animate-pulse rounded-2xl border border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-800"
+                className="h-[220px] animate-pulse rounded-2xl border border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-800"
               />
             )
           )}
@@ -1271,33 +1271,33 @@ export default function DocumentListPage() {
         pagedGroups.length > 0 && (
           <div className="overflow-visible rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
             <table className="w-full text-left text-sm">
-              <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-400">
+              <thead className="border-b border-slate-200 bg-slate-50 text-[11px] uppercase tracking-wide text-slate-500 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-400">
                 <tr>
-                  <th className="px-4 py-3.5 font-semibold">
+                  <th className="px-3 py-2.5 font-semibold">
                     Employee
                   </th>
 
-                  <th className="px-4 py-3.5 font-semibold">
+                  <th className="px-3 py-2.5 font-semibold">
                     Organization
                   </th>
 
-                  <th className="px-4 py-3.5 font-semibold">
+                  <th className="px-3 py-2.5 font-semibold">
                     Documents
                   </th>
 
-                  <th className="px-4 py-3.5 font-semibold">
+                  <th className="px-3 py-2.5 font-semibold">
                     Document Type
                   </th>
 
-                  <th className="px-4 py-3.5 font-semibold">
+                  <th className="px-3 py-2.5 font-semibold">
                     File
                   </th>
 
-                  <th className="px-4 py-3.5 font-semibold">
+                  <th className="px-3 py-2.5 font-semibold">
                     Status
                   </th>
 
-                  <th className="px-4 py-3.5 text-right font-semibold">
+                  <th className="px-3 py-2.5 text-right font-semibold">
                     Actions
                   </th>
                 </tr>
@@ -1344,7 +1344,7 @@ export default function DocumentListPage() {
                             {idx === 0 && (
                               <>
                                 <td
-                                  className="px-4 py-3 align-middle"
+                                  className="px-3 py-2 align-middle"
                                   rowSpan={
                                     group.docs.length
                                   }
@@ -1357,7 +1357,7 @@ export default function DocumentListPage() {
                                         emp
                                       )
                                     }
-                                    className="flex items-center gap-2.5 text-left"
+                                    className="flex items-center gap-2 text-left"
                                   >
                                     <Avatar
                                       name={empName}
@@ -1365,7 +1365,7 @@ export default function DocumentListPage() {
                                     />
 
                                     <div className="min-w-0">
-                                      <p className="truncate text-sm font-medium text-slate-800 hover:text-primary-600 dark:text-slate-100 dark:hover:text-primary-400">
+                                      <p className="truncate text-[13px] font-medium text-slate-800 hover:text-primary-600 dark:text-slate-100 dark:hover:text-primary-400">
                                         {empName}
                                       </p>
 
@@ -1379,7 +1379,7 @@ export default function DocumentListPage() {
 
                                 {/* ORGANIZATION */}
                                 <td
-                                  className="px-4 py-3 align-middle"
+                                  className="px-3 py-2 align-middle"
                                   rowSpan={
                                     group.docs.length
                                   }
@@ -1406,7 +1406,7 @@ export default function DocumentListPage() {
 
                                 {/* DOCUMENT OVERVIEW */}
                                 <td
-                                  className="overflow-visible px-4 py-3 align-middle"
+                                  className="overflow-visible px-3 py-2 align-middle"
                                   rowSpan={
                                     group.docs.length
                                   }
@@ -1419,18 +1419,18 @@ export default function DocumentListPage() {
                             )}
 
                             {/* DOCUMENT TYPE */}
-                            <td className="px-4 py-3">
+                            <td className="px-3 py-2 align-middle">
                               <DocTypeBadge
                                 type={doc.doc_type}
                               />
                             </td>
 
                             {/* FILE */}
-                            <td className="px-4 py-3">
-                              <div className="flex items-center gap-2">
-                                <FileTypeIcon size="h-7 w-7" />
+                            <td className="px-3 py-2 align-middle">
+                              <div className="flex items-center gap-1.5">
+                                <FileTypeIcon size="h-6 w-6" />
 
-                                <span className="text-xs font-medium uppercase text-slate-400">
+                                <span className="text-[11px] font-medium uppercase text-slate-400">
                                   {getExtension(
                                     doc.file_url
                                   ) || "file"}
@@ -1439,9 +1439,9 @@ export default function DocumentListPage() {
                             </td>
 
                             {/* STATUS */}
-                            <td className="px-4 py-3">
+                            <td className="px-3 py-2 align-middle">
                               <span
-                                className={`inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-[10px] font-medium ${
+                                className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-medium ${
                                   isActive
                                     ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300"
                                     : "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300"
@@ -1462,7 +1462,7 @@ export default function DocumentListPage() {
                             </td>
 
                             {/* ACTIONS */}
-                            <td className="px-4 py-3">
+                            <td className="px-3 py-2 align-middle">
                               <div className="flex items-center justify-end gap-0.5">
                                 {/* PREVIEW */}
                                 <TableIconButton
@@ -1475,7 +1475,7 @@ export default function DocumentListPage() {
                                 >
                                   <svg
                                     xmlns="http://www.w3.org/2000/svg"
-                                    className="h-4 w-4"
+                                    className="h-3.5 w-3.5"
                                     fill="none"
                                     viewBox="0 0 24 24"
                                     stroke="currentColor"
@@ -1512,7 +1512,7 @@ export default function DocumentListPage() {
                                 >
                                   <svg
                                     xmlns="http://www.w3.org/2000/svg"
-                                    className="h-4 w-4"
+                                    className="h-3.5 w-3.5"
                                     fill="none"
                                     viewBox="0 0 24 24"
                                     stroke="currentColor"
@@ -1526,7 +1526,7 @@ export default function DocumentListPage() {
                                   </svg>
                                 </TableIconButton>
 
-                                <span className="mx-1 h-5 w-px bg-slate-200 dark:bg-slate-700" />
+                                <span className="mx-0.5 h-4 w-px bg-slate-200 dark:bg-slate-700" />
 
                                 {/* EDIT */}
                                 <TableIconButton
@@ -1538,7 +1538,7 @@ export default function DocumentListPage() {
                                 >
                                   <svg
                                     xmlns="http://www.w3.org/2000/svg"
-                                    className="h-4 w-4"
+                                    className="h-3.5 w-3.5"
                                     fill="none"
                                     viewBox="0 0 24 24"
                                     stroke="currentColor"
@@ -1565,7 +1565,7 @@ export default function DocumentListPage() {
                                   >
                                     <svg
                                       xmlns="http://www.w3.org/2000/svg"
-                                      className="h-4 w-4"
+                                      className="h-3.5 w-3.5"
                                       fill="none"
                                       viewBox="0 0 24 24"
                                       stroke="currentColor"
@@ -1593,7 +1593,7 @@ export default function DocumentListPage() {
                                   >
                                     <svg
                                       xmlns="http://www.w3.org/2000/svg"
-                                      className="h-4 w-4"
+                                      className="h-3.5 w-3.5"
                                       fill="none"
                                       viewBox="0 0 24 24"
                                       stroke="currentColor"
@@ -1627,7 +1627,7 @@ export default function DocumentListPage() {
       {!isLoading &&
         viewMode === "card" &&
         pagedGroups.length > 0 && (
-          <div className="grid grid-cols-1 items-start gap-5 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid grid-cols-1 items-start gap-3.5 sm:grid-cols-2 xl:grid-cols-3">
             {pagedGroups.map((group) => {
               const emp = group.employee;
 
@@ -1655,7 +1655,7 @@ export default function DocumentListPage() {
                   }`}
                 >
                   <div
-                    className={`absolute inset-x-0 top-0 h-1 rounded-t-2xl ${
+                    className={`absolute inset-x-0 top-0 h-0.5 rounded-t-2xl ${
                       allInactive
                         ? "bg-red-500"
                         : "bg-primary-600"
@@ -1663,8 +1663,8 @@ export default function DocumentListPage() {
                   />
 
                   {/* CARD HEADER */}
-                  <div className="p-5 pb-4">
-                    <div className="flex items-start justify-between gap-2.5">
+                  <div className="p-3.5 pb-3">
+                    <div className="flex items-start justify-between gap-2">
                       <button
                         type="button"
                         onClick={() =>
@@ -1672,11 +1672,11 @@ export default function DocumentListPage() {
                           setViewingEmployee(emp)
                         }
                         disabled={!emp}
-                        className="flex min-w-0 items-center gap-3 text-left disabled:cursor-default"
+                        className="flex min-w-0 items-center gap-2.5 text-left disabled:cursor-default"
                       >
                         <Avatar
                           name={empName}
-                          size="md"
+                          size="sm"
                         />
 
                         <div className="min-w-0">
@@ -1684,14 +1684,14 @@ export default function DocumentListPage() {
                             {empName}
                           </p>
 
-                          <p className="text-[11px] text-slate-400">
+                          <p className="text-[10px] text-slate-400">
                             {emp?.employee_code ||
                               `#${group.employeeId}`}
                           </p>
                         </div>
                       </button>
 
-                      <span className="shrink-0 rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                      <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500 dark:bg-slate-800 dark:text-slate-400">
                         {group.docs.length} doc
                         {group.docs.length !== 1
                           ? "s"
@@ -1700,7 +1700,7 @@ export default function DocumentListPage() {
                     </div>
 
                     {/* ORGANIZATION */}
-                    <div className="mt-3">
+                    <div className="mt-2">
                       <HierarchyTrail
                         company={
                           emp?.department?.company
@@ -1722,7 +1722,7 @@ export default function DocumentListPage() {
                     </div>
 
                     {/* DOCUMENT OVERVIEW */}
-                    <div className="mt-3 flex items-center gap-2 rounded-lg bg-slate-50 px-3 py-2 dark:bg-slate-800/60">
+                    <div className="mt-2.5 flex items-center gap-2 rounded-lg bg-slate-50 px-2.5 py-1.5 dark:bg-slate-800/60">
                       <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
                         Overview
                       </span>
@@ -1736,7 +1736,7 @@ export default function DocumentListPage() {
                   <div className="border-t border-slate-100 dark:border-slate-800" />
 
                   {/* DOCUMENT LIST - INFORMATION ONLY */}
-                  <div className="space-y-2.5 p-5 pt-4">
+                  <div className="space-y-2 p-3.5 pt-3">
                     {group.docs.map((doc) => {
                       const isActive =
                         doc.is_active !== false;
@@ -1744,13 +1744,13 @@ export default function DocumentListPage() {
                       return (
                         <div
                           key={doc.id}
-                          className="overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800/60"
+                          className="overflow-hidden rounded-lg border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800/60"
                         >
-                          <div className="flex items-center justify-between gap-3 px-3 py-3">
-                            <div className="flex min-w-0 items-center gap-2.5">
-                              <FileTypeIcon size="h-8 w-8" />
+                          <div className="flex items-center justify-between gap-2.5 px-2.5 py-2">
+                            <div className="flex min-w-0 items-center gap-2">
+                              <FileTypeIcon size="h-7 w-7" />
 
-                              <div className="flex min-w-0 flex-col gap-1">
+                              <div className="flex min-w-0 flex-col gap-0.5">
                                 <DocTypeBadge
                                   type={
                                     doc.doc_type
@@ -1766,7 +1766,7 @@ export default function DocumentListPage() {
                             </div>
 
                             <span
-                              className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-semibold ${
+                              className={`inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-[9px] font-semibold ${
                                 isActive
                                   ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300"
                                   : "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300"
@@ -1798,14 +1798,14 @@ export default function DocumentListPage() {
       {/* EMPTY STATE */}
       {!isLoading &&
         pagedGroups.length === 0 && (
-          <div className="flex min-h-[260px] flex-col items-center justify-center rounded-xl border border-slate-200 bg-white px-6 py-10 text-center shadow-sm dark:border-slate-700 dark:bg-slate-900">
-            <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800">
-              <span className="text-xl font-bold text-slate-400">
+          <div className="flex min-h-[220px] flex-col items-center justify-center rounded-xl border border-slate-200 bg-white px-6 py-8 text-center shadow-sm dark:border-slate-700 dark:bg-slate-900">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800">
+              <span className="text-lg font-bold text-slate-400">
                 D
               </span>
             </div>
 
-            <h3 className="mt-4 text-sm font-semibold text-slate-800 dark:text-white">
+            <h3 className="mt-3 text-sm font-semibold text-slate-800 dark:text-white">
               No documents found
             </h3>
 
@@ -1816,7 +1816,7 @@ export default function DocumentListPage() {
 
             <Button
               onClick={handleAdd}
-              className="mt-4 h-9 px-4 text-sm"
+              className="mt-3 h-8 px-3.5 text-xs"
             >
               + Add Document
             </Button>
@@ -1824,7 +1824,7 @@ export default function DocumentListPage() {
         )}
 
       {/* PAGINATION */}
-      <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
+      <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs text-slate-500 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
         <span>
           Page {page} of {pageCount}
         </span>
@@ -1838,7 +1838,7 @@ export default function DocumentListPage() {
                 Math.max(1, p - 1)
               )
             }
-            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium transition hover:bg-slate-50 disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700"
+            className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium transition hover:bg-slate-50 disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700"
           >
             Previous
           </button>
@@ -1851,7 +1851,7 @@ export default function DocumentListPage() {
                 Math.min(pageCount, p + 1)
               )
             }
-            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium transition hover:bg-slate-50 disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700"
+            className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium transition hover:bg-slate-50 disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700"
           >
             Next
           </button>
@@ -1920,7 +1920,7 @@ export default function DocumentListPage() {
         onClose={() => setPreviewUrl(null)}
         title={
           <div className="flex items-center gap-2">
-            <FileTypeIcon size="h-7 w-7" />
+            <FileTypeIcon size="h-6 w-6" />
             <span>Document Preview</span>
           </div>
         }
