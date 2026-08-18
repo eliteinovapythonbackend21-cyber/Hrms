@@ -36,6 +36,104 @@ const PAGE_SIZE = 10;
 const CARD_PAGE_SIZE = 6;
 
 /* =========================================================
+   TRANSFER REASON OPTIONS
+========================================================= */
+
+const TRANSFER_REASON_OPTIONS = [
+  "Business Requirement",
+  "Employee Request",
+  "Department Requirement",
+  "Workforce Planning",
+  "Business Expansion",
+  "Operational Requirement",
+  "Project Requirement",
+  "Skill Requirement",
+  "Performance",
+  "Career Development",
+  "Employee Development",
+  "Relocation",
+  "Management Decision",
+  "Other",
+];
+
+/* =========================================================
+   GET TRANSFER REASON
+========================================================= */
+
+/*
+ * Single source of truth for Transfer Reason.
+ *
+ * New records:
+ *   transfer_reason
+ *
+ * Older records:
+ *   reason
+ *
+ * This allows existing data to continue displaying correctly.
+ */
+function getTransferReason(transfer) {
+  if (!transfer) {
+    return "";
+  }
+
+  const value =
+    transfer.transfer_reason ??
+    transfer.reason ??
+    "";
+
+  return String(value).trim();
+}
+
+/* =========================================================
+   NORMALIZE TRANSFER FOR FORM
+========================================================= */
+
+function normalizeTransferForForm(transfer) {
+  if (!transfer) {
+    return {};
+  }
+
+  return {
+    ...transfer,
+
+    id: transfer.id,
+
+    employee_id:
+      transfer.employee_id ??
+      transfer.employee?.id ??
+      "",
+
+    from_department_id:
+      transfer.from_department_id ??
+      transfer.from_department?.id ??
+      "",
+
+    to_department_id:
+      transfer.to_department_id ??
+      transfer.to_department?.id ??
+      "",
+
+    /*
+     * IMPORTANT:
+     *
+     * Always pass the normalized reason
+     * to TransferForm as transfer_reason.
+     */
+    transfer_reason:
+      getTransferReason(transfer),
+
+    effective_date:
+      transfer.effective_date ?? "",
+
+    remarks:
+      transfer.remarks ?? "",
+
+    is_active:
+      transfer.is_active !== false,
+  };
+}
+
+/* =========================================================
    ICONS
 ========================================================= */
 
@@ -295,11 +393,11 @@ function DepartmentDetailsCard({
           </span>
         </div>
 
-        {/* REASON */}
+        {/* TRANSFER REASON */}
 
         <div className="grid grid-cols-[90px_minmax(0,1fr)] gap-3">
           <span className="text-xs text-slate-400 dark:text-slate-500">
-            Reason
+            Transfer Reason
           </span>
 
           <span className="break-words text-right text-xs font-medium text-slate-700 dark:text-slate-200">
@@ -354,7 +452,8 @@ function DepartmentHoverTrigger({
 }) {
   const alignClasses = {
     left: "left-0",
-    center: "left-1/2 -translate-x-1/2",
+    center:
+      "left-1/2 -translate-x-1/2",
     right: "right-0",
   };
 
@@ -400,13 +499,16 @@ function DepartmentHoverTrigger({
 function ReasonBadge({
   reason,
 }) {
+  const displayReason =
+    reason || "Other";
+
   return (
     <span
-      title={reason || "Other"}
+      title={displayReason}
       className="inline-flex max-w-full items-center rounded-full bg-sky-50 px-2.5 py-1 text-xs font-medium text-sky-700 ring-1 ring-inset ring-sky-600/20 dark:bg-sky-500/10 dark:text-sky-400 dark:ring-sky-400/30"
     >
       <span className="max-w-[180px] truncate">
-        {reason || "Other"}
+        {displayReason}
       </span>
     </span>
   );
@@ -424,7 +526,8 @@ function formatDuration(
     return "—";
   }
 
-  const start = new Date(startDate);
+  const start =
+    new Date(startDate);
 
   const end = endDate
     ? new Date(endDate)
@@ -460,7 +563,8 @@ function formatDuration(
         0
       ).getDate();
 
-    days += daysInPreviousMonth;
+    days +=
+      daysInPreviousMonth;
   }
 
   if (months < 0) {
@@ -537,73 +641,6 @@ const TableIconButton = ({
     </button>
   );
 };
-
-/* =========================================================
-   EDIT DATA NORMALIZER
-========================================================= */
-
-function normalizeTransferForForm(
-  transfer
-) {
-  if (!transfer) {
-    return {};
-  }
-
-  /*
-   * IMPORTANT:
-   * Backend may return either `reason`
-   * or the older `transfer_reason`.
-   *
-   * Always convert it to `reason` for the form.
-   */
-  const transferReason =
-    transfer.reason ??
-    transfer.transfer_reason ??
-    "";
-
-  return {
-    ...transfer,
-
-    id: transfer.id,
-
-    employee_id:
-      transfer.employee_id ??
-      transfer.employee?.id ??
-      "",
-
-    from_department_id:
-      transfer.from_department_id ??
-      transfer.from_department?.id ??
-      "",
-
-    to_department_id:
-      transfer.to_department_id ??
-      transfer.to_department?.id ??
-      "",
-
-    /*
-     * Single source of truth for the form.
-     */
-    reason: transferReason,
-
-    /*
-     * Prevent GenericForm from accidentally
-     * using the old property.
-     */
-    transfer_reason: undefined,
-
-    effective_date:
-      transfer.effective_date ??
-      "",
-
-    remarks:
-      transfer.remarks ??
-      "",
-
-    is_active:
-      transfer.is_active !== false,
-  };
-}
 
 /* =========================================================
    PAGE
@@ -725,10 +762,6 @@ export default function TransferListPage() {
     setFilterReason,
   ] = useState("");
 
-  /* =======================================================
-     STATES
-  ======================================================= */
-
   const [search, setSearch] =
     useState("");
 
@@ -778,30 +811,25 @@ export default function TransferListPage() {
   const reasonOptions =
     useMemo(() => {
       const reasons =
-        new Set();
+        new Set(
+          TRANSFER_REASON_OPTIONS
+        );
 
       allTransfers.forEach(
         (transfer) => {
           const reason =
-            transfer.reason ??
-            transfer.transfer_reason;
-
-          if (
-            reason !== null &&
-            reason !== undefined &&
-            String(reason).trim()
-          ) {
-            reasons.add(
-              String(reason).trim()
+            getTransferReason(
+              transfer
             );
+
+          if (reason) {
+            reasons.add(reason);
           }
         }
       );
 
       return Array.from(
         reasons
-      ).sort((a, b) =>
-        a.localeCompare(b)
       );
     }, [allTransfers]);
 
@@ -841,6 +869,11 @@ export default function TransferListPage() {
               transfer.employee_id
             ];
 
+          const transferReason =
+            getTransferReason(
+              transfer
+            );
+
           if (
             filterDepartmentId &&
             String(
@@ -859,20 +892,9 @@ export default function TransferListPage() {
             return false;
           }
 
-          /*
-           * IMPORTANT:
-           * Always read the same normalized reason.
-           */
-          const transferReason =
-            transfer.reason ??
-            transfer.transfer_reason ??
-            "";
-
           if (
             filterReason &&
-            String(
-              transferReason
-            ) !==
+            transferReason !==
               String(filterReason)
           ) {
             return false;
@@ -1155,6 +1177,11 @@ export default function TransferListPage() {
   const handleEdit = (
     transfer
   ) => {
+    /*
+     * Normalize before opening the form.
+     * This ensures existing Transfer Reason
+     * appears correctly in Edit Transfer.
+     */
     const normalizedTransfer =
       normalizeTransferForForm(
         transfer
@@ -1180,13 +1207,23 @@ export default function TransferListPage() {
     async (payload) => {
       try {
         /*
-         * IMPORTANT:
-         * TransferForm now returns `reason`.
+         * TransferForm should send:
          *
-         * `transfer_reason` is supported only as
-         * a backward-compatible fallback.
+         * transfer_reason
+         *
+         * Old reason field is supported only
+         * as a fallback.
          */
+        const transferReason =
+          String(
+            payload.transfer_reason ??
+              payload.reason ??
+              ""
+          ).trim();
+
         const normalizedPayload = {
+          ...payload,
+
           employee_id:
             payload.employee_id
               ? Number(
@@ -1209,26 +1246,25 @@ export default function TransferListPage() {
               : payload.to_department_id,
 
           /*
-           * THIS IS THE IMPORTANT FIX.
+           * IMPORTANT:
+           * Use transfer_reason as the
+           * actual API field.
            */
-          reason:
-            payload.reason ??
-            payload.transfer_reason ??
-            "Other",
+          transfer_reason:
+            transferReason,
 
           effective_date:
             payload.effective_date ||
             "",
 
           remarks:
-            payload.remarks ||
-            "",
+            payload.remarks ?? "",
         };
 
         /*
-         * Never send the old field.
+         * Do not send the legacy reason field.
          */
-        delete normalizedPayload.transfer_reason;
+        delete normalizedPayload.reason;
 
         if (editing) {
           await updateMutation.mutateAsync(
@@ -1256,13 +1292,10 @@ export default function TransferListPage() {
 
         closeModal();
 
-        /*
-         * Reload latest data.
-         */
         await refetch();
       } catch (err) {
         showToast(
-          err.response?.data
+          err?.response?.data
             ?.message ||
             "Operation failed",
           "error"
@@ -1295,7 +1328,7 @@ export default function TransferListPage() {
         await refetch();
       } catch (err) {
         showToast(
-          err.response?.data
+          err?.response?.data
             ?.message ||
             "Operation failed",
           "error"
@@ -1327,7 +1360,7 @@ export default function TransferListPage() {
         await refetch();
       } catch (err) {
         showToast(
-          err.response?.data
+          err?.response?.data
             ?.message ||
             "Operation failed",
           "error"
@@ -1710,12 +1743,13 @@ export default function TransferListPage() {
                     false;
 
                   /*
-                   * Single reason lookup.
+                   * SINGLE SOURCE OF TRUTH
+                   * FOR TRANSFER REASON
                    */
                   const transferReason =
-                    transfer.reason ??
-                    transfer.transfer_reason ??
-                    "Other";
+                    getTransferReason(
+                      transfer
+                    );
 
                   const {
                     previousRoleStart,
@@ -1765,7 +1799,7 @@ export default function TransferListPage() {
                         </div>
                       </td>
 
-                      {/* EXISTING */}
+                      {/* EXISTING DEPARTMENT */}
 
                       <td className="relative px-4 py-3">
                         <DepartmentHoverTrigger
@@ -1813,7 +1847,7 @@ export default function TransferListPage() {
                         </DepartmentHoverTrigger>
                       </td>
 
-                      {/* CURRENT */}
+                      {/* CURRENT DEPARTMENT */}
 
                       <td className="relative px-4 py-3">
                         <DepartmentHoverTrigger
@@ -2016,12 +2050,12 @@ export default function TransferListPage() {
                 false;
 
               /*
-               * Same normalized reason.
+               * SAME REASON SOURCE AS TABLE
                */
               const transferReason =
-                transfer.reason ??
-                transfer.transfer_reason ??
-                "Other";
+                getTransferReason(
+                  transfer
+                );
 
               const {
                 previousRoleStart,
@@ -2041,7 +2075,6 @@ export default function TransferListPage() {
                   }
                   className="relative flex h-full flex-col overflow-visible rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900"
                 >
-
                   <div className="absolute inset-x-0 top-0 h-0.5 rounded-t-2xl bg-primary-600" />
 
                   <div className="flex flex-1 flex-col p-4">
@@ -2050,7 +2083,6 @@ export default function TransferListPage() {
 
                     <div className="flex items-start justify-between gap-2.5">
                       <div className="flex min-w-0 items-center gap-2.5">
-
                         <Avatar
                           name={
                             employeeName
@@ -2308,7 +2340,7 @@ export default function TransferListPage() {
                           <path
                             strokeLinecap="round"
                             strokeLinejoin="round"
-                            d="M4 12a8 8 0 018-8 8.5 8.5 0 017 4M20 4v5h-5M20 12a8 8 0 01-8 8 8.5 8.5 0 017-4M4 20v-5h5"
+                            d="M4 12a8 8 0 018-8 8.5 8.5 0 017 4M20 4v5h-5M20 12a8 8 0 01-8 8 8.5 8.5 0 01-7-4M4 20v-5h5"
                           />
                         </svg>
 
@@ -2323,9 +2355,7 @@ export default function TransferListPage() {
         </div>
       )}
 
-      {/* =================================================
-         PAGINATION
-      ================================================= */}
+      {/* PAGINATION */}
 
       <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
 
@@ -2376,9 +2406,7 @@ export default function TransferListPage() {
         </div>
       </div>
 
-      {/* =================================================
-         FORM MODAL
-      ================================================= */}
+      {/* FORM MODAL */}
 
       <Modal
         open={modalOpen}
@@ -2390,21 +2418,7 @@ export default function TransferListPage() {
         }
       >
         <TransferForm
-          /*
-           * IMPORTANT:
-           * Force GenericForm to recreate when the
-           * transfer/reason being edited changes.
-           */
-          key={
-            editing
-              ? `edit-transfer-${editing.id}-${editing.reason ?? editing.transfer_reason ?? ""}`
-              : "add-transfer"
-          }
-          formId={
-            editing
-              ? `transfer-edit-${editing.id}`
-              : "transfer-add"
-          }
+          formId="transfers-form"
           initialData={
             editing || {}
           }
@@ -2415,9 +2429,7 @@ export default function TransferListPage() {
         />
       </Modal>
 
-      {/* =================================================
-         DELETE CONFIRM
-      ================================================= */}
+      {/* DELETE CONFIRM */}
 
       <ConfirmDialog
         open={
