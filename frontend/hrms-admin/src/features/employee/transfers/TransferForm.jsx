@@ -1,196 +1,401 @@
-import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import Select from "@/components/ui/Select";
-import { useEmployeeOptions } from "@/hooks/useLookupOptions";
+import { useEffect, useMemo, useState } from "react";
+
+import GenericForm from "@/components/form/GenericForm";
+
+import {
+  useEmployeeOptions,
+  useDepartmentOptions,
+} from "@/hooks/useLookupOptions";
+
 import { employeesApi } from "@/api/employees.api";
-import { masterApi } from "@/api/master.api";
-import { isRequired } from "@/utils/validators";
 
-export default function TransferForm({ formId = "transfers-form", initialData, onSubmit, loading }) {
-  const employeeOptions = useEmployeeOptions();
+/* =========================================================
+   TRANSFER REASON OPTIONS
+========================================================= */
 
-  // Full employee records (with nested department.branch) — used so
-  // picking an Employee can auto-fill their CURRENT branch/department into
-  // the "Existing Assignment" fields, instead of making the person look it
-  // up and re-select it manually.
-  const { data: employeesData } = useQuery({
-    queryKey: ["transfer-form", "employees-full"],
-    queryFn: async () => (await employeesApi.list({ page: 1, per_page: 1000, is_active: true })).data.data,
-  });
-  const employeeFullMap = useMemo(
-    () => Object.fromEntries((employeesData?.items || []).map((e) => [e.id, e])),
-    [employeesData]
-  );
+const TRANSFER_REASON_OPTIONS = [
+  {
+    value: "Business Requirement",
+    label: "Business Requirement",
+  },
+  {
+    value: "Employee Request",
+    label: "Employee Request",
+  },
+  {
+    value: "Department Requirement",
+    label: "Department Requirement",
+  },
+  {
+    value: "Workforce Planning",
+    label: "Workforce Planning",
+  },
+  {
+    value: "Business Expansion",
+    label: "Business Expansion",
+  },
+  {
+    value: "Operational Requirement",
+    label: "Operational Requirement",
+  },
+  {
+    value: "Project Requirement",
+    label: "Project Requirement",
+  },
+  {
+    value: "Skill Requirement",
+    label: "Skill Requirement",
+  },
+  {
+    value: "Performance",
+    label: "Performance",
+  },
+  {
+    value: "Career Development",
+    label: "Career Development",
+  },
+  {
+    value: "Employee Development",
+    label: "Employee Development",
+  },
+  {
+    value: "Relocation",
+    label: "Relocation",
+  },
+  {
+    value: "Management Decision",
+    label: "Management Decision",
+  },
+  {
+    value: "Other",
+    label: "Other",
+  },
+];
 
-  // Full department records (with nested branch) — needed to build the
-  // Branch dropdown and to filter Department options down to whichever
-  // branch was picked, for both the existing and future assignment.
-  const { data: departmentsData } = useQuery({
-    queryKey: ["transfer-form", "departments-full"],
-    queryFn: async () => (await masterApi.listDepartments({ page: 1, per_page: 1000, is_active: true })).data.data,
-  });
-  const departments = departmentsData?.items || [];
+/* =========================================================
+   NORMALIZE TRANSFER REASON
+========================================================= */
 
-  const branchOptions = useMemo(() => {
-    const map = new Map();
-    departments.forEach((d) => {
-      if (d.branch?.id) map.set(d.branch.id, d.branch.name);
-    });
-    return Array.from(map.entries()).map(([value, label]) => ({ value, label }));
-  }, [departments]);
+function normalizeTransferReason(value) {
+  if (
+    value === null ||
+    value === undefined
+  ) {
+    return "Other";
+  }
 
-  const departmentOptionsForBranch = (branchId) =>
-    departments
-      .filter((d) => String(d.branch?.id) === String(branchId))
-      .map((d) => ({ value: d.id, label: d.department_name }));
+  const text = String(value).trim();
 
-  const [form, setForm] = useState({
-    employee_id: initialData?.employee_id || "",
-    from_department_id: initialData?.from_department_id || "",
-    to_department_id: initialData?.to_department_id || "",
-    effective_date: initialData?.effective_date || "",
-    remarks: initialData?.remarks || "",
-  });
-  // Branch is UI-only — it narrows the Department dropdown but is never
-  // sent to the backend (Transfer only stores department IDs; branch is
-  // derived from whichever department's own .branch on the list page).
-  // When editing an existing transfer, pre-select the branch that the
-  // saved from/to department already belongs to, so the cascading
-  // dropdown starts in the right state instead of blank.
-  const initialFromDept = departments.find((d) => d.id === initialData?.from_department_id);
-  const initialToDept = departments.find((d) => d.id === initialData?.to_department_id);
-  const [fromBranchId, setFromBranchId] = useState(initialFromDept?.branch?.id || "");
-  const [toBranchId, setToBranchId] = useState(initialToDept?.branch?.id || "");
-  const [errors, setErrors] = useState({});
+  if (!text) {
+    return "Other";
+  }
 
-  const handleChange = (e) => setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  /*
+   * Match the existing API value against the
+   * available select options.
+   *
+   * This prevents the edit select from becoming
+   * blank when the API returns a slightly different
+   * casing or spacing.
+   */
+  const matchedOption =
+    TRANSFER_REASON_OPTIONS.find(
+      (option) =>
+        option.value.toLowerCase() ===
+        text.toLowerCase()
+    );
 
-  // Auto-fills "Existing Branch" / "Existing Department" from whatever the
-  // selected employee's CURRENT department already is — only overwrites
-  // those two fields if the employee's own record actually has a
-  // department assigned; otherwise leaves them for manual selection.
-  const handleEmployeeChange = (e) => {
-    const employeeId = e.target.value;
-    const emp = employeeFullMap[employeeId];
-    const currentDept = emp?.department;
+  return matchedOption?.value || text;
+}
 
-    setForm((prev) => ({
-      ...prev,
-      employee_id: employeeId,
-      from_department_id: currentDept?.id || prev.from_department_id,
-    }));
+/* =========================================================
+   FORM
+========================================================= */
 
-    if (currentDept?.branch?.id) {
-      setFromBranchId(currentDept.branch.id);
-    }
+export default function TransferForm({
+  formId = "transfer-form",
+  initialData = {},
+  onSubmit,
+  loading,
+}) {
+  const employeeOptions =
+    useEmployeeOptions();
+
+  const departmentOptions =
+    useDepartmentOptions();
+
+  const [employeeDetails, setEmployeeDetails] =
+    useState(null);
+
+  const [loadingEmployee, setLoadingEmployee] =
+    useState(false);
+
+  const [selectedEmployeeId, setSelectedEmployeeId] =
+    useState(
+      initialData?.employee_id
+        ? String(initialData.employee_id)
+        : ""
+    );
+
+  /* =======================================================
+     NORMALIZE INITIAL DATA
+  ======================================================= */
+
+  const normalizedInitialData = useMemo(() => {
+    const reason =
+      initialData?.reason ??
+      initialData?.transfer_reason ??
+      "";
+
+    return {
+      employee_id:
+        initialData?.employee_id
+          ? String(initialData.employee_id)
+          : "",
+
+      from_department_id:
+        initialData?.from_department_id
+          ? String(initialData.from_department_id)
+          : "",
+
+      to_department_id:
+        initialData?.to_department_id
+          ? String(initialData.to_department_id)
+          : "",
+
+      /*
+       * IMPORTANT:
+       * Use `reason` consistently inside the form.
+       */
+      reason:
+        normalizeTransferReason(reason),
+
+      effective_date:
+        initialData?.effective_date || "",
+
+      remarks:
+        initialData?.remarks || "",
+    };
+  }, [initialData]);
+
+  /* =======================================================
+     KEEP EMPLOYEE STATE IN SYNC WHILE EDITING
+  ======================================================= */
+
+  useEffect(() => {
+    setSelectedEmployeeId(
+      initialData?.employee_id
+        ? String(initialData.employee_id)
+        : ""
+    );
+  }, [initialData?.employee_id]);
+
+  /* =======================================================
+     FETCH EMPLOYEE DETAILS
+  ======================================================= */
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchEmployee = async () => {
+      if (!selectedEmployeeId) {
+        setEmployeeDetails(null);
+        return;
+      }
+
+      setLoadingEmployee(true);
+
+      try {
+        const response =
+          await employeesApi.get(
+            selectedEmployeeId
+          );
+
+        if (!cancelled) {
+          setEmployeeDetails(
+            response?.data?.data ||
+              response?.data ||
+              null
+          );
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setEmployeeDetails(null);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadingEmployee(false);
+        }
+      }
+    };
+
+    fetchEmployee();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedEmployeeId]);
+
+  /* =======================================================
+     EXISTING DEPARTMENT
+  ======================================================= */
+
+  const existingDepartmentId =
+    employeeDetails?.department?.id ||
+    employeeDetails?.department_id ||
+    normalizedInitialData.from_department_id ||
+    "";
+
+  /* =======================================================
+     HANDLE EMPLOYEE CHANGE
+  ======================================================= */
+
+  const handleEmployeeChange = (value) => {
+    setSelectedEmployeeId(
+      value ? String(value) : ""
+    );
   };
 
-  // Changing a branch clears its department, since the old department
-  // choice likely doesn't belong to the newly selected branch.
-  const handleFromBranchChange = (e) => {
-    setFromBranchId(e.target.value);
-    setForm((prev) => ({ ...prev, from_department_id: "" }));
-  };
-  const handleToBranchChange = (e) => {
-    setToBranchId(e.target.value);
-    setForm((prev) => ({ ...prev, to_department_id: "" }));
-  };
+  /* =======================================================
+     FORM FIELDS
+  ======================================================= */
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (loading) return;
-    const errs = {};
-    if (!isRequired(form.employee_id)) errs.employee_id = "Employee is required";
-    if (!isRequired(fromBranchId)) errs.from_branch_id = "Existing branch is required";
-    if (!isRequired(form.from_department_id)) errs.from_department_id = "Existing department is required";
-    if (!isRequired(toBranchId)) errs.to_branch_id = "Future branch is required";
-    if (!isRequired(form.to_department_id)) errs.to_department_id = "Future department is required";
-    if (!isRequired(form.effective_date)) errs.effective_date = "Effective date is required";
-    setErrors(errs);
-    if (Object.keys(errs).length > 0) return;
-    // Only the actual Transfer fields go to the backend — from_branch_id/
-    // to_branch_id were only ever local filter state.
-    onSubmit(form);
+  const fields = [
+    {
+      name: "employee_id",
+      label: "Employee",
+      type: "select",
+      options: employeeOptions,
+      required: true,
+      onChange: handleEmployeeChange,
+    },
+
+    {
+      name: "from_department_id",
+      label: "Existing Department",
+      type: "select",
+      options: departmentOptions,
+      required: true,
+
+      disabled: !!existingDepartmentId,
+
+      helperText: loadingEmployee
+        ? "Loading employee department..."
+        : "Existing department is based on the employee's current assignment.",
+    },
+
+    {
+      name: "to_department_id",
+      label: "Current Department",
+      type: "select",
+      options: departmentOptions,
+      required: true,
+
+      helperText:
+        "Select the department to which the employee is being transferred.",
+    },
+
+    {
+      /*
+       * IMPORTANT:
+       * Use `reason`, not `transfer_reason`.
+       */
+      name: "reason",
+      label: "Transfer Reason",
+      type: "select",
+      options: TRANSFER_REASON_OPTIONS,
+      required: true,
+    },
+
+    {
+      name: "effective_date",
+      label: "Effective Date",
+      type: "date",
+      required: true,
+    },
+
+    {
+      name: "remarks",
+      label: "Remarks",
+      type: "textarea",
+    },
+  ];
+
+  /* =======================================================
+     SUBMIT
+  ======================================================= */
+
+  const handleSubmit = async (payload) => {
+    const finalPayload = {
+      ...payload,
+
+      employee_id: payload.employee_id
+        ? Number(payload.employee_id)
+        : payload.employee_id,
+
+      from_department_id:
+        payload.from_department_id
+          ? Number(payload.from_department_id)
+          : payload.from_department_id,
+
+      to_department_id:
+        payload.to_department_id
+          ? Number(payload.to_department_id)
+          : payload.to_department_id,
+
+      /*
+       * Always submit the selected reason.
+       */
+      reason:
+        normalizeTransferReason(
+          payload.reason ??
+            payload.transfer_reason
+        ),
+
+      effective_date:
+        payload.effective_date || "",
+
+      remarks:
+        payload.remarks || "",
+    };
+
+    /*
+     * Do not send the old field name.
+     */
+    delete finalPayload.transfer_reason;
+
+    await onSubmit(finalPayload);
   };
 
   return (
-    <form id={formId} onSubmit={handleSubmit}>
-      <Select
-        label="Employee"
-        name="employee_id"
-        value={form.employee_id}
-        onChange={handleEmployeeChange}
-        options={employeeOptions}
-        error={errors.employee_id}
-        required
-      />
+    <GenericForm
+      formId={formId}
+      fields={fields}
+      initialData={{
+        ...normalizedInitialData,
 
-      <div className="mb-2 mt-4 text-xs font-semibold uppercase tracking-wide text-slate-400">Existing Assignment</div>
-      <Select
-        label="Existing Branch"
-        name="from_branch_id"
-        value={fromBranchId}
-        onChange={handleFromBranchChange}
-        options={branchOptions}
-        error={errors.from_branch_id}
-        required
-      />
-      <Select
-        label="Existing Department"
-        name="from_department_id"
-        value={form.from_department_id}
-        onChange={handleChange}
-        options={departmentOptionsForBranch(fromBranchId)}
-        error={errors.from_department_id}
-        required
-        disabled={!fromBranchId}
-      />
+        employee_id:
+          normalizedInitialData.employee_id,
 
-      <div className="mb-2 mt-4 text-xs font-semibold uppercase tracking-wide text-slate-400">Future Assignment</div>
-      <Select
-        label="Future Branch"
-        name="to_branch_id"
-        value={toBranchId}
-        onChange={handleToBranchChange}
-        options={branchOptions}
-        error={errors.to_branch_id}
-        required
-      />
-      <Select
-        label="Future Department"
-        name="to_department_id"
-        value={form.to_department_id}
-        onChange={handleChange}
-        options={departmentOptionsForBranch(toBranchId)}
-        error={errors.to_department_id}
-        required
-        disabled={!toBranchId}
-      />
+        from_department_id:
+          existingDepartmentId
+            ? String(existingDepartmentId)
+            : normalizedInitialData.from_department_id,
 
-      <div className="mb-4 mt-4">
-        <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
-          Effective Date <span className="text-red-500">*</span>
-        </label>
-        <input
-          type="date"
-          name="effective_date"
-          value={form.effective_date}
-          onChange={handleChange}
-          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
-        />
-        {errors.effective_date && <p className="mt-1 text-xs text-red-500">{errors.effective_date}</p>}
-      </div>
+        to_department_id:
+          normalizedInitialData.to_department_id,
 
-      <div className="mb-4">
-        <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Remarks</label>
-        <textarea
-          name="remarks"
-          value={form.remarks}
-          onChange={handleChange}
-          rows={3}
-          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
-        />
-      </div>
-    </form>
+        reason:
+          normalizedInitialData.reason,
+
+        effective_date:
+          normalizedInitialData.effective_date,
+
+        remarks:
+          normalizedInitialData.remarks,
+      }}
+      onSubmit={handleSubmit}
+      loading={loading}
+    />
   );
 }
