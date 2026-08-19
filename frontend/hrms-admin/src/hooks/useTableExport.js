@@ -1,32 +1,195 @@
 import { useState, useCallback } from "react";
-import { exportToExcel, exportToPDF } from "@/utils/exportTable";
+import {
+  exportToExcel as exportExcelFile,
+  exportToPDF as exportPDFFile,
+} from "@/utils/exportTable";
 import { useToast } from "@/components/feedback/Toast";
 
-// Exports the full filtered dataset (not just the current page) by re-running
-// the list query with a large per_page, then handing the rows to the CSV/PDF
-// writers. `fetchAll` is the raw axios list call (e.g. employeesApi.list) so
-// this bypasses react-query's cached, paginated page of rows.
-export function useTableExport({ fetchAll, queryParams, exportColumns, filename, title }) {
+/**
+ * Table export hook.
+ *
+ * Supports two export modes:
+ *
+ * 1. Direct export:
+ *
+ * const { exportToExcel } = useTableExport();
+ *
+ * exportToExcel(rows, columns, "transfers");
+ *
+ * 2. Fetch-all export:
+ *
+ * const {
+ *   exportExcel,
+ *   exportPDF,
+ * } = useTableExport({
+ *   fetchAll: employeesApi.list,
+ *   queryParams,
+ *   exportColumns,
+ *   filename: "employees",
+ *   title: "Employees",
+ * });
+ */
+export function useTableExport(options = {}) {
+  const {
+    fetchAll = null,
+    queryParams = {},
+    exportColumns = [],
+    filename = "export",
+    title = "",
+  } = options;
+
   const { showToast } = useToast();
+
   const [exporting, setExporting] = useState(false);
 
-  const getRows = useCallback(async () => {
-    const res = await fetchAll({ ...queryParams, page: 1, per_page: 5000 });
-    return res.data.data.items || [];
-  }, [fetchAll, queryParams]);
+  /* =========================================================
+     DIRECT EXCEL EXPORT
+     Used by TransferListPage and other pages that already
+     have the rows available.
+  ========================================================= */
+
+  const exportToExcel = useCallback(
+    async (
+      rows = [],
+      columns = [],
+      fileName = "export"
+    ) => {
+      if (!Array.isArray(rows) || rows.length === 0) {
+        showToast(
+          "No data to export",
+          "info"
+        );
+        return;
+      }
+
+      try {
+        setExporting(true);
+
+        exportExcelFile(
+          rows,
+          columns,
+          fileName
+        );
+      } catch (error) {
+        console.error(
+          "Excel export failed:",
+          error
+        );
+
+        showToast(
+          "Failed to export data",
+          "error"
+        );
+      } finally {
+        setExporting(false);
+      }
+    },
+    [showToast]
+  );
+
+  /* =========================================================
+     DIRECT PDF EXPORT
+  ========================================================= */
+
+  const exportToPDF = useCallback(
+    async (
+      rows = [],
+      columns = [],
+      fileName = "export",
+      exportTitle = ""
+    ) => {
+      if (!Array.isArray(rows) || rows.length === 0) {
+        showToast(
+          "No data to export",
+          "info"
+        );
+        return;
+      }
+
+      try {
+        setExporting(true);
+
+        exportPDFFile(
+          rows,
+          exportTitle,
+          columns,
+          fileName
+        );
+      } catch (error) {
+        console.error(
+          "PDF export failed:",
+          error
+        );
+
+        showToast(
+          "Failed to export data",
+          "error"
+        );
+      } finally {
+        setExporting(false);
+      }
+    },
+    [showToast]
+  );
+
+  /* =========================================================
+     FETCH ALL ROWS
+  ========================================================= */
+
+  const getRows = useCallback(
+    async () => {
+      if (typeof fetchAll !== "function") {
+        throw new Error(
+          "fetchAll is required for fetch-based export"
+        );
+      }
+
+      const response =
+        await fetchAll({
+          ...queryParams,
+          page: 1,
+          per_page: 5000,
+        });
+
+      return (
+        response?.data?.data?.items ||
+        []
+      );
+    },
+    [fetchAll, queryParams]
+  );
+
+  /* =========================================================
+     FETCH-BASED EXPORT
+  ========================================================= */
 
   const withRows = useCallback(
     async (run) => {
       setExporting(true);
+
       try {
-        const rows = await getRows();
+        const rows =
+          await getRows();
+
         if (!rows.length) {
-          showToast("No data to export", "info");
+          showToast(
+            "No data to export",
+            "info"
+          );
           return;
         }
+
         run(rows);
-      } catch {
-        showToast("Failed to export data", "error");
+      } catch (error) {
+        console.error(
+          "Export failed:",
+          error
+        );
+
+        showToast(
+          "Failed to export data",
+          "error"
+        );
       } finally {
         setExporting(false);
       }
@@ -34,15 +197,57 @@ export function useTableExport({ fetchAll, queryParams, exportColumns, filename,
     [getRows, showToast]
   );
 
+  /* =========================================================
+     FETCH-BASED EXCEL
+  ========================================================= */
+
   const exportExcel = useCallback(
-    () => withRows((rows) => exportToExcel(filename, exportColumns, rows)),
-    [withRows, filename, exportColumns]
+    () =>
+      withRows((rows) =>
+        exportExcelFile(
+          filename,
+          exportColumns,
+          rows
+        )
+      ),
+    [
+      withRows,
+      filename,
+      exportColumns,
+    ]
   );
+
+  /* =========================================================
+     FETCH-BASED PDF
+  ========================================================= */
 
   const exportPDF = useCallback(
-    () => withRows((rows) => exportToPDF(filename, title, exportColumns, rows)),
-    [withRows, filename, title, exportColumns]
+    () =>
+      withRows((rows) =>
+        exportPDFFile(
+          filename,
+          title,
+          exportColumns,
+          rows
+        )
+      ),
+    [
+      withRows,
+      filename,
+      title,
+      exportColumns,
+    ]
   );
 
-  return { exporting, exportExcel, exportPDF };
+  return {
+    exporting,
+
+    // Direct export API
+    exportToExcel,
+    exportToPDF,
+
+    // Fetch-all export API
+    exportExcel,
+    exportPDF,
+  };
 }

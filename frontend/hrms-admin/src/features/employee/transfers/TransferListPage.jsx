@@ -592,7 +592,8 @@ function AccomplishmentsHoverCard({
 
       <div className="mt-2 max-h-[220px] overflow-y-auto">
         <p className="whitespace-pre-wrap break-words text-xs leading-5 text-slate-600 dark:text-slate-300">
-          {accomplishments || "No accomplishments recorded."}
+          {accomplishments ||
+            "No accomplishments recorded."}
         </p>
       </div>
     </div>
@@ -633,28 +634,6 @@ function AccomplishmentsPreview({
         {value}
       </p>
     </DepartmentHoverTrigger>
-  );
-}
-
-/* =========================================================
-   REASON BADGE
-========================================================= */
-
-function ReasonBadge({
-  reason,
-}) {
-  const displayReason =
-    reason || "Other";
-
-  return (
-    <span
-      title={displayReason}
-      className="inline-flex max-w-full items-center rounded-full bg-sky-50 px-2.5 py-1 text-xs font-medium text-sky-700 ring-1 ring-inset ring-sky-600/20 dark:bg-sky-500/10 dark:text-sky-400 dark:ring-sky-400/30"
-    >
-      <span className="max-w-[180px] truncate">
-        {displayReason}
-      </span>
-    </span>
   );
 }
 
@@ -896,8 +875,10 @@ export default function TransferListPage() {
      EXPORT
   ======================================================= */
 
-  const { exportToExcel } =
-    useTableExport();
+  const {
+    exportToExcel,
+    exporting,
+  } = useTableExport();
 
   /* =======================================================
      FILTERS
@@ -1348,7 +1329,7 @@ export default function TransferListPage() {
      EXPORT HANDLER
   ======================================================= */
 
-  const handleExport = () => {
+  const handleExport = async () => {
     const rows = filtered.map(
       (transfer) => {
         const employee =
@@ -1407,7 +1388,15 @@ export default function TransferListPage() {
       }
     );
 
-    exportToExcel(
+    if (!rows.length) {
+      showToast(
+        "No data to export",
+        "info"
+      );
+      return;
+    }
+
+    await exportToExcel(
       rows,
       EXPORT_COLUMNS,
       "transfers"
@@ -1460,8 +1449,7 @@ export default function TransferListPage() {
             "",
 
           location:
-            payload.location ??
-            "",
+            payload.location ?? "",
 
           accomplishments:
             payload.accomplishments ??
@@ -1627,6 +1615,7 @@ export default function TransferListPage() {
             onRefresh={refetch}
             refreshing={isFetching}
             onExport={handleExport}
+            exporting={exporting}
           />
 
           <Button
