@@ -3,6 +3,31 @@ import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import { isRequired } from "@/utils/validators";
 
+/* =========================================================
+   HELPERS
+========================================================= */
+
+function normalizeDate(value) {
+  if (!value) {
+    return "";
+  }
+
+  /*
+   * HTML date inputs require:
+   *
+   * YYYY-MM-DD
+   *
+   * This also handles values such as:
+   * 2026-08-19T00:00:00
+   * 2026-08-19T00:00:00.000Z
+   */
+  return String(value).slice(0, 10);
+}
+
+/* =========================================================
+   CUSTOM SELECT
+========================================================= */
+
 function CustomSelect({
   label,
   name,
@@ -14,20 +39,30 @@ function CustomSelect({
   disabled,
   placeholder = "Select an option",
 }) {
-  const [open, setOpen] = useState(false);
-  const wrapperRef = useRef(null);
+  const [open, setOpen] =
+    useState(false);
+
+  const wrapperRef =
+    useRef(null);
 
   useEffect(() => {
-    const handleOutsideClick = (event) => {
+    const handleOutsideClick = (
+      event
+    ) => {
       if (
         wrapperRef.current &&
-        !wrapperRef.current.contains(event.target)
+        !wrapperRef.current.contains(
+          event.target
+        )
       ) {
         setOpen(false);
       }
     };
 
-    document.addEventListener("mousedown", handleOutsideClick);
+    document.addEventListener(
+      "mousedown",
+      handleOutsideClick
+    );
 
     return () => {
       document.removeEventListener(
@@ -37,11 +72,16 @@ function CustomSelect({
     };
   }, []);
 
-  const selectedOption = options.find(
-    (option) => String(option.value) === String(value)
-  );
+  const selectedOption =
+    options.find(
+      (option) =>
+        String(option.value) ===
+        String(value)
+    );
 
-  const handleSelect = (option) => {
+  const handleSelect = (
+    option
+  ) => {
     onChange({
       target: {
         name,
@@ -54,11 +94,17 @@ function CustomSelect({
   };
 
   return (
-    <div className="relative mb-4" ref={wrapperRef}>
+    <div
+      className="relative mb-4"
+      ref={wrapperRef}
+    >
       <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
         {label}
+
         {required && (
-          <span className="ml-1 text-red-500">*</span>
+          <span className="ml-1 text-red-500">
+            *
+          </span>
         )}
       </label>
 
@@ -67,7 +113,9 @@ function CustomSelect({
         disabled={disabled}
         onClick={() => {
           if (!disabled) {
-            setOpen((prev) => !prev);
+            setOpen(
+              (prev) => !prev
+            );
           }
         }}
         className={`flex h-10 w-full items-center justify-between rounded-lg border bg-white px-3 text-left text-sm outline-none transition
@@ -91,13 +139,16 @@ function CustomSelect({
               : "truncate text-slate-400 dark:text-slate-500"
           }
         >
-          {selectedOption?.label || placeholder}
+          {selectedOption?.label ||
+            placeholder}
         </span>
 
         <svg
           xmlns="http://www.w3.org/2000/svg"
           className={`ml-2 h-4 w-4 shrink-0 text-slate-400 transition-transform ${
-            open ? "rotate-180" : ""
+            open
+              ? "rotate-180"
+              : ""
           }`}
           fill="none"
           viewBox="0 0 24 24"
@@ -119,46 +170,63 @@ function CustomSelect({
               No options available
             </div>
           ) : (
-            options.map((option) => {
-              const isSelected =
-                String(option.value) === String(value);
+            options.map(
+              (option) => {
+                const isSelected =
+                  String(
+                    option.value
+                  ) ===
+                  String(
+                    value
+                  );
 
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => handleSelect(option)}
-                  className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm transition
-                    ${
-                      isSelected
-                        ? "bg-primary-50 text-primary-700 dark:bg-primary-500/10 dark:text-primary-400"
-                        : "text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-700"
+                return (
+                  <button
+                    key={
+                      option.value
                     }
-                  `}
-                >
-                  <span className="truncate">
-                    {option.label}
-                  </span>
+                    type="button"
+                    onClick={() =>
+                      handleSelect(
+                        option
+                      )
+                    }
+                    className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm transition
+                      ${
+                        isSelected
+                          ? "bg-primary-50 text-primary-700 dark:bg-primary-500/10 dark:text-primary-400"
+                          : "text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-700"
+                      }
+                    `}
+                  >
+                    <span className="truncate">
+                      {
+                        option.label
+                      }
+                    </span>
 
-                  {isSelected && (
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="ml-2 h-4 w-4 shrink-0 text-primary-600"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M5 12l4 4L19 7"
-                      />
-                    </svg>
-                  )}
-                </button>
-              );
-            })
+                    {isSelected && (
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="ml-2 h-4 w-4 shrink-0 text-primary-600"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={
+                          2
+                        }
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M5 12l4 4L19 7"
+                        />
+                      </svg>
+                    )}
+                  </button>
+                );
+              }
+            )
           )}
         </div>
       )}
@@ -172,18 +240,10 @@ function CustomSelect({
   );
 }
 
-// Config-driven form shared by create/edit transactional features.
-// fields:
-// {
-//   name,
-//   label,
-//   type: "text" | "number" | "date" | "select" | "checkbox" | "textarea",
-//   required,
-//   options,
-//   placeholder,
-//   defaultValue,
-//   disabled
-// }
+/* =========================================================
+   GENERIC FORM
+========================================================= */
+
 export default function GenericForm({
   formId,
   fields,
@@ -194,31 +254,98 @@ export default function GenericForm({
   onCancel,
   isEdit,
 }) {
+  /* =======================================================
+     BUILD INITIAL FORM
+  ======================================================= */
+
   const buildInitial = () => {
     const obj = {};
 
-    fields.forEach((field) => {
-      if (field.type === "checkbox") {
+    fields.forEach(
+      (field) => {
+        if (
+          field.type ===
+          "checkbox"
+        ) {
+          obj[field.name] =
+            initialData[
+              field.name
+            ] !== undefined
+              ? initialData[
+                  field.name
+                ]
+              : field.defaultValue ??
+                true;
+
+          return;
+        }
+
+        let value =
+          initialData[
+            field.name
+          ];
+
+        if (
+          value ===
+            undefined ||
+          value === null
+        ) {
+          value =
+            field.defaultValue ??
+            "";
+        }
+
+        /*
+         * IMPORTANT:
+         *
+         * Normalize date values before
+         * putting them into <input type="date">.
+         */
+        if (
+          field.type ===
+          "date"
+        ) {
+          value =
+            normalizeDate(
+              value
+            );
+        }
+
         obj[field.name] =
-          initialData[field.name] !== undefined
-            ? initialData[field.name]
-            : field.defaultValue ?? true;
-      } else {
-        obj[field.name] =
-          initialData[field.name] !== undefined &&
-          initialData[field.name] !== null
-            ? initialData[field.name]
-            : field.defaultValue ?? "";
+          value;
       }
-    });
+    );
 
     return obj;
   };
 
-  const [form, setForm] = useState(buildInitial);
-  const [errors, setErrors] = useState({});
+  /* =======================================================
+     FORM STATE
+  ======================================================= */
 
-  const handleChange = (event) => {
+  const [form, setForm] =
+    useState(buildInitial);
+
+  const [errors, setErrors] =
+    useState({});
+
+  /* =======================================================
+     IMPORTANT:
+     RESYNC FORM WHEN EDIT RECORD CHANGES
+  ======================================================= */
+
+  useEffect(() => {
+    setForm(buildInitial());
+    setErrors({});
+  }, [initialData]);
+
+  /* =======================================================
+     CHANGE HANDLER
+  ======================================================= */
+
+  const handleChange = (
+    event
+  ) => {
     const {
       name,
       value,
@@ -228,49 +355,78 @@ export default function GenericForm({
 
     setForm((prev) => ({
       ...prev,
+
       [name]:
-        type === "checkbox" ? checked : value,
+        type ===
+        "checkbox"
+          ? checked
+          : value,
     }));
 
-    // Clear the field error immediately after user changes it.
     if (errors[name]) {
       setErrors((prev) => {
-        const next = { ...prev };
+        const next = {
+          ...prev,
+        };
+
         delete next[name];
+
         return next;
       });
     }
   };
 
+  /* =======================================================
+     VALIDATION
+  ======================================================= */
+
   const validate = () => {
     const errs = {};
 
-    fields.forEach((field) => {
-      if (
-        field.required &&
-        !isRequired(form[field.name])
-      ) {
-        errs[field.name] =
-          `${field.label} is required`;
+    fields.forEach(
+      (field) => {
+        if (
+          field.required &&
+          !isRequired(
+            form[field.name]
+          )
+        ) {
+          errs[field.name] =
+            `${field.label} is required`;
+        }
       }
-    });
+    );
 
     return errs;
   };
 
-  const handleSubmit = (event) => {
+  /* =======================================================
+     SUBMIT
+  ======================================================= */
+
+  const handleSubmit = (
+    event
+  ) => {
     event.preventDefault();
 
-    const errs = validate();
+    const errs =
+      validate();
 
     setErrors(errs);
 
-    if (Object.keys(errs).length > 0) {
+    if (
+      Object.keys(errs)
+        .length > 0
+    ) {
       return;
     }
 
     onSubmit(form);
   };
+
+  /* =======================================================
+     RENDER
+  ======================================================= */
 
   return (
     <form
@@ -284,109 +440,230 @@ export default function GenericForm({
         </p>
       )}
 
-      {fields.map((field) => {
-        if (field.type === "select") {
+      {fields.map(
+        (field) => {
+          /* =================================================
+             SELECT
+          ================================================= */
+
+          if (
+            field.type ===
+            "select"
+          ) {
+            return (
+              <CustomSelect
+                key={
+                  field.name
+                }
+                label={
+                  field.label
+                }
+                name={
+                  field.name
+                }
+                value={
+                  form[
+                    field.name
+                  ]
+                }
+                onChange={
+                  handleChange
+                }
+                options={
+                  field.options ||
+                  []
+                }
+                error={
+                  errors[
+                    field.name
+                  ]
+                }
+                required={
+                  field.required
+                }
+                disabled={
+                  field.disabled
+                }
+                placeholder={
+                  field.placeholder ||
+                  `Select ${field.label}`
+                }
+              />
+            );
+          }
+
+          /* =================================================
+             CHECKBOX
+          ================================================= */
+
+          if (
+            field.type ===
+            "checkbox"
+          ) {
+            return (
+              <div
+                className="mb-4"
+                key={
+                  field.name
+                }
+              >
+                <label className="inline-flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+                  <input
+                    type="checkbox"
+                    name={
+                      field.name
+                    }
+                    checked={!!form[
+                      field.name
+                    ]}
+                    onChange={
+                      handleChange
+                    }
+                    disabled={
+                      field.disabled
+                    }
+                    className="h-4 w-4"
+                  />
+
+                  {
+                    field.label
+                  }
+                </label>
+
+                {errors[
+                  field.name
+                ] && (
+                  <p className="mt-1 text-xs text-red-500">
+                    {
+                      errors[
+                        field.name
+                      ]
+                    }
+                  </p>
+                )}
+              </div>
+            );
+          }
+
+          /* =================================================
+             TEXTAREA
+          ================================================= */
+
+          if (
+            field.type ===
+            "textarea"
+          ) {
+            return (
+              <div
+                className="mb-4"
+                key={
+                  field.name
+                }
+              >
+                <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
+                  {
+                    field.label
+                  }
+
+                  {field.required && (
+                    <span className="ml-1 text-red-500">
+                      *
+                    </span>
+                  )}
+                </label>
+
+                <textarea
+                  name={
+                    field.name
+                  }
+                  value={
+                    form[
+                      field.name
+                    ]
+                  }
+                  onChange={
+                    handleChange
+                  }
+                  rows={3}
+                  className={`input ${
+                    errors[
+                      field.name
+                    ]
+                      ? "border-red-500"
+                      : ""
+                  }`}
+                  placeholder={
+                    field.placeholder
+                  }
+                  disabled={
+                    field.disabled
+                  }
+                />
+
+                {errors[
+                  field.name
+                ] && (
+                  <p className="mt-1 text-xs text-red-500">
+                    {
+                      errors[
+                        field.name
+                      ]
+                    }
+                  </p>
+                )}
+              </div>
+            );
+          }
+
+          /* =================================================
+             INPUT
+          ================================================= */
+
           return (
-            <CustomSelect
-              key={field.name}
-              label={field.label}
-              name={field.name}
-              value={form[field.name]}
-              onChange={handleChange}
-              options={field.options || []}
-              error={errors[field.name]}
-              required={field.required}
-              disabled={field.disabled}
+            <Input
+              key={
+                field.name
+              }
+              label={
+                field.label
+              }
+              name={
+                field.name
+              }
+              type={
+                field.type ||
+                "text"
+              }
+              value={
+                form[
+                  field.name
+                ]
+              }
+              onChange={
+                handleChange
+              }
+              error={
+                errors[
+                  field.name
+                ]
+              }
+              required={
+                field.required
+              }
               placeholder={
-                field.placeholder ||
-                `Select ${field.label}`
+                field.placeholder
+              }
+              disabled={
+                field.disabled
               }
             />
           );
         }
+      )}
 
-        if (field.type === "checkbox") {
-          return (
-            <div
-              className="mb-4"
-              key={field.name}
-            >
-              <label className="inline-flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
-                <input
-                  type="checkbox"
-                  name={field.name}
-                  checked={!!form[field.name]}
-                  onChange={handleChange}
-                  disabled={field.disabled}
-                  className="h-4 w-4"
-                />
-
-                {field.label}
-              </label>
-
-              {errors[field.name] && (
-                <p className="mt-1 text-xs text-red-500">
-                  {errors[field.name]}
-                </p>
-              )}
-            </div>
-          );
-        }
-
-        if (field.type === "textarea") {
-          return (
-            <div
-              className="mb-4"
-              key={field.name}
-            >
-              <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
-                {field.label}
-
-                {field.required && (
-                  <span className="ml-1 text-red-500">
-                    *
-                  </span>
-                )}
-              </label>
-
-              <textarea
-                name={field.name}
-                value={form[field.name]}
-                onChange={handleChange}
-                rows={3}
-                className={`input ${
-                  errors[field.name]
-                    ? "border-red-500"
-                    : ""
-                }`}
-                placeholder={field.placeholder}
-                disabled={field.disabled}
-              />
-
-              {errors[field.name] && (
-                <p className="mt-1 text-xs text-red-500">
-                  {errors[field.name]}
-                </p>
-              )}
-            </div>
-          );
-        }
-
-        return (
-          <Input
-            key={field.name}
-            label={field.label}
-            name={field.name}
-            type={field.type || "text"}
-            value={form[field.name]}
-            onChange={handleChange}
-            error={errors[field.name]}
-            required={field.required}
-            placeholder={field.placeholder}
-            disabled={field.disabled}
-          />
-        );
-      })}
+      {/* =====================================================
+          ACTIONS
+      ===================================================== */}
 
       <div className="mt-6 flex justify-end gap-2">
         {onCancel && (
@@ -403,10 +680,11 @@ export default function GenericForm({
           type="submit"
           isLoading={loading}
         >
-          {isEdit ? "Update" : "Create"}
+          {isEdit
+            ? "Update"
+            : "Create"}
         </Button>
       </div>
     </form>
   );
 }
-

@@ -5,6 +5,10 @@ import { employeesApi } from "@/api/employees.api";
 import { masterApi } from "@/api/master.api";
 import { useCompanies } from "@/features/master/company/useCompanies";
 
+/* =========================================================
+   TRANSFER REASONS
+========================================================= */
+
 const COMMON_TRANSFER_REASONS = [
   "Business Requirement",
   "Department Requirement",
@@ -19,11 +23,19 @@ const COMMON_TRANSFER_REASONS = [
   "Other",
 ];
 
+/* =========================================================
+   STYLES
+========================================================= */
+
 const inputClass =
   "h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-slate-800 dark:text-white";
 
 const labelClass =
   "mb-1.5 block text-xs font-medium text-slate-700 dark:text-slate-300";
+
+/* =========================================================
+   DEFAULT FORM
+========================================================= */
 
 const DEFAULT_FORM = {
   employee_id: "",
@@ -31,36 +43,46 @@ const DEFAULT_FORM = {
   to_department_id: "",
   transfer_reason: "Other",
   transfer_apply_date: "",
-  joining_date: "",
   relieving_date: "",
+  joining_date: "",
   location: "",
   accomplishments: "",
   is_active: true,
 };
+
+/* =========================================================
+   HELPERS
+========================================================= */
 
 function normalizeDate(value) {
   if (!value) {
     return "";
   }
 
+  /*
+   * HTML date input requires exactly:
+   * YYYY-MM-DD
+   */
   return String(value).slice(0, 10);
 }
 
-function normalizeTransferData(initialData = {}) {
+function normalizeTransferData(
+  initialData = {}
+) {
   return {
     employee_id:
-      initialData?.employee_id ||
-      initialData?.employee?.id ||
+      initialData?.employee_id ??
+      initialData?.employee?.id ??
       "",
 
     from_department_id:
-      initialData?.from_department_id ||
-      initialData?.from_department?.id ||
+      initialData?.from_department_id ??
+      initialData?.from_department?.id ??
       "",
 
     to_department_id:
-      initialData?.to_department_id ||
-      initialData?.to_department?.id ||
+      initialData?.to_department_id ??
+      initialData?.to_department?.id ??
       "",
 
     transfer_reason:
@@ -68,22 +90,24 @@ function normalizeTransferData(initialData = {}) {
       initialData?.reason ||
       "Other",
 
-    transfer_apply_date: normalizeDate(
-      initialData?.transfer_apply_date
-    ),
+    transfer_apply_date:
+      normalizeDate(
+        initialData?.transfer_apply_date
+      ),
 
-    joining_date: normalizeDate(
-      initialData?.joining_date
-    ),
+    relieving_date:
+      normalizeDate(
+        initialData?.relieving_date
+      ),
 
-    relieving_date: normalizeDate(
-      initialData?.relieving_date
-    ),
+    joining_date:
+      normalizeDate(
+        initialData?.joining_date
+      ),
 
     /*
-     * IMPORTANT:
-     * Location belongs to the transfer record.
-     * Never populate this from employee.location.
+     * Location is always taken from
+     * the transfer record.
      */
     location:
       initialData?.location || "",
@@ -96,6 +120,10 @@ function normalizeTransferData(initialData = {}) {
       initialData?.is_active !== false,
   };
 }
+
+/* =========================================================
+   FORM
+========================================================= */
 
 export default function TransferForm({
   formId = "transfer-form",
@@ -126,11 +154,12 @@ export default function TransferForm({
   ] = useState(false);
 
   const [form, setForm] =
-    useState(() =>
-      normalizeTransferData(
+    useState(() => ({
+      ...DEFAULT_FORM,
+      ...normalizeTransferData(
         initialData
-      )
-    );
+      ),
+    }));
 
   const [error, setError] =
     useState("");
@@ -146,6 +175,8 @@ export default function TransferForm({
         initialData
       ),
     });
+
+    setError("");
   }, [initialData]);
 
   /* =========================================================
@@ -208,9 +239,7 @@ export default function TransferForm({
     const loadDepartments =
       async () => {
         try {
-          setLoadingDepartments(
-            true
-          );
+          setLoadingDepartments(true);
 
           const response =
             await masterApi.listDepartments({
@@ -255,11 +284,12 @@ export default function TransferForm({
      LOAD COMPANIES
   ========================================================= */
 
-  const { data: companyData } =
-    useCompanies({
-      page: 1,
-      per_page: 1000,
-    });
+  const {
+    data: companyData,
+  } = useCompanies({
+    page: 1,
+    per_page: 1000,
+  });
 
   useEffect(() => {
     const items =
@@ -280,8 +310,7 @@ export default function TransferForm({
     employees.forEach(
       (employee) => {
         const branch =
-          employee?.department
-            ?.branch ||
+          employee?.department?.branch ||
           employee?.branch;
 
         if (branch?.id) {
@@ -311,7 +340,10 @@ export default function TransferForm({
     setBranches(
       Array.from(map.values())
     );
-  }, [employees, companies]);
+  }, [
+    employees,
+    companies,
+  ]);
 
   /* =========================================================
      SELECTED EMPLOYEE
@@ -375,11 +407,6 @@ export default function TransferForm({
         employee?.department_id ||
         "";
 
-      /*
-       * Do not populate transfer location
-       * from employee location.
-       */
-
       setForm((current) => ({
         ...current,
 
@@ -407,6 +434,10 @@ export default function TransferForm({
       ...current,
       [name]: value,
     }));
+
+    if (error) {
+      setError("");
+    }
   };
 
   /* =========================================================
@@ -484,6 +515,10 @@ export default function TransferForm({
         return;
       }
 
+      /*
+       * Joining date should not be before
+       * relieving date.
+       */
       if (
         new Date(
           form.joining_date
@@ -499,8 +534,9 @@ export default function TransferForm({
       }
 
       const payload = {
-        employee_id:
-          Number(form.employee_id),
+        employee_id: Number(
+          form.employee_id
+        ),
 
         from_department_id:
           form.from_department_id
@@ -509,23 +545,31 @@ export default function TransferForm({
               )
             : null,
 
-        to_department_id:
-          Number(
-            form.to_department_id
-          ),
+        to_department_id: Number(
+          form.to_department_id
+        ),
 
         transfer_reason:
           form.transfer_reason ||
           "Other",
 
+        /*
+         * New transfer dates.
+         */
         transfer_apply_date:
-          form.transfer_apply_date,
-
-        joining_date:
-          form.joining_date,
+          normalizeDate(
+            form.transfer_apply_date
+          ),
 
         relieving_date:
-          form.relieving_date,
+          normalizeDate(
+            form.relieving_date
+          ),
+
+        joining_date:
+          normalizeDate(
+            form.joining_date
+          ),
 
         /*
          * Transfer-specific location.
@@ -538,7 +582,7 @@ export default function TransferForm({
           null,
 
         is_active:
-          form.is_active,
+          form.is_active !== false,
       };
 
       try {
@@ -945,8 +989,9 @@ export default function TransferForm({
         />
 
         <p className="mt-1 text-[11px] text-slate-400">
-          This location belongs to the transfer record
-          and is independent of the employee's location.
+          This location belongs to the transfer
+          record and is independent of the
+          employee's location.
         </p>
       </div>
 

@@ -93,6 +93,18 @@ const PROMOTION_REASON_OPTIONS = [
 ];
 
 /* =========================================================
+   HELPERS
+========================================================= */
+
+function normalizeDate(value) {
+  if (!value) {
+    return "";
+  }
+
+  return String(value).slice(0, 10);
+}
+
+/* =========================================================
    FORM
 ========================================================= */
 
@@ -160,7 +172,7 @@ export default function PromotionForm({
   ];
 
   /* =======================================================
-     INITIAL DATA
+     NORMALIZED INITIAL DATA
   ======================================================= */
 
   const normalizedInitialData = {
@@ -183,9 +195,16 @@ export default function PromotionForm({
       initialData?.reason ||
       "Other",
 
-    promotion_date:
-      initialData?.promotion_date ||
-      "",
+    /*
+     * Support both the new field and any
+     * old API data that may still contain
+     * effective_date.
+     */
+    promotion_date: normalizeDate(
+      initialData?.promotion_date ??
+        initialData?.effective_date ??
+        ""
+    ),
 
     accomplishments:
       initialData?.accomplishments ||
