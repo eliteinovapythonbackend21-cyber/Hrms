@@ -1,6 +1,7 @@
 from models import Promotion
 from utils import register_crud_blueprint
 
+
 promotions_bp = register_crud_blueprint(
     "promotions_bp",
     Promotion,
@@ -9,23 +10,28 @@ promotions_bp = register_crud_blueprint(
         "employee_id",
         "from_designation_id",
         "to_designation_id",
-        "effective_date",
+        "promotion_date",
+        "reason",
+        "accomplishments",
+        "is_active",
+    ],
+
+    update_fields=[
+        "employee_id",
+        "from_designation_id",
+        "to_designation_id",
+        "promotion_date",
         "reason",
         "accomplishments",
         "is_active",
     ],
 
     search_fields=[
-        "accomplishments",
         "reason",
+        "accomplishments",
     ],
 
     url_prefix_singular="",
-
-    # Editable/deletable now enabled — register_crud_blueprint already
-    # implements PUT (update_item) and DELETE (soft-delete via
-    # is_active=False) generically, so no custom blueprint code is needed
-    # here, unlike documents_bp.py (which needed multipart file handling).
     editable=True,
     deletable=True,
 

@@ -6,12 +6,14 @@ import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
 import ConfirmDialog from "@/components/feedback/ConfirmDialog";
 import TableToolbar from "@/components/table/TableToolbar";
+
 import { useToast } from "@/components/feedback/Toast";
 import { useTableExport } from "@/hooks/useTableExport";
 
 import { employeeLifecycleApi } from "@/api/employee.api";
 import { employeesApi } from "@/api/employees.api";
 import { masterApi } from "@/api/master.api";
+
 import { useCompanies } from "@/features/master/company/useCompanies";
 
 import {
@@ -29,7 +31,6 @@ import {
 } from "./usePromotions";
 
 import { formatDate } from "@/utils/formatDate";
-
 
 /* =========================================================
    CONSTANTS
@@ -59,8 +60,12 @@ const EXPORT_COLUMNS = [
     label: "Location",
   },
   {
-    key: "effective_date",
-    label: "Effective Date",
+    key: "promotion_date",
+    label: "Promotion Date",
+  },
+  {
+    key: "reason",
+    label: "Promotion Reason",
   },
   {
     key: "accomplishments",
@@ -71,7 +76,6 @@ const EXPORT_COLUMNS = [
     label: "Active",
   },
 ];
-
 
 /* =========================================================
    ICONS
@@ -94,7 +98,6 @@ const ArrowIcon = () => (
   </svg>
 );
 
-
 const TrendUpIcon = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -111,7 +114,6 @@ const TrendUpIcon = () => (
     />
   </svg>
 );
-
 
 const CalendarIcon = () => (
   <svg
@@ -138,7 +140,6 @@ const CalendarIcon = () => (
   </svg>
 );
 
-
 const UsersIcon = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -155,7 +156,6 @@ const UsersIcon = () => (
     />
   </svg>
 );
-
 
 const SmallCalendarIcon = () => (
   <svg
@@ -182,12 +182,15 @@ const SmallCalendarIcon = () => (
   </svg>
 );
 
-
 /* =========================================================
    STAT CARD
 ========================================================= */
 
-function StatCard({ icon, value, label }) {
+function StatCard({
+  icon,
+  value,
+  label,
+}) {
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
       <div className="flex items-center gap-3">
@@ -211,12 +214,14 @@ function StatCard({ icon, value, label }) {
   );
 }
 
-
 /* =========================================================
    DESIGNATION BADGE
 ========================================================= */
 
-function DesignationBadge({ label, tone }) {
+function DesignationBadge({
+  label,
+  tone,
+}) {
   const dotTones = {
     from: "bg-slate-400 dark:bg-slate-500",
     to: "bg-sky-500",
@@ -245,7 +250,6 @@ function DesignationBadge({ label, tone }) {
   );
 }
 
-
 /* =========================================================
    DESIGNATION DETAILS CARD
 ========================================================= */
@@ -258,20 +262,25 @@ function DesignationDetailsCard({
   employeeName,
   employeeCode,
   reason,
-  effectiveDate,
+  promotionDate,
   duration,
   accomplishments,
   isActive,
 }) {
   const accentTones = {
-    from: "border-t-slate-400 dark:border-t-slate-500",
-    to: "border-t-sky-500 dark:border-t-sky-400",
+    from:
+      "border-t-slate-400 dark:border-t-slate-500",
+
+    to:
+      "border-t-sky-500 dark:border-t-sky-400",
   };
 
   return (
     <div
       className={`w-[300px] max-w-[calc(100vw-32px)] rounded-xl border border-slate-200 border-t-2 bg-white p-4 text-left shadow-xl dark:border-slate-700 dark:bg-slate-800 ${accentTones[tone]}`}
     >
+      {/* HEADER */}
+
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
@@ -291,9 +300,13 @@ function DesignationDetailsCard({
               : "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300"
           }`}
         >
-          {isActive ? "Active" : "Inactive"}
+          {isActive
+            ? "Active"
+            : "Inactive"}
         </span>
       </div>
+
+      {/* DESCRIPTION */}
 
       {designation?.description && (
         <>
@@ -313,7 +326,11 @@ function DesignationDetailsCard({
 
       <div className="my-3 border-t border-slate-100 dark:border-slate-700" />
 
+      {/* DETAILS */}
+
       <div className="space-y-2.5">
+        {/* EMPLOYEE */}
+
         <div className="grid grid-cols-[90px_minmax(0,1fr)] gap-3">
           <span className="text-xs text-slate-400 dark:text-slate-500">
             Employee
@@ -327,6 +344,8 @@ function DesignationDetailsCard({
           </span>
         </div>
 
+        {/* REASON */}
+
         <div className="grid grid-cols-[90px_minmax(0,1fr)] gap-3">
           <span className="text-xs text-slate-400 dark:text-slate-500">
             Reason
@@ -337,15 +356,19 @@ function DesignationDetailsCard({
           </span>
         </div>
 
+        {/* PROMOTION DATE */}
+
         <div className="grid grid-cols-[90px_minmax(0,1fr)] gap-3">
           <span className="text-xs text-slate-400 dark:text-slate-500">
-            Effective Date
+            Promotion Date
           </span>
 
           <span className="text-right text-xs font-medium text-slate-700 dark:text-slate-200">
-            {effectiveDate || "—"}
+            {promotionDate || "—"}
           </span>
         </div>
+
+        {/* DURATION */}
 
         <div className="grid grid-cols-[90px_minmax(0,1fr)] gap-3">
           <span className="text-xs text-slate-400 dark:text-slate-500">
@@ -358,6 +381,8 @@ function DesignationDetailsCard({
         </div>
       </div>
 
+      {/* ACCOMPLISHMENTS */}
+
       {accomplishments && (
         <>
           <div className="my-3 border-t border-slate-100 dark:border-slate-700" />
@@ -367,7 +392,7 @@ function DesignationDetailsCard({
               Overall Records / Accomplishments
             </p>
 
-            <p className="break-words text-xs leading-5 text-slate-600 dark:text-slate-300">
+            <p className="max-h-[120px] overflow-y-auto whitespace-pre-wrap break-words text-xs leading-5 text-slate-600 dark:text-slate-300">
               {accomplishments}
             </p>
           </div>
@@ -376,7 +401,6 @@ function DesignationDetailsCard({
     </div>
   );
 }
-
 
 /* =========================================================
    HOVER TRIGGER
@@ -389,7 +413,8 @@ function DesignationHoverTrigger({
 }) {
   const alignClasses = {
     left: "left-0",
-    center: "left-1/2 -translate-x-1/2",
+    center:
+      "left-1/2 -translate-x-1/2",
     right: "right-0",
   };
 
@@ -428,12 +453,13 @@ function DesignationHoverTrigger({
   );
 }
 
-
 /* =========================================================
    REASON BADGE
 ========================================================= */
 
-function ReasonBadge({ reason }) {
+function ReasonBadge({
+  reason,
+}) {
   return (
     <span
       title={reason || "Other"}
@@ -446,21 +472,32 @@ function ReasonBadge({ reason }) {
   );
 }
 
-
 /* =========================================================
    DURATION
 ========================================================= */
 
-function formatDuration(startDate, endDate) {
-  if (!startDate) return "—";
+function formatDuration(
+  startDate,
+  endDate
+) {
+  if (!startDate) {
+    return "—";
+  }
 
-  const start = new Date(startDate);
+  const start =
+    new Date(startDate);
 
   const end = endDate
     ? new Date(endDate)
     : new Date();
 
-  if (end < start) return "—";
+  if (
+    Number.isNaN(start.getTime()) ||
+    Number.isNaN(end.getTime()) ||
+    end < start
+  ) {
+    return "—";
+  }
 
   let years =
     end.getFullYear() -
@@ -477,14 +514,15 @@ function formatDuration(startDate, endDate) {
   if (days < 0) {
     months -= 1;
 
-    const daysInPrevMonth =
+    const daysInPreviousMonth =
       new Date(
         end.getFullYear(),
         end.getMonth(),
         0
       ).getDate();
 
-    days += daysInPrevMonth;
+    days +=
+      daysInPreviousMonth;
   }
 
   if (months < 0) {
@@ -496,27 +534,32 @@ function formatDuration(startDate, endDate) {
 
   if (years > 0) {
     parts.push(
-      `${years} yr${years > 1 ? "s" : ""}`
+      `${years} yr${
+        years > 1 ? "s" : ""
+      }`
     );
   }
 
   if (months > 0) {
     parts.push(
-      `${months} mo${months > 1 ? "s" : ""}`
+      `${months} mo${
+        months > 1 ? "s" : ""
+      }`
     );
   }
 
   if (days > 0) {
     parts.push(
-      `${days} day${days > 1 ? "s" : ""}`
+      `${days} day${
+        days > 1 ? "s" : ""
+      }`
     );
   }
 
-  return parts.length > 0
+  return parts.length
     ? parts.join(" ")
     : "0 days";
 }
-
 
 /* =========================================================
    TABLE ACTION BUTTON
@@ -557,27 +600,40 @@ const TableIconButton = ({
   );
 };
 
-
 /* =========================================================
    LOCATION
 ========================================================= */
 
-function getEmployeeLocation(employee) {
-  if (!employee) return "—";
+function getEmployeeLocation(
+  employee
+) {
+  if (!employee) {
+    return "—";
+  }
 
   const location =
     employee.location ||
     employee.branch?.location ||
-    employee.department?.branch?.location ||
+    employee.department?.branch
+      ?.location ||
     employee.department?.location ||
     employee.company?.location ||
     employee.address;
 
-  if (typeof location === "string") {
-    return location.trim() || "—";
+  if (
+    typeof location ===
+    "string"
+  ) {
+    return (
+      location.trim() || "—"
+    );
   }
 
-  if (location && typeof location === "object") {
+  if (
+    location &&
+    typeof location ===
+      "object"
+  ) {
     return (
       location.name ||
       location.location_name ||
@@ -591,14 +647,13 @@ function getEmployeeLocation(employee) {
   return "—";
 }
 
-
 /* =========================================================
    PAGE
 ========================================================= */
 
 export default function PromotionListPage() {
-  const { showToast } = useToast();
-
+  const { showToast } =
+    useToast();
 
   /* =======================================================
      PROMOTIONS
@@ -618,94 +673,98 @@ export default function PromotionListPage() {
   const allPromotions =
     allData?.items || [];
 
-
   /* =======================================================
      EMPLOYEES
   ======================================================= */
 
-  const { data: employeesData } =
-    useQuery({
-      queryKey: [
-        "promotions-page",
-        "employees-full",
-      ],
+  const {
+    data: employeesData,
+  } = useQuery({
+    queryKey: [
+      "promotions-page",
+      "employees-full",
+    ],
 
-      queryFn: async () =>
-        (
-          await employeesApi.list({
-            page: 1,
-            per_page: 1000,
-            is_active: true,
-          })
-        ).data.data,
-    });
+    queryFn: async () =>
+      (
+        await employeesApi.list({
+          page: 1,
+          per_page: 1000,
+          is_active: true,
+        })
+      ).data.data,
+  });
 
   const employees =
     employeesData?.items || [];
 
-
-  const employeeMap = useMemo(
-    () =>
-      Object.fromEntries(
-        employees.map((employee) => [
-          employee.id,
-          employee,
-        ])
-      ),
-    [employees]
-  );
-
+  const employeeMap =
+    useMemo(
+      () =>
+        Object.fromEntries(
+          employees.map(
+            (employee) => [
+              employee.id,
+              employee,
+            ]
+          )
+        ),
+      [employees]
+    );
 
   /* =======================================================
      DESIGNATIONS
   ======================================================= */
 
-  const { data: designationsData } =
-    useQuery({
-      queryKey: [
-        "promotions-page",
-        "designations-full",
-      ],
+  const {
+    data: designationsData,
+  } = useQuery({
+    queryKey: [
+      "promotions-page",
+      "designations-full",
+    ],
 
-      queryFn: async () =>
-        (
-          await masterApi.listDesignations({
-            page: 1,
-            per_page: 500,
-          })
-        ).data.data,
-    });
+    queryFn: async () =>
+      (
+        await masterApi.listDesignations({
+          page: 1,
+          per_page: 500,
+        })
+      ).data.data,
+  });
 
-
-  const designationFullMap = useMemo(
-    () =>
-      Object.fromEntries(
-        (designationsData?.items || []).map(
-          (designation) => [
-            designation.id,
-            designation,
-          ]
-        )
-      ),
-    [designationsData]
-  );
-
+  const designationFullMap =
+    useMemo(
+      () =>
+        Object.fromEntries(
+          (
+            designationsData?.items ||
+            []
+          ).map(
+            (designation) => [
+              designation.id,
+              designation,
+            ]
+          )
+        ),
+      [designationsData]
+    );
 
   /* =======================================================
      COMPANIES
   ======================================================= */
 
-  const { data: companyData } =
-    useCompanies({
-      page: 1,
-      per_page: 100,
-    });
+  const {
+    data: companyData,
+  } = useCompanies({
+    page: 1,
+    per_page: 100,
+  });
 
   const companies =
     companyData?.items ||
     companyData?.data ||
     [];
-
 
   /* =======================================================
      LOOKUP OPTIONS
@@ -717,91 +776,173 @@ export default function PromotionListPage() {
   const designationOptions =
     useDesignationOptions();
 
-
   /* =======================================================
      FILTER STATES
   ======================================================= */
 
-  const [filterCompanyId, setFilterCompanyId] =
-    useState("");
+  const [
+    filterCompanyId,
+    setFilterCompanyId,
+  ] = useState("");
 
-  const [filterBranchId, setFilterBranchId] =
-    useState("");
+  const [
+    filterBranchId,
+    setFilterBranchId,
+  ] = useState("");
 
-  const [filterDepartmentId, setFilterDepartmentId] =
-    useState("");
+  const [
+    filterDepartmentId,
+    setFilterDepartmentId,
+  ] = useState("");
 
-  const [filterDesignationId, setFilterDesignationId] =
-    useState("");
+  const [
+    filterDesignationId,
+    setFilterDesignationId,
+  ] = useState("");
 
-  const [filterReason, setFilterReason] =
-    useState("");
-
+  const [
+    filterReason,
+    setFilterReason,
+  ] = useState("");
 
   /* =======================================================
      BRANCH OPTIONS
   ======================================================= */
 
-  const branches = useMemo(() => {
-    const map = new Map();
+  const branches =
+    useMemo(() => {
+      const map =
+        new Map();
 
-    employees.forEach((employee) => {
-      const branch =
-        employee.department?.branch;
+      employees.forEach(
+        (employee) => {
+          const branch =
+            employee.department
+              ?.branch ||
+            employee.branch;
 
-      if (!branch?.id) return;
+          if (!branch?.id) {
+            return;
+          }
 
-      if (
-        filterCompanyId &&
-        String(
-          employee.department?.company?.id
-        ) !== String(filterCompanyId)
-      ) {
-        return;
-      }
+          const company =
+            employee.department
+              ?.company ||
+            employee.company;
 
-      map.set(branch.id, branch);
-    });
+          if (
+            filterCompanyId &&
+            String(
+              company?.id
+            ) !==
+              String(
+                filterCompanyId
+              )
+          ) {
+            return;
+          }
 
-    return Array.from(map.values());
-  }, [employees, filterCompanyId]);
+          map.set(
+            branch.id,
+            branch
+          );
+        }
+      );
 
+      companies.forEach(
+        (company) => {
+          if (
+            filterCompanyId &&
+            String(company.id) !==
+              String(
+                filterCompanyId
+              )
+          ) {
+            return;
+          }
+
+          (
+            company.branches ||
+            []
+          ).forEach(
+            (branch) => {
+              if (branch?.id) {
+                map.set(
+                  branch.id,
+                  branch
+                );
+              }
+            }
+          );
+        }
+      );
+
+      return Array.from(
+        map.values()
+      ).sort(
+        (a, b) =>
+          (
+            a.name ||
+            a.branch_name ||
+            ""
+          ).localeCompare(
+            b.name ||
+              b.branch_name ||
+              ""
+          )
+      );
+    }, [
+      employees,
+      companies,
+      filterCompanyId,
+    ]);
 
   /* =======================================================
      EMPLOYEE TIMELINE
   ======================================================= */
 
-  const employeeTimeline = useMemo(() => {
-    const map = new Map();
+  const employeeTimeline =
+    useMemo(() => {
+      const map =
+        new Map();
 
-    allPromotions.forEach((promotion) => {
-      if (
-        !map.has(
-          promotion.employee_id
-        )
-      ) {
-        map.set(
-          promotion.employee_id,
-          []
-        );
-      }
+      allPromotions.forEach(
+        (promotion) => {
+          if (
+            !map.has(
+              promotion.employee_id
+            )
+          ) {
+            map.set(
+              promotion.employee_id,
+              []
+            );
+          }
 
-      map
-        .get(promotion.employee_id)
-        .push(promotion);
-    });
-
-    map.forEach((list) => {
-      list.sort(
-        (a, b) =>
-          new Date(a.effective_date) -
-          new Date(b.effective_date)
+          map
+            .get(
+              promotion.employee_id
+            )
+            .push(promotion);
+        }
       );
-    });
 
-    return map;
-  }, [allPromotions]);
+      map.forEach(
+        (list) => {
+          list.sort(
+            (a, b) =>
+              new Date(
+                a.promotion_date
+              ) -
+              new Date(
+                b.promotion_date
+              )
+          );
+        }
+      );
 
+      return map;
+    }, [allPromotions]);
 
   /* =======================================================
      MUTATIONS
@@ -816,32 +957,40 @@ export default function PromotionListPage() {
   const deactivateMutation =
     useDeactivatePromotion();
 
-
   /* =======================================================
      PAGE STATES
   ======================================================= */
 
-  const [search, setSearch] =
-    useState("");
+  const [
+    search,
+    setSearch,
+  ] = useState("");
 
-  const [statusFilter, setStatusFilter] =
-    useState("active");
+  const [
+    statusFilter,
+    setStatusFilter,
+  ] = useState("active");
 
-  const [viewMode, setViewMode] =
-    useState("table");
+  const [
+    viewMode,
+    setViewMode,
+  ] = useState("table");
 
   const [page, setPage] =
     useState(1);
 
-  const [modalOpen, setModalOpen] =
-    useState(false);
+  const [
+    modalOpen,
+    setModalOpen,
+  ] = useState(false);
 
   const [editing, setEditing] =
     useState(null);
 
-  const [deleteTarget, setDeleteTarget] =
-    useState(null);
-
+  const [
+    deleteTarget,
+    setDeleteTarget,
+  ] = useState(null);
 
   /* =======================================================
      EXPORT
@@ -853,19 +1002,23 @@ export default function PromotionListPage() {
     exportPDF,
   } = useTableExport({
     fetchAll:
-      employeeLifecycleApi.promotions.list,
+      employeeLifecycleApi
+        .promotions.list,
 
     queryParams: {
-      search: search || undefined,
+      search:
+        search || undefined,
     },
 
-    exportColumns: EXPORT_COLUMNS,
+    exportColumns:
+      EXPORT_COLUMNS,
 
-    filename: "promotions",
+    filename:
+      "promotions",
 
-    title: "Promotions",
+    title:
+      "Promotions",
   });
-
 
   /* =======================================================
      ACTIVE PROMOTIONS
@@ -874,296 +1027,393 @@ export default function PromotionListPage() {
   const activePromotions =
     allPromotions.filter(
       (promotion) =>
-        promotion.is_active !== false
+        promotion.is_active !==
+        false
     );
-
 
   /* =======================================================
      STATISTICS
   ======================================================= */
 
-  const thisMonthCount = useMemo(() => {
-    const now = new Date();
+  const thisMonthCount =
+    useMemo(() => {
+      const now =
+        new Date();
 
-    return activePromotions.filter(
-      (promotion) => {
-        if (!promotion.effective_date)
-          return false;
+      return activePromotions.filter(
+        (promotion) => {
+          if (
+            !promotion.promotion_date
+          ) {
+            return false;
+          }
 
-        const date = new Date(
-          promotion.effective_date
-        );
+          const date =
+            new Date(
+              promotion.promotion_date
+            );
 
-        return (
-          date.getMonth() ===
-            now.getMonth() &&
-          date.getFullYear() ===
-            now.getFullYear()
-        );
-      }
-    ).length;
-  }, [activePromotions]);
+          return (
+            date.getMonth() ===
+              now.getMonth() &&
+            date.getFullYear() ===
+              now.getFullYear()
+          );
+        }
+      ).length;
+    }, [activePromotions]);
 
-
-  const uniqueEmployeeCount = useMemo(
-    () =>
-      new Set(
-        activePromotions.map(
-          (promotion) =>
-            promotion.employee_id
-        )
-      ).size,
-    [activePromotions]
-  );
-
+  const uniqueEmployeeCount =
+    useMemo(
+      () =>
+        new Set(
+          activePromotions.map(
+            (promotion) =>
+              promotion.employee_id
+          )
+        ).size,
+      [activePromotions]
+    );
 
   /* =======================================================
      REASONS
   ======================================================= */
 
-  const reasonOptions = useMemo(() => {
-    const reasons = new Set();
+  const reasonOptions =
+    useMemo(() => {
+      const reasons =
+        new Set();
 
-    allPromotions.forEach(
-      (promotion) => {
-        if (promotion.reason) {
-          reasons.add(
+      allPromotions.forEach(
+        (promotion) => {
+          if (
             promotion.reason
-          );
+          ) {
+            reasons.add(
+              promotion.reason
+            );
+          }
         }
-      }
-    );
+      );
 
-    const commonReasons = [
-      "Performance Improvement",
-      "Outstanding Performance",
-      "Consistent High Performance",
-      "Achievement of Targets",
-      "Increased Responsibilities",
-      "Leadership Skills",
-      "Skill Enhancement",
-      "Additional Qualifications",
-      "Experience / Tenure",
-      "Career Growth",
-      "Role Expansion",
-      "Successful Project Completion",
-      "Business Requirements",
-      "Critical Role / Business Need",
-      "Succession Planning",
-      "Internal Career Progression",
-      "Recognition / Merit",
-      "Promotion After Performance Review",
-      "Promotion After Probation",
-      "Other",
-    ];
+      [
+        "Performance Improvement",
+        "Outstanding Performance",
+        "Consistent High Performance",
+        "Achievement of Targets",
+        "Increased Responsibilities",
+        "Leadership Skills",
+        "Skill Enhancement",
+        "Additional Qualifications",
+        "Experience / Tenure",
+        "Career Growth",
+        "Role Expansion",
+        "Successful Project Completion",
+        "Business Requirements",
+        "Critical Role / Business Need",
+        "Succession Planning",
+        "Internal Career Progression",
+        "Recognition / Merit",
+        "Promotion After Performance Review",
+        "Promotion After Probation",
+        "Other",
+      ].forEach(
+        (reason) =>
+          reasons.add(reason)
+      );
 
-    commonReasons.forEach((reason) =>
-      reasons.add(reason)
-    );
-
-    return Array.from(reasons);
-  }, [allPromotions]);
-
+      return Array.from(
+        reasons
+      ).sort();
+    }, [allPromotions]);
 
   /* =======================================================
      FILTERED DATA
   ======================================================= */
 
-  const filtered = useMemo(() => {
-    const normalizedSearch =
-      search.trim().toLowerCase();
+  const filtered =
+    useMemo(() => {
+      const normalizedSearch =
+        search
+          .trim()
+          .toLowerCase();
 
-    return allPromotions
-      .filter((promotion) => {
-        if (
-          statusFilter === "active" &&
-          promotion.is_active === false
-        ) {
-          return false;
-        }
+      return allPromotions
+        .filter(
+          (promotion) => {
+            /* STATUS */
 
-        if (
-          statusFilter === "inactive" &&
-          promotion.is_active !== false
-        ) {
-          return false;
-        }
+            if (
+              statusFilter ===
+                "active" &&
+              promotion.is_active ===
+                false
+            ) {
+              return false;
+            }
 
-        const employee =
-          employeeMap[
-            promotion.employee_id
-          ];
+            if (
+              statusFilter ===
+                "inactive" &&
+              promotion.is_active !==
+                false
+            ) {
+              return false;
+            }
 
-        if (
-          filterCompanyId &&
-          String(
-            employee?.department?.company?.id
-          ) !== String(filterCompanyId)
-        ) {
-          return false;
-        }
+            const employee =
+              employeeMap[
+                promotion.employee_id
+              ];
 
-        if (
-          filterBranchId &&
-          String(
-            employee?.department?.branch?.id
-          ) !== String(filterBranchId)
-        ) {
-          return false;
-        }
+            /* COMPANY */
 
-        if (
-          filterDepartmentId &&
-          String(
-            employee?.department?.id
-          ) !== String(filterDepartmentId)
-        ) {
-          return false;
-        }
-
-        if (
-          filterDesignationId &&
-          String(
-            promotion.from_designation_id
-          ) !==
-            String(filterDesignationId) &&
-          String(
-            promotion.to_designation_id
-          ) !==
-            String(filterDesignationId)
-        ) {
-          return false;
-        }
-
-        if (
-          filterReason &&
-          String(
-            promotion.reason || ""
-          ) !== String(filterReason)
-        ) {
-          return false;
-        }
-
-        if (normalizedSearch) {
-          const employeeName = employee
-            ? `${employee.first_name || ""} ${
-                employee.last_name || ""
-              }`
-            : "";
-
-          const employeeCode =
-            employee?.employee_code || "";
-
-          const fromDesignation =
-            designationFullMap[
-              promotion.from_designation_id
-            ]?.designation_name || "";
-
-          const toDesignation =
-            designationFullMap[
-              promotion.to_designation_id
-            ]?.designation_name || "";
-
-          const location =
-            getEmployeeLocation(
+            const employeeCompany =
               employee
-            );
+                ?.department
+                ?.company ||
+              employee?.company;
 
-          const haystack = [
-            employeeName,
-            employeeCode,
-            promotion.reason || "",
-            promotion.accomplishments || "",
-            fromDesignation,
-            toDesignation,
-            location,
-          ]
-            .join(" ")
-            .toLowerCase();
+            if (
+              filterCompanyId &&
+              String(
+                employeeCompany?.id
+              ) !==
+                String(
+                  filterCompanyId
+                )
+            ) {
+              return false;
+            }
 
-          if (
-            !haystack.includes(
+            /* BRANCH */
+
+            const employeeBranch =
+              employee
+                ?.department
+                ?.branch ||
+              employee?.branch;
+
+            if (
+              filterBranchId &&
+              String(
+                employeeBranch?.id
+              ) !==
+                String(
+                  filterBranchId
+                )
+            ) {
+              return false;
+            }
+
+            /* DEPARTMENT */
+
+            const employeeDepartment =
+              employee?.department;
+
+            if (
+              filterDepartmentId &&
+              String(
+                employeeDepartment?.id
+              ) !==
+                String(
+                  filterDepartmentId
+                )
+            ) {
+              return false;
+            }
+
+            /* DESIGNATION */
+
+            if (
+              filterDesignationId &&
+              String(
+                promotion.from_designation_id
+              ) !==
+                String(
+                  filterDesignationId
+                ) &&
+              String(
+                promotion.to_designation_id
+              ) !==
+                String(
+                  filterDesignationId
+                )
+            ) {
+              return false;
+            }
+
+            /* REASON */
+
+            if (
+              filterReason &&
+              String(
+                promotion.reason ||
+                  ""
+              ) !==
+                String(
+                  filterReason
+                )
+            ) {
+              return false;
+            }
+
+            /* SEARCH */
+
+            if (
               normalizedSearch
-            )
-          ) {
-            return false;
+            ) {
+              const employeeName =
+                employee
+                  ? `${employee.first_name || ""} ${
+                      employee.last_name || ""
+                    }`
+                  : "";
+
+              const employeeCode =
+                employee?.employee_code ||
+                "";
+
+              const fromDesignation =
+                designationFullMap[
+                  promotion
+                    .from_designation_id
+                ]
+                  ?.designation_name ||
+                "";
+
+              const toDesignation =
+                designationFullMap[
+                  promotion
+                    .to_designation_id
+                ]
+                  ?.designation_name ||
+                "";
+
+              const location =
+                getEmployeeLocation(
+                  employee
+                );
+
+              const haystack = [
+                employeeName,
+                employeeCode,
+                promotion.reason ||
+                  "",
+                promotion.accomplishments ||
+                  "",
+                fromDesignation,
+                toDesignation,
+                location,
+                promotion.promotion_date ||
+                  "",
+              ]
+                .join(" ")
+                .toLowerCase();
+
+              if (
+                !haystack.includes(
+                  normalizedSearch
+                )
+              ) {
+                return false;
+              }
+            }
+
+            return true;
           }
-        }
-
-        return true;
-      })
-      .sort(
-        (a, b) =>
-          new Date(b.effective_date) -
-          new Date(a.effective_date)
-      );
-  }, [
-    allPromotions,
-    statusFilter,
-    search,
-    employeeMap,
-    designationFullMap,
-    filterCompanyId,
-    filterBranchId,
-    filterDepartmentId,
-    filterDesignationId,
-    filterReason,
-  ]);
-
+        )
+        .sort(
+          (a, b) =>
+            new Date(
+              b.promotion_date
+            ) -
+            new Date(
+              a.promotion_date
+            )
+        );
+    }, [
+      allPromotions,
+      statusFilter,
+      search,
+      employeeMap,
+      designationFullMap,
+      filterCompanyId,
+      filterBranchId,
+      filterDepartmentId,
+      filterDesignationId,
+      filterReason,
+    ]);
 
   /* =======================================================
      GROUP BY EMPLOYEE
   ======================================================= */
 
-  const groupedByEmployee = useMemo(() => {
-    const groups = new Map();
+  const groupedByEmployee =
+    useMemo(() => {
+      const groups =
+        new Map();
 
-    filtered.forEach((promotion) => {
-      if (
-        !groups.has(
-          promotion.employee_id
-        )
-      ) {
-        groups.set(
-          promotion.employee_id,
-          {
-            employeeId:
+      filtered.forEach(
+        (promotion) => {
+          if (
+            !groups.has(
+              promotion.employee_id
+            )
+          ) {
+            groups.set(
               promotion.employee_id,
+              {
+                employeeId:
+                  promotion.employee_id,
 
-            employee:
-              employeeMap[
-                promotion.employee_id
-              ],
+                employee:
+                  employeeMap[
+                    promotion.employee_id
+                  ],
 
-            promotions: [],
+                promotions: [],
+              }
+            );
           }
-        );
-      }
 
-      groups
-        .get(promotion.employee_id)
-        .promotions.push(promotion);
-    });
+          groups
+            .get(
+              promotion.employee_id
+            )
+            .promotions.push(
+              promotion
+            );
+        }
+      );
 
-    return Array.from(
-      groups.values()
-    ).sort((a, b) => {
-      const nameA = a.employee
-        ? `${a.employee.first_name || ""} ${
-            a.employee.last_name || ""
-          }`
-        : "";
+      return Array.from(
+        groups.values()
+      ).sort(
+        (a, b) => {
+          const nameA =
+            a.employee
+              ? `${a.employee.first_name || ""} ${
+                  a.employee.last_name || ""
+                }`
+              : "";
 
-      const nameB = b.employee
-        ? `${b.employee.first_name || ""} ${
-            b.employee.last_name || ""
-          }`
-        : "";
+          const nameB =
+            b.employee
+              ? `${b.employee.first_name || ""} ${
+                  b.employee.last_name || ""
+                }`
+              : "";
 
-      return nameA.localeCompare(nameB);
-    });
-  }, [filtered, employeeMap]);
-
+          return nameA.localeCompare(
+            nameB
+          );
+        }
+      );
+    }, [
+      filtered,
+      employeeMap,
+    ]);
 
   /* =======================================================
      PAGINATION
@@ -1179,95 +1429,106 @@ export default function PromotionListPage() {
       ? groupedByEmployee.length
       : filtered.length;
 
-  const pageCount = Math.max(
-    1,
-    Math.ceil(
-      totalForPaging / pageSize
-    )
-  );
+  const pageCount =
+    Math.max(
+      1,
+      Math.ceil(
+        totalForPaging /
+          pageSize
+      )
+    );
 
-  const paged = filtered.slice(
-    (page - 1) * pageSize,
-    page * pageSize
-  );
-
-  const pagedGroups =
-    groupedByEmployee.slice(
-      (page - 1) * pageSize,
+  const paged =
+    filtered.slice(
+      (page - 1) *
+        pageSize,
       page * pageSize
     );
 
+  const pagedGroups =
+    groupedByEmployee.slice(
+      (page - 1) *
+        pageSize,
+      page * pageSize
+    );
 
   /* =======================================================
      PROMOTION DETAILS
   ======================================================= */
 
-  const getPromotionDetails = (
-    promotion
-  ) => {
-    const timeline =
-      employeeTimeline.get(
-        promotion.employee_id
-      ) || [];
+  const getPromotionDetails =
+    (promotion) => {
+      const timeline =
+        employeeTimeline.get(
+          promotion.employee_id
+        ) || [];
 
-    const index =
-      timeline.findIndex(
-        (item) =>
-          item.id === promotion.id
-      );
+      const index =
+        timeline.findIndex(
+          (item) =>
+            item.id ===
+            promotion.id
+        );
 
-    const previous =
-      index > 0
-        ? timeline[index - 1]
-        : null;
+      const previous =
+        index > 0
+          ? timeline[
+              index - 1
+            ]
+          : null;
 
-    const next =
-      index >= 0 &&
-      index < timeline.length - 1
-        ? timeline[index + 1]
-        : null;
+      const next =
+        index >= 0 &&
+        index <
+          timeline.length - 1
+          ? timeline[
+              index + 1
+            ]
+          : null;
 
-    const employee =
-      employeeMap[
-        promotion.employee_id
-      ];
+      const employee =
+        employeeMap[
+          promotion.employee_id
+        ];
 
-    const previousRoleStart =
-      previous
-        ? previous.effective_date
-        : employee?.joining_date;
+      const previousRoleStart =
+        previous
+          ? previous.promotion_date
+          : employee?.joining_date;
 
-    return {
-      previousRoleStart,
+      return {
+        previousRoleStart,
 
-      timeInPreviousRole:
-        formatDuration(
-          previousRoleStart,
-          promotion.effective_date
-        ),
+        timeInPreviousRole:
+          formatDuration(
+            previousRoleStart,
+            promotion.promotion_date
+          ),
 
-      timeInNewRole: next
-        ? formatDuration(
-            promotion.effective_date,
-            next.effective_date
-          )
-        : `${formatDuration(
-            promotion.effective_date,
-            null
-          )} (current)`,
+        timeInNewRole:
+          next
+            ? formatDuration(
+                promotion.promotion_date,
+                next.promotion_date
+              )
+            : `${formatDuration(
+                promotion.promotion_date,
+                null
+              )} (current)`,
 
-      fromDesig:
-        designationFullMap[
-          promotion.from_designation_id
-        ],
+        fromDesig:
+          designationFullMap[
+            promotion
+              .from_designation_id
+          ],
 
-      toDesig:
-        designationFullMap[
-          promotion.to_designation_id
-        ],
+        toDesig:
+          designationFullMap[
+            promotion
+              .to_designation_id
+          ],
+      };
     };
-  };
-
 
   /* =======================================================
      HANDLERS
@@ -1278,110 +1539,155 @@ export default function PromotionListPage() {
     setModalOpen(true);
   };
 
-
   const handleEdit = (
     promotion
   ) => {
-    setEditing(promotion);
+    setEditing(
+      promotion
+    );
+
     setModalOpen(true);
   };
-
 
   const closeModal = () => {
     setModalOpen(false);
     setEditing(null);
   };
 
+  const handleSubmit =
+    async (payload) => {
+      try {
+        const normalizedPayload = {
+          ...payload,
 
-  const handleSubmit = async (
-    payload
-  ) => {
-    try {
-      if (editing) {
-        await updateMutation.mutateAsync({
-          id: editing.id,
-          payload,
-        });
+          employee_id:
+            payload.employee_id
+              ? Number(
+                  payload.employee_id
+                )
+              : payload.employee_id,
 
+          from_designation_id:
+            payload.from_designation_id
+              ? Number(
+                  payload.from_designation_id
+                )
+              : payload.from_designation_id,
+
+          to_designation_id:
+            payload.to_designation_id
+              ? Number(
+                  payload.to_designation_id
+                )
+              : payload.to_designation_id,
+
+          promotion_date:
+            payload.promotion_date ||
+            "",
+
+          reason:
+            payload.reason ||
+            "Other",
+
+          accomplishments:
+            payload.accomplishments ??
+            "",
+        };
+
+        /* Do not send the removed field */
+        delete normalizedPayload.effective_date;
+
+        if (editing) {
+          await updateMutation.mutateAsync(
+            {
+              id: editing.id,
+              payload:
+                normalizedPayload,
+            }
+          );
+
+          showToast(
+            "Promotion updated",
+            "success"
+          );
+        } else {
+          await createMutation.mutateAsync(
+            normalizedPayload
+          );
+
+          showToast(
+            "Promotion created",
+            "success"
+          );
+        }
+
+        closeModal();
+        await refetch();
+      } catch (err) {
         showToast(
-          "Promotion updated",
-          "success"
-        );
-      } else {
-        await createMutation.mutateAsync(
-          payload
-        );
-
-        showToast(
-          "Promotion created",
-          "success"
+          err?.response?.data
+            ?.message ||
+            "Operation failed",
+          "error"
         );
       }
+    };
 
-      closeModal();
-      refetch();
-    } catch (err) {
-      showToast(
-        err.response?.data?.message ||
-          "Operation failed",
-        "error"
-      );
-    }
-  };
+  const confirmDelete =
+    async () => {
+      if (!deleteTarget) {
+        return;
+      }
 
+      try {
+        await deactivateMutation.mutateAsync(
+          deleteTarget.id
+        );
 
-  const confirmDelete = async () => {
-    if (!deleteTarget) return;
+        showToast(
+          "Promotion deactivated",
+          "success"
+        );
 
-    try {
-      await deactivateMutation.mutateAsync(
-        deleteTarget.id
-      );
+        setDeleteTarget(null);
+        await refetch();
+      } catch (err) {
+        showToast(
+          err?.response?.data
+            ?.message ||
+            "Operation failed",
+          "error"
+        );
+      }
+    };
 
-      showToast(
-        "Promotion deactivated",
-        "success"
-      );
+  const handleReactivate =
+    async (promotion) => {
+      try {
+        await updateMutation.mutateAsync(
+          {
+            id: promotion.id,
+            payload: {
+              is_active: true,
+            },
+          }
+        );
 
-      setDeleteTarget(null);
-      refetch();
-    } catch (err) {
-      showToast(
-        err.response?.data?.message ||
-          "Operation failed",
-        "error"
-      );
-    }
-  };
+        showToast(
+          "Promotion reactivated",
+          "success"
+        );
 
-
-  const handleReactivate = async (
-    promotion
-  ) => {
-    try {
-      await updateMutation.mutateAsync({
-        id: promotion.id,
-
-        payload: {
-          is_active: true,
-        },
-      });
-
-      showToast(
-        "Promotion reactivated",
-        "success"
-      );
-
-      refetch();
-    } catch (err) {
-      showToast(
-        err.response?.data?.message ||
-          "Operation failed",
-        "error"
-      );
-    }
-  };
-
+        await refetch();
+      } catch (err) {
+        showToast(
+          err?.response?.data
+            ?.message ||
+            "Operation failed",
+          "error"
+        );
+      }
+    };
 
   const clearFilters = () => {
     setSearch("");
@@ -1394,11 +1700,9 @@ export default function PromotionListPage() {
     setPage(1);
   };
 
-
   const isSaving =
     createMutation.isPending ||
     updateMutation.isPending;
-
 
   /* =======================================================
      ERROR
@@ -1412,17 +1716,13 @@ export default function PromotionListPage() {
     );
   }
 
-
   /* =======================================================
      RETURN
   ======================================================= */
 
   return (
     <div className="min-w-0 space-y-5">
-
-      {/* =====================================================
-          HEADER
-      ===================================================== */}
+      {/* HEADER */}
 
       <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
         <div>
@@ -1458,15 +1758,14 @@ export default function PromotionListPage() {
         </div>
       </div>
 
-
-      {/* =====================================================
-          STAT CARDS
-      ===================================================== */}
+      {/* STAT CARDS */}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatCard
           icon={<TrendUpIcon />}
-          value={activePromotions.length}
+          value={
+            activePromotions.length
+          }
           label="Total Promotions"
         />
 
@@ -1478,21 +1777,18 @@ export default function PromotionListPage() {
 
         <StatCard
           icon={<UsersIcon />}
-          value={uniqueEmployeeCount}
+          value={
+            uniqueEmployeeCount
+          }
           label="Employees Promoted"
         />
       </div>
 
-
-      {/* =====================================================
-          FILTERS
-      ===================================================== */}
+      {/* FILTERS */}
 
       <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-900">
         <div className="flex flex-col gap-3">
-
           <div className="flex flex-col gap-2.5 lg:flex-row lg:flex-wrap">
-
             {/* SEARCH */}
 
             <div className="relative w-full sm:max-w-xs">
@@ -1528,17 +1824,20 @@ export default function PromotionListPage() {
               />
             </div>
 
-
             {/* COMPANY */}
 
             <select
-              value={filterCompanyId}
+              value={
+                filterCompanyId
+              }
               onChange={(event) => {
                 setFilterCompanyId(
                   event.target.value
                 );
 
-                setFilterBranchId("");
+                setFilterBranchId(
+                  ""
+                );
 
                 setPage(1);
               }}
@@ -1554,17 +1853,20 @@ export default function PromotionListPage() {
                     key={company.id}
                     value={company.id}
                   >
-                    {company.name}
+                    {company.name ||
+                      company.company_name ||
+                      `Company #${company.id}`}
                   </option>
                 )
               )}
             </select>
 
-
             {/* BRANCH */}
 
             <select
-              value={filterBranchId}
+              value={
+                filterBranchId
+              }
               onChange={(event) => {
                 setFilterBranchId(
                   event.target.value
@@ -1584,17 +1886,20 @@ export default function PromotionListPage() {
                     key={branch.id}
                     value={branch.id}
                   >
-                    {branch.name}
+                    {branch.name ||
+                      branch.branch_name ||
+                      `Branch #${branch.id}`}
                   </option>
                 )
               )}
             </select>
 
-
             {/* DEPARTMENT */}
 
             <select
-              value={filterDepartmentId}
+              value={
+                filterDepartmentId
+              }
               onChange={(event) => {
                 setFilterDepartmentId(
                   event.target.value
@@ -1611,20 +1916,27 @@ export default function PromotionListPage() {
               {departmentOptions.map(
                 (department) => (
                   <option
-                    key={department.value}
-                    value={department.value}
+                    key={
+                      department.value
+                    }
+                    value={
+                      department.value
+                    }
                   >
-                    {department.label}
+                    {
+                      department.label
+                    }
                   </option>
                 )
               )}
             </select>
 
-
             {/* DESIGNATION */}
 
             <select
-              value={filterDesignationId}
+              value={
+                filterDesignationId
+              }
               onChange={(event) => {
                 setFilterDesignationId(
                   event.target.value
@@ -1641,20 +1953,27 @@ export default function PromotionListPage() {
               {designationOptions.map(
                 (designation) => (
                   <option
-                    key={designation.value}
-                    value={designation.value}
+                    key={
+                      designation.value
+                    }
+                    value={
+                      designation.value
+                    }
                   >
-                    {designation.label}
+                    {
+                      designation.label
+                    }
                   </option>
                 )
               )}
             </select>
 
-
             {/* REASON */}
 
             <select
-              value={filterReason}
+              value={
+                filterReason
+              }
               onChange={(event) => {
                 setFilterReason(
                   event.target.value
@@ -1680,37 +1999,38 @@ export default function PromotionListPage() {
               )}
             </select>
 
-
             {/* CLEAR */}
 
-            {(search ||
+            {(
+              search ||
               filterCompanyId ||
               filterBranchId ||
               filterDepartmentId ||
               filterDesignationId ||
-              filterReason) && (
+              filterReason
+            ) && (
               <button
                 type="button"
-                onClick={clearFilters}
+                onClick={
+                  clearFilters
+                }
                 className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-xs font-medium text-slate-600 transition hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
               >
                 Clear Filters
               </button>
             )}
-
           </div>
-
 
           {/* VIEW / STATUS */}
 
           <div className="flex flex-wrap items-center justify-between gap-2">
-
             <div className="flex w-fit items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
-
               <button
                 type="button"
                 onClick={() => {
-                  setViewMode("table");
+                  setViewMode(
+                    "table"
+                  );
                   setPage(1);
                 }}
                 className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition ${
@@ -1725,7 +2045,9 @@ export default function PromotionListPage() {
               <button
                 type="button"
                 onClick={() => {
-                  setViewMode("card");
+                  setViewMode(
+                    "card"
+                  );
                   setPage(1);
                 }}
                 className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition ${
@@ -1736,58 +2058,48 @@ export default function PromotionListPage() {
               >
                 Card
               </button>
-
             </div>
-
 
             <div className="flex w-fit items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
               {[
                 "active",
                 "inactive",
                 "all",
-              ].map((status) => (
-                <button
-                  key={status}
-                  type="button"
-                  onClick={() => {
-                    setStatusFilter(
+              ].map(
+                (status) => (
+                  <button
+                    key={status}
+                    type="button"
+                    onClick={() => {
+                      setStatusFilter(
+                        status
+                      );
+
+                      setPage(1);
+                    }}
+                    className={`rounded-md px-3 py-1.5 text-xs font-medium capitalize transition ${
+                      statusFilter ===
                       status
-                    );
-
-                    setPage(1);
-                  }}
-                  className={`rounded-md px-3 py-1.5 text-xs font-medium capitalize transition ${
-                    statusFilter ===
-                    status
-                      ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
-                      : "text-slate-500 hover:text-slate-700 dark:text-slate-400"
-                  }`}
-                >
-                  {status}
-                </button>
-              ))}
+                        ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
+                        : "text-slate-500 hover:text-slate-700 dark:text-slate-400"
+                    }`}
+                  >
+                    {status}
+                  </button>
+                )
+              )}
             </div>
-
           </div>
-
         </div>
       </div>
 
-
-      {/* =====================================================
-          DATA
-      ===================================================== */}
+      {/* DATA */}
 
       {isLoading ? (
         <div className="py-10 text-center text-sm text-slate-400">
           Loading...
         </div>
       ) : viewMode === "table" ? (
-
-        /* ===================================================
-           TABLE VIEW
-        =================================================== */
-
         paged.length === 0 ? (
           <div className="flex min-h-[200px] flex-col items-center justify-center rounded-xl border border-slate-200 bg-white px-6 py-10 text-center shadow-sm dark:border-slate-700 dark:bg-slate-900">
             <h3 className="text-sm font-semibold text-slate-800 dark:text-white">
@@ -1799,14 +2111,6 @@ export default function PromotionListPage() {
             </p>
           </div>
         ) : (
-
-          /*
-           * IMPORTANT:
-           * The table itself is wrapped in overflow-x-auto.
-           * This prevents the Actions column from getting
-           * compressed when the screen becomes smaller.
-           */
-
           <div
             className="
               w-full
@@ -1822,7 +2126,6 @@ export default function PromotionListPage() {
               dark:bg-slate-900
             "
           >
-
             <table
               className="
                 w-full
@@ -1833,40 +2136,15 @@ export default function PromotionListPage() {
                 text-sm
               "
             >
-
-              {/* =================================================
-                  FIXED COLUMN WIDTHS
-              ================================================= */}
-
               <colgroup>
-
-                {/* Employee */}
                 <col className="w-[19%]" />
-
-                {/* Current Designation */}
                 <col className="w-[17%]" />
-
-                {/* Promoted To */}
                 <col className="w-[17%]" />
-
-                {/* Location */}
                 <col className="w-[12%]" />
-
-                {/* Accomplishments */}
-                <col className="w-[18%]" />
-
-                {/* Status */}
+                <col className="w-[13%]" />
                 <col className="w-[9%]" />
-
-                {/* Actions */}
                 <col className="w-[8%]" />
-
               </colgroup>
-
-
-              {/* =================================================
-                  TABLE HEADER
-              ================================================= */}
 
               <thead
                 className="
@@ -1883,7 +2161,6 @@ export default function PromotionListPage() {
                 "
               >
                 <tr>
-
                   <th className="whitespace-nowrap px-4 py-3 font-medium">
                     Employee
                   </th>
@@ -1900,17 +2177,13 @@ export default function PromotionListPage() {
                     Employee Location
                   </th>
 
-                  <th className="px-4 py-3 font-medium">
-                    Overall Records / Accomplishments
+                  <th className="whitespace-nowrap px-4 py-3 font-medium">
+                    Promotion Date
                   </th>
 
                   <th className="whitespace-nowrap px-4 py-3 font-medium">
                     Status
                   </th>
-
-                  {/* =================================================
-                      FIXED ACTION HEADER
-                  ================================================= */}
 
                   <th
                     className="
@@ -1935,25 +2208,16 @@ export default function PromotionListPage() {
                   >
                     Actions
                   </th>
-
                 </tr>
               </thead>
 
-
-              {/* =================================================
-                  TABLE BODY
-              ================================================= */}
-
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-
                 {paged.map(
                   (promotion) => {
-
                     const employee =
                       employeeMap[
                         promotion.employee_id
                       ];
-
 
                     const employeeName =
                       employee
@@ -1962,23 +2226,19 @@ export default function PromotionListPage() {
                           }`.trim()
                         : `Employee #${promotion.employee_id}`;
 
-
                     const employeeLocation =
                       getEmployeeLocation(
                         employee
                       );
 
-
                     const isActive =
                       promotion.is_active !==
                       false;
-
 
                     const timeline =
                       employeeTimeline.get(
                         promotion.employee_id
                       ) || [];
-
 
                     const index =
                       timeline.findIndex(
@@ -1987,14 +2247,12 @@ export default function PromotionListPage() {
                           promotion.id
                       );
 
-
                     const previous =
                       index > 0
                         ? timeline[
                             index - 1
                           ]
                         : null;
-
 
                     const next =
                       index >= 0 &&
@@ -2005,49 +2263,43 @@ export default function PromotionListPage() {
                           ]
                         : null;
 
-
                     const previousRoleStart =
                       previous
-                        ? previous.effective_date
+                        ? previous.promotion_date
                         : employee?.joining_date;
-
 
                     const timeInPreviousRole =
                       formatDuration(
                         previousRoleStart,
-                        promotion.effective_date
+                        promotion.promotion_date
                       );
-
 
                     const timeInNewRole =
                       next
                         ? formatDuration(
-                            promotion.effective_date,
-                            next.effective_date
+                            promotion.promotion_date,
+                            next.promotion_date
                           )
                         : `${formatDuration(
-                            promotion.effective_date,
+                            promotion.promotion_date,
                             null
                           )} (current)`;
 
-
                     const fromDesignation =
                       designationFullMap[
-                        promotion
-                          .from_designation_id
+                        promotion.from_designation_id
                       ];
-
 
                     const toDesignation =
                       designationFullMap[
-                        promotion
-                          .to_designation_id
+                        promotion.to_designation_id
                       ];
-
 
                     return (
                       <tr
-                        key={promotion.id}
+                        key={
+                          promotion.id
+                        }
                         className="
                           group
                           relative
@@ -2055,14 +2307,10 @@ export default function PromotionListPage() {
                           dark:hover:bg-slate-800/40
                         "
                       >
-
-                        {/* =================================================
-                            EMPLOYEE
-                        ================================================= */}
+                        {/* EMPLOYEE */}
 
                         <td className="min-w-0 px-4 py-3">
                           <div className="flex min-w-0 items-center gap-2.5">
-
                             <Avatar
                               name={
                                 employeeName
@@ -2082,17 +2330,12 @@ export default function PromotionListPage() {
                                   `#${promotion.employee_id}`}
                               </p>
                             </div>
-
                           </div>
                         </td>
 
-
-                        {/* =================================================
-                            CURRENT DESIGNATION
-                        ================================================= */}
+                        {/* CURRENT DESIGNATION */}
 
                         <td className="relative min-w-0 px-4 py-3">
-
                           <DesignationHoverTrigger
                             align="left"
                             panel={
@@ -2112,7 +2355,7 @@ export default function PromotionListPage() {
                                 reason={
                                   promotion.reason
                                 }
-                                effectiveDate={formatDate(
+                                promotionDate={formatDate(
                                   previousRoleStart
                                 )}
                                 duration={
@@ -2135,16 +2378,11 @@ export default function PromotionListPage() {
                               }
                             />
                           </DesignationHoverTrigger>
-
                         </td>
 
-
-                        {/* =================================================
-                            PROMOTED TO
-                        ================================================= */}
+                        {/* PROMOTED TO */}
 
                         <td className="relative min-w-0 px-4 py-3">
-
                           <DesignationHoverTrigger
                             align="left"
                             panel={
@@ -2164,8 +2402,8 @@ export default function PromotionListPage() {
                                 reason={
                                   promotion.reason
                                 }
-                                effectiveDate={formatDate(
-                                  promotion.effective_date
+                                promotionDate={formatDate(
+                                  promotion.promotion_date
                                 )}
                                 duration={
                                   timeInNewRole
@@ -2187,16 +2425,11 @@ export default function PromotionListPage() {
                               }
                             />
                           </DesignationHoverTrigger>
-
                         </td>
 
-
-                        {/* =================================================
-                            LOCATION
-                        ================================================= */}
+                        {/* LOCATION */}
 
                         <td className="min-w-0 overflow-hidden px-4 py-3">
-
                           <span
                             title={
                               employeeLocation
@@ -2215,52 +2448,28 @@ export default function PromotionListPage() {
                               employeeLocation
                             }
                           </span>
-
                         </td>
 
-
-                        {/* =================================================
-                            OVERALL RECORDS
-                        ================================================= */}
-
-                        <td className="min-w-0 px-4 py-3">
-
-                          <span
-                            title={
-                              promotion.accomplishments ||
-                              "No overall records / accomplishments"
-                            }
-                            className="
-                              block
-                              max-w-full
-                              truncate
-                              text-xs
-                              font-medium
-                              text-slate-600
-                              dark:text-slate-300
-                            "
-                          >
-                            {promotion.accomplishments ||
-                              "—"}
-                          </span>
-
-                        </td>
-
-
-                        {/* =================================================
-                            STATUS
-                        ================================================= */}
+                        {/* PROMOTION DATE */}
 
                         <td className="px-4 py-3">
+                          <span className="whitespace-nowrap text-xs font-medium text-slate-600 dark:text-slate-300">
+                            {formatDate(
+                              promotion.promotion_date
+                            )}
+                          </span>
+                        </td>
 
+                        {/* STATUS */}
+
+                        <td className="px-4 py-3">
                           <span
-                            className={`inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-[10px] font-medium ${
+                            className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2 py-1 text-[10px] font-medium ${
                               isActive
                                 ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300"
                                 : "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300"
                             }`}
                           >
-
                             <span
                               className={`h-1.5 w-1.5 shrink-0 rounded-full ${
                                 isActive
@@ -2272,15 +2481,10 @@ export default function PromotionListPage() {
                             {isActive
                               ? "Active"
                               : "Inactive"}
-
                           </span>
-
                         </td>
 
-
-                        {/* =================================================
-                            FIXED ACTIONS COLUMN
-                        ================================================= */}
+                        {/* ACTIONS */}
 
                         <td
                           className="
@@ -2303,7 +2507,6 @@ export default function PromotionListPage() {
                             dark:group-hover:bg-slate-800/90
                           "
                         >
-
                           <div
                             className="
                               flex
@@ -2314,11 +2517,6 @@ export default function PromotionListPage() {
                               whitespace-nowrap
                             "
                           >
-
-                            {/* =================================================
-                                EDIT BUTTON
-                            ================================================= */}
-
                             <TableIconButton
                               title="Edit"
                               onClick={() =>
@@ -2344,13 +2542,7 @@ export default function PromotionListPage() {
                               </svg>
                             </TableIconButton>
 
-
-                            {/* =================================================
-                                DELETE / REACTIVATE
-                            ================================================= */}
-
                             {isActive ? (
-
                               <TableIconButton
                                 title="Delete"
                                 onClick={() =>
@@ -2375,9 +2567,7 @@ export default function PromotionListPage() {
                                   />
                                 </svg>
                               </TableIconButton>
-
                             ) : (
-
                               <TableIconButton
                                 title="Reactivate"
                                 onClick={() =>
@@ -2405,374 +2595,349 @@ export default function PromotionListPage() {
                                   />
                                 </svg>
                               </TableIconButton>
-
                             )}
-
                           </div>
-
                         </td>
-
                       </tr>
                     );
                   }
                 )}
-
               </tbody>
-
             </table>
-
           </div>
         )
+      ) : pagedGroups.length === 0 ? (
+        <div className="flex min-h-[200px] flex-col items-center justify-center rounded-xl border border-slate-200 bg-white px-6 py-10 text-center shadow-sm dark:border-slate-700 dark:bg-slate-900">
+          <h3 className="text-sm font-semibold text-slate-800 dark:text-white">
+            No promotions found
+          </h3>
 
+          <p className="mt-1 max-w-sm text-xs text-slate-500 dark:text-slate-400">
+            No records match your current search or filters.
+          </p>
+        </div>
       ) : (
-
         /* ===================================================
            CARD VIEW
         =================================================== */
 
-        pagedGroups.length === 0 ? (
-          <div className="flex min-h-[200px] flex-col items-center justify-center rounded-xl border border-slate-200 bg-white px-6 py-10 text-center shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <div className="grid grid-cols-1 items-start gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {pagedGroups.map(
+            (group) => {
+              const employee =
+                group.employee;
 
-            <h3 className="text-sm font-semibold text-slate-800 dark:text-white">
-              No promotions found
-            </h3>
+              const employeeName =
+                employee
+                  ? `${employee.first_name || ""} ${
+                      employee.last_name || ""
+                    }`.trim()
+                  : `Employee #${group.employeeId}`;
 
-            <p className="mt-1 max-w-sm text-xs text-slate-500 dark:text-slate-400">
-              No records match your current search or filters.
-            </p>
-
-          </div>
-        ) : (
-
-          <div className="grid grid-cols-1 items-start gap-4 sm:grid-cols-2 xl:grid-cols-3">
-
-            {pagedGroups.map(
-              (group) => {
-
-                const employee =
-                  group.employee;
-
-                const employeeName =
-                  employee
-                    ? `${employee.first_name || ""} ${
-                        employee.last_name || ""
-                      }`.trim()
-                    : `Employee #${group.employeeId}`;
-
-                const sortedPromotions = [
-                  ...group.promotions,
-                ].sort(
+              const sortedPromotions =
+                [...group.promotions].sort(
                   (a, b) =>
                     new Date(
-                      b.effective_date
+                      b.promotion_date
                     ) -
                     new Date(
-                      a.effective_date
+                      a.promotion_date
                     )
                 );
 
-                return (
-                  <div
-                    key={
-                      group.employeeId
-                    }
-                    className="relative overflow-visible rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900"
-                  >
+              return (
+                <div
+                  key={
+                    group.employeeId
+                  }
+                  className="relative overflow-visible rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900"
+                >
+                  <div className="absolute inset-x-0 top-0 h-0.5 rounded-t-2xl bg-primary-600" />
 
-                    <div className="absolute inset-x-0 top-0 h-0.5 rounded-t-2xl bg-primary-600" />
+                  <div className="p-4">
+                    {/* EMPLOYEE */}
 
-                    <div className="p-4">
+                    <div className="flex items-start justify-between gap-2.5">
+                      <div className="flex min-w-0 items-center gap-2.5">
+                        <Avatar
+                          name={
+                            employeeName
+                          }
+                          size="sm"
+                        />
 
-                      {/* EMPLOYEE */}
-
-                      <div className="flex items-start justify-between gap-2.5">
-
-                        <div className="flex min-w-0 items-center gap-2.5">
-
-                          <Avatar
-                            name={
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">
+                            {
                               employeeName
                             }
-                            size="sm"
-                          />
+                          </p>
 
-                          <div className="min-w-0">
-
-                            <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">
-                              {
-                                employeeName
-                              }
-                            </p>
-
-                            <p className="truncate text-[10px] text-slate-400">
-                              {employee?.employee_code ||
-                                `#${group.employeeId}`}
-                            </p>
-
-                          </div>
-
+                          <p className="truncate text-[10px] text-slate-400">
+                            {employee?.employee_code ||
+                              `#${group.employeeId}`}
+                          </p>
                         </div>
-
-                        <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-500 dark:bg-slate-800 dark:text-slate-400">
-                          {
-                            group
-                              .promotions
-                              .length
-                          }{" "}
-                          promo
-                          {group.promotions
-                            .length !== 1
-                            ? "s"
-                            : ""}
-                        </span>
-
                       </div>
 
+                      <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                        {
+                          group
+                            .promotions
+                            .length
+                        }{" "}
+                        promo
+                        {group.promotions
+                          .length !== 1
+                          ? "s"
+                          : ""}
+                      </span>
+                    </div>
 
-                      <div className="my-3 border-t border-slate-100 dark:border-slate-800" />
+                    <div className="my-3 border-t border-slate-100 dark:border-slate-800" />
 
+                    {/* PROMOTION HISTORY */}
 
-                      {/* PROMOTION HISTORY */}
+                    <div className="space-y-2.5">
+                      {sortedPromotions.map(
+                        (promotion) => {
+                          const isActive =
+                            promotion.is_active !==
+                            false;
 
-                      <div className="space-y-2.5">
+                          const {
+                            previousRoleStart,
+                            timeInPreviousRole,
+                            timeInNewRole,
+                            fromDesig,
+                            toDesig,
+                          } =
+                            getPromotionDetails(
+                              promotion
+                            );
 
-                        {sortedPromotions.map(
-                          (
-                            promotion
-                          ) => {
+                          return (
+                            <div
+                              key={
+                                promotion.id
+                              }
+                              className="relative overflow-visible rounded-lg border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800/60"
+                            >
+                              <div className="px-2.5 py-2.5">
+                                {/* DESIGNATIONS */}
 
-                            const isActive =
-                              promotion.is_active !==
-                              false;
-
-                            const {
-                              previousRoleStart,
-                              timeInPreviousRole,
-                              timeInNewRole,
-                              fromDesig,
-                              toDesig,
-                            } =
-                              getPromotionDetails(
-                                promotion
-                              );
-
-                            return (
-                              <div
-                                key={
-                                  promotion.id
-                                }
-                                className="relative overflow-visible rounded-lg border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800/60"
-                              >
-
-                                <div className="px-2.5 py-2.5">
-
-                                  {/* DESIGNATIONS */}
-
-                                  <div className="flex min-w-0 items-start justify-between gap-2">
-
-                                    <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
-
-                                      <DesignationHoverTrigger
-                                        align="left"
-                                        panel={
-                                          <DesignationDetailsCard
-                                            roleLabel="Existing Designation"
-                                            tone="from"
-                                            designation={
-                                              fromDesig
-                                            }
-                                            designationFallback={`#${promotion.from_designation_id}`}
-                                            employeeName={
-                                              employeeName
-                                            }
-                                            employeeCode={
-                                              employee?.employee_code
-                                            }
-                                            reason={
-                                              promotion.reason
-                                            }
-                                            effectiveDate={formatDate(
-                                              previousRoleStart
-                                            )}
-                                            duration={
-                                              timeInPreviousRole
-                                            }
-                                            accomplishments={
-                                              promotion.accomplishments
-                                            }
-                                            isActive={
-                                              isActive
-                                            }
-                                          />
-                                        }
-                                      >
-                                        <DesignationBadge
+                                <div className="flex min-w-0 items-start justify-between gap-2">
+                                  <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
+                                    <DesignationHoverTrigger
+                                      align="left"
+                                      panel={
+                                        <DesignationDetailsCard
+                                          roleLabel="Existing Designation"
                                           tone="from"
-                                          label={
-                                            fromDesig?.designation_name ||
-                                            `#${promotion.from_designation_id}`
+                                          designation={
+                                            fromDesig
+                                          }
+                                          designationFallback={`#${promotion.from_designation_id}`}
+                                          employeeName={
+                                            employeeName
+                                          }
+                                          employeeCode={
+                                            employee?.employee_code
+                                          }
+                                          reason={
+                                            promotion.reason
+                                          }
+                                          promotionDate={formatDate(
+                                            previousRoleStart
+                                          )}
+                                          duration={
+                                            timeInPreviousRole
+                                          }
+                                          accomplishments={
+                                            promotion.accomplishments
+                                          }
+                                          isActive={
+                                            isActive
                                           }
                                         />
-                                      </DesignationHoverTrigger>
-
-
-                                      <ArrowIcon />
-
-
-                                      <DesignationHoverTrigger
-                                        align="left"
-                                        panel={
-                                          <DesignationDetailsCard
-                                            roleLabel="Current Designation"
-                                            tone="to"
-                                            designation={
-                                              toDesig
-                                            }
-                                            designationFallback={`#${promotion.to_designation_id}`}
-                                            employeeName={
-                                              employeeName
-                                            }
-                                            employeeCode={
-                                              employee?.employee_code
-                                            }
-                                            reason={
-                                              promotion.reason
-                                            }
-                                            effectiveDate={formatDate(
-                                              promotion.effective_date
-                                            )}
-                                            duration={
-                                              timeInNewRole
-                                            }
-                                            accomplishments={
-                                              promotion.accomplishments
-                                            }
-                                            isActive={
-                                              isActive
-                                            }
-                                          />
-                                        }
-                                      >
-                                        <DesignationBadge
-                                          tone="to"
-                                          label={
-                                            toDesig?.designation_name ||
-                                            `#${promotion.to_designation_id}`
-                                          }
-                                        />
-                                      </DesignationHoverTrigger>
-
-                                    </div>
-
-
-                                    <span
-                                      className={`inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-[9px] font-medium ${
-                                        isActive
-                                          ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300"
-                                          : "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300"
-                                      }`}
-                                    >
-
-                                      <span
-                                        className={`h-1 w-1 rounded-full ${
-                                          isActive
-                                            ? "bg-emerald-500"
-                                            : "bg-red-500"
-                                        }`}
-                                      />
-
-                                      {isActive
-                                        ? "Active"
-                                        : "Inactive"}
-
-                                    </span>
-
-                                  </div>
-
-
-                                  {/* DATE */}
-
-                                  <div className="mt-2 flex items-center gap-1.5 text-[10px] text-slate-400">
-
-                                    <SmallCalendarIcon />
-
-                                    {formatDate(
-                                      promotion.effective_date
-                                    )}
-
-                                  </div>
-
-
-                                  {/* REASON */}
-
-                                  <div className="mt-1.5">
-
-                                    <ReasonBadge
-                                      reason={
-                                        promotion.reason
                                       }
+                                    >
+                                      <DesignationBadge
+                                        tone="from"
+                                        label={
+                                          fromDesig?.designation_name ||
+                                          `#${promotion.from_designation_id}`
+                                        }
+                                      />
+                                    </DesignationHoverTrigger>
+
+                                    <ArrowIcon />
+
+                                    <DesignationHoverTrigger
+                                      align="left"
+                                      panel={
+                                        <DesignationDetailsCard
+                                          roleLabel="Current Designation"
+                                          tone="to"
+                                          designation={
+                                            toDesig
+                                          }
+                                          designationFallback={`#${promotion.to_designation_id}`}
+                                          employeeName={
+                                            employeeName
+                                          }
+                                          employeeCode={
+                                            employee?.employee_code
+                                          }
+                                          reason={
+                                            promotion.reason
+                                          }
+                                          promotionDate={formatDate(
+                                            promotion.promotion_date
+                                          )}
+                                          duration={
+                                            timeInNewRole
+                                          }
+                                          accomplishments={
+                                            promotion.accomplishments
+                                          }
+                                          isActive={
+                                            isActive
+                                          }
+                                        />
+                                      }
+                                    >
+                                      <DesignationBadge
+                                        tone="to"
+                                        label={
+                                          toDesig?.designation_name ||
+                                          `#${promotion.to_designation_id}`
+                                        }
+                                      />
+                                    </DesignationHoverTrigger>
+                                  </div>
+
+                                  {/* STATUS */}
+
+                                  <span
+                                    className={`inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-[9px] font-medium ${
+                                      isActive
+                                        ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300"
+                                        : "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300"
+                                    }`}
+                                  >
+                                    <span
+                                      className={`h-1 w-1 rounded-full ${
+                                        isActive
+                                          ? "bg-emerald-500"
+                                          : "bg-red-500"
+                                      }`}
                                     />
 
-                                  </div>
-
-
-                                  {/* ACCOMPLISHMENTS */}
-
-                                  {promotion.accomplishments && (
-                                    <p
-                                      className="mt-1.5 truncate text-xs text-slate-500 dark:text-slate-400"
-                                      title={
-                                        promotion.accomplishments
-                                      }
-                                    >
-                                      {
-                                        promotion.accomplishments
-                                      }
-                                    </p>
-                                  )}
-
-
-                                  {/* DURATION */}
-
-                                  <div className="mt-2 grid grid-cols-2 gap-2 text-[10px] text-slate-500 dark:text-slate-400">
-
-                                    <div>
-                                      <span className="text-slate-400">
-                                        Previous:
-                                      </span>{" "}
-                                      {
-                                        timeInPreviousRole
-                                      }
-                                    </div>
-
-                                    <div>
-                                      <span className="text-slate-400">
-                                        New:
-                                      </span>{" "}
-                                      {
-                                        timeInNewRole
-                                      }
-                                    </div>
-
-                                  </div>
-
+                                    {isActive
+                                      ? "Active"
+                                      : "Inactive"}
+                                  </span>
                                 </div>
 
+                                {/* PROMOTION DATE */}
 
-                                {/* ACTIONS */}
+                                <div className="mt-2 flex items-center gap-1.5 text-[10px] text-slate-400">
+                                  <SmallCalendarIcon />
 
-                                <div className="grid grid-cols-2 divide-x divide-slate-100 border-t border-slate-100 dark:divide-slate-700 dark:border-slate-700">
+                                  {formatDate(
+                                    promotion.promotion_date
+                                  )}
+                                </div>
 
-                                  <div className="flex items-center justify-center py-1.5">
+                                {/* REASON */}
 
+                                <div className="mt-1.5">
+                                  <ReasonBadge
+                                    reason={
+                                      promotion.reason
+                                    }
+                                  />
+                                </div>
+
+                                {/* ACCOMPLISHMENTS */}
+
+                                {promotion.accomplishments && (
+                                  <p
+                                    className="mt-1.5 truncate text-xs text-slate-500 dark:text-slate-400"
+                                    title={
+                                      promotion.accomplishments
+                                    }
+                                  >
+                                    {
+                                      promotion.accomplishments
+                                    }
+                                  </p>
+                                )}
+
+                                {/* DURATION */}
+
+                                <div className="mt-2 grid grid-cols-2 gap-2 text-[10px] text-slate-500 dark:text-slate-400">
+                                  <div>
+                                    <span className="text-slate-400">
+                                      Previous:
+                                    </span>{" "}
+                                    {
+                                      timeInPreviousRole
+                                    }
+                                  </div>
+
+                                  <div>
+                                    <span className="text-slate-400">
+                                      New:
+                                    </span>{" "}
+                                    {
+                                      timeInNewRole
+                                    }
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* ACTIONS */}
+
+                              <div className="grid grid-cols-2 divide-x divide-slate-100 border-t border-slate-100 dark:divide-slate-700 dark:border-slate-700">
+                                <div className="flex items-center justify-center py-1.5">
+                                  <TableIconButton
+                                    title="Edit"
+                                    onClick={() =>
+                                      handleEdit(
+                                        promotion
+                                      )
+                                    }
+                                    tone="slate"
+                                  >
+                                    <svg
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      className="h-4 w-4"
+                                      fill="none"
+                                      viewBox="0 0 24 24"
+                                      stroke="currentColor"
+                                      strokeWidth={2}
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        d="M16.862 4.487l1.687-1.688a2.121 2.121 0 013 3l-9.9 9.9-4.137 1.034 1.034-4.137 9.9-9.9z"
+                                      />
+                                    </svg>
+                                  </TableIconButton>
+                                </div>
+
+                                <div className="flex items-center justify-center py-1.5">
+                                  {isActive ? (
                                     <TableIconButton
-                                      title="Edit"
+                                      title="Delete"
                                       onClick={() =>
-                                        handleEdit(
+                                        setDeleteTarget(
                                           promotion
                                         )
                                       }
-                                      tone="slate"
+                                      tone="red"
                                     >
                                       <svg
                                         xmlns="http://www.w3.org/2000/svg"
@@ -2785,111 +2950,63 @@ export default function PromotionListPage() {
                                         <path
                                           strokeLinecap="round"
                                           strokeLinejoin="round"
-                                          d="M16.862 4.487l1.687-1.688a2.121 2.121 0 013 3l-9.9 9.9-4.137 1.034 1.034-4.137 9.9-9.9z"
+                                          d="M6 7h12M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m2 0v12a2 2 0 01-2 2H8a2 2 0 01-2-2V7h12z"
                                         />
                                       </svg>
                                     </TableIconButton>
-
-                                  </div>
-
-
-                                  <div className="flex items-center justify-center py-1.5">
-
-                                    {isActive ? (
-
-                                      <TableIconButton
-                                        title="Delete"
-                                        onClick={() =>
-                                          setDeleteTarget(
-                                            promotion
-                                          )
-                                        }
-                                        tone="red"
+                                  ) : (
+                                    <TableIconButton
+                                      title="Reactivate"
+                                      onClick={() =>
+                                        handleReactivate(
+                                          promotion
+                                        )
+                                      }
+                                      disabled={
+                                        updateMutation.isPending
+                                      }
+                                      tone="emerald"
+                                    >
+                                      <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        className="h-4 w-4"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                        strokeWidth={2}
                                       >
-                                        <svg
-                                          xmlns="http://www.w3.org/2000/svg"
-                                          className="h-4 w-4"
-                                          fill="none"
-                                          viewBox="0 0 24 24"
-                                          stroke="currentColor"
-                                          strokeWidth={2}
-                                        >
-                                          <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            d="M6 7h12M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m2 0v12a2 2 0 01-2 2H8a2 2 0 01-2-2V7h12z"
-                                          />
-                                        </svg>
-                                      </TableIconButton>
-
-                                    ) : (
-
-                                      <TableIconButton
-                                        title="Reactivate"
-                                        onClick={() =>
-                                          handleReactivate(
-                                            promotion
-                                          )
-                                        }
-                                        disabled={
-                                          updateMutation.isPending
-                                        }
-                                        tone="emerald"
-                                      >
-                                        <svg
-                                          xmlns="http://www.w3.org/2000/svg"
-                                          className="h-4 w-4"
-                                          fill="none"
-                                          viewBox="0 0 24 24"
-                                          stroke="currentColor"
-                                          strokeWidth={2}
-                                        >
-                                          <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            d="M4 12a8 8 0 018-8 8.5 8.5 0 017 4M20 4v5h-5M20 12a8 8 0 01-8 8 8.5 8.5 0 01-7-4M4 20v-5h5"
-                                          />
-                                        </svg>
-                                      </TableIconButton>
-
-                                    )}
-
-                                  </div>
-
+                                        <path
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          d="M4 12a8 8 0 018-8 8.5 8.5 0 017 4M20 4v5h-5M20 12a8 8 0 01-8 8 8.5 8.5 0 01-7-4M4 20v-5h5"
+                                        />
+                                      </svg>
+                                    </TableIconButton>
+                                  )}
                                 </div>
-
                               </div>
-                            );
-                          }
-                        )}
-
-                      </div>
-
+                            </div>
+                          );
+                        }
+                      )}
                     </div>
-
                   </div>
-                );
-              }
-            )}
-
-          </div>
-        )
+                </div>
+              );
+            }
+          )}
+        </div>
       )}
 
-
-      {/* =====================================================
-          PAGINATION
-      ===================================================== */}
+      {/* PAGINATION */}
 
       <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
-
         <span>
           Page {page} of{" "}
           {pageCount}
         </span>
 
         <div className="flex gap-2">
-
           <button
             type="button"
             disabled={page <= 1}
@@ -2925,15 +3042,10 @@ export default function PromotionListPage() {
           >
             Next
           </button>
-
         </div>
-
       </div>
 
-
-      {/* =====================================================
-          ADD / EDIT MODAL
-      ===================================================== */}
+      {/* ADD / EDIT MODAL */}
 
       <Modal
         open={modalOpen}
@@ -2949,22 +3061,23 @@ export default function PromotionListPage() {
           initialData={
             editing || {}
           }
-          onSubmit={handleSubmit}
+          onSubmit={
+            handleSubmit
+          }
           loading={isSaving}
         />
       </Modal>
 
-
-      {/* =====================================================
-          DELETE CONFIRM
-      ===================================================== */}
+      {/* DELETE CONFIRM */}
 
       <ConfirmDialog
         open={!!deleteTarget}
         onClose={() =>
           setDeleteTarget(null)
         }
-        onConfirm={confirmDelete}
+        onConfirm={
+          confirmDelete
+        }
         title="Deactivate Promotion"
         message={
           deleteTarget
@@ -2976,7 +3089,6 @@ export default function PromotionListPage() {
           deactivateMutation.isPending
         }
       />
-
     </div>
   );
 }

@@ -982,23 +982,107 @@ class Training(TimestampMixin, db.Model):
 class Promotion(TimestampMixin, db.Model):
     __tablename__ = "promotions"
 
-    id = db.Column(db.Integer, primary_key=True)
-    employee_id = db.Column(db.Integer, db.ForeignKey("employees.id"), nullable=False)
-    from_designation_id = db.Column(db.Integer, db.ForeignKey("designations.id"), nullable=False)
-    to_designation_id = db.Column(db.Integer, db.ForeignKey("designations.id"), nullable=False)
-    effective_date = db.Column(db.Date, nullable=False)
-    reason = db.Column(db.String(255), nullable=False, default="Other")
-    accomplishments = db.Column(db.Text)
-    is_active = db.Column(db.Boolean, default=True)
-    employee = db.relationship("Employee")
-    from_designation = db.relationship("Designation", foreign_keys=[from_designation_id])
-    to_designation = db.relationship("Designation", foreign_keys=[to_designation_id])
+    id = db.Column(
+        db.Integer,
+        primary_key=True,
+    )
+
+    employee_id = db.Column(
+        db.Integer,
+        db.ForeignKey("employees.id"),
+        nullable=False,
+    )
+
+    from_designation_id = db.Column(
+        db.Integer,
+        db.ForeignKey("designations.id"),
+        nullable=False,
+    )
+
+    to_designation_id = db.Column(
+        db.Integer,
+        db.ForeignKey("designations.id"),
+        nullable=False,
+    )
+
+    promotion_date = db.Column(
+        db.Date,
+        nullable=False,
+    )
+
+    reason = db.Column(
+        db.String(255),
+        nullable=False,
+        default="Other",
+    )
+
+    accomplishments = db.Column(
+        db.Text,
+        nullable=True,
+    )
+
+    is_active = db.Column(
+        db.Boolean,
+        default=True,
+        nullable=False,
+    )
+
+    employee = db.relationship(
+        "Employee",
+        foreign_keys=[employee_id],
+    )
+
+    from_designation = db.relationship(
+        "Designation",
+        foreign_keys=[from_designation_id],
+    )
+
+    to_designation = db.relationship(
+        "Designation",
+        foreign_keys=[to_designation_id],
+    )
 
     def to_dict(self):
         data = super().to_dict()
-        data["employee"] = _summary(self.employee, ["id", "employee_code", "first_name", "last_name"])
-        data["from_designation"] = _summary(self.from_designation, ["id", "designation_name"])
-        data["to_designation"] = _summary(self.to_designation, ["id", "designation_name"])
+
+        data["promotion_date"] = (
+            self.promotion_date
+        )
+
+        data["reason"] = (
+            self.reason or "Other"
+        )
+
+        data["accomplishments"] = (
+            self.accomplishments or ""
+        )
+
+        data["employee"] = _summary(
+            self.employee,
+            [
+                "id",
+                "employee_code",
+                "first_name",
+                "last_name",
+            ],
+        )
+
+        data["from_designation"] = _summary(
+            self.from_designation,
+            [
+                "id",
+                "designation_name",
+            ],
+        )
+
+        data["to_designation"] = _summary(
+            self.to_designation,
+            [
+                "id",
+                "designation_name",
+            ],
+        )
+
         return data
 
 

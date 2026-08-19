@@ -5,6 +5,9 @@ import {
   useDesignationOptions,
 } from "@/hooks/useLookupOptions";
 
+/* =========================================================
+   PROMOTION REASON OPTIONS
+========================================================= */
 
 const PROMOTION_REASON_OPTIONS = [
   {
@@ -89,18 +92,25 @@ const PROMOTION_REASON_OPTIONS = [
   },
 ];
 
+/* =========================================================
+   FORM
+========================================================= */
 
 export default function PromotionForm({
   formId = "promotions-form",
-  initialData,
+  initialData = {},
   onSubmit,
-  loading,
+  loading = false,
 }) {
-  const employeeOptions = useEmployeeOptions();
+  const employeeOptions =
+    useEmployeeOptions();
 
   const designationOptions =
     useDesignationOptions();
 
+  /* =======================================================
+     FIELDS
+  ======================================================= */
 
   const fields = [
     {
@@ -136,8 +146,8 @@ export default function PromotionForm({
     },
 
     {
-      name: "effective_date",
-      label: "Effective Date",
+      name: "promotion_date",
+      label: "Promotion Date",
       type: "date",
       required: true,
     },
@@ -149,15 +159,47 @@ export default function PromotionForm({
     },
   ];
 
+  /* =======================================================
+     INITIAL DATA
+  ======================================================= */
+
+  const normalizedInitialData = {
+    employee_id:
+      initialData?.employee_id ??
+      initialData?.employee?.id ??
+      "",
+
+    from_designation_id:
+      initialData?.from_designation_id ??
+      initialData?.from_designation?.id ??
+      "",
+
+    to_designation_id:
+      initialData?.to_designation_id ??
+      initialData?.to_designation?.id ??
+      "",
+
+    reason:
+      initialData?.reason ||
+      "Other",
+
+    promotion_date:
+      initialData?.promotion_date ||
+      "",
+
+    accomplishments:
+      initialData?.accomplishments ||
+      "",
+
+    is_active:
+      initialData?.is_active !== false,
+  };
 
   return (
     <GenericForm
       formId={formId}
       fields={fields}
-      initialData={{
-        reason: "Other",
-        ...initialData,
-      }}
+      initialData={normalizedInitialData}
       onSubmit={onSubmit}
       loading={loading}
     />
