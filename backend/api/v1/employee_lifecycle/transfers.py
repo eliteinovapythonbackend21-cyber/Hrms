@@ -12,13 +12,12 @@ transfers_bp = register_crud_blueprint(
         "to_department_id",
         "transfer_reason",
         "transfer_apply_date",
-        "releving_date",
         "joining_date",
+        "relieving_date",
         "location",
         "accomplishments",
         "is_active",
     ],
-
 
     update_fields=[
         "employee_id",
@@ -26,13 +25,12 @@ transfers_bp = register_crud_blueprint(
         "to_department_id",
         "transfer_reason",
         "transfer_apply_date",
-        "releving_date",
         "joining_date",
+        "relieving_date",
         "location",
         "accomplishments",
         "is_active",
     ],
-
 
     search_fields=[
         "transfer_reason",
@@ -43,7 +41,6 @@ transfers_bp = register_crud_blueprint(
     url_prefix_singular="",
     editable=True,
     deletable=True,
-
 
     allowed_roles=[
         "admin",
