@@ -158,6 +158,13 @@ export default function AppRouter() {
 
         {/* CRM */}
         <Route path="/crm" element={<Navigate to="/crm/leads" replace />} />
+        {/* CRM's own employees view: scoped to the "CRM" department
+            (Voice / Non-Voice designations), table+card UI matched to
+            DesignationListPage, View-only action (no Add/Edit). Rendered
+            by EmployeeListPage's crmOnly branch — a completely separate
+            code path from the default view, so /master/employees (Admin,
+            Finance) is unaffected. */}
+        <Route path="/crm/employees" element={<RoleGuard><EmployeeListPage crmOnly /></RoleGuard>} />
         <Route path="/crm/leads" element={<RoleGuard><LeadListPage /></RoleGuard>} />
         <Route path="/crm/customers" element={<RoleGuard><CustomerListPage /></RoleGuard>} />
         <Route path="/crm/customers/:id" element={<RoleGuard><CustomerDetailPage /></RoleGuard>} />

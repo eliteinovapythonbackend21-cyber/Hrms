@@ -103,7 +103,12 @@ export const navConfig = [
     icon: "crm",
     roles: ["admin"],
     children: [
-      { label: "Employees", path: "/master/employees", icon: "employees" },
+      // Dedicated CRM-only employees route (was "/master/employees"):
+      // renders EmployeeListPage with hideSalary + hideActions so this
+      // section only ever shows org info + status, no compensation or
+      // row-level actions. Admin's and Finance's "Employees" children
+      // below are untouched and still point at "/master/employees".
+      { label: "Employees", path: "/crm/employees", icon: "employees" },
       { label: "Leads", path: "/crm/leads", icon: "crm" },
       { label: "Customers", path: "/crm/customers", icon: "crm" },
       { label: "Follow-ups", path: "/crm/follow-ups", icon: "crm" },
