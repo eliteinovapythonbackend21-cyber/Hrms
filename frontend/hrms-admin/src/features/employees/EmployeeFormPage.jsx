@@ -12,10 +12,7 @@ import {
 
 import EmployeeForm from "./components/EmployeeForm";
 
-import {
-  useToast,
-} from "@/components/feedback/Toast";
-
+import { useToast } from "@/components/feedback/Toast";
 import LoadingSpinner from "@/components/feedback/LoadingSpinner";
 import Button from "@/components/ui/Button";
 
@@ -26,34 +23,20 @@ export default function EmployeeFormPage() {
   const navigate =
     useNavigate();
 
-  const [searchParams] =
-    useSearchParams();
+  const [
+    searchParams,
+  ] = useSearchParams();
 
   const { showToast } =
     useToast();
 
-  const isEdit = !!id;
+  const isEdit =
+    !!id;
 
-  /*
-   * CRM opens:
-   *
-   * /employees/:id/edit?returnTo=/crm/employees
-   *
-   * Normal employee editing has
-   * no returnTo parameter.
-   */
-  const returnTo =
+  const fromCrm =
     searchParams.get(
-      "returnTo"
-    ) || "";
-
-  const isCrm =
-    returnTo ===
-    "/crm/employees";
-
-  const backPath =
-    returnTo ||
-    "/employees";
+      "from"
+    ) === "crm";
 
   const {
     data: employee,
@@ -93,18 +76,10 @@ export default function EmployeeFormPage() {
           );
         }
 
-        /*
-         * Return to the page from which
-         * the user opened the form.
-         *
-         * CRM -> /crm/employees
-         * Normal -> /employees
-         */
         navigate(
-          backPath,
-          {
-            replace: true,
-          }
+          fromCrm
+            ? "/crm/employees"
+            : "/employees"
         );
       } catch (err) {
         showToast(
@@ -131,19 +106,11 @@ export default function EmployeeFormPage() {
     <div className="mx-auto max-w-3xl">
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-              {isEdit
-                ? "Edit Employee"
-                : "Add Employee"}
-            </h1>
-
-            {isCrm && (
-              <span className="rounded-full bg-primary-50 px-2.5 py-1 text-[10px] font-semibold text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
-                CRM
-              </span>
-            )}
-          </div>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+            {isEdit
+              ? "Edit Employee"
+              : "Add Employee"}
+          </h1>
 
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
             {isEdit
@@ -160,11 +127,13 @@ export default function EmployeeFormPage() {
 
         <Button
           variant="secondary"
-          onClick={() =>
+          onClick={() => {
             navigate(
-              backPath
-            )
-          }
+              fromCrm
+                ? "/crm/employees"
+                : "/employees"
+            );
+          }}
           className="w-full sm:w-auto"
         >
           Back

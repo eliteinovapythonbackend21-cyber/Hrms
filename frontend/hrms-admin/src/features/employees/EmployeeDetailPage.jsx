@@ -5,35 +5,26 @@ import {
 } from "react-router-dom";
 
 import { useEmployee } from "./useEmployees";
-
 import LoadingSpinner from "@/components/feedback/LoadingSpinner";
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 import Avatar from "@/components/ui/Avatar";
-
 import {
   formatDate,
   formatDateTime,
 } from "@/utils/formatDate";
-
 import { formatCurrency } from "@/utils/formatCurrency";
-
 import TabbedDetailLayout from "@/components/TabbedDetailLayout";
 import EmployeeSubList from "@/components/EmployeeSubList";
-
 import { employeeLifecycleApi } from "@/api/employee.api";
 
 const SKY = {
   text: "text-sky-600 dark:text-sky-400",
-
   badge:
     "bg-sky-50 text-sky-700 dark:bg-sky-500/10 dark:text-sky-400",
-
   ring:
     "ring-sky-100 dark:ring-sky-500/20",
-
-  bar:
-    "bg-sky-500",
+  bar: "bg-sky-500",
 };
 
 const Icon = ({
@@ -67,7 +58,6 @@ const AlertIcon = () => (
       strokeWidth="1.3"
       strokeLinejoin="round"
     />
-
     <path
       d="M10 8v4M10 14.5v.01"
       stroke="currentColor"
@@ -85,7 +75,6 @@ const MapPinIcon = () => (
       strokeWidth="1.3"
       strokeLinejoin="round"
     />
-
     <circle
       cx="10"
       cy="8.4"
@@ -107,7 +96,6 @@ const CalendarIcon = () => (
       stroke="currentColor"
       strokeWidth="1.3"
     />
-
     <path
       d="M3 8h14M7 3v3M13 3v3"
       stroke="currentColor"
@@ -126,7 +114,6 @@ const UserIcon = () => (
       stroke="currentColor"
       strokeWidth="1.3"
     />
-
     <path
       d="M3.5 17c1-3.3 4-5 6.5-5s5.5 1.7 6.5 5"
       stroke="currentColor"
@@ -147,7 +134,6 @@ const CardIcon = () => (
       stroke="currentColor"
       strokeWidth="1.3"
     />
-
     <path
       d="M2.5 8.5h15"
       stroke="currentColor"
@@ -200,9 +186,7 @@ function HierarchyTrail({
     designation,
   ].filter(Boolean);
 
-  if (
-    steps.length === 0
-  ) {
+  if (!steps.length) {
     return (
       <p className="text-sm text-slate-400">
         No organization assigned
@@ -213,7 +197,10 @@ function HierarchyTrail({
   return (
     <div className="flex flex-wrap items-center gap-1.5">
       {steps.map(
-        (step, index) => (
+        (
+          step,
+          index
+        ) => (
           <div
             key={index}
             className="flex items-center gap-1.5"
@@ -245,36 +232,19 @@ export default function EmployeeDetailPage() {
   const navigate =
     useNavigate();
 
-  const [searchParams] =
-    useSearchParams();
+  const [
+    searchParams,
+  ] = useSearchParams();
 
   const restricted =
     searchParams.get(
       "restricted"
     ) === "1";
 
-  /*
-   * CRM sends:
-   *
-   * ?restricted=1&returnTo=/crm/employees
-   *
-   * Normal employee page does not
-   * send returnTo.
-   */
-  const returnTo =
+  const fromCrm =
     searchParams.get(
-      "returnTo"
-    ) || "";
-
-  const isCrm =
-    returnTo ===
-    "/crm/employees";
-
-  const backPath =
-    returnTo ||
-    (restricted
-      ? "/employees"
-      : "/master/employees");
+      "from"
+    ) === "crm";
 
   const {
     data: employee,
@@ -295,7 +265,7 @@ export default function EmployeeDetailPage() {
     !employee
   ) {
     return (
-      <div className="py-16 text-center text-slate-500">
+      <div className="py-16 text-center text-slate-500 dark:text-slate-400">
         Employee not found.
       </div>
     );
@@ -324,8 +294,9 @@ export default function EmployeeDetailPage() {
     0;
 
   const allowance =
-    Number(employee.allowance) ||
-    0;
+    Number(
+      employee.allowance
+    ) || 0;
 
   const totalComp =
     salary + allowance;
@@ -339,27 +310,33 @@ export default function EmployeeDetailPage() {
         )
       : 0;
 
+  const handleBack =
+    () => {
+      if (fromCrm) {
+        navigate(
+          "/crm/employees"
+        );
+        return;
+      }
+
+      navigate(
+        restricted
+          ? "/employees"
+          : "/master/employees"
+      );
+    };
+
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-            Employee Details
-          </h1>
-
-          {isCrm && (
-            <p className="mt-1 text-xs font-medium text-primary-600 dark:text-primary-400">
-              CRM Employee
-            </p>
-          )}
-        </div>
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+          Employee Details
+        </h1>
 
         <Button
           variant="secondary"
-          onClick={() =>
-            navigate(
-              backPath
-            )
+          onClick={
+            handleBack
           }
         >
           Back
@@ -367,20 +344,10 @@ export default function EmployeeDetailPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="space-y-4 lg:sticky lg:top-6 lg:h-fit">
-          <div
-            className={`rounded-xl border bg-white p-6 text-center shadow-sm dark:bg-slate-900 ${
-              isCrm
-                ? "border-primary-200 dark:border-primary-500/20"
-                : "border-slate-200 dark:border-slate-700"
-            }`}
-          >
+        <div className="space-y-4 lg:sticky lg:top-6 lg:col-span-1 lg:h-fit">
+          <div className="rounded-xl border border-slate-200 bg-white p-6 text-center shadow-sm dark:border-slate-700 dark:bg-slate-900">
             <div
-              className={`mx-auto w-fit rounded-full ring-4 ${
-                isCrm
-                  ? "ring-primary-100 dark:ring-primary-500/20"
-                  : SKY.ring
-              }`}
+              className={`mx-auto w-fit rounded-full ring-4 ${SKY.ring}`}
             >
               <Avatar
                 name={
@@ -406,12 +373,12 @@ export default function EmployeeDetailPage() {
               }
             </p>
 
-            <div className="mt-3 flex flex-wrap justify-center gap-2">
+            <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
               <Badge
                 className={
                   employee.is_active
-                    ? "bg-green-100 text-green-700"
-                    : "bg-red-100 text-red-700"
+                    ? "bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300"
+                    : "bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300"
                 }
               >
                 {employee.is_active
@@ -440,13 +407,7 @@ export default function EmployeeDetailPage() {
                   variant="secondary"
                   onClick={() =>
                     navigate(
-                      `/employees/${id}/edit${
-                        returnTo
-                          ? `?returnTo=${encodeURIComponent(
-                              returnTo
-                            )}`
-                          : ""
-                      }`
+                      `/employees/${id}/edit`
                     )
                   }
                   className="w-full text-sm"
@@ -515,7 +476,7 @@ export default function EmployeeDetailPage() {
                     }
                   </p>
 
-                  <p className="mt-0.5 text-[11px] text-slate-500">
+                  <p className="mt-0.5 text-[11px] leading-tight text-slate-500 dark:text-slate-400">
                     {
                       count.label
                     }
@@ -532,7 +493,7 @@ export default function EmployeeDetailPage() {
               Personal
             </h3>
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
               <Field
                 icon={<UserIcon />}
                 label="Gender"
@@ -552,7 +513,9 @@ export default function EmployeeDetailPage() {
               />
 
               <Field
-                icon={<PhoneIcon />}
+                icon={
+                  <PhoneIcon />
+                }
                 label="Phone"
                 value={
                   employee.phone
@@ -630,14 +593,12 @@ export default function EmployeeDetailPage() {
               </h3>
 
               {totalComp > 0 && (
-                <div className="mb-5 rounded-lg bg-slate-50 p-4 dark:bg-slate-800">
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold">
-                      {
-                        formatCurrency(
-                          totalComp
-                        )
-                      }
+                <div className="mb-5 rounded-lg border border-slate-100 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-800/60">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-semibold text-slate-800 dark:text-white">
+                      {formatCurrency(
+                        totalComp
+                      )}
                     </span>
 
                     <span className="text-xs text-slate-400">
@@ -645,7 +606,7 @@ export default function EmployeeDetailPage() {
                     </span>
                   </div>
 
-                  <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-200">
+                  <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
                     <div
                       className={`h-full ${SKY.bar}`}
                       style={{
@@ -654,29 +615,25 @@ export default function EmployeeDetailPage() {
                     />
                   </div>
 
-                  <div className="mt-2 flex justify-between text-xs text-slate-500">
+                  <div className="mt-2 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
                     <span>
                       Salary ·{" "}
-                      {
-                        formatCurrency(
-                          salary
-                        )
-                      }
+                      {formatCurrency(
+                        salary
+                      )}
                     </span>
 
                     <span>
                       Allowance ·{" "}
-                      {
-                        formatCurrency(
-                          allowance
-                        )
-                      }
+                      {formatCurrency(
+                        allowance
+                      )}
                     </span>
                   </div>
                 </div>
               )}
 
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
                 <Field
                   icon={
                     <CalendarIcon />
@@ -698,7 +655,9 @@ export default function EmployeeDetailPage() {
                 />
 
                 <Field
-                  icon={<CardIcon />}
+                  icon={
+                    <CardIcon />
+                  }
                   label="PF Number"
                   value={
                     employee.pf_number
@@ -707,7 +666,9 @@ export default function EmployeeDetailPage() {
                 />
 
                 <Field
-                  icon={<CardIcon />}
+                  icon={
+                    <CardIcon />
+                  }
                   label="ESI Number"
                   value={
                     employee.esi_number
@@ -716,7 +677,9 @@ export default function EmployeeDetailPage() {
                 />
 
                 <Field
-                  icon={<CardIcon />}
+                  icon={
+                    <CardIcon />
+                  }
                   label="Bank Account No."
                   value={
                     employee.account_number
@@ -748,13 +711,12 @@ export default function EmployeeDetailPage() {
                         },
                         {
                           key: "file_url",
-                          label: "File",
-                          render: (
-                            record
-                          ) => (
+                          label:
+                            "File",
+                          render: (row) => (
                             <a
                               href={
-                                record.file_url
+                                row.file_url
                               }
                               target="_blank"
                               rel="noreferrer"
@@ -769,7 +731,6 @@ export default function EmployeeDetailPage() {
                     />
                   ),
                 },
-
                 {
                   key: "performance",
                   label: "Performance",
@@ -788,15 +749,15 @@ export default function EmployeeDetailPage() {
                         },
                         {
                           key: "rating",
-                          label: "Rating",
+                          label:
+                            "Rating",
                         },
                         {
                           key: "remarks",
-                          label: "Remarks",
-                          render: (
-                            record
-                          ) =>
-                            record.remarks ||
+                          label:
+                            "Remarks",
+                          render: (row) =>
+                            row.remarks ||
                             "-",
                         },
                       ]}
@@ -804,7 +765,6 @@ export default function EmployeeDetailPage() {
                     />
                   ),
                 },
-
                 {
                   key: "training",
                   label: "Training",
@@ -830,15 +790,14 @@ export default function EmployeeDetailPage() {
                           key: "end_date",
                           label:
                             "End Date",
-                          render: (
-                            record
-                          ) =>
-                            record.end_date ||
+                          render: (row) =>
+                            row.end_date ||
                             "-",
                         },
                         {
                           key: "status",
-                          label: "Status",
+                          label:
+                            "Status",
                         },
                       ]}
                       emptyText="No training records."

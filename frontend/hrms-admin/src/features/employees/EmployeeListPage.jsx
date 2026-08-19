@@ -1,25 +1,22 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-
-import { useEmployees , useUpdateEmployee, } from "./useEmployees";
+import {
+  useEmployees,
+  useUpdateEmployee,
+  useDeactivateEmployee,
+} from "./useEmployees";
 import EmployeeTable from "./components/EmployeeTable";
-
 import { usePagination } from "@/hooks/usePagination";
 import { useDebouncedSearch } from "@/hooks/useDebouncedSearch";
 import { useTableExport } from "@/hooks/useTableExport";
-
 import TableSearchBar from "@/components/table/TableSearchBar";
 import TablePagination from "@/components/table/TablePagination";
 import TableToolbar from "@/components/table/TableToolbar";
-
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
-import ConfirmDialog from "@/components/feedback/ConfirmDialog";
-
 import { employeesApi } from "@/api/employees.api";
 import { masterApi } from "@/api/master.api";
-
 import { formatCurrency } from "@/utils/formatCurrency";
 import { useModulePermissions } from "@/hooks/useModulePermissions";
 
@@ -31,9 +28,7 @@ const EXPORT_COLUMNS = [
   {
     header: "Name",
     accessor: (r) =>
-      `${r.first_name || ""} ${
-        r.last_name || ""
-      }`.trim(),
+      `${r.first_name || ""} ${r.last_name || ""}`.trim(),
   },
   {
     header: "Company",
@@ -104,10 +99,8 @@ export default function EmployeeListPage({
     debouncedValue,
   } = useDebouncedSearch();
 
-  const [
-    statusFilter,
-    setStatusFilter,
-  ] = useState("active");
+  const [statusFilter, setStatusFilter] =
+    useState("active");
 
   const queryParams = {
     ...params,
@@ -147,31 +140,29 @@ export default function EmployeeListPage({
 
   const activeEmployees =
     employees.filter(
-      (employee) =>
-        employee.is_active
+      (e) => e.is_active
     );
 
   const inactiveEmployees =
     employees.filter(
-      (employee) =>
-        !employee.is_active
+      (e) => !e.is_active
     );
 
   const filteredEmployees =
     employees.filter(
-      (employee) => {
+      (e) => {
         if (
           statusFilter ===
           "active"
         ) {
-          return employee.is_active;
+          return e.is_active;
         }
 
         if (
           statusFilter ===
           "inactive"
         ) {
-          return !employee.is_active;
+          return !e.is_active;
         }
 
         return true;
@@ -208,9 +199,7 @@ export default function EmployeeListPage({
             onExportExcel={
               exportExcel
             }
-            onExportPDF={
-              exportPDF
-            }
+            onExportPDF={exportPDF}
             exporting={exporting}
           />
 
@@ -232,45 +221,77 @@ export default function EmployeeListPage({
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div className="h-[110px] rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-          <p className="text-xs font-medium text-slate-500">
-            Total Employees
-          </p>
+          <div className="flex h-full items-center justify-between">
+            <div>
+              <p className="truncate text-xs font-medium text-slate-500 dark:text-slate-400">
+                Total Employees
+              </p>
 
-          <p className="mt-1 text-2xl font-bold text-slate-900 dark:text-white">
-            {employees.length}
-          </p>
+              <p className="mt-1 text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+                {employees.length}
+              </p>
 
-          <p className="mt-0.5 text-[11px] text-slate-400">
-            Current page
-          </p>
+              <p className="mt-0.5 text-[11px] text-slate-400">
+                Current page
+              </p>
+            </div>
+
+            <div
+              className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${ACCENT.badge}`}
+            >
+              <span className="text-sm font-bold">
+                E
+              </span>
+            </div>
+          </div>
         </div>
 
         <div className="h-[110px] rounded-xl border border-emerald-100 bg-white px-4 py-3 shadow-sm dark:border-emerald-900/30 dark:bg-slate-900">
-          <p className="text-xs font-medium text-slate-500">
-            Active Employees
-          </p>
+          <div className="flex h-full items-center justify-between">
+            <div>
+              <p className="truncate text-xs font-medium text-slate-500 dark:text-slate-400">
+                Active Employees
+              </p>
 
-          <p className="mt-1 text-2xl font-bold text-emerald-600">
-            {activeEmployees.length}
-          </p>
+              <p className="mt-1 text-2xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400">
+                {
+                  activeEmployees.length
+                }
+              </p>
 
-          <p className="mt-0.5 text-[11px] text-slate-400">
-            Currently active
-          </p>
+              <p className="mt-0.5 text-[11px] text-slate-400">
+                Currently active
+              </p>
+            </div>
+
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50 dark:bg-emerald-500/10">
+              <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+            </div>
+          </div>
         </div>
 
         <div className="h-[110px] rounded-xl border border-red-100 bg-white px-4 py-3 shadow-sm dark:border-red-900/30 dark:bg-slate-900">
-          <p className="text-xs font-medium text-slate-500">
-            Inactive Employees
-          </p>
+          <div className="flex h-full items-center justify-between">
+            <div>
+              <p className="truncate text-xs font-medium text-slate-500 dark:text-slate-400">
+                Inactive Employees
+              </p>
 
-          <p className="mt-1 text-2xl font-bold text-red-600">
-            {inactiveEmployees.length}
-          </p>
+              <p className="mt-1 text-2xl font-bold tracking-tight text-red-600 dark:text-red-400">
+                {
+                  inactiveEmployees.length
+                }
+              </p>
 
-          <p className="mt-0.5 text-[11px] text-slate-400">
-            Deactivated employees
-          </p>
+              <p className="mt-0.5 text-[11px] text-slate-400">
+                Deactivated employees
+              </p>
+            </div>
+
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-red-50 dark:bg-red-500/10">
+              <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
+            </div>
+          </div>
         </div>
       </div>
 
@@ -295,16 +316,17 @@ export default function EmployeeListPage({
                   <button
                     key={status}
                     type="button"
-                    onClick={() =>
+                    onClick={() => {
                       setStatusFilter(
                         status
-                      )
-                    }
-                    className={`rounded-md px-3 py-1.5 text-xs font-medium capitalize ${
+                      );
+                      setPage(1);
+                    }}
+                    className={`rounded-md px-3 py-1.5 text-xs font-medium capitalize transition ${
                       statusFilter ===
                       status
                         ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
-                        : "text-slate-500"
+                        : "text-slate-500 hover:text-slate-700 dark:text-slate-400"
                     }`}
                   >
                     {status}
@@ -316,7 +338,7 @@ export default function EmployeeListPage({
         </div>
 
         {isError && (
-          <div className="m-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-600">
+          <div className="m-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-600 dark:border-red-900/40 dark:bg-red-500/10 dark:text-red-400">
             Failed to load employees.
           </div>
         )}
@@ -332,7 +354,9 @@ export default function EmployeeListPage({
             onSort={toggleSort}
             restricted={restricted}
             hideSalary={hideSalary}
-            hideActions={hideActions}
+            hideActions={
+              hideActions
+            }
           />
         )}
 
@@ -360,7 +384,7 @@ export default function EmployeeListPage({
 }
 
 /* =========================================================
-   CRM
+   CRM EMPLOYEES
 ========================================================= */
 
 const CRM_DEPARTMENT_NAME =
@@ -456,13 +480,11 @@ function CrmEmployeeView() {
     setDesignationFilterId,
   ] = useState("");
 
-  const [
-    deactivateTarget,
-    setDeactivateTarget,
-  ] = useState(null);
-
   const updateEmployee =
     useUpdateEmployee();
+
+  const deactivateEmployee =
+    useDeactivateEmployee();
 
   const {
     data: departmentsData,
@@ -473,55 +495,48 @@ function CrmEmployeeView() {
       "crm-employees",
       "all-departments",
     ],
-
-    queryFn: async () =>
-      (
-        await masterApi.listDepartments(
-          {
-            page: 1,
-            per_page: 500,
-            is_active: true,
-          }
-        )
-      ).data.data,
+    queryFn:
+      async () =>
+        (
+          await masterApi.listDepartments(
+            {
+              page: 1,
+              per_page: 500,
+              is_active: true,
+            }
+          )
+        ).data.data,
   });
 
   const crmDepartments =
-    useMemo(
-      () =>
-        (
-          departmentsData?.items ||
-          []
-        ).filter(
-          (department) =>
-            (
-              department.department_name ||
-              ""
-            )
-              .trim()
-              .toLowerCase() ===
-            CRM_DEPARTMENT_NAME.toLowerCase()
-        ),
-      [departmentsData]
-    );
+    useMemo(() => {
+      return (
+        departmentsData?.items ||
+        []
+      ).filter(
+        (department) =>
+          (
+            department.department_name ||
+            ""
+          )
+            .trim()
+            .toLowerCase() ===
+          CRM_DEPARTMENT_NAME.toLowerCase()
+      );
+    }, [departmentsData]);
 
   const crmDepartmentIds =
-    useMemo(
-      () =>
-        new Set(
-          crmDepartments.map(
-            (department) =>
+    useMemo(() => {
+      return new Set(
+        crmDepartments.map(
+          (department) =>
+            Number(
               department.id
-          )
-        ),
-      [crmDepartments]
-    );
+            )
+        )
+      );
+    }, [crmDepartments]);
 
-  /*
-   * IMPORTANT:
-   * Employees are loaded BEFORE
-   * companyOptions / branchOptions.
-   */
   const {
     data: employeesData,
     isLoading:
@@ -535,64 +550,49 @@ function CrmEmployeeView() {
   });
 
   const allEmployees =
-    employeesData?.items ||
-    [];
+    employeesData?.items || [];
 
   const crmEmployees =
-    useMemo(
-      () =>
-        allEmployees.filter(
-          (employee) =>
-            crmDepartmentIds.has(
-              employee.department_id ??
-                employee.department?.id
+    useMemo(() => {
+      if (
+        !crmDepartmentIds.size
+      ) {
+        return [];
+      }
+
+      return allEmployees.filter(
+        (employee) => {
+          const departmentId =
+            employee.department_id ??
+            employee.department?.id;
+
+          return crmDepartmentIds.has(
+            Number(
+              departmentId
             )
-        ),
-      [
-        allEmployees,
-        crmDepartmentIds,
-      ]
-    );
+          );
+        }
+      );
+    }, [
+      allEmployees,
+      crmDepartmentIds,
+    ]);
 
   const activeCrmEmployees =
     crmEmployees.filter(
       (employee) =>
-        employee.is_active
+        employee.is_active !== false
     );
 
   const inactiveCrmEmployees =
     crmEmployees.filter(
       (employee) =>
-        !employee.is_active
+        employee.is_active === false
     );
 
-  /*
-   * Build companies from BOTH
-   * department data and employees.
-   * This prevents one company from
-   * disappearing when the department
-   * response does not contain all
-   * nested company records.
-   */
   const companyOptions =
     useMemo(() => {
       const map = new Map();
-
-      crmEmployees.forEach(
-        (employee) => {
-          const company =
-            employee
-              .department?.company ||
-            employee.company;
-
-          if (company?.id) {
-            map.set(
-              company.id,
-              company
-            );
-          }
-        }
-      );
 
       crmDepartments.forEach(
         (department) => {
@@ -613,58 +613,16 @@ function CrmEmployeeView() {
       ).sort(
         (a, b) =>
           (
-            a.name ||
-            a.company_name ||
-            ""
+            a.name || ""
           ).localeCompare(
-            b.name ||
-            b.company_name ||
-            ""
+            b.name || ""
           )
       );
-    }, [
-      crmEmployees,
-      crmDepartments,
-    ]);
+    }, [crmDepartments]);
 
   const branchOptions =
     useMemo(() => {
       const map = new Map();
-
-      crmEmployees.forEach(
-        (employee) => {
-          const branch =
-            employee
-              .department?.branch ||
-            employee.branch;
-
-          const company =
-            employee
-              .department?.company ||
-            employee.company;
-
-          if (!branch?.id) {
-            return;
-          }
-
-          if (
-            companyFilterId &&
-            String(
-              company?.id
-            ) !==
-              String(
-                companyFilterId
-              )
-          ) {
-            return;
-          }
-
-          map.set(
-            branch.id,
-            branch
-          );
-        }
-      );
 
       crmDepartments.forEach(
         (department) => {
@@ -677,7 +635,8 @@ function CrmEmployeeView() {
           if (
             companyFilterId &&
             String(
-              department.company?.id
+              department
+                .company?.id
             ) !==
               String(
                 companyFilterId
@@ -698,59 +657,54 @@ function CrmEmployeeView() {
       ).sort(
         (a, b) =>
           (
-            a.name ||
-            a.branch_name ||
-            ""
+            a.name || ""
           ).localeCompare(
-            b.name ||
-            b.branch_name ||
-            ""
+            b.name || ""
           )
       );
     }, [
-      crmEmployees,
       crmDepartments,
       companyFilterId,
     ]);
 
   const departmentOptions =
-    useMemo(
-      () =>
-        crmDepartments.filter(
-          (department) => {
-            if (
-              companyFilterId &&
+    useMemo(() => {
+      return crmDepartments.filter(
+        (department) => {
+          if (
+            companyFilterId &&
+            String(
+              department
+                .company?.id
+            ) !==
               String(
-                department.company?.id
-              ) !==
-                String(
-                  companyFilterId
-                )
-            ) {
-              return false;
-            }
-
-            if (
-              branchFilterId &&
-              String(
-                department.branch?.id
-              ) !==
-                String(
-                  branchFilterId
-                )
-            ) {
-              return false;
-            }
-
-            return true;
+                companyFilterId
+              )
+          ) {
+            return false;
           }
-        ),
-      [
-        crmDepartments,
-        companyFilterId,
-        branchFilterId,
-      ]
-    );
+
+          if (
+            branchFilterId &&
+            String(
+              department
+                .branch?.id
+            ) !==
+              String(
+                branchFilterId
+              )
+          ) {
+            return false;
+          }
+
+          return true;
+        }
+      );
+    }, [
+      crmDepartments,
+      companyFilterId,
+      branchFilterId,
+    ]);
 
   const {
     data: designationsData,
@@ -760,20 +714,19 @@ function CrmEmployeeView() {
       "designations",
       departmentFilterId,
     ],
-
-    queryFn: async () =>
-      (
-        await masterApi.listDesignations(
-          {
-            department_id:
-              departmentFilterId,
-            page: 1,
-            per_page: 100,
-            is_active: true,
-          }
-        )
-      ).data.data,
-
+    queryFn:
+      async () =>
+        (
+          await masterApi.listDesignations(
+            {
+              department_id:
+                departmentFilterId,
+              page: 1,
+              per_page: 100,
+              is_active: true,
+            }
+          )
+        ).data.data,
     enabled:
       !!departmentFilterId,
   });
@@ -836,7 +789,8 @@ function CrmEmployeeView() {
           if (
             statusFilter ===
               "active" &&
-            !employee.is_active
+            employee.is_active ===
+              false
           ) {
             return false;
           }
@@ -844,20 +798,19 @@ function CrmEmployeeView() {
           if (
             statusFilter ===
               "inactive" &&
-            employee.is_active
+            employee.is_active !==
+              false
           ) {
             return false;
           }
 
           const companyId =
-            employee
-              .department?.company?.id ??
-            employee.company?.id;
+            employee.department
+              ?.company?.id;
 
           const branchId =
-            employee
-              .department?.branch?.id ??
-            employee.branch?.id;
+            employee.department
+              ?.branch?.id;
 
           const departmentId =
             employee.department_id ??
@@ -911,23 +864,21 @@ function CrmEmployeeView() {
             return false;
           }
 
-          if (normalizedSearch) {
+          if (
+            normalizedSearch
+          ) {
             const haystack = [
               employee.employee_code,
               getEmployeeFullName(
                 employee
               ),
-              employee
-                .department
+              employee.department
                 ?.company?.name,
-              employee
-                .department
+              employee.department
                 ?.branch?.name,
-              employee
-                .department
+              employee.department
                 ?.department_name,
-              employee
-                .designation
+              employee.designation
                 ?.designation_name,
             ]
               .join(" ")
@@ -973,8 +924,54 @@ function CrmEmployeeView() {
     filteredEmployees.slice(
       (page - 1) *
         pageSize,
-      page * pageSize
+      page *
+        pageSize
     );
+
+  const handleCrmDeactivate =
+    async (employee) => {
+      if (!employee?.id) {
+        return;
+      }
+
+      try {
+        await deactivateEmployee.mutateAsync(
+          employee.id
+        );
+
+        await refetch();
+      } catch (error) {
+        console.error(
+          "Failed to deactivate CRM employee:",
+          error
+        );
+      }
+    };
+
+  const handleCrmReactivate =
+    async (employee) => {
+      if (!employee?.id) {
+        return;
+      }
+
+      try {
+        await updateEmployee.mutateAsync(
+          {
+            id: employee.id,
+            payload: {
+              is_active: true,
+            },
+          }
+        );
+
+        await refetch();
+      } catch (error) {
+        console.error(
+          "Failed to reactivate CRM employee:",
+          error
+        );
+      }
+    };
 
   const {
     exporting,
@@ -994,46 +991,6 @@ function CrmEmployeeView() {
     title:
       "CRM Employees",
   });
-
-  const isLoading =
-    employeesLoading ||
-    departmentsLoading;
-
-  /*
-   * Use the same employee API update
-   * function for CRM activate/deactivate.
-   *
-   * If your employeesApi uses a different
-   * method name, use the existing update
-   * method from employeesApi here.
-   */
-  const handleStatusChange =
-    async (employee) => {
-      if (!employee?.id) {
-        return;
-      }
-
-      try {
-        await updateEmployee.mutateAsync({
-          id: employee.id,
-          payload: {
-            is_active:
-              !employee.is_active,
-          },
-        });
-
-        setDeactivateTarget(
-          null
-        );
-
-        await refetch();
-      } catch (error) {
-        console.error(
-          "Failed to update employee status",
-          error
-        );
-      }
-  };
 
   const statusBadge =
     (isActive) => (
@@ -1058,93 +1015,78 @@ function CrmEmployeeView() {
       </Badge>
     );
 
+  const isLoading =
+    employeesLoading ||
+    departmentsLoading;
+
   if (isError) {
     return (
-      <div className="p-6">
-        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-600">
-          <h2 className="font-semibold">
-            Failed to load CRM employees
-          </h2>
-
-          <p className="mt-1 text-sm">
-            Please refresh the page and try again.
-          </p>
-        </div>
+      <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-600 dark:border-red-900/40 dark:bg-red-950/20 dark:text-red-400">
+        Failed to load CRM employees.
       </div>
     );
   }
 
   return (
     <div className="space-y-5">
-      {/* CRM HEADER */}
-
-      <div className="rounded-2xl border border-primary-200 bg-gradient-to-r from-primary-50 via-white to-white p-5 shadow-sm dark:border-primary-500/20 dark:from-primary-500/10 dark:via-slate-900 dark:to-slate-900">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-600 text-white shadow-sm">
-              <span className="text-lg font-bold">
-                CRM
-              </span>
-            </div>
-
-            <div>
-              <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-                CRM Employees
-              </h1>
-
-              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                CRM team directory and employee management
-              </p>
-            </div>
+      <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary-600 text-white shadow-sm">
+            <span className="text-lg font-bold">
+              C
+            </span>
           </div>
 
-          <TableToolbar
-            onRefresh={refetch}
-            refreshing={isFetching}
-            onExportExcel={
-              exportExcel
-            }
-            onExportPDF={
-              exportPDF
-            }
-            exporting={exporting}
-          />
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+              CRM Employees
+            </h1>
+
+            <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
+              Employees under the CRM department
+            </p>
+          </div>
         </div>
+
+        <TableToolbar
+          onRefresh={refetch}
+          refreshing={isFetching}
+          onExportExcel={
+            exportExcel
+          }
+          onExportPDF={exportPDF}
+          exporting={exporting}
+        />
       </div>
 
-      {/* STATS */}
-
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div className="rounded-2xl border border-primary-100 bg-primary-50/50 p-4 dark:border-primary-500/20 dark:bg-primary-500/5">
-          <p className="text-xs font-medium text-slate-500">
+        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+          <p className="text-xs text-slate-500">
             Total CRM Employees
           </p>
-
-          <p className="mt-1 text-2xl font-bold text-primary-700 dark:text-primary-400">
+          <p className="mt-1 text-2xl font-bold text-slate-900 dark:text-white">
             {
               crmEmployees.length
             }
           </p>
         </div>
 
-        <div className="rounded-2xl border border-emerald-100 bg-emerald-50/50 p-4 dark:border-emerald-500/20 dark:bg-emerald-500/5">
-          <p className="text-xs font-medium text-slate-500">
+        <div className="rounded-xl border border-emerald-100 bg-white p-4 shadow-sm dark:border-emerald-900/30 dark:bg-slate-900">
+          <p className="text-xs text-slate-500">
             Active
           </p>
-
-          <p className="mt-1 text-2xl font-bold text-emerald-600">
+          <p className="mt-1 text-2xl font-bold text-emerald-600 dark:text-emerald-400">
             {
               activeCrmEmployees.length
             }
           </p>
         </div>
 
-        <div className="rounded-2xl border border-red-100 bg-red-50/50 p-4 dark:border-red-500/20 dark:bg-red-500/5">
-          <p className="text-xs font-medium text-slate-500">
+        <div className="rounded-xl border border-red-100 bg-white p-4 shadow-sm dark:border-red-900/30 dark:bg-slate-900">
+          <p className="text-xs text-slate-500">
             Inactive
           </p>
-
-          <p className="mt-1 text-2xl font-bold text-red-600">
+          <p className="mt-1 text-2xl font-bold text-red-600 dark:text-red-400">
             {
               inactiveCrmEmployees.length
             }
@@ -1152,382 +1094,429 @@ function CrmEmployeeView() {
         </div>
       </div>
 
-      {/* FILTERS */}
-
-      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-        <div className="flex flex-col gap-3">
+      <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <div className="flex flex-wrap gap-2">
           <input
-            type="text"
             value={search}
-            onChange={(event) => {
+            onChange={(e) => {
               setSearch(
-                event.target.value
+                e.target.value
               );
               setPage(1);
             }}
             placeholder="Search CRM employees..."
-            className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+            className="h-10 w-full rounded-lg border border-slate-300 px-3 text-sm sm:max-w-xs dark:border-slate-600 dark:bg-slate-800 dark:text-white"
           />
 
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
-            <select
-              value={
-                companyFilterId
-              }
-              onChange={
-                handleCompanyFilterChange
-              }
-              className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-white"
-            >
-              <option value="">
-                All Companies
-              </option>
+          <select
+            value={
+              companyFilterId
+            }
+            onChange={
+              handleCompanyFilterChange
+            }
+            className="h-10 rounded-lg border border-slate-300 px-3 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+          >
+            <option value="">
+              All Companies
+            </option>
 
-              {companyOptions.map(
-                (company) => (
-                  <option
-                    key={company.id}
-                    value={company.id}
-                  >
-                    {company.name ||
-                      company.company_name}
-                  </option>
-                )
-              )}
-            </select>
+            {companyOptions.map(
+              (company) => (
+                <option
+                  key={
+                    company.id
+                  }
+                  value={
+                    company.id
+                  }
+                >
+                  {company.name}
+                </option>
+              )
+            )}
+          </select>
 
-            <select
-              value={
-                branchFilterId
-              }
-              onChange={
-                handleBranchFilterChange
-              }
-              className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-white"
-            >
-              <option value="">
-                All Branches
-              </option>
+          <select
+            value={
+              branchFilterId
+            }
+            onChange={
+              handleBranchFilterChange
+            }
+            disabled={
+              !companyFilterId
+            }
+            className="h-10 rounded-lg border border-slate-300 px-3 text-sm disabled:opacity-50 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+          >
+            <option value="">
+              {companyFilterId
+                ? "All Branches"
+                : "Select Company First"}
+            </option>
 
-              {branchOptions.map(
-                (branch) => (
-                  <option
-                    key={branch.id}
-                    value={branch.id}
-                  >
-                    {branch.name ||
-                      branch.branch_name}
-                  </option>
-                )
-              )}
-            </select>
+            {branchOptions.map(
+              (branch) => (
+                <option
+                  key={branch.id}
+                  value={branch.id}
+                >
+                  {branch.name}
+                </option>
+              )
+            )}
+          </select>
 
-            <select
-              value={
-                departmentFilterId
-              }
-              onChange={
-                handleDepartmentFilterChange
-              }
-              className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-white"
-            >
-              <option value="">
-                All Departments
-              </option>
+          <select
+            value={
+              departmentFilterId
+            }
+            onChange={
+              handleDepartmentFilterChange
+            }
+            disabled={
+              !branchFilterId
+            }
+            className="h-10 rounded-lg border border-slate-300 px-3 text-sm disabled:opacity-50 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+          >
+            <option value="">
+              {branchFilterId
+                ? "All CRM Departments"
+                : "Select Branch First"}
+            </option>
 
-              {departmentOptions.map(
-                (department) => (
-                  <option
-                    key={department.id}
-                    value={
-                      department.id
-                    }
-                  >
-                    {
-                      department.department_name
-                    }
-                  </option>
-                )
-              )}
-            </select>
+            {departmentOptions.map(
+              (department) => (
+                <option
+                  key={
+                    department.id
+                  }
+                  value={
+                    department.id
+                  }
+                >
+                  {
+                    department.department_name
+                  }
+                </option>
+              )
+            )}
+          </select>
 
-            <select
-              value={
-                designationFilterId
-              }
-              onChange={
-                handleDesignationFilterChange
-              }
-              disabled={
-                !departmentFilterId
-              }
-              className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm disabled:opacity-50 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
-            >
-              <option value="">
-                All Designations
-              </option>
+          <select
+            value={
+              designationFilterId
+            }
+            onChange={
+              handleDesignationFilterChange
+            }
+            disabled={
+              !departmentFilterId
+            }
+            className="h-10 rounded-lg border border-slate-300 px-3 text-sm disabled:opacity-50 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+          >
+            <option value="">
+              {departmentFilterId
+                ? "All Designations"
+                : "Select Department First"}
+            </option>
 
-              {designationOptions.map(
-                (designation) => (
-                  <option
-                    key={
-                      designation.id
-                    }
-                    value={
-                      designation.id
-                    }
-                  >
-                    {
-                      designation.designation_name
-                    }
-                  </option>
-                )
-              )}
-            </select>
+            {designationOptions.map(
+              (designation) => (
+                <option
+                  key={
+                    designation.id
+                  }
+                  value={
+                    designation.id
+                  }
+                >
+                  {
+                    designation.designation_name
+                  }
+                </option>
+              )
+            )}
+          </select>
+
+          <div className="ml-auto flex items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
+            {[
+              "active",
+              "inactive",
+              "all",
+            ].map(
+              (status) => (
+                <button
+                  key={status}
+                  type="button"
+                  onClick={() => {
+                    setStatusFilter(
+                      status
+                    );
+                    setPage(1);
+                  }}
+                  className={`rounded-md px-3 py-1.5 text-xs font-medium capitalize ${
+                    statusFilter ===
+                    status
+                      ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
+                      : "text-slate-500"
+                  }`}
+                >
+                  {status}
+                </button>
+              )
+            )}
           </div>
 
-          <div className="flex flex-wrap justify-between gap-2">
-            <div className="flex rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
-              <button
-                type="button"
-                onClick={() => {
-                  setViewMode(
-                    "table"
-                  );
-                  setPage(1);
-                }}
-                className={`rounded-md px-3 py-1.5 text-xs font-medium ${
-                  viewMode === "table"
-                    ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
-                    : "text-slate-500"
-                }`}
-              >
-                Table
-              </button>
+          <div className="flex items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
+            <button
+              type="button"
+              onClick={() => {
+                setViewMode(
+                  "table"
+                );
+                setPage(1);
+              }}
+              className={`rounded-md px-3 py-1.5 text-xs font-medium ${
+                viewMode ===
+                "table"
+                  ? "bg-white shadow-sm dark:bg-slate-700"
+                  : ""
+              }`}
+            >
+              Table
+            </button>
 
-              <button
-                type="button"
-                onClick={() => {
-                  setViewMode(
-                    "card"
-                  );
-                  setPage(1);
-                }}
-                className={`rounded-md px-3 py-1.5 text-xs font-medium ${
-                  viewMode === "card"
-                    ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
-                    : "text-slate-500"
-                }`}
-              >
-                Card
-              </button>
-            </div>
-
-            <div className="flex rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
-              {[
-                "active",
-                "inactive",
-                "all",
-              ].map(
-                (status) => (
-                  <button
-                    key={status}
-                    type="button"
-                    onClick={() => {
-                      setStatusFilter(
-                        status
-                      );
-                      setPage(1);
-                    }}
-                    className={`rounded-md px-3 py-1.5 text-xs font-medium capitalize ${
-                      statusFilter ===
-                      status
-                        ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
-                        : "text-slate-500"
-                    }`}
-                  >
-                    {status}
-                  </button>
-                )
-              )}
-            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setViewMode(
+                  "card"
+                );
+                setPage(1);
+              }}
+              className={`rounded-md px-3 py-1.5 text-xs font-medium ${
+                viewMode ===
+                "card"
+                  ? "bg-white shadow-sm dark:bg-slate-700"
+                  : ""
+              }`}
+            >
+              Card
+            </button>
           </div>
         </div>
       </div>
 
-      {/* LOADING */}
-
       {isLoading ? (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {Array.from({
-            length: 6,
-          }).map((_, index) => (
-            <div
-              key={index}
-              className="h-[330px] animate-pulse rounded-2xl bg-slate-100 dark:bg-slate-800"
-            />
-          ))}
+        <div className="py-10 text-center text-sm text-slate-400">
+          Loading CRM employees...
         </div>
       ) : viewMode ===
         "table" ? (
-        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
-          <table className="w-full table-fixed text-left text-sm">
-            <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500 dark:border-slate-700 dark:bg-slate-800">
-              <tr>
-                <th className="w-[22%] px-4 py-3">
-                  Employee
-                </th>
+        pagedEmployees.length ===
+        0 ? (
+          <div className="rounded-xl border border-slate-200 bg-white p-10 text-center dark:border-slate-700 dark:bg-slate-900">
+            No CRM employees found.
+          </div>
+        ) : (
+          <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+            <table className="w-full text-left text-sm">
+              <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500 dark:border-slate-700 dark:bg-slate-800/60">
+                <tr>
+                  <th className="px-4 py-3">
+                    Employee
+                  </th>
 
-                <th className="w-[16%] px-4 py-3">
-                  Company
-                </th>
+                  <th className="px-4 py-3">
+                    Company
+                  </th>
 
-                <th className="w-[14%] px-4 py-3">
-                  Branch
-                </th>
+                  <th className="px-4 py-3">
+                    Branch
+                  </th>
 
-                <th className="w-[15%] px-4 py-3">
-                  Department
-                </th>
+                  <th className="px-4 py-3">
+                    Department
+                  </th>
 
-                <th className="w-[13%] px-4 py-3">
-                  Designation
-                </th>
+                  <th className="px-4 py-3">
+                    Designation
+                  </th>
 
-                <th className="w-[10%] px-4 py-3">
-                  Status
-                </th>
+                  <th className="px-4 py-3">
+                    Status
+                  </th>
 
-                <th className="w-[10%] px-4 py-3 text-center">
-                  Actions
-                </th>
-              </tr>
-            </thead>
+                  <th className="px-4 py-3 text-right">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
 
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {pagedEmployees.map(
-                (employee) => {
-                  const name =
-                    getEmployeeFullName(
-                      employee
-                    ) ||
-                    `Employee #${employee.id}`;
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                {pagedEmployees.map(
+                  (employee) => {
+                    const name =
+                      getEmployeeFullName(
+                        employee
+                      ) ||
+                      `Employee #${employee.id}`;
 
-                  return (
-                    <tr
-                      key={
-                        employee.id
-                      }
-                      className="hover:bg-slate-50 dark:hover:bg-slate-800/40"
-                    >
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2.5">
-                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-50 font-bold text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
-                            {name
-                              .charAt(0)
-                              .toUpperCase()}
-                          </div>
-
-                          <div className="min-w-0">
-                            <p className="truncate font-medium text-slate-800 dark:text-white">
-                              {name}
-                            </p>
-
-                            <p className="font-mono text-[10px] text-slate-400">
-                              {
-                                employee.employee_code
-                              }
-                            </p>
-                          </div>
-                        </div>
-                      </td>
-
-                      <td className="truncate px-4 py-3 text-xs text-slate-600 dark:text-slate-300">
-                        {employee.department?.company?.name ||
-                          employee.company?.name ||
-                          "-"}
-                      </td>
-
-                      <td className="truncate px-4 py-3 text-xs text-slate-600 dark:text-slate-300">
-                        {employee.department?.branch?.name ||
-                          employee.branch?.name ||
-                          "-"}
-                      </td>
-
-                      <td className="truncate px-4 py-3 text-xs text-slate-600 dark:text-slate-300">
-                        {employee.department?.department_name ||
-                          "-"}
-                      </td>
-
-                      <td className="truncate px-4 py-3 text-xs text-slate-600 dark:text-slate-300">
-                        {employee.designation?.designation_name ||
-                          "-"}
-                      </td>
-
-                      <td className="px-4 py-3">
-                        {statusBadge(
-                          employee.is_active
-                        )}
-                      </td>
-
-                      <td className="px-3 py-3">
-                        <div className="flex items-center justify-center gap-1">
-                          <Link
-                            to={`/employees/${employee.id}?restricted=1&returnTo=/crm/employees`}
-                            title="View"
-                            className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-700"
-                          >
-                            View
-                          </Link>
-
-                          <Link
-                            to={`/employees/${employee.id}/edit?returnTo=/crm/employees`}
-                            title="Edit"
-                            className="rounded-lg p-1.5 text-primary-600 hover:bg-primary-50 dark:text-primary-400 dark:hover:bg-primary-500/10"
-                          >
-                            Edit
-                          </Link>
-
-                          {employee.is_active ? (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setDeactivateTarget(
-                                  employee
+                    return (
+                      <tr
+                        key={
+                          employee.id
+                        }
+                        className="hover:bg-slate-50 dark:hover:bg-slate-800/40"
+                      >
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2.5">
+                            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
+                              {name
+                                .charAt(
+                                  0
                                 )
-                              }
-                              disabled={
-                                updateEmployee.isPending
-                              }
-                              className="rounded-lg p-1.5 text-red-500 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10"
-                            >
-                              Deactivate
-                            </button>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handleStatusChange(
-                                  employee
-                                )
-                              }
-                              disabled={
-                                updateEmployee.isPending
-                              }
-                              className="rounded-lg p-1.5 text-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-500/10"
-                            >
-                              Reactivate
-                            </button>
+                                .toUpperCase()}
+                            </div>
+
+                            <div>
+                              <p className="font-medium text-slate-800 dark:text-slate-100">
+                                {name}
+                              </p>
+
+                              <p className="font-mono text-[10px] text-slate-400">
+                                {
+                                  employee.employee_code
+                                }
+                              </p>
+                            </div>
+                          </div>
+                        </td>
+
+                        <td className="px-4 py-3">
+                          {
+                            employee
+                              .department
+                              ?.company
+                              ?.name ||
+                            "-"
+                          }
+                        </td>
+
+                        <td className="px-4 py-3">
+                          {
+                            employee
+                              .department
+                              ?.branch
+                              ?.name ||
+                            "-"
+                          }
+                        </td>
+
+                        <td className="px-4 py-3">
+                          {
+                            employee
+                              .department
+                              ?.department_name ||
+                            "-"
+                          }
+                        </td>
+
+                        <td className="px-4 py-3">
+                          {
+                            employee
+                              .designation
+                              ?.designation_name ||
+                            "-"
+                          }
+                        </td>
+
+                        <td className="px-4 py-3">
+                          {statusBadge(
+                            employee.is_active !==
+                              false
                           )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                }
-              )}
-            </tbody>
-          </table>
-        </div>
+                        </td>
+
+                        <td className="px-4 py-3">
+                          <div className="flex items-center justify-end gap-1">
+                            <Link
+                              to={`/employees/${employee.id}?restricted=1&from=crm`}
+                              title="View"
+                              className="rounded-full p-1.5 text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-700"
+                            >
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-4 w-4"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                strokeWidth={2}
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"
+                                />
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                />
+                              </svg>
+                            </Link>
+
+                            <button
+                              type="button"
+                              disabled={
+                                deactivateEmployee.isPending ||
+                                updateEmployee.isPending
+                              }
+                              onClick={() => {
+                                if (
+                                  employee.is_active !==
+                                  false
+                                ) {
+                                  handleCrmDeactivate(
+                                    employee
+                                  );
+                                } else {
+                                  handleCrmReactivate(
+                                    employee
+                                  );
+                                }
+                              }}
+                              title={
+                                employee.is_active !==
+                                false
+                                  ? "Deactivate"
+                                  : "Reactivate"
+                              }
+                              className={`rounded-full p-1.5 disabled:opacity-40 ${
+                                employee.is_active !==
+                                false
+                                  ? "text-red-500 hover:bg-red-50 dark:text-red-400"
+                                  : "text-emerald-600 hover:bg-emerald-50 dark:text-emerald-400"
+                              }`}
+                            >
+                              {employee.is_active !==
+                              false ? (
+                                <span>×</span>
+                              ) : (
+                                <span>↻</span>
+                              )}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  }
+                )}
+              </tbody>
+            </table>
+          </div>
+        )
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {pagedEmployees.map(
@@ -1538,157 +1527,130 @@ function CrmEmployeeView() {
                 ) ||
                 `Employee #${employee.id}`;
 
-              const companyName =
-                employee.department?.company?.name ||
-                employee.company?.name ||
-                "Not assigned";
-
-              const branchName =
-                employee.department?.branch?.name ||
-                employee.branch?.name ||
-                "Not assigned";
-
-              const departmentName =
-                employee.department?.department_name ||
-                "Not assigned";
-
-              const designationName =
-                employee.designation?.designation_name ||
-                "Not assigned";
-
               return (
                 <div
-                  key={employee.id}
-                  className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900"
+                  key={
+                    employee.id
+                  }
+                  className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900"
                 >
-                  <div className="h-1 bg-primary-600" />
-
-                  <div className="p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary-50 font-bold text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
-                          {name
-                            .charAt(0)
-                            .toUpperCase()}
-                        </div>
-
-                        <div className="min-w-0">
-                          <h3 className="truncate font-semibold text-slate-900 dark:text-white">
-                            {name}
-                          </h3>
-
-                          <p className="font-mono text-[10px] text-slate-400">
-                            {
-                              employee.employee_code
-                            }
-                          </p>
-                        </div>
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-50 font-bold text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
+                        {name
+                          .charAt(
+                            0
+                          )
+                          .toUpperCase()}
                       </div>
 
-                      {statusBadge(
-                        employee.is_active
-                      )}
-                    </div>
-
-                    <div className="mt-4 grid grid-cols-2 gap-3">
-                      <div className="rounded-xl bg-slate-50 p-3 dark:bg-slate-800">
-                        <p className="text-[9px] uppercase tracking-wide text-slate-400">
-                          Company
+                      <div>
+                        <p className="font-semibold text-slate-900 dark:text-white">
+                          {name}
                         </p>
 
-                        <p className="mt-1 truncate text-xs font-semibold text-slate-700 dark:text-slate-200">
+                        <p className="font-mono text-[10px] text-slate-400">
                           {
-                            companyName
-                          }
-                        </p>
-                      </div>
-
-                      <div className="rounded-xl bg-slate-50 p-3 dark:bg-slate-800">
-                        <p className="text-[9px] uppercase tracking-wide text-slate-400">
-                          Branch
-                        </p>
-
-                        <p className="mt-1 truncate text-xs font-semibold text-slate-700 dark:text-slate-200">
-                          {
-                            branchName
-                          }
-                        </p>
-                      </div>
-
-                      <div className="rounded-xl bg-slate-50 p-3 dark:bg-slate-800">
-                        <p className="text-[9px] uppercase tracking-wide text-slate-400">
-                          Department
-                        </p>
-
-                        <p className="mt-1 truncate text-xs font-semibold text-slate-700 dark:text-slate-200">
-                          {
-                            departmentName
-                          }
-                        </p>
-                      </div>
-
-                      <div className="rounded-xl bg-primary-50 p-3 dark:bg-primary-500/10">
-                        <p className="text-[9px] uppercase tracking-wide text-primary-500">
-                          Designation
-                        </p>
-
-                        <p className="mt-1 truncate text-xs font-semibold text-primary-700 dark:text-primary-300">
-                          {
-                            designationName
+                            employee.employee_code
                           }
                         </p>
                       </div>
                     </div>
 
-                    <div className="mt-4 grid grid-cols-2 gap-2">
-                      <Link
-                        to={`/employees/${employee.id}?restricted=1&returnTo=/crm/employees`}
-                        className="rounded-lg border border-slate-200 px-3 py-2 text-center text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
-                      >
-                        View
-                      </Link>
+                    {statusBadge(
+                      employee.is_active !==
+                        false
+                    )}
+                  </div>
 
-                      <Link
-                        to={`/employees/${employee.id}/edit?returnTo=/crm/employees`}
-                        className="rounded-lg bg-primary-600 px-3 py-2 text-center text-xs font-semibold text-white hover:bg-primary-700"
-                      >
-                        Edit
-                      </Link>
-                    </div>
+                  <div className="mt-4 space-y-2 text-xs">
+                    <p>
+                      <span className="text-slate-400">
+                        Company:
+                      </span>{" "}
+                      {
+                        employee
+                          .department
+                          ?.company
+                          ?.name
+                      }
+                    </p>
 
-                    <div className="mt-2">
-                      {employee.is_active ? (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setDeactivateTarget(
-                              employee
-                            )
-                          }
-                          disabled={
-                            updateEmployee.isPending
-                          }
-                          className="w-full rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 dark:border-red-900/40 dark:text-red-400 dark:hover:bg-red-500/10"
-                        >
-                          Deactivate Employee
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            handleStatusChange(
-                              employee
-                            )
-                          }
-                          disabled={
-                            updateEmployee.isPending
-                          }
-                          className="w-full rounded-lg border border-emerald-200 px-3 py-2 text-xs font-semibold text-emerald-600 hover:bg-emerald-50 dark:border-emerald-900/40 dark:text-emerald-400 dark:hover:bg-emerald-500/10"
-                        >
-                          Reactivate Employee
-                        </button>
-                      )}
-                    </div>
+                    <p>
+                      <span className="text-slate-400">
+                        Branch:
+                      </span>{" "}
+                      {
+                        employee
+                          .department
+                          ?.branch
+                          ?.name
+                      }
+                    </p>
+
+                    <p>
+                      <span className="text-slate-400">
+                        Department:
+                      </span>{" "}
+                      {
+                        employee
+                          .department
+                          ?.department_name
+                      }
+                    </p>
+
+                    <p>
+                      <span className="text-slate-400">
+                        Designation:
+                      </span>{" "}
+                      {
+                        employee
+                          .designation
+                          ?.designation_name
+                      }
+                    </p>
+                  </div>
+
+                  <div className="mt-4 grid grid-cols-2 gap-2">
+                    <Link
+                      to={`/employees/${employee.id}?restricted=1&from=crm`}
+                      className="rounded-lg border border-slate-200 px-3 py-2 text-center text-xs font-semibold dark:border-slate-700"
+                    >
+                      View
+                    </Link>
+
+                    <button
+                      type="button"
+                      disabled={
+                        deactivateEmployee.isPending ||
+                        updateEmployee.isPending
+                      }
+                      onClick={() => {
+                        if (
+                          employee.is_active !==
+                          false
+                        ) {
+                          handleCrmDeactivate(
+                            employee
+                          );
+                        } else {
+                          handleCrmReactivate(
+                            employee
+                          );
+                        }
+                      }}
+                      className={`rounded-lg px-3 py-2 text-xs font-semibold disabled:opacity-40 ${
+                        employee.is_active !==
+                        false
+                          ? "bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400"
+                          : "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400"
+                      }`}
+                    >
+                      {employee.is_active !==
+                      false
+                        ? "Deactivate"
+                        : "Reactivate"}
+                    </button>
                   </div>
                 </div>
               );
@@ -1696,20 +1658,6 @@ function CrmEmployeeView() {
           )}
         </div>
       )}
-
-      {!isLoading &&
-        pagedEmployees.length ===
-          0 && (
-          <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center dark:border-slate-700 dark:bg-slate-900">
-            <h3 className="font-semibold text-slate-800 dark:text-white">
-              No CRM employees found
-            </h3>
-
-            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-              No employees match the selected filters.
-            </p>
-          </div>
-        )}
 
       <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 dark:border-slate-700 dark:bg-slate-900">
         <span className="text-sm text-slate-500">
@@ -1720,7 +1668,9 @@ function CrmEmployeeView() {
         <div className="flex gap-2">
           <button
             type="button"
-            disabled={page <= 1}
+            disabled={
+              page <= 1
+            }
             onClick={() =>
               setPage(
                 (current) =>
@@ -1730,7 +1680,7 @@ function CrmEmployeeView() {
                   )
               )
             }
-            className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs disabled:opacity-40 dark:border-slate-700"
+            className="rounded-lg border px-3 py-1.5 text-xs disabled:opacity-40 dark:border-slate-700"
           >
             Previous
           </button>
@@ -1738,7 +1688,8 @@ function CrmEmployeeView() {
           <button
             type="button"
             disabled={
-              page >= pageCount
+              page >=
+              pageCount
             }
             onClick={() =>
               setPage(
@@ -1749,44 +1700,12 @@ function CrmEmployeeView() {
                   )
               )
             }
-            className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs disabled:opacity-40 dark:border-slate-700"
+            className="rounded-lg border px-3 py-1.5 text-xs disabled:opacity-40 dark:border-slate-700"
           >
             Next
           </button>
         </div>
       </div>
-
-      <ConfirmDialog
-        open={
-          !!deactivateTarget
-        }
-        onClose={() => {
-          if (
-            !updateEmployee.isPending
-          ) {
-            setDeactivateTarget(
-              null
-            );
-          }
-        }}
-        onConfirm={() =>
-          handleStatusChange(
-            deactivateTarget
-          )
-        }
-        title="Deactivate Employee"
-        message={
-          deactivateTarget
-            ? `Are you sure you want to deactivate ${getEmployeeFullName(
-                deactivateTarget
-              )}?`
-            : ""
-        }
-        confirmText="Deactivate"
-        loading={
-          updateEmployee.isPending
-        }
-      />
     </div>
   );
 }
