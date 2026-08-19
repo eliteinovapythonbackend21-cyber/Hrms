@@ -1039,7 +1039,7 @@ class Transfer(TimestampMixin, db.Model):
         nullable=False,
     )
 
-    releiving_date = db.Column(
+    relieving_date = db.Column(
         db.Date,
         nullable=False,
     )
@@ -1091,8 +1091,8 @@ class Transfer(TimestampMixin, db.Model):
             self.transfer_apply_date
         )
 
-        data["releiving_date"] = (
-            self.releiving_date
+        data["relieving_date"] = (
+            self.relieving_date
         )
 
         data["joining_date"] = (
@@ -1101,6 +1101,10 @@ class Transfer(TimestampMixin, db.Model):
 
         data["location"] = (
             self.location or ""
+        )
+
+        data["accomplishments"] = (
+            self.accomplishments or ""
         )
 
         data["employee"] = _summary(
