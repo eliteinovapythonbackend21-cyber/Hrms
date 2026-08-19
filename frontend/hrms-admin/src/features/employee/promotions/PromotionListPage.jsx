@@ -78,6 +78,41 @@ const EXPORT_COLUMNS = [
 ];
 
 /* =========================================================
+   HELPERS
+========================================================= */
+
+function normalizeDateForInput(value) {
+  if (!value) {
+    return "";
+  }
+
+  /*
+   * HTML input[type="date"] requires:
+   * YYYY-MM-DD
+   *
+   * Backend can return:
+   * YYYY-MM-DD
+   * YYYY-MM-DDTHH:mm:ss
+   * YYYY-MM-DD HH:mm:ss
+   */
+  return String(value).slice(0, 10);
+}
+
+function getEmployeeName(employee) {
+  if (!employee) {
+    return "";
+  }
+
+  return (
+    `${employee.first_name || ""} ${
+      employee.last_name || ""
+    }`.trim() ||
+    employee.employee_code ||
+    ""
+  );
+}
+
+/* =========================================================
    ICONS
 ========================================================= */
 
@@ -237,6 +272,7 @@ function DesignationBadge({
 
   return (
     <span
+      title={label}
       className={`inline-flex max-w-full cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset ${badgeTones[tone]}`}
     >
       <span
@@ -279,8 +315,6 @@ function DesignationDetailsCard({
     <div
       className={`w-[300px] max-w-[calc(100vw-32px)] rounded-xl border border-slate-200 border-t-2 bg-white p-4 text-left shadow-xl dark:border-slate-700 dark:bg-slate-800 ${accentTones[tone]}`}
     >
-      {/* HEADER */}
-
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
@@ -306,8 +340,6 @@ function DesignationDetailsCard({
         </span>
       </div>
 
-      {/* DESCRIPTION */}
-
       {designation?.description && (
         <>
           <div className="my-3 border-t border-slate-100 dark:border-slate-700" />
@@ -326,11 +358,7 @@ function DesignationDetailsCard({
 
       <div className="my-3 border-t border-slate-100 dark:border-slate-700" />
 
-      {/* DETAILS */}
-
       <div className="space-y-2.5">
-        {/* EMPLOYEE */}
-
         <div className="grid grid-cols-[90px_minmax(0,1fr)] gap-3">
           <span className="text-xs text-slate-400 dark:text-slate-500">
             Employee
@@ -344,8 +372,6 @@ function DesignationDetailsCard({
           </span>
         </div>
 
-        {/* REASON */}
-
         <div className="grid grid-cols-[90px_minmax(0,1fr)] gap-3">
           <span className="text-xs text-slate-400 dark:text-slate-500">
             Reason
@@ -355,8 +381,6 @@ function DesignationDetailsCard({
             {reason || "Other"}
           </span>
         </div>
-
-        {/* PROMOTION DATE */}
 
         <div className="grid grid-cols-[90px_minmax(0,1fr)] gap-3">
           <span className="text-xs text-slate-400 dark:text-slate-500">
@@ -368,8 +392,6 @@ function DesignationDetailsCard({
           </span>
         </div>
 
-        {/* DURATION */}
-
         <div className="grid grid-cols-[90px_minmax(0,1fr)] gap-3">
           <span className="text-xs text-slate-400 dark:text-slate-500">
             Duration
@@ -380,8 +402,6 @@ function DesignationDetailsCard({
           </span>
         </div>
       </div>
-
-      {/* ACCOMPLISHMENTS */}
 
       {accomplishments && (
         <>
@@ -484,16 +504,21 @@ function formatDuration(
     return "—";
   }
 
-  const start =
-    new Date(startDate);
+  const start = new Date(
+    startDate
+  );
 
   const end = endDate
     ? new Date(endDate)
     : new Date();
 
   if (
-    Number.isNaN(start.getTime()) ||
-    Number.isNaN(end.getTime()) ||
+    Number.isNaN(
+      start.getTime()
+    ) ||
+    Number.isNaN(
+      end.getTime()
+    ) ||
     end < start
   ) {
     return "—";
@@ -521,8 +546,7 @@ function formatDuration(
         0
       ).getDate();
 
-    days +=
-      daysInPreviousMonth;
+    days += daysInPreviousMonth;
   }
 
   if (months < 0) {
@@ -616,7 +640,8 @@ function getEmployeeLocation(
     employee.branch?.location ||
     employee.department?.branch
       ?.location ||
-    employee.department?.location ||
+    employee.department
+      ?.location ||
     employee.company?.location ||
     employee.address;
 
@@ -811,8 +836,7 @@ export default function PromotionListPage() {
 
   const branches =
     useMemo(() => {
-      const map =
-        new Map();
+      const map = new Map();
 
       employees.forEach(
         (employee) => {
@@ -903,8 +927,7 @@ export default function PromotionListPage() {
 
   const employeeTimeline =
     useMemo(() => {
-      const map =
-        new Map();
+      const map = new Map();
 
       allPromotions.forEach(
         (promotion) => {
@@ -976,16 +999,20 @@ export default function PromotionListPage() {
     setViewMode,
   ] = useState("table");
 
-  const [page, setPage] =
-    useState(1);
+  const [
+    page,
+    setPage,
+  ] = useState(1);
 
   const [
     modalOpen,
     setModalOpen,
   ] = useState(false);
 
-  const [editing, setEditing] =
-    useState(null);
+  const [
+    editing,
+    setEditing,
+  ] = useState(null);
 
   const [
     deleteTarget,
@@ -1037,8 +1064,7 @@ export default function PromotionListPage() {
 
   const thisMonthCount =
     useMemo(() => {
-      const now =
-        new Date();
+      const now = new Date();
 
       return activePromotions.filter(
         (promotion) => {
@@ -1141,8 +1167,6 @@ export default function PromotionListPage() {
       return allPromotions
         .filter(
           (promotion) => {
-            /* STATUS */
-
             if (
               statusFilter ===
                 "active" &&
@@ -1166,11 +1190,8 @@ export default function PromotionListPage() {
                 promotion.employee_id
               ];
 
-            /* COMPANY */
-
             const employeeCompany =
-              employee
-                ?.department
+              employee?.department
                 ?.company ||
               employee?.company;
 
@@ -1186,11 +1207,8 @@ export default function PromotionListPage() {
               return false;
             }
 
-            /* BRANCH */
-
             const employeeBranch =
-              employee
-                ?.department
+              employee?.department
                 ?.branch ||
               employee?.branch;
 
@@ -1206,8 +1224,6 @@ export default function PromotionListPage() {
               return false;
             }
 
-            /* DEPARTMENT */
-
             const employeeDepartment =
               employee?.department;
 
@@ -1222,8 +1238,6 @@ export default function PromotionListPage() {
             ) {
               return false;
             }
-
-            /* DESIGNATION */
 
             if (
               filterDesignationId &&
@@ -1243,8 +1257,6 @@ export default function PromotionListPage() {
               return false;
             }
 
-            /* REASON */
-
             if (
               filterReason &&
               String(
@@ -1258,17 +1270,13 @@ export default function PromotionListPage() {
               return false;
             }
 
-            /* SEARCH */
-
             if (
               normalizedSearch
             ) {
               const employeeName =
-                employee
-                  ? `${employee.first_name || ""} ${
-                      employee.last_name || ""
-                    }`
-                  : "";
+                getEmployeeName(
+                  employee
+                );
 
               const employeeCode =
                 employee?.employee_code ||
@@ -1278,16 +1286,14 @@ export default function PromotionListPage() {
                 designationFullMap[
                   promotion
                     .from_designation_id
-                ]
-                  ?.designation_name ||
+                ]?.designation_name ||
                 "";
 
               const toDesignation =
                 designationFullMap[
                   promotion
                     .to_designation_id
-                ]
-                  ?.designation_name ||
+                ]?.designation_name ||
                 "";
 
               const location =
@@ -1392,18 +1398,14 @@ export default function PromotionListPage() {
       ).sort(
         (a, b) => {
           const nameA =
-            a.employee
-              ? `${a.employee.first_name || ""} ${
-                  a.employee.last_name || ""
-                }`
-              : "";
+            getEmployeeName(
+              a.employee
+            );
 
           const nameB =
-            b.employee
-              ? `${b.employee.first_name || ""} ${
-                  b.employee.last_name || ""
-                }`
-              : "";
+            getEmployeeName(
+              b.employee
+            );
 
           return nameA.localeCompare(
             nameB
@@ -1472,18 +1474,14 @@ export default function PromotionListPage() {
 
       const previous =
         index > 0
-          ? timeline[
-              index - 1
-            ]
+          ? timeline[index - 1]
           : null;
 
       const next =
         index >= 0 &&
         index <
           timeline.length - 1
-          ? timeline[
-              index + 1
-            ]
+          ? timeline[index + 1]
           : null;
 
       const employee =
@@ -1539,11 +1537,72 @@ export default function PromotionListPage() {
     setModalOpen(true);
   };
 
+  /* =======================================================
+     EDIT PROMOTION
+  ======================================================= */
+
   const handleEdit = (
     promotion
   ) => {
+    /*
+     * IMPORTANT:
+     *
+     * The backend may return:
+     *   2026-08-19
+     *   2026-08-19T00:00:00
+     *   2026-08-19 00:00:00
+     *
+     * <input type="date"> requires:
+     *   2026-08-19
+     *
+     * Normalize the value before sending
+     * it to PromotionForm.
+     */
+
+    const normalizedPromotion = {
+      ...promotion,
+
+      employee_id:
+        promotion.employee_id ||
+        promotion.employee?.id ||
+        "",
+
+      from_designation_id:
+        promotion.from_designation_id ||
+        promotion.from_designation?.id ||
+        "",
+
+      to_designation_id:
+        promotion.to_designation_id ||
+        promotion.to_designation?.id ||
+        "",
+
+      reason:
+        promotion.reason ||
+        "Other",
+
+      promotion_date:
+        normalizeDateForInput(
+          promotion.promotion_date ||
+            promotion.effective_date
+        ),
+
+      accomplishments:
+        promotion.accomplishments ||
+        "",
+
+      is_active:
+        promotion.is_active !==
+        false,
+    };
+
+    /*
+     * Remove the old field from edit state.
+     */
+    delete normalizedPromotion.effective_date;
+
     setEditing(
-      promotion
+      normalizedPromotion
     );
 
     setModalOpen(true);
@@ -1553,6 +1612,10 @@ export default function PromotionListPage() {
     setModalOpen(false);
     setEditing(null);
   };
+
+  /* =======================================================
+     SUBMIT
+  ======================================================= */
 
   const handleSubmit =
     async (payload) => {
@@ -1582,8 +1645,9 @@ export default function PromotionListPage() {
               : payload.to_designation_id,
 
           promotion_date:
-            payload.promotion_date ||
-            "",
+            normalizeDateForInput(
+              payload.promotion_date
+            ),
 
           reason:
             payload.reason ||
@@ -1594,7 +1658,9 @@ export default function PromotionListPage() {
             "",
         };
 
-        /* Do not send the removed field */
+        /*
+         * Old field must not be sent.
+         */
         delete normalizedPayload.effective_date;
 
         if (editing) {
@@ -1622,6 +1688,7 @@ export default function PromotionListPage() {
         }
 
         closeModal();
+
         await refetch();
       } catch (err) {
         showToast(
@@ -1632,6 +1699,10 @@ export default function PromotionListPage() {
         );
       }
     };
+
+  /* =======================================================
+     DELETE
+  ======================================================= */
 
   const confirmDelete =
     async () => {
@@ -1649,7 +1720,10 @@ export default function PromotionListPage() {
           "success"
         );
 
-        setDeleteTarget(null);
+        setDeleteTarget(
+          null
+        );
+
         await refetch();
       } catch (err) {
         showToast(
@@ -1660,6 +1734,10 @@ export default function PromotionListPage() {
         );
       }
     };
+
+  /* =======================================================
+     REACTIVATE
+  ======================================================= */
 
   const handleReactivate =
     async (promotion) => {
@@ -1688,6 +1766,10 @@ export default function PromotionListPage() {
         );
       }
     };
+
+  /* =======================================================
+     CLEAR FILTERS
+  ======================================================= */
 
   const clearFilters = () => {
     setSearch("");
@@ -1722,7 +1804,9 @@ export default function PromotionListPage() {
 
   return (
     <div className="min-w-0 space-y-5">
-      {/* HEADER */}
+      {/* =====================================================
+          HEADER
+      ===================================================== */}
 
       <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
         <div>
@@ -1758,7 +1842,9 @@ export default function PromotionListPage() {
         </div>
       </div>
 
-      {/* STAT CARDS */}
+      {/* =====================================================
+          STAT CARDS
+      ===================================================== */}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatCard
@@ -1784,7 +1870,9 @@ export default function PromotionListPage() {
         />
       </div>
 
-      {/* FILTERS */}
+      {/* =====================================================
+          FILTERS
+      ===================================================== */}
 
       <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-900">
         <div className="flex flex-col gap-3">
@@ -1816,7 +1904,6 @@ export default function PromotionListPage() {
                   setSearch(
                     event.target.value
                   );
-
                   setPage(1);
                 }}
                 placeholder="Search employee, reason or accomplishments..."
@@ -1827,18 +1914,12 @@ export default function PromotionListPage() {
             {/* COMPANY */}
 
             <select
-              value={
-                filterCompanyId
-              }
+              value={filterCompanyId}
               onChange={(event) => {
                 setFilterCompanyId(
                   event.target.value
                 );
-
-                setFilterBranchId(
-                  ""
-                );
-
+                setFilterBranchId("");
                 setPage(1);
               }}
               className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 sm:max-w-[180px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
@@ -1864,14 +1945,11 @@ export default function PromotionListPage() {
             {/* BRANCH */}
 
             <select
-              value={
-                filterBranchId
-              }
+              value={filterBranchId}
               onChange={(event) => {
                 setFilterBranchId(
                   event.target.value
                 );
-
                 setPage(1);
               }}
               className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 sm:max-w-[180px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
@@ -1897,14 +1975,11 @@ export default function PromotionListPage() {
             {/* DEPARTMENT */}
 
             <select
-              value={
-                filterDepartmentId
-              }
+              value={filterDepartmentId}
               onChange={(event) => {
                 setFilterDepartmentId(
                   event.target.value
                 );
-
                 setPage(1);
               }}
               className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 sm:max-w-[180px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
@@ -1934,14 +2009,11 @@ export default function PromotionListPage() {
             {/* DESIGNATION */}
 
             <select
-              value={
-                filterDesignationId
-              }
+              value={filterDesignationId}
               onChange={(event) => {
                 setFilterDesignationId(
                   event.target.value
                 );
-
                 setPage(1);
               }}
               className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 sm:max-w-[180px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
@@ -1971,14 +2043,11 @@ export default function PromotionListPage() {
             {/* REASON */}
 
             <select
-              value={
-                filterReason
-              }
+              value={filterReason}
               onChange={(event) => {
                 setFilterReason(
                   event.target.value
                 );
-
                 setPage(1);
               }}
               className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 sm:max-w-[240px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
@@ -2074,7 +2143,6 @@ export default function PromotionListPage() {
                       setStatusFilter(
                         status
                       );
-
                       setPage(1);
                     }}
                     className={`rounded-md px-3 py-1.5 text-xs font-medium capitalize transition ${
@@ -2093,7 +2161,9 @@ export default function PromotionListPage() {
         </div>
       </div>
 
-      {/* DATA */}
+      {/* =====================================================
+          DATA
+      ===================================================== */}
 
       {isLoading ? (
         <div className="py-10 text-center text-sm text-slate-400">
@@ -2111,55 +2181,19 @@ export default function PromotionListPage() {
             </p>
           </div>
         ) : (
-          <div
-            className="
-              w-full
-              min-w-0
-              overflow-x-auto
-              overflow-y-visible
-              rounded-xl
-              border
-              border-slate-200
-              bg-white
-              shadow-sm
-              dark:border-slate-700
-              dark:bg-slate-900
-            "
-          >
-            <table
-              className="
-                w-full
-                min-w-[1050px]
-                table-fixed
-                border-collapse
-                text-left
-                text-sm
-              "
-            >
+          <div className="w-full min-w-0 overflow-visible rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+            <table className="w-full table-fixed border-collapse text-left text-sm">
               <colgroup>
-                <col className="w-[19%]" />
-                <col className="w-[17%]" />
-                <col className="w-[17%]" />
+                <col className="w-[20%]" />
+                <col className="w-[18%]" />
+                <col className="w-[18%]" />
+                <col className="w-[14%]" />
                 <col className="w-[12%]" />
-                <col className="w-[13%]" />
                 <col className="w-[9%]" />
-                <col className="w-[8%]" />
+                <col className="w-[9%]" />
               </colgroup>
 
-              <thead
-                className="
-                  border-b
-                  border-slate-200
-                  bg-slate-50
-                  text-xs
-                  uppercase
-                  tracking-wide
-                  text-slate-500
-                  dark:border-slate-700
-                  dark:bg-slate-800/60
-                  dark:text-slate-400
-                "
-              >
+              <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-400">
                 <tr>
                   <th className="whitespace-nowrap px-4 py-3 font-medium">
                     Employee
@@ -2185,27 +2219,7 @@ export default function PromotionListPage() {
                     Status
                   </th>
 
-                  <th
-                    className="
-                      sticky
-                      right-0
-                      z-30
-                      w-[90px]
-                      min-w-[90px]
-                      whitespace-nowrap
-                      border-l
-                      border-slate-200
-                      bg-slate-50
-                      px-3
-                      py-3
-                      text-center
-                      font-medium
-                      shadow-[-4px_0_8px_-6px_rgba(15,23,42,0.25)]
-                      dark:border-slate-700
-                      dark:bg-slate-800/95
-                      dark:shadow-[-4px_0_8px_-6px_rgba(0,0,0,0.45)]
-                    "
-                  >
+                  <th className="whitespace-nowrap px-3 py-3 text-center font-medium">
                     Actions
                   </th>
                 </tr>
@@ -2220,11 +2234,10 @@ export default function PromotionListPage() {
                       ];
 
                     const employeeName =
-                      employee
-                        ? `${employee.first_name || ""} ${
-                            employee.last_name || ""
-                          }`.trim()
-                        : `Employee #${promotion.employee_id}`;
+                      getEmployeeName(
+                        employee
+                      ) ||
+                      `Employee #${promotion.employee_id}`;
 
                     const employeeLocation =
                       getEmployeeLocation(
@@ -2287,12 +2300,14 @@ export default function PromotionListPage() {
 
                     const fromDesignation =
                       designationFullMap[
-                        promotion.from_designation_id
+                        promotion
+                          .from_designation_id
                       ];
 
                     const toDesignation =
                       designationFullMap[
-                        promotion.to_designation_id
+                        promotion
+                          .to_designation_id
                       ];
 
                     return (
@@ -2300,15 +2315,8 @@ export default function PromotionListPage() {
                         key={
                           promotion.id
                         }
-                        className="
-                          group
-                          relative
-                          hover:bg-slate-50
-                          dark:hover:bg-slate-800/40
-                        "
+                        className="group hover:bg-slate-50 dark:hover:bg-slate-800/40"
                       >
-                        {/* EMPLOYEE */}
-
                         <td className="min-w-0 px-4 py-3">
                           <div className="flex min-w-0 items-center gap-2.5">
                             <Avatar
@@ -2332,8 +2340,6 @@ export default function PromotionListPage() {
                             </div>
                           </div>
                         </td>
-
-                        {/* CURRENT DESIGNATION */}
 
                         <td className="relative min-w-0 px-4 py-3">
                           <DesignationHoverTrigger
@@ -2380,8 +2386,6 @@ export default function PromotionListPage() {
                           </DesignationHoverTrigger>
                         </td>
 
-                        {/* PROMOTED TO */}
-
                         <td className="relative min-w-0 px-4 py-3">
                           <DesignationHoverTrigger
                             align="left"
@@ -2427,22 +2431,12 @@ export default function PromotionListPage() {
                           </DesignationHoverTrigger>
                         </td>
 
-                        {/* LOCATION */}
-
-                        <td className="min-w-0 overflow-hidden px-4 py-3">
+                        <td className="min-w-0 px-4 py-3">
                           <span
                             title={
                               employeeLocation
                             }
-                            className="
-                              block
-                              max-w-full
-                              truncate
-                              text-xs
-                              font-medium
-                              text-slate-600
-                              dark:text-slate-300
-                            "
+                            className="block truncate text-xs font-medium text-slate-600 dark:text-slate-300"
                           >
                             {
                               employeeLocation
@@ -2450,17 +2444,13 @@ export default function PromotionListPage() {
                           </span>
                         </td>
 
-                        {/* PROMOTION DATE */}
-
                         <td className="px-4 py-3">
-                          <span className="whitespace-nowrap text-xs font-medium text-slate-600 dark:text-slate-300">
+                          <span className="block truncate whitespace-nowrap text-xs font-medium text-slate-600 dark:text-slate-300">
                             {formatDate(
                               promotion.promotion_date
                             )}
                           </span>
                         </td>
-
-                        {/* STATUS */}
 
                         <td className="px-4 py-3">
                           <span
@@ -2484,39 +2474,8 @@ export default function PromotionListPage() {
                           </span>
                         </td>
 
-                        {/* ACTIONS */}
-
-                        <td
-                          className="
-                            sticky
-                            right-0
-                            z-20
-                            w-[90px]
-                            min-w-[90px]
-                            border-l
-                            border-slate-200
-                            bg-white
-                            px-2
-                            py-2
-                            align-middle
-                            shadow-[-4px_0_8px_-6px_rgba(15,23,42,0.25)]
-                            group-hover:bg-slate-50
-                            dark:border-slate-700
-                            dark:bg-slate-900
-                            dark:shadow-[-4px_0_8px_-6px_rgba(0,0,0,0.45)]
-                            dark:group-hover:bg-slate-800/90
-                          "
-                        >
-                          <div
-                            className="
-                              flex
-                              w-full
-                              items-center
-                              justify-center
-                              gap-1
-                              whitespace-nowrap
-                            "
-                          >
+                        <td className="px-3 py-3">
+                          <div className="flex w-full items-center justify-center gap-1">
                             <TableIconButton
                               title="Edit"
                               onClick={() =>
@@ -2617,10 +2576,6 @@ export default function PromotionListPage() {
           </p>
         </div>
       ) : (
-        /* ===================================================
-           CARD VIEW
-        =================================================== */
-
         <div className="grid grid-cols-1 items-start gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {pagedGroups.map(
             (group) => {
@@ -2628,11 +2583,10 @@ export default function PromotionListPage() {
                 group.employee;
 
               const employeeName =
-                employee
-                  ? `${employee.first_name || ""} ${
-                      employee.last_name || ""
-                    }`.trim()
-                  : `Employee #${group.employeeId}`;
+                getEmployeeName(
+                  employee
+                ) ||
+                `Employee #${group.employeeId}`;
 
               const sortedPromotions =
                 [...group.promotions].sort(
@@ -2655,8 +2609,6 @@ export default function PromotionListPage() {
                   <div className="absolute inset-x-0 top-0 h-0.5 rounded-t-2xl bg-primary-600" />
 
                   <div className="p-4">
-                    {/* EMPLOYEE */}
-
                     <div className="flex items-start justify-between gap-2.5">
                       <div className="flex min-w-0 items-center gap-2.5">
                         <Avatar
@@ -2696,8 +2648,6 @@ export default function PromotionListPage() {
 
                     <div className="my-3 border-t border-slate-100 dark:border-slate-800" />
 
-                    {/* PROMOTION HISTORY */}
-
                     <div className="space-y-2.5">
                       {sortedPromotions.map(
                         (promotion) => {
@@ -2724,8 +2674,6 @@ export default function PromotionListPage() {
                               className="relative overflow-visible rounded-lg border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800/60"
                             >
                               <div className="px-2.5 py-2.5">
-                                {/* DESIGNATIONS */}
-
                                 <div className="flex min-w-0 items-start justify-between gap-2">
                                   <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
                                     <DesignationHoverTrigger
@@ -2817,8 +2765,6 @@ export default function PromotionListPage() {
                                     </DesignationHoverTrigger>
                                   </div>
 
-                                  {/* STATUS */}
-
                                   <span
                                     className={`inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-[9px] font-medium ${
                                       isActive
@@ -2840,8 +2786,6 @@ export default function PromotionListPage() {
                                   </span>
                                 </div>
 
-                                {/* PROMOTION DATE */}
-
                                 <div className="mt-2 flex items-center gap-1.5 text-[10px] text-slate-400">
                                   <SmallCalendarIcon />
 
@@ -2850,8 +2794,6 @@ export default function PromotionListPage() {
                                   )}
                                 </div>
 
-                                {/* REASON */}
-
                                 <div className="mt-1.5">
                                   <ReasonBadge
                                     reason={
@@ -2859,8 +2801,6 @@ export default function PromotionListPage() {
                                     }
                                   />
                                 </div>
-
-                                {/* ACCOMPLISHMENTS */}
 
                                 {promotion.accomplishments && (
                                   <p
@@ -2874,8 +2814,6 @@ export default function PromotionListPage() {
                                     }
                                   </p>
                                 )}
-
-                                {/* DURATION */}
 
                                 <div className="mt-2 grid grid-cols-2 gap-2 text-[10px] text-slate-500 dark:text-slate-400">
                                   <div>
@@ -2897,8 +2835,6 @@ export default function PromotionListPage() {
                                   </div>
                                 </div>
                               </div>
-
-                              {/* ACTIONS */}
 
                               <div className="grid grid-cols-2 divide-x divide-slate-100 border-t border-slate-100 dark:divide-slate-700 dark:border-slate-700">
                                 <div className="flex items-center justify-center py-1.5">
@@ -2998,7 +2934,9 @@ export default function PromotionListPage() {
         </div>
       )}
 
-      {/* PAGINATION */}
+      {/* =====================================================
+          PAGINATION
+      ===================================================== */}
 
       <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
         <span>
@@ -3009,10 +2947,14 @@ export default function PromotionListPage() {
         <div className="flex gap-2">
           <button
             type="button"
-            disabled={page <= 1}
+            disabled={
+              page <= 1
+            }
             onClick={() =>
               setPage(
-                (currentPage) =>
+                (
+                  currentPage
+                ) =>
                   Math.max(
                     1,
                     currentPage - 1
@@ -3027,11 +2969,14 @@ export default function PromotionListPage() {
           <button
             type="button"
             disabled={
-              page >= pageCount
+              page >=
+              pageCount
             }
             onClick={() =>
               setPage(
-                (currentPage) =>
+                (
+                  currentPage
+                ) =>
                   Math.min(
                     pageCount,
                     currentPage + 1
@@ -3045,11 +2990,17 @@ export default function PromotionListPage() {
         </div>
       </div>
 
-      {/* ADD / EDIT MODAL */}
+      {/* =====================================================
+          ADD / EDIT MODAL
+      ===================================================== */}
 
       <Modal
-        open={modalOpen}
-        onClose={closeModal}
+        open={
+          modalOpen
+        }
+        onClose={
+          closeModal
+        }
         title={
           editing
             ? "Edit Promotion"
@@ -3064,16 +3015,24 @@ export default function PromotionListPage() {
           onSubmit={
             handleSubmit
           }
-          loading={isSaving}
+          loading={
+            isSaving
+          }
         />
       </Modal>
 
-      {/* DELETE CONFIRM */}
+      {/* =====================================================
+          DELETE CONFIRM
+      ===================================================== */}
 
       <ConfirmDialog
-        open={!!deleteTarget}
+        open={
+          !!deleteTarget
+        }
         onClose={() =>
-          setDeleteTarget(null)
+          setDeleteTarget(
+            null
+          )
         }
         onConfirm={
           confirmDelete

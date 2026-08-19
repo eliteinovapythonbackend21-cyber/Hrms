@@ -85,6 +85,24 @@ const EXPORT_COLUMNS = [
    HELPERS
 ========================================================= */
 
+function normalizeDateForInput(value) {
+  if (!value) {
+    return "";
+  }
+
+  /*
+   * HTML <input type="date"> accepts:
+   *
+   * YYYY-MM-DD
+   *
+   * API may return:
+   * YYYY-MM-DD
+   * YYYY-MM-DDT00:00:00
+   * YYYY-MM-DD 00:00:00
+   */
+  return String(value).slice(0, 10);
+}
+
 function getEmployeeName(employee) {
   if (!employee) {
     return "";
@@ -110,14 +128,12 @@ function getDepartmentName(
   );
 }
 
-function getTransferLocation(
-  transfer
-) {
+function getTransferLocation(transfer) {
   /*
    * IMPORTANT:
    *
    * Transfer location MUST come from
-   * the transfer table.
+   * the transfer record.
    *
    * Never use employee.location here.
    */
@@ -128,18 +144,13 @@ function getTransferLocation(
   );
 }
 
-function getAccomplishments(
-  transfer
-) {
+function getAccomplishments(transfer) {
   return String(
-    transfer?.accomplishments ||
-      ""
+    transfer?.accomplishments || ""
   ).trim();
 }
 
-function getTransferReason(
-  transfer
-) {
+function getTransferReason(transfer) {
   return String(
     transfer?.transfer_reason ||
       transfer?.reason ||
@@ -440,9 +451,11 @@ function DepartmentDetailsCard({
           </span>
 
           <span className="text-right text-xs font-medium text-slate-700 dark:text-slate-200">
-            {formatDate(
-              transferApplyDate
-            )}
+            {transferApplyDate
+              ? formatDate(
+                  transferApplyDate
+                )
+              : "—"}
           </span>
         </div>
 
@@ -452,9 +465,11 @@ function DepartmentDetailsCard({
           </span>
 
           <span className="text-right text-xs font-medium text-slate-700 dark:text-slate-200">
-            {formatDate(
-              relievingDate
-            )}
+            {relievingDate
+              ? formatDate(
+                  relievingDate
+                )
+              : "—"}
           </span>
         </div>
 
@@ -464,9 +479,11 @@ function DepartmentDetailsCard({
           </span>
 
           <span className="text-right text-xs font-medium text-slate-700 dark:text-slate-200">
-            {formatDate(
-              joiningDate
-            )}
+            {joiningDate
+              ? formatDate(
+                  joiningDate
+                )
+              : "—"}
           </span>
         </div>
       </div>
@@ -791,7 +808,8 @@ export default function TransferListPage() {
 
   const branches =
     useMemo(() => {
-      const map = new Map();
+      const map =
+        new Map();
 
       employees.forEach(
         (employee) => {
@@ -805,8 +823,8 @@ export default function TransferListPage() {
           }
 
           const company =
-            employee
-              ?.department?.company ||
+            employee?.department
+              ?.company ||
             employee?.company;
 
           if (
@@ -994,9 +1012,11 @@ export default function TransferListPage() {
     exportColumns:
       EXPORT_COLUMNS,
 
-    filename: "transfers",
+    filename:
+      "transfers",
 
-    title: "Transfers",
+    title:
+      "Transfers",
   });
 
   /* =======================================================
@@ -1040,7 +1060,8 @@ export default function TransferListPage() {
                 now.getFullYear()
             );
           }
-        ).length;
+        )
+        .length;
     }, [activeTransfers]);
 
   const uniqueEmployeeCount =
@@ -1176,8 +1197,7 @@ export default function TransferListPage() {
             const transferReason =
               getTransferReason(
                 transfer
-              ) ||
-              "Other";
+              ) || "Other";
 
             if (
               filterReason &&
@@ -1219,9 +1239,6 @@ export default function TransferListPage() {
                   ""
                 );
 
-              /*
-               * Transfer location ONLY.
-               */
               const location =
                 transfer.location ||
                 "";
@@ -1239,6 +1256,12 @@ export default function TransferListPage() {
                 transferReason,
                 location,
                 accomplishments,
+                transfer.transfer_apply_date ||
+                  "",
+                transfer.relieving_date ||
+                  "",
+                transfer.joining_date ||
+                  "",
               ]
                 .join(" ")
                 .toLowerCase();
@@ -1311,15 +1334,28 @@ export default function TransferListPage() {
     setModalOpen(true);
   };
 
+  /* =======================================================
+     EDIT
+  ======================================================= */
+
   const handleEdit = (
     transfer
   ) => {
     /*
-     * Pass the full transfer object,
-     * including transfer-specific
-     * location and dates.
+     * IMPORTANT:
+     *
+     * Convert API date values to YYYY-MM-DD
+     * before passing them to the date inputs.
+     *
+     * This fixes edit popup values not being
+     * populated for:
+     *
+     * - Transfer Apply Date
+     * - Relieving Date
+     * - Joining Date
      */
-    setEditing({
+
+    const normalizedTransfer = {
       ...transfer,
 
       employee_id:
@@ -1337,24 +1373,36 @@ export default function TransferListPage() {
         transfer.to_department?.id ||
         "",
 
-      location:
-        transfer.location || "",
-
-      transfer_apply_date:
-        transfer.transfer_apply_date ||
-        "",
-
-      joining_date:
-        transfer.joining_date ||
-        "",
-
-      relieving_date:
-        transfer.relieving_date ||
-        "",
-
       transfer_reason:
         transfer.transfer_reason ||
+        transfer.reason ||
         "Other",
+
+      transfer_apply_date:
+        normalizeDateForInput(
+          transfer.transfer_apply_date
+        ),
+
+      /*
+       * Frontend key is relieving_date.
+       *
+       * Support releiving_date too in case
+       * an older API response/model uses the
+       * misspelled form.
+       */
+      relieving_date:
+        normalizeDateForInput(
+          transfer.relieving_date ||
+            transfer.releiving_date
+        ),
+
+      joining_date:
+        normalizeDateForInput(
+          transfer.joining_date
+        ),
+
+      location:
+        transfer.location || "",
 
       accomplishments:
         transfer.accomplishments ||
@@ -1363,7 +1411,19 @@ export default function TransferListPage() {
       is_active:
         transfer.is_active !==
         false,
-    });
+    };
+
+    /*
+     * Remove obsolete fields from edit data.
+     */
+    delete normalizedTransfer.effective_date;
+    delete normalizedTransfer.remarks;
+    delete normalizedTransfer.reason;
+    delete normalizedTransfer.releiving_date;
+
+    setEditing(
+      normalizedTransfer
+    );
 
     setModalOpen(true);
   };
@@ -1410,20 +1470,20 @@ export default function TransferListPage() {
               "Other",
 
             transfer_apply_date:
-              payload.transfer_apply_date ||
-              "",
-
-            joining_date:
-              payload.joining_date ||
-              "",
+              normalizeDateForInput(
+                payload.transfer_apply_date
+              ),
 
             relieving_date:
-              payload.relieving_date ||
-              "",
+              normalizeDateForInput(
+                payload.relieving_date
+              ),
 
-            /*
-             * Transfer location.
-             */
+            joining_date:
+              normalizeDateForInput(
+                payload.joining_date
+              ),
+
             location:
               payload.location?.trim() ||
               "",
@@ -1438,19 +1498,12 @@ export default function TransferListPage() {
           };
 
         /*
-         * Explicitly remove old field.
+         * Remove obsolete transfer fields.
          */
         delete normalizedPayload.effective_date;
-
-        /*
-         * Explicitly remove old field.
-         */
         delete normalizedPayload.remarks;
-
-        /*
-         * Explicitly remove old fallback.
-         */
         delete normalizedPayload.reason;
+        delete normalizedPayload.releiving_date;
 
         if (editing) {
           await updateMutation.mutateAsync(
@@ -1561,15 +1614,6 @@ export default function TransferListPage() {
     };
 
   /* =======================================================
-     EXPORT
-  ======================================================= */
-
-  /*
-   * Export is handled by useTableExport.
-   * The columns use the new transfer date fields.
-   */
-
-  /* =======================================================
      CLEAR FILTERS
   ======================================================= */
 
@@ -1623,12 +1667,8 @@ export default function TransferListPage() {
 
         <div className="flex flex-wrap items-center gap-2">
           <TableToolbar
-            onRefresh={
-              refetch
-            }
-            refreshing={
-              isFetching
-            }
+            onRefresh={refetch}
+            refreshing={isFetching}
             onExportExcel={
               exportExcel
             }
@@ -2237,7 +2277,8 @@ export default function TransferListPage() {
                                 transfer.transfer_apply_date
                               }
                               relievingDate={
-                                transfer.relieving_date
+                                transfer.relieving_date ||
+                                transfer.releiving_date
                               }
                               joiningDate={
                                 transfer.joining_date
@@ -2290,7 +2331,8 @@ export default function TransferListPage() {
                                 transfer.transfer_apply_date
                               }
                               relievingDate={
-                                transfer.relieving_date
+                                transfer.relieving_date ||
+                                transfer.releiving_date
                               }
                               joiningDate={
                                 transfer.joining_date
@@ -2347,7 +2389,8 @@ export default function TransferListPage() {
                               Relieve:
                             </span>{" "}
                             {formatDate(
-                              transfer.relieving_date
+                              transfer.relieving_date ||
+                                transfer.releiving_date
                             )}
                           </p>
 
@@ -2466,7 +2509,7 @@ export default function TransferListPage() {
                                 <path
                                   strokeLinecap="round"
                                   strokeLinejoin="round"
-                                  d="M4 12a8 8 0 018-8 8.5 8.5 0 017 4M20 4v5h-5M20 12a8 8 0 01-8 8 8.5 8.5 0 017-4M4 20v-5h5"
+                                  d="M4 12a8 8 0 018-8 8.5 8.5 0 017 4M20 4v5h-5M20 12a8 8 0 01-8 8 8.5 8.5 0 01-7-4M4 20v-5h5"
                                 />
                               </svg>
                             </TableIconButton>
@@ -2603,7 +2646,8 @@ export default function TransferListPage() {
                               transfer.transfer_apply_date
                             }
                             relievingDate={
-                              transfer.relieving_date
+                              transfer.relieving_date ||
+                                transfer.releiving_date
                             }
                             joiningDate={
                               transfer.joining_date
@@ -2654,7 +2698,8 @@ export default function TransferListPage() {
                               transfer.transfer_apply_date
                             }
                             relievingDate={
-                              transfer.relieving_date
+                              transfer.relieving_date ||
+                                transfer.releiving_date
                             }
                             joiningDate={
                               transfer.joining_date
@@ -2696,7 +2741,8 @@ export default function TransferListPage() {
                       </span>
 
                       {formatDate(
-                        transfer.relieving_date
+                        transfer.relieving_date ||
+                          transfer.releiving_date
                       )}
                     </div>
 
@@ -2836,7 +2882,7 @@ export default function TransferListPage() {
                             <path
                               strokeLinecap="round"
                               strokeLinejoin="round"
-                              d="M4 12a8 8 0 018-8 8.5 8.5 0 017 4M20 4v5h-5M20 12a8 8 0 01-8 8 8.5 8.5 0 01-7-4M4 20v-5h5"
+                              d="M4 12a8 8 0 018-8 8.5 8.5 0 017 4M20 4v5h-5M20 12a8 8 0 01-8 8 8.5 8.5 0 017-4M4 20v-5h5"
                             />
                           </svg>
                         </TableIconButton>
@@ -2911,8 +2957,12 @@ export default function TransferListPage() {
       ===================================================== */}
 
       <Modal
-        open={modalOpen}
-        onClose={closeModal}
+        open={
+          modalOpen
+        }
+        onClose={
+          closeModal
+        }
         title={
           editing
             ? "Edit Transfer"
