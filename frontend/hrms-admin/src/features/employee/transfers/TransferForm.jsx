@@ -9,7 +9,6 @@ import {
 
 import { employeesApi } from "@/api/employees.api";
 
-
 const TRANSFER_REASON_OPTIONS = [
   {
     value: "Business Requirement",
@@ -69,7 +68,6 @@ const TRANSFER_REASON_OPTIONS = [
   },
 ];
 
-
 function normalizeTransferReason(value) {
   if (value === null || value === undefined) {
     return "Other";
@@ -82,13 +80,21 @@ function normalizeTransferReason(value) {
   }
 
   const matchedOption = TRANSFER_REASON_OPTIONS.find(
-    (option) =>
-      option.value.toLowerCase() === text.toLowerCase()
+    (option) => option.value.toLowerCase() === text.toLowerCase()
   );
 
   return matchedOption?.value || text;
 }
 
+function getEmployeeDepartmentId(employee) {
+  return (
+    employee?.department?.id ||
+    employee?.department_id ||
+    employee?.current_department?.id ||
+    employee?.current_department_id ||
+    ""
+  );
+}
 
 export default function TransferForm({
   formId = "transfer-form",
@@ -99,31 +105,20 @@ export default function TransferForm({
   const employeeOptions = useEmployeeOptions();
   const departmentOptions = useDepartmentOptions();
 
-  const [employeeDetails, setEmployeeDetails] =
-    useState(null);
+  const [employeeDetails, setEmployeeDetails] = useState(null);
+  const [loadingEmployee, setLoadingEmployee] = useState(false);
 
-  const [loadingEmployee, setLoadingEmployee] =
-    useState(false);
-
-  const [selectedEmployeeId, setSelectedEmployeeId] =
-    useState(
-      initialData?.employee_id
-        ? String(initialData.employee_id)
-        : ""
-    );
-
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState(
+    initialData?.employee_id ? String(initialData.employee_id) : ""
+  );
 
   const normalizedInitialData = useMemo(() => {
     const employeeId = initialData?.employee_id;
-    const fromDepartmentId =
-      initialData?.from_department_id;
-    const toDepartmentId =
-      initialData?.to_department_id;
+    const fromDepartmentId = initialData?.from_department_id;
+    const toDepartmentId = initialData?.to_department_id;
 
     return {
-      employee_id: employeeId
-        ? String(employeeId)
-        : "",
+      employee_id: employeeId ? String(employeeId) : "",
 
       from_department_id: fromDepartmentId
         ? String(fromDepartmentId)
@@ -137,14 +132,11 @@ export default function TransferForm({
         initialData?.transfer_reason
       ),
 
-      effective_date:
-        initialData?.effective_date || "",
+      effective_date: initialData?.effective_date || "",
 
-      remarks:
-        initialData?.remarks || "",
+      remarks: initialData?.remarks || "",
     };
   }, [initialData]);
-
 
   useEffect(() => {
     setSelectedEmployeeId(
@@ -154,32 +146,36 @@ export default function TransferForm({
     );
   }, [initialData?.employee_id]);
 
-
   useEffect(() => {
     let cancelled = false;
 
     const fetchEmployee = async () => {
       if (!selectedEmployeeId) {
         setEmployeeDetails(null);
+        setLoadingEmployee(false);
         return;
       }
 
       setLoadingEmployee(true);
 
       try {
-        const response = await employeesApi.get(
-          selectedEmployeeId
-        );
+        const response = await employeesApi.get(selectedEmployeeId);
 
-        if (!cancelled) {
-          setEmployeeDetails(
-            response?.data?.data ||
-              response?.data ||
-              null
-          );
-        }
+        if (cancelled) return;
+
+        const employee =
+          response?.data?.data ||
+          response?.data ||
+          null;
+
+        setEmployeeDetails(employee);
       } catch (error) {
         if (!cancelled) {
+          console.error(
+            "Failed to load employee details:",
+            error
+          );
+
           setEmployeeDetails(null);
         }
       } finally {
@@ -196,20 +192,21 @@ export default function TransferForm({
     };
   }, [selectedEmployeeId]);
 
-
+  /*
+   * Existing Department should always come from the
+   * employee's current department.
+   *
+   * During edit, fall back to the saved from_department_id
+   * until employee details are loaded.
+   */
   const existingDepartmentId =
-    employeeDetails?.department?.id ||
-    employeeDetails?.department_id ||
+    getEmployeeDepartmentId(employeeDetails) ||
     normalizedInitialData.from_department_id ||
     "";
 
-
   const handleEmployeeChange = (value) => {
-    setSelectedEmployeeId(
-      value ? String(value) : ""
-    );
+    setSelectedEmployeeId(value ? String(value) : "");
   };
-
 
   const fields = [
     {
@@ -227,12 +224,12 @@ export default function TransferForm({
       type: "select",
       options: departmentOptions,
       required: true,
-
-      disabled: !!existingDepartmentId,
-
+      disabled: true,
       helperText: loadingEmployee
         ? "Loading employee department..."
-        : "Existing department is based on the employee's current assignment.",
+        : existingDepartmentId
+          ? "Automatically populated from the employee's current department."
+          : "Select an employee to load the existing department.",
     },
 
     {
@@ -241,7 +238,6 @@ export default function TransferForm({
       type: "select",
       options: departmentOptions,
       required: true,
-
       helperText:
         "Select the department to which the employee is being transferred.",
     },
@@ -268,7 +264,6 @@ export default function TransferForm({
     },
   ];
 
-
   const handleSubmit = async (payload) => {
     const finalPayload = {
       ...payload,
@@ -277,59 +272,54 @@ export default function TransferForm({
         ? Number(payload.employee_id)
         : payload.employee_id,
 
-      from_department_id:
-        payload.from_department_id
+      from_department_id: existingDepartmentId
+        ? Number(existingDepartmentId)
+        : payload.from_department_id
           ? Number(payload.from_department_id)
           : payload.from_department_id,
 
-      to_department_id:
-        payload.to_department_id
-          ? Number(payload.to_department_id)
-          : payload.to_department_id,
+      to_department_id: payload.to_department_id
+        ? Number(payload.to_department_id)
+        : payload.to_department_id,
 
-      transfer_reason:
-        normalizeTransferReason(
-          payload.transfer_reason
-        ),
+      transfer_reason: normalizeTransferReason(
+        payload.transfer_reason
+      ),
 
-      effective_date:
-        payload.effective_date || "",
+      effective_date: payload.effective_date || "",
 
-      remarks:
-        payload.remarks || "",
+      remarks: payload.remarks || "",
     };
 
     await onSubmit(finalPayload);
   };
 
+  const formInitialData = useMemo(
+    () => ({
+      ...normalizedInitialData,
+
+      employee_id: normalizedInitialData.employee_id,
+
+      from_department_id: existingDepartmentId
+        ? String(existingDepartmentId)
+        : normalizedInitialData.from_department_id,
+
+      to_department_id: normalizedInitialData.to_department_id,
+
+      transfer_reason: normalizedInitialData.transfer_reason,
+
+      effective_date: normalizedInitialData.effective_date,
+
+      remarks: normalizedInitialData.remarks,
+    }),
+    [normalizedInitialData, existingDepartmentId]
+  );
 
   return (
     <GenericForm
       formId={formId}
       fields={fields}
-      initialData={{
-        ...normalizedInitialData,
-
-        employee_id:
-          normalizedInitialData.employee_id,
-
-        from_department_id:
-          existingDepartmentId
-            ? String(existingDepartmentId)
-            : normalizedInitialData.from_department_id,
-
-        to_department_id:
-          normalizedInitialData.to_department_id,
-
-        transfer_reason:
-          normalizedInitialData.transfer_reason,
-
-        effective_date:
-          normalizedInitialData.effective_date,
-
-        remarks:
-          normalizedInitialData.remarks,
-      }}
+      initialData={formInitialData}
       onSubmit={handleSubmit}
       loading={loading}
     />

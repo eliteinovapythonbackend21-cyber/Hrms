@@ -183,13 +183,27 @@ function normalizeTransferForForm(transfer) {
       transfer.effective_date ?? "",
 
     location:
-      transfer.location ?? "",
+      getTransferLocation(
+        transfer,
+        transfer.employee
+      ),
 
+    /*
+     * Overall Records / Accomplishments
+     *
+     * This is now the primary field used by
+     * the Transfer form and Transfer list.
+     */
     accomplishments:
-      getTransferAccomplishments(transfer),
+      getTransferAccomplishments(
+        transfer
+      ),
 
-    remarks:
-      transfer.remarks ?? "",
+    /*
+     * Keep remarks empty so old Remarks data
+     * does not appear as the primary field.
+     */
+    remarks: "",
 
     is_active:
       transfer.is_active !== false,
@@ -361,7 +375,7 @@ function DepartmentBadge({
         className={`h-1.5 w-1.5 shrink-0 rounded-full ${dotTones[tone]}`}
       />
 
-      <span className="max-w-[150px] truncate">
+      <span className="max-w-[145px] truncate">
         {label}
       </span>
     </span>
@@ -382,7 +396,6 @@ function DepartmentDetailsCard({
   reason,
   effectiveDate,
   duration,
-  remarks,
   location,
   accomplishments,
   isActive,
@@ -422,7 +435,9 @@ function DepartmentDetailsCard({
               : "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300"
           }`}
         >
-          {isActive ? "Active" : "Inactive"}
+          {isActive
+            ? "Active"
+            : "Inactive"}
         </span>
       </div>
 
@@ -499,6 +514,8 @@ function DepartmentDetailsCard({
         </div>
       </div>
 
+      {/* OVERALL RECORDS */}
+
       <div className="my-3 border-t border-slate-100 dark:border-slate-700" />
 
       <div>
@@ -506,20 +523,8 @@ function DepartmentDetailsCard({
           Overall Records / Accomplishments
         </p>
 
-        <p className="break-words text-xs leading-5 text-slate-600 dark:text-slate-300">
+        <p className="max-h-[120px] overflow-y-auto whitespace-pre-wrap break-words text-xs leading-5 text-slate-600 dark:text-slate-300">
           {accomplishments || "—"}
-        </p>
-      </div>
-
-      <div className="my-3 border-t border-slate-100 dark:border-slate-700" />
-
-      <div>
-        <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
-          Remarks
-        </p>
-
-        <p className="break-words text-xs leading-5 text-slate-600 dark:text-slate-300">
-          {remarks || "—"}
         </p>
       </div>
     </div>
@@ -629,7 +634,7 @@ function AccomplishmentsPreview({
     >
       <p
         title={value}
-        className="line-clamp-2 max-w-[260px] cursor-pointer whitespace-normal break-words text-xs leading-4 text-slate-600 dark:text-slate-300"
+        className="line-clamp-2 max-w-full cursor-pointer whitespace-normal break-words text-xs leading-4 text-slate-600 dark:text-slate-300"
       >
         {value}
       </p>
@@ -1066,8 +1071,6 @@ export default function TransferListPage() {
               employeeName,
               employeeCode,
               transferReason,
-              transfer.remarks ||
-                "",
               fromDepartment,
               toDepartment,
               location,
@@ -1308,13 +1311,10 @@ export default function TransferListPage() {
   const handleEdit = (
     transfer
   ) => {
-    const normalizedTransfer =
+    setEditing(
       normalizeTransferForForm(
         transfer
-      );
-
-    setEditing(
-      normalizedTransfer
+      )
     );
 
     setModalOpen(true);
@@ -1326,7 +1326,7 @@ export default function TransferListPage() {
   };
 
   /* =======================================================
-     EXPORT HANDLER
+     EXPORT
   ======================================================= */
 
   const handleExport = async () => {
@@ -1451,15 +1451,25 @@ export default function TransferListPage() {
           location:
             payload.location ?? "",
 
+          /*
+           * Overall Records / Accomplishments
+           */
           accomplishments:
             payload.accomplishments ??
+            payload.overall_records ??
+            payload.overall_records_accomplishments ??
             "",
 
-          remarks:
-            payload.remarks ?? "",
+          /*
+           * Do not use Remarks as the UI field.
+           * Keep this empty for compatibility.
+           */
+          remarks: "",
         };
 
         delete normalizedPayload.reason;
+        delete normalizedPayload.overall_records;
+        delete normalizedPayload.overall_records_accomplishments;
 
         if (editing) {
           await updateMutation.mutateAsync(
@@ -1754,13 +1764,10 @@ export default function TransferListPage() {
           <div className="flex flex-wrap items-center justify-between gap-2">
 
             <div className="flex w-fit items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
-
               <button
                 type="button"
                 onClick={() => {
-                  setViewMode(
-                    "table"
-                  );
+                  setViewMode("table");
                   setPage(1);
                 }}
                 className={`rounded-md px-3 py-1.5 text-xs font-medium ${
@@ -1776,9 +1783,7 @@ export default function TransferListPage() {
               <button
                 type="button"
                 onClick={() => {
-                  setViewMode(
-                    "card"
-                  );
+                  setViewMode("card");
                   setPage(1);
                 }}
                 className={`rounded-md px-3 py-1.5 text-xs font-medium ${
@@ -1846,35 +1851,41 @@ export default function TransferListPage() {
            TABLE VIEW
         ================================================= */
 
-        <div className="w-full min-w-0 overflow-visible rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <div className="w-full overflow-x-auto overflow-y-visible rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
 
-          <table className="w-full table-fixed border-collapse text-left text-sm">
+          <table className="w-full min-w-[1050px] border-collapse text-left text-sm">
 
+            {/*
+             * Fixed table widths.
+             *
+             * This removes the large empty spaces between
+             * department/status/action columns.
+             */}
             <colgroup>
-              <col className="w-[21%]" />
-              <col className="w-[19%]" />
-              <col className="w-[19%]" />
-              <col className="w-[11%]" />
-              <col className="w-[19%]" />
-              <col className="w-[5%]" />
-              <col className="w-[6%]" />
+              <col className="w-[210px]" />
+              <col className="w-[185px]" />
+              <col className="w-[185px]" />
+              <col className="w-[125px]" />
+              <col />
+              <col className="w-[95px]" />
+              <col className="w-[105px]" />
             </colgroup>
 
             <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-400">
               <tr>
-                <th className="px-4 py-3 font-medium">
+                <th className="whitespace-nowrap px-4 py-3 font-medium">
                   Employee
                 </th>
 
-                <th className="px-4 py-3 font-medium">
+                <th className="whitespace-nowrap px-4 py-3 font-medium">
                   Current Department
                 </th>
 
-                <th className="px-4 py-3 font-medium">
+                <th className="whitespace-nowrap px-4 py-3 font-medium">
                   Transfer Department
                 </th>
 
-                <th className="px-4 py-3 font-medium">
+                <th className="whitespace-nowrap px-4 py-3 font-medium">
                   Location
                 </th>
 
@@ -1882,11 +1893,11 @@ export default function TransferListPage() {
                   Overall Records / Accomplishments
                 </th>
 
-                <th className="px-4 py-3 font-medium">
+                <th className="whitespace-nowrap px-4 py-3 font-medium">
                   Status
                 </th>
 
-                <th className="px-4 py-3 text-center font-medium">
+                <th className="whitespace-nowrap px-3 py-3 text-center font-medium">
                   Actions
                 </th>
               </tr>
@@ -1944,14 +1955,13 @@ export default function TransferListPage() {
                       key={
                         transfer.id
                       }
-                      className="relative hover:bg-slate-50 dark:hover:bg-slate-800/40"
+                      className="hover:bg-slate-50 dark:hover:bg-slate-800/40"
                     >
 
                       {/* EMPLOYEE */}
 
                       <td className="min-w-0 px-4 py-3">
                         <div className="flex min-w-0 items-center gap-2.5">
-
                           <Avatar
                             name={
                               employeeName
@@ -2004,9 +2014,6 @@ export default function TransferListPage() {
                               duration={
                                 timeInPreviousDept
                               }
-                              remarks={
-                                transfer.remarks
-                              }
                               location={
                                 location
                               }
@@ -2057,9 +2064,6 @@ export default function TransferListPage() {
                               )}
                               duration={
                                 timeInCurrentDept
-                              }
-                              remarks={
-                                transfer.remarks
                               }
                               location={
                                 location
@@ -2112,32 +2116,33 @@ export default function TransferListPage() {
                       {/* STATUS */}
 
                       <td className="px-4 py-3">
-                        <span
-                          className={`inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-[10px] font-medium ${
-                            isActive
-                              ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300"
-                              : "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300"
-                          }`}
-                        >
+                        <div className="flex justify-start">
                           <span
-                            className={`h-1.5 w-1.5 rounded-full ${
+                            className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2 py-1 text-[10px] font-medium ${
                               isActive
-                                ? "bg-emerald-500"
-                                : "bg-red-500"
+                                ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300"
+                                : "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300"
                             }`}
-                          />
+                          >
+                            <span
+                              className={`h-1.5 w-1.5 shrink-0 rounded-full ${
+                                isActive
+                                  ? "bg-emerald-500"
+                                  : "bg-red-500"
+                              }`}
+                            />
 
-                          {isActive
-                            ? "Active"
-                            : "Inactive"}
-                        </span>
+                            {isActive
+                              ? "Active"
+                              : "Inactive"}
+                          </span>
+                        </div>
                       </td>
 
                       {/* ACTIONS */}
 
-                      <td className="px-4 py-3">
-                        <div className="flex items-center justify-center gap-1">
-
+                      <td className="px-2 py-3">
+                        <div className="flex w-full items-center justify-center gap-0.5">
                           <TableIconButton
                             title="Edit"
                             onClick={() =>
@@ -2336,7 +2341,6 @@ export default function TransferListPage() {
                     {/* DEPARTMENTS */}
 
                     <div className="flex min-w-0 items-center gap-1.5">
-
                       <DepartmentHoverTrigger
                         align="left"
                         panel={
@@ -2361,9 +2365,6 @@ export default function TransferListPage() {
                             )}
                             duration={
                               timeInPreviousDept
-                            }
-                            remarks={
-                              transfer.remarks
                             }
                             location={
                               location
@@ -2413,9 +2414,6 @@ export default function TransferListPage() {
                             )}
                             duration={
                               timeInCurrentDept
-                            }
-                            remarks={
-                              transfer.remarks
                             }
                             location={
                               location
@@ -2469,35 +2467,18 @@ export default function TransferListPage() {
                       )}
                     </div>
 
-                    {/* ACCOMPLISHMENTS */}
+                    {/* OVERALL RECORDS / ACCOMPLISHMENTS */}
 
-                    <div className="mt-2 min-h-[32px]">
+                    <div className="mt-3 min-h-[45px]">
+                      <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
+                        Overall Records / Accomplishments
+                      </p>
+
                       <AccomplishmentsPreview
                         accomplishments={
                           accomplishments
                         }
                       />
-                    </div>
-
-                    {/* REMARKS */}
-
-                    <div className="mt-1.5 min-h-[20px]">
-                      {transfer.remarks ? (
-                        <p
-                          className="truncate text-xs text-slate-500 dark:text-slate-400"
-                          title={
-                            transfer.remarks
-                          }
-                        >
-                          {
-                            transfer.remarks
-                          }
-                        </p>
-                      ) : (
-                        <span className="text-xs text-slate-300 dark:text-slate-600">
-                          No remarks
-                        </span>
-                      )}
                     </div>
                   </div>
 
@@ -2601,7 +2582,6 @@ export default function TransferListPage() {
       {/* PAGINATION */}
 
       <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
-
         <span>
           Page {page} of{" "}
           {pageCount}
@@ -2610,9 +2590,7 @@ export default function TransferListPage() {
         <div className="flex gap-2">
           <button
             type="button"
-            disabled={
-              page <= 1
-            }
+            disabled={page <= 1}
             onClick={() =>
               setPage(
                 (currentPage) =>
@@ -2630,8 +2608,7 @@ export default function TransferListPage() {
           <button
             type="button"
             disabled={
-              page >=
-              pageCount
+              page >= pageCount
             }
             onClick={() =>
               setPage(
