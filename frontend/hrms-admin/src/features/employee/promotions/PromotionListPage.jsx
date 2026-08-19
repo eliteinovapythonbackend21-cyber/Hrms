@@ -30,6 +30,7 @@ import {
 
 import { formatDate } from "@/utils/formatDate";
 
+
 /* =========================================================
    CONSTANTS
 ========================================================= */
@@ -41,14 +42,36 @@ const PAGE_SIZE = 10;
 const CARD_PAGE_SIZE = 6;
 
 const EXPORT_COLUMNS = [
-  { key: "employee_id", label: "Employee ID" },
-  { key: "from_designation_id", label: "From Designation" },
-  { key: "to_designation_id", label: "To Designation" },
-  { key: "reason", label: "Promotion Reason" },
-  { key: "effective_date", label: "Effective Date" },
-  { key: "remarks", label: "Remarks" },
-  { key: "is_active", label: "Active" },
+  {
+    key: "employee_id",
+    label: "Employee ID",
+  },
+  {
+    key: "from_designation_id",
+    label: "From Designation",
+  },
+  {
+    key: "to_designation_id",
+    label: "To Designation",
+  },
+  {
+    key: "reason",
+    label: "Promotion Reason",
+  },
+  {
+    key: "effective_date",
+    label: "Effective Date",
+  },
+  {
+    key: "accomplishments",
+    label: "Overall Records / Accomplishments",
+  },
+  {
+    key: "is_active",
+    label: "Active",
+  },
 ];
+
 
 /* =========================================================
    ICONS
@@ -71,6 +94,7 @@ const ArrowIcon = () => (
   </svg>
 );
 
+
 const TrendUpIcon = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -87,6 +111,7 @@ const TrendUpIcon = () => (
     />
   </svg>
 );
+
 
 const CalendarIcon = () => (
   <svg
@@ -113,6 +138,7 @@ const CalendarIcon = () => (
   </svg>
 );
 
+
 const UsersIcon = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -129,6 +155,7 @@ const UsersIcon = () => (
     />
   </svg>
 );
+
 
 const SmallCalendarIcon = () => (
   <svg
@@ -154,6 +181,7 @@ const SmallCalendarIcon = () => (
     />
   </svg>
 );
+
 
 /* =========================================================
    STAT CARD
@@ -182,6 +210,7 @@ function StatCard({ icon, value, label }) {
     </div>
   );
 }
+
 
 /* =========================================================
    DESIGNATION BADGE
@@ -216,6 +245,7 @@ function DesignationBadge({ label, tone }) {
   );
 }
 
+
 /* =========================================================
    DESIGNATION DETAILS CARD
 ========================================================= */
@@ -230,7 +260,7 @@ function DesignationDetailsCard({
   reason,
   effectiveDate,
   duration,
-  remarks,
+  accomplishments,
   isActive,
 }) {
   const accentTones = {
@@ -243,6 +273,7 @@ function DesignationDetailsCard({
       className={`w-[300px] max-w-[calc(100vw-32px)] rounded-xl border border-slate-200 border-t-2 bg-white p-4 text-left shadow-xl dark:border-slate-700 dark:bg-slate-800 ${accentTones[tone]}`}
     >
       {/* HEADER */}
+
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
@@ -266,7 +297,9 @@ function DesignationDetailsCard({
         </span>
       </div>
 
+
       {/* DESCRIPTION */}
+
       {designation?.description && (
         <>
           <div className="my-3 border-t border-slate-100 dark:border-slate-700" />
@@ -283,11 +316,16 @@ function DesignationDetailsCard({
         </>
       )}
 
+
       <div className="my-3 border-t border-slate-100 dark:border-slate-700" />
 
+
       {/* DETAILS */}
+
       <div className="space-y-2.5">
+
         {/* EMPLOYEE */}
+
         <div className="grid grid-cols-[90px_minmax(0,1fr)] gap-3">
           <span className="text-xs text-slate-400 dark:text-slate-500">
             Employee
@@ -301,7 +339,9 @@ function DesignationDetailsCard({
           </span>
         </div>
 
+
         {/* REASON */}
+
         <div className="grid grid-cols-[90px_minmax(0,1fr)] gap-3">
           <span className="text-xs text-slate-400 dark:text-slate-500">
             Reason
@@ -312,7 +352,9 @@ function DesignationDetailsCard({
           </span>
         </div>
 
+
         {/* EFFECTIVE DATE */}
+
         <div className="grid grid-cols-[90px_minmax(0,1fr)] gap-3">
           <span className="text-xs text-slate-400 dark:text-slate-500">
             Effective Date
@@ -323,7 +365,9 @@ function DesignationDetailsCard({
           </span>
         </div>
 
+
         {/* DURATION */}
+
         <div className="grid grid-cols-[90px_minmax(0,1fr)] gap-3">
           <span className="text-xs text-slate-400 dark:text-slate-500">
             Duration
@@ -333,27 +377,32 @@ function DesignationDetailsCard({
             {duration || "—"}
           </span>
         </div>
+
       </div>
 
-      {/* REMARKS */}
-      {remarks && (
+
+      {/* OVERALL RECORDS / ACCOMPLISHMENTS */}
+
+      {accomplishments && (
         <>
           <div className="my-3 border-t border-slate-100 dark:border-slate-700" />
 
           <div>
             <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
-              Remarks
+              Overall Records / Accomplishments
             </p>
 
             <p className="break-words text-xs leading-5 text-slate-600 dark:text-slate-300">
-              {remarks}
+              {accomplishments}
             </p>
           </div>
         </>
       )}
+
     </div>
   );
 }
+
 
 /* =========================================================
    HOVER TRIGGER
@@ -405,6 +454,7 @@ function DesignationHoverTrigger({
   );
 }
 
+
 /* =========================================================
    REASON BADGE
 ========================================================= */
@@ -422,6 +472,7 @@ function ReasonBadge({ reason }) {
   );
 }
 
+
 /* =========================================================
    DURATION
 ========================================================= */
@@ -437,13 +488,16 @@ function formatDuration(startDate, endDate) {
   if (end < start) return "—";
 
   let years =
-    end.getFullYear() - start.getFullYear();
+    end.getFullYear() -
+    start.getFullYear();
 
   let months =
-    end.getMonth() - start.getMonth();
+    end.getMonth() -
+    start.getMonth();
 
   let days =
-    end.getDate() - start.getDate();
+    end.getDate() -
+    start.getDate();
 
   if (days < 0) {
     months -= 1;
@@ -487,6 +541,7 @@ function formatDuration(startDate, endDate) {
     : "0 days";
 }
 
+
 /* =========================================================
    TABLE ACTION BUTTON
 ========================================================= */
@@ -526,12 +581,48 @@ const TableIconButton = ({
   );
 };
 
+
+/* =========================================================
+   LOCATION
+========================================================= */
+
+function getEmployeeLocation(employee) {
+  if (!employee) return "—";
+
+  const location =
+    employee.location ||
+    employee.branch?.location ||
+    employee.department?.branch?.location ||
+    employee.department?.location ||
+    employee.company?.location ||
+    employee.address;
+
+  if (typeof location === "string") {
+    return location.trim() || "—";
+  }
+
+  if (location && typeof location === "object") {
+    return (
+      location.name ||
+      location.location_name ||
+      location.branch_name ||
+      location.city ||
+      location.address ||
+      "—"
+    );
+  }
+
+  return "—";
+}
+
+
 /* =========================================================
    PAGE
 ========================================================= */
 
 export default function PromotionListPage() {
   const { showToast } = useToast();
+
 
   /* =======================================================
      PROMOTIONS
@@ -551,28 +642,31 @@ export default function PromotionListPage() {
   const allPromotions =
     allData?.items || [];
 
+
   /* =======================================================
      EMPLOYEES
   ======================================================= */
 
-  const { data: employeesData } = useQuery({
-    queryKey: [
-      "promotions-page",
-      "employees-full",
-    ],
+  const { data: employeesData } =
+    useQuery({
+      queryKey: [
+        "promotions-page",
+        "employees-full",
+      ],
 
-    queryFn: async () =>
-      (
-        await employeesApi.list({
-          page: 1,
-          per_page: 1000,
-          is_active: true,
-        })
-      ).data.data,
-  });
+      queryFn: async () =>
+        (
+          await employeesApi.list({
+            page: 1,
+            per_page: 1000,
+            is_active: true,
+          })
+        ).data.data,
+    });
 
   const employees =
     employeesData?.items || [];
+
 
   const employeeMap = useMemo(
     () =>
@@ -584,6 +678,7 @@ export default function PromotionListPage() {
       ),
     [employees]
   );
+
 
   /* =======================================================
      DESIGNATIONS
@@ -605,6 +700,7 @@ export default function PromotionListPage() {
         ).data.data,
     });
 
+
   const designationFullMap = useMemo(
     () =>
       Object.fromEntries(
@@ -617,6 +713,7 @@ export default function PromotionListPage() {
       ),
     [designationsData]
   );
+
 
   /* =======================================================
      COMPANIES
@@ -633,6 +730,7 @@ export default function PromotionListPage() {
     companyData?.data ||
     [];
 
+
   /* =======================================================
      LOOKUP OPTIONS
   ======================================================= */
@@ -642,6 +740,7 @@ export default function PromotionListPage() {
 
   const designationOptions =
     useDesignationOptions();
+
 
   /* =======================================================
      FILTER STATES
@@ -661,6 +760,7 @@ export default function PromotionListPage() {
 
   const [filterReason, setFilterReason] =
     useState("");
+
 
   /* =======================================================
      BRANCH OPTIONS
@@ -690,6 +790,7 @@ export default function PromotionListPage() {
     return Array.from(map.values());
   }, [employees, filterCompanyId]);
 
+
   /* =======================================================
      EMPLOYEE TIMELINE
   ======================================================= */
@@ -699,7 +800,9 @@ export default function PromotionListPage() {
 
     allPromotions.forEach((promotion) => {
       if (
-        !map.has(promotion.employee_id)
+        !map.has(
+          promotion.employee_id
+        )
       ) {
         map.set(
           promotion.employee_id,
@@ -723,6 +826,7 @@ export default function PromotionListPage() {
     return map;
   }, [allPromotions]);
 
+
   /* =======================================================
      MUTATIONS
   ======================================================= */
@@ -735,6 +839,7 @@ export default function PromotionListPage() {
 
   const deactivateMutation =
     useDeactivatePromotion();
+
 
   /* =======================================================
      PAGE STATES
@@ -761,6 +866,7 @@ export default function PromotionListPage() {
   const [deleteTarget, setDeleteTarget] =
     useState(null);
 
+
   /* =======================================================
      EXPORT
   ======================================================= */
@@ -784,6 +890,7 @@ export default function PromotionListPage() {
     title: "Promotions",
   });
 
+
   /* =======================================================
      ACTIVE PROMOTIONS
   ======================================================= */
@@ -793,6 +900,7 @@ export default function PromotionListPage() {
       (promotion) =>
         promotion.is_active !== false
     );
+
 
   /* =======================================================
      STATISTICS
@@ -820,6 +928,7 @@ export default function PromotionListPage() {
     ).length;
   }, [activePromotions]);
 
+
   const uniqueEmployeeCount = useMemo(
     () =>
       new Set(
@@ -830,6 +939,7 @@ export default function PromotionListPage() {
       ).size,
     [activePromotions]
   );
+
 
   /* =======================================================
      REASONS
@@ -877,6 +987,7 @@ export default function PromotionListPage() {
 
     return Array.from(reasons);
   }, [allPromotions]);
+
 
   /* =======================================================
      FILTERED DATA
@@ -980,13 +1091,19 @@ export default function PromotionListPage() {
               promotion.to_designation_id
             ]?.designation_name || "";
 
+          const location =
+            getEmployeeLocation(
+              employee
+            );
+
           const haystack = [
             employeeName,
             employeeCode,
             promotion.reason || "",
-            promotion.remarks || "",
+            promotion.accomplishments || "",
             fromDesignation,
             toDesignation,
+            location,
           ]
             .join(" ")
             .toLowerCase();
@@ -1019,6 +1136,7 @@ export default function PromotionListPage() {
     filterDesignationId,
     filterReason,
   ]);
+
 
   /* =======================================================
      GROUP BY EMPLOYEE
@@ -1073,6 +1191,7 @@ export default function PromotionListPage() {
     });
   }, [filtered, employeeMap]);
 
+
   /* =======================================================
      PAGINATION
   ======================================================= */
@@ -1104,6 +1223,7 @@ export default function PromotionListPage() {
       (page - 1) * pageSize,
       page * pageSize
     );
+
 
   /* =======================================================
      PROMOTION DETAILS
@@ -1175,6 +1295,7 @@ export default function PromotionListPage() {
     };
   };
 
+
   /* =======================================================
      HANDLERS
   ======================================================= */
@@ -1184,6 +1305,7 @@ export default function PromotionListPage() {
     setModalOpen(true);
   };
 
+
   const handleEdit = (
     promotion
   ) => {
@@ -1191,10 +1313,12 @@ export default function PromotionListPage() {
     setModalOpen(true);
   };
 
+
   const closeModal = () => {
     setModalOpen(false);
     setEditing(null);
   };
+
 
   const handleSubmit = async (
     payload
@@ -1234,6 +1358,7 @@ export default function PromotionListPage() {
     }
   };
 
+
   const confirmDelete = async () => {
     if (!deleteTarget) return;
 
@@ -1257,6 +1382,7 @@ export default function PromotionListPage() {
       );
     }
   };
+
 
   const handleReactivate = async (
     promotion
@@ -1285,6 +1411,7 @@ export default function PromotionListPage() {
     }
   };
 
+
   const clearFilters = () => {
     setSearch("");
     setFilterCompanyId("");
@@ -1296,9 +1423,11 @@ export default function PromotionListPage() {
     setPage(1);
   };
 
+
   const isSaving =
     createMutation.isPending ||
     updateMutation.isPending;
+
 
   /* =======================================================
      ERROR
@@ -1312,12 +1441,14 @@ export default function PromotionListPage() {
     );
   }
 
+
   /* =======================================================
      RETURN
   ======================================================= */
 
   return (
     <div className="min-w-0 space-y-5">
+
       {/* =====================================================
           HEADER
       ===================================================== */}
@@ -1356,6 +1487,7 @@ export default function PromotionListPage() {
         </div>
       </div>
 
+
       {/* =====================================================
           STAT CARDS
       ===================================================== */}
@@ -1380,12 +1512,14 @@ export default function PromotionListPage() {
         />
       </div>
 
+
       {/* =====================================================
           FILTERS
       ===================================================== */}
 
       <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-900">
         <div className="flex flex-col gap-3">
+
           <div className="flex flex-col gap-2.5 lg:flex-row lg:flex-wrap">
 
             {/* SEARCH */}
@@ -1418,10 +1552,11 @@ export default function PromotionListPage() {
 
                   setPage(1);
                 }}
-                placeholder="Search employee, reason or remarks..."
+                placeholder="Search employee, reason or accomplishments..."
                 className="h-10 w-full rounded-lg border border-slate-300 bg-white pl-9 pr-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
               />
             </div>
+
 
             {/* COMPANY */}
 
@@ -1454,6 +1589,7 @@ export default function PromotionListPage() {
               )}
             </select>
 
+
             {/* BRANCH */}
 
             <select
@@ -1483,6 +1619,7 @@ export default function PromotionListPage() {
               )}
             </select>
 
+
             {/* DEPARTMENT */}
 
             <select
@@ -1511,6 +1648,7 @@ export default function PromotionListPage() {
                 )
               )}
             </select>
+
 
             {/* DESIGNATION */}
 
@@ -1543,6 +1681,7 @@ export default function PromotionListPage() {
               )}
             </select>
 
+
             {/* REASON */}
 
             <select
@@ -1572,6 +1711,7 @@ export default function PromotionListPage() {
               )}
             </select>
 
+
             {/* CLEAR */}
 
             {(search ||
@@ -1588,7 +1728,9 @@ export default function PromotionListPage() {
                 Clear Filters
               </button>
             )}
+
           </div>
+
 
           {/* VIEW / STATUS */}
 
@@ -1597,6 +1739,7 @@ export default function PromotionListPage() {
             {/* VIEW MODE */}
 
             <div className="flex w-fit items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
+
               <button
                 type="button"
                 onClick={() => {
@@ -1626,7 +1769,9 @@ export default function PromotionListPage() {
               >
                 Card
               </button>
+
             </div>
+
 
             {/* STATUS */}
 
@@ -1657,9 +1802,12 @@ export default function PromotionListPage() {
                 </button>
               ))}
             </div>
+
           </div>
+
         </div>
       </div>
+
 
       {/* =====================================================
           DATA
@@ -1670,9 +1818,11 @@ export default function PromotionListPage() {
           Loading...
         </div>
       ) : viewMode === "table" ? (
+
         /* ===================================================
            TABLE VIEW
         =================================================== */
+
         paged.length === 0 ? (
           <div className="flex min-h-[200px] flex-col items-center justify-center rounded-xl border border-slate-200 bg-white px-6 py-10 text-center shadow-sm dark:border-slate-700 dark:bg-slate-900">
             <h3 className="text-sm font-semibold text-slate-800 dark:text-white">
@@ -1715,15 +1865,15 @@ export default function PromotionListPage() {
                   </th>
 
                   <th className="px-4 py-3 font-medium">
-                    Existing Designation
-                  </th>
-
-                  <th className="px-4 py-3 font-medium">
                     Current Designation
                   </th>
 
                   <th className="px-4 py-3 font-medium">
-                    Reason
+                    Promoted To
+                  </th>
+
+                  <th className="px-4 py-3 font-medium">
+                    Location
                   </th>
 
                   <th className="px-4 py-3 font-medium">
@@ -1750,6 +1900,11 @@ export default function PromotionListPage() {
                             employee.last_name || ""
                           }`.trim()
                         : `Employee #${promotion.employee_id}`;
+
+                    const employeeLocation =
+                      getEmployeeLocation(
+                        employee
+                      );
 
                     const isActive =
                       promotion.is_active !==
@@ -1822,6 +1977,7 @@ export default function PromotionListPage() {
                         key={promotion.id}
                         className="relative hover:bg-slate-50 dark:hover:bg-slate-800/40"
                       >
+
                         {/* EMPLOYEE */}
 
                         <td className="min-w-0 px-4 py-3">
@@ -1848,14 +2004,15 @@ export default function PromotionListPage() {
                           </div>
                         </td>
 
-                        {/* EXISTING DESIGNATION */}
+
+                        {/* CURRENT DESIGNATION */}
 
                         <td className="relative px-4 py-3">
                           <DesignationHoverTrigger
                             align="left"
                             panel={
                               <DesignationDetailsCard
-                                roleLabel="Existing Designation"
+                                roleLabel="Current Designation"
                                 tone="from"
                                 designation={
                                   fromDesignation
@@ -1876,8 +2033,8 @@ export default function PromotionListPage() {
                                 duration={
                                   timeInPreviousRole
                                 }
-                                remarks={
-                                  promotion.remarks
+                                accomplishments={
+                                  promotion.accomplishments
                                 }
                                 isActive={
                                   isActive
@@ -1895,14 +2052,15 @@ export default function PromotionListPage() {
                           </DesignationHoverTrigger>
                         </td>
 
-                        {/* CURRENT DESIGNATION */}
+
+                        {/* PROMOTED TO */}
 
                         <td className="relative px-4 py-3">
                           <DesignationHoverTrigger
                             align="left"
                             panel={
                               <DesignationDetailsCard
-                                roleLabel="Current Designation"
+                                roleLabel="Promoted To"
                                 tone="to"
                                 designation={
                                   toDesignation
@@ -1923,8 +2081,8 @@ export default function PromotionListPage() {
                                 duration={
                                   timeInNewRole
                                 }
-                                remarks={
-                                  promotion.remarks
+                                accomplishments={
+                                  promotion.accomplishments
                                 }
                                 isActive={
                                   isActive
@@ -1942,15 +2100,22 @@ export default function PromotionListPage() {
                           </DesignationHoverTrigger>
                         </td>
 
-                        {/* REASON */}
+
+                        {/* LOCATION */}
 
                         <td className="min-w-0 overflow-hidden px-4 py-3">
-                          <ReasonBadge
-                            reason={
-                              promotion.reason
+                          <span
+                            title={
+                              employeeLocation
                             }
-                          />
+                            className="block max-w-full truncate text-xs font-medium text-slate-600 dark:text-slate-300"
+                          >
+                            {
+                              employeeLocation
+                            }
+                          </span>
                         </td>
+
 
                         {/* STATUS */}
 
@@ -1976,10 +2141,12 @@ export default function PromotionListPage() {
                           </span>
                         </td>
 
+
                         {/* ACTIONS */}
 
                         <td className="px-4 py-3">
                           <div className="flex items-center justify-end gap-1">
+
                             {/* EDIT */}
 
                             <TableIconButton
@@ -2006,6 +2173,7 @@ export default function PromotionListPage() {
                                 />
                               </svg>
                             </TableIconButton>
+
 
                             {/* DELETE / REACTIVATE */}
 
@@ -2063,8 +2231,10 @@ export default function PromotionListPage() {
                                 </svg>
                               </TableIconButton>
                             )}
+
                           </div>
                         </td>
+
                       </tr>
                     );
                   }
@@ -2073,10 +2243,13 @@ export default function PromotionListPage() {
             </table>
           </div>
         )
+
       ) : (
+
         /* ===================================================
            CARD VIEW
         =================================================== */
+
         pagedGroups.length === 0 ? (
           <div className="flex min-h-[200px] flex-col items-center justify-center rounded-xl border border-slate-200 bg-white px-6 py-10 text-center shadow-sm dark:border-slate-700 dark:bg-slate-900">
             <h3 className="text-sm font-semibold text-slate-800 dark:text-white">
@@ -2123,6 +2296,7 @@ export default function PromotionListPage() {
                     <div className="absolute inset-x-0 top-0 h-0.5 rounded-t-2xl bg-primary-600" />
 
                     <div className="p-4">
+
                       {/* EMPLOYEE */}
 
                       <div className="flex items-start justify-between gap-2.5">
@@ -2162,7 +2336,9 @@ export default function PromotionListPage() {
                         </span>
                       </div>
 
+
                       <div className="my-3 border-t border-slate-100 dark:border-slate-800" />
+
 
                       {/* PROMOTION HISTORY */}
 
@@ -2227,8 +2403,8 @@ export default function PromotionListPage() {
                                             duration={
                                               timeInPreviousRole
                                             }
-                                            remarks={
-                                              promotion.remarks
+                                            accomplishments={
+                                              promotion.accomplishments
                                             }
                                             isActive={
                                               isActive
@@ -2245,7 +2421,9 @@ export default function PromotionListPage() {
                                         />
                                       </DesignationHoverTrigger>
 
+
                                       <ArrowIcon />
+
 
                                       {/* CURRENT */}
 
@@ -2274,8 +2452,8 @@ export default function PromotionListPage() {
                                             duration={
                                               timeInNewRole
                                             }
-                                            remarks={
-                                              promotion.remarks
+                                            accomplishments={
+                                              promotion.accomplishments
                                             }
                                             isActive={
                                               isActive
@@ -2291,7 +2469,9 @@ export default function PromotionListPage() {
                                           }
                                         />
                                       </DesignationHoverTrigger>
+
                                     </div>
+
 
                                     {/* STATUS */}
 
@@ -2314,7 +2494,9 @@ export default function PromotionListPage() {
                                         ? "Active"
                                         : "Inactive"}
                                     </span>
+
                                   </div>
+
 
                                   {/* DATE */}
 
@@ -2326,6 +2508,7 @@ export default function PromotionListPage() {
                                     )}
                                   </div>
 
+
                                   {/* REASON */}
 
                                   <div className="mt-1.5">
@@ -2336,20 +2519,22 @@ export default function PromotionListPage() {
                                     />
                                   </div>
 
-                                  {/* REMARKS */}
 
-                                  {promotion.remarks && (
+                                  {/* OVERALL RECORDS / ACCOMPLISHMENTS */}
+
+                                  {promotion.accomplishments && (
                                     <p
                                       className="mt-1.5 truncate text-xs text-slate-500 dark:text-slate-400"
                                       title={
-                                        promotion.remarks
+                                        promotion.accomplishments
                                       }
                                     >
                                       {
-                                        promotion.remarks
+                                        promotion.accomplishments
                                       }
                                     </p>
                                   )}
+
 
                                   {/* DURATION */}
 
@@ -2372,11 +2557,14 @@ export default function PromotionListPage() {
                                       }
                                     </div>
                                   </div>
+
                                 </div>
+
 
                                 {/* ACTIONS */}
 
                                 <div className="grid grid-cols-2 divide-x divide-slate-100 border-t border-slate-100 dark:divide-slate-700 dark:border-slate-700">
+
                                   <div className="flex items-center justify-center py-1.5">
                                     <TableIconButton
                                       title="Edit"
@@ -2403,6 +2591,7 @@ export default function PromotionListPage() {
                                       </svg>
                                     </TableIconButton>
                                   </div>
+
 
                                   <div className="flex items-center justify-center py-1.5">
                                     {isActive ? (
@@ -2460,12 +2649,15 @@ export default function PromotionListPage() {
                                       </TableIconButton>
                                     )}
                                   </div>
+
                                 </div>
+
                               </div>
                             );
                           }
                         )}
                       </div>
+
                     </div>
                   </div>
                 );
@@ -2474,6 +2666,7 @@ export default function PromotionListPage() {
           </div>
         )
       )}
+
 
       {/* =====================================================
           PAGINATION
@@ -2486,6 +2679,7 @@ export default function PromotionListPage() {
         </span>
 
         <div className="flex gap-2">
+
           <button
             type="button"
             disabled={page <= 1}
@@ -2521,8 +2715,10 @@ export default function PromotionListPage() {
           >
             Next
           </button>
+
         </div>
       </div>
+
 
       {/* =====================================================
           ADD / EDIT MODAL
@@ -2547,6 +2743,7 @@ export default function PromotionListPage() {
         />
       </Modal>
 
+
       {/* =====================================================
           DELETE CONFIRM
       ===================================================== */}
@@ -2568,6 +2765,7 @@ export default function PromotionListPage() {
           deactivateMutation.isPending
         }
       />
+
     </div>
   );
 }

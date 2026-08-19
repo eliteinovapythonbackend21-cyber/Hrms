@@ -988,7 +988,7 @@ class Promotion(TimestampMixin, db.Model):
     to_designation_id = db.Column(db.Integer, db.ForeignKey("designations.id"), nullable=False)
     effective_date = db.Column(db.Date, nullable=False)
     reason = db.Column(db.String(255), nullable=False, default="Other")
-    remarks = db.Column(db.Text)
+    accomplishments = db.Column(db.Text)
     is_active = db.Column(db.Boolean, default=True)
     employee = db.relationship("Employee")
     from_designation = db.relationship("Designation", foreign_keys=[from_designation_id])

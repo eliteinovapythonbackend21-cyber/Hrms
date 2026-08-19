@@ -1,8 +1,10 @@
 import GenericForm from "@/components/form/GenericForm";
+
 import {
   useEmployeeOptions,
   useDesignationOptions,
 } from "@/hooks/useLookupOptions";
+
 
 const PROMOTION_REASON_OPTIONS = [
   {
@@ -87,6 +89,7 @@ const PROMOTION_REASON_OPTIONS = [
   },
 ];
 
+
 export default function PromotionForm({
   formId = "promotions-form",
   initialData,
@@ -94,7 +97,10 @@ export default function PromotionForm({
   loading,
 }) {
   const employeeOptions = useEmployeeOptions();
-  const designationOptions = useDesignationOptions();
+
+  const designationOptions =
+    useDesignationOptions();
+
 
   const fields = [
     {
@@ -137,11 +143,12 @@ export default function PromotionForm({
     },
 
     {
-      name: "remarks",
-      label: "Remarks",
+      name: "accomplishments",
+      label: "Overall Records / Accomplishments",
       type: "textarea",
     },
   ];
+
 
   return (
     <GenericForm
