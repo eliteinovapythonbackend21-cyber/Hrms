@@ -1006,23 +1006,110 @@ class Transfer(TimestampMixin, db.Model):
     __tablename__ = "transfers"
 
     id = db.Column(db.Integer, primary_key=True)
-    employee_id = db.Column(db.Integer, db.ForeignKey("employees.id"), nullable=False)
-    from_department_id = db.Column(db.Integer, db.ForeignKey("departments.id"))
-    to_department_id = db.Column(db.Integer, db.ForeignKey("departments.id"), nullable=False)
-    transfer_reason = db.Column(db.String(255), nullable=False, default="Other")
-    effective_date = db.Column(db.Date, nullable=False)
-    remarks = db.Column(db.Text)
-    is_active = db.Column(db.Boolean, default=True)
-    employee = db.relationship("Employee")
-    from_department = db.relationship("Department", foreign_keys=[from_department_id])
-    to_department = db.relationship("Department", foreign_keys=[to_department_id])
+    employee_id = db.Column(
+        db.Integer,
+        db.ForeignKey("employees.id"),
+        nullable=False,
+    )
+    # Employee's department before the transfer
+    from_department_id = db.Column(
+        db.Integer,
+        db.ForeignKey("departments.id"),
+    )
+
+    # Department to which the employee is transferred
+    to_department_id = db.Column(
+        db.Integer,
+        db.ForeignKey("departments.id"),
+        nullable=False,
+    )
+
+    transfer_reason = db.Column(
+        db.String(255),
+        nullable=False,
+        default="Other",
+    )
+
+    effective_date = db.Column(
+        db.Date,
+        nullable=False,
+    )
+
+    location = db.Column(
+        db.String(255),
+        nullable=True,
+    )
+
+    accomplishments = db.Column(
+        db.Text,
+        nullable=True,
+    )
+
+    remarks = db.Column(
+        db.Text,
+        nullable=True,
+    )
+
+    is_active = db.Column(
+        db.Boolean,
+        default=True,
+    )
+
+    employee = db.relationship(
+        "Employee",
+    )
+
+    from_department = db.relationship(
+        "Department",
+        foreign_keys=[from_department_id],
+    )
+
+    to_department = db.relationship(
+        "Department",
+        foreign_keys=[to_department_id],
+    )
 
     def to_dict(self):
         data = super().to_dict()
-        data["transfer_reason"] = self.transfer_reason or "Other"
-        data["employee"] = _summary(self.employee, ["id", "employee_code", "first_name", "last_name"])
-        data["from_department"] = _summary(self.from_department, ["id", "department_name"])
-        data["to_department"] = _summary(self.to_department, ["id", "department_name"])
+
+        data["transfer_reason"] = (
+            self.transfer_reason or "Other"
+        )
+
+        data["location"] = (
+            self.location or ""
+        )
+
+        data["accomplishments"] = (
+            self.accomplishments or ""
+        )
+
+        data["employee"] = _summary(
+            self.employee,
+            [
+                "id",
+                "employee_code",
+                "first_name",
+                "last_name",
+            ],
+        )
+
+        data["from_department"] = _summary(
+            self.from_department,
+            [
+                "id",
+                "department_name",
+            ],
+        )
+
+        data["to_department"] = _summary(
+            self.to_department,
+            [
+                "id",
+                "department_name",
+            ],
+        )
+
         return data
 
 

@@ -48,15 +48,15 @@ const EXPORT_COLUMNS = [
   },
   {
     key: "from_designation_id",
-    label: "From Designation",
+    label: "Current Designation",
   },
   {
     key: "to_designation_id",
-    label: "To Designation",
+    label: "Promoted To",
   },
   {
-    key: "reason",
-    label: "Promotion Reason",
+    key: "location",
+    label: "Location",
   },
   {
     key: "effective_date",
@@ -1850,12 +1850,13 @@ export default function PromotionListPage() {
           >
             <table className="w-full table-fixed border-collapse text-left text-sm">
               <colgroup>
-                <col className="w-[24%]" />
-                <col className="w-[22%]" />
-                <col className="w-[22%]" />
-                <col className="w-[17%]" />
-                <col className="w-[8%]" />
+                <col className="w-[20%]" />
+                <col className="w-[18%]" />
+                <col className="w-[18%]" />
+                <col className="w-[13%]" />
+                <col className="w-[18%]" />
                 <col className="w-[7%]" />
+                <col className="w-[6%]" />
               </colgroup>
 
               <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-400">
@@ -1874,6 +1875,12 @@ export default function PromotionListPage() {
 
                   <th className="px-4 py-3 font-medium">
                     Location
+                  </th>
+
+                  {/* ADDED: OVERALL RECORDS / ACCOMPLISHMENTS */}
+
+                  <th className="px-4 py-3 font-medium">
+                    Overall Records / Accomplishments
                   </th>
 
                   <th className="px-4 py-3 font-medium">
@@ -2113,6 +2120,22 @@ export default function PromotionListPage() {
                             {
                               employeeLocation
                             }
+                          </span>
+                        </td>
+
+
+                        {/* ADDED: OVERALL RECORDS / ACCOMPLISHMENTS */}
+
+                        <td className="min-w-0 px-4 py-3">
+                          <span
+                            title={
+                              promotion.accomplishments ||
+                              "No overall records / accomplishments"
+                            }
+                            className="block max-w-full truncate text-xs font-medium text-slate-600 dark:text-slate-300"
+                          >
+                            {promotion.accomplishments ||
+                              "—"}
                           </span>
                         </td>
 
@@ -2643,7 +2666,7 @@ export default function PromotionListPage() {
                                           <path
                                             strokeLinecap="round"
                                             strokeLinejoin="round"
-                                            d="M4 12a8 8 0 018-8 8.5 8.5 0 017 4M20 4v5h-5M20 12a8 8 0 01-8 8 8.5 8.5 0 01-7-4M4 20v-5h5"
+                                            d="M4 12a8 8 0 018-8 8.5 8.5 0 017 4M20 4v5h-5M20 12a8 8 0 01-8 8 8.5 8.5 0 017-4M4 20v-5h5"
                                           />
                                         </svg>
                                       </TableIconButton>

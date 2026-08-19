@@ -8,6 +8,7 @@ import ConfirmDialog from "@/components/feedback/ConfirmDialog";
 import TableToolbar from "@/components/table/TableToolbar";
 
 import { useToast } from "@/components/feedback/Toast";
+import { useTableExport } from "@/hooks/useTableExport";
 
 import { employeesApi } from "@/api/employees.api";
 import { masterApi } from "@/api/master.api";
@@ -36,6 +37,41 @@ const PAGE_SIZE = 10;
 const CARD_PAGE_SIZE = 6;
 
 /* =========================================================
+   EXPORT COLUMNS
+========================================================= */
+
+const EXPORT_COLUMNS = [
+  {
+    key: "employee_id",
+    label: "Employee ID",
+  },
+  {
+    key: "from_department_id",
+    label: "Current Department",
+  },
+  {
+    key: "to_department_id",
+    label: "Transfer Department",
+  },
+  {
+    key: "location",
+    label: "Location",
+  },
+  {
+    key: "effective_date",
+    label: "Effective Date",
+  },
+  {
+    key: "accomplishments",
+    label: "Overall Records / Accomplishments",
+  },
+  {
+    key: "is_active",
+    label: "Active",
+  },
+];
+
+/* =========================================================
    TRANSFER REASON OPTIONS
 ========================================================= */
 
@@ -60,17 +96,6 @@ const TRANSFER_REASON_OPTIONS = [
    GET TRANSFER REASON
 ========================================================= */
 
-/*
- * Single source of truth for Transfer Reason.
- *
- * New records:
- *   transfer_reason
- *
- * Older records:
- *   reason
- *
- * This allows existing data to continue displaying correctly.
- */
 function getTransferReason(transfer) {
   if (!transfer) {
     return "";
@@ -79,6 +104,44 @@ function getTransferReason(transfer) {
   const value =
     transfer.transfer_reason ??
     transfer.reason ??
+    "";
+
+  return String(value).trim();
+}
+
+/* =========================================================
+   GET LOCATION
+========================================================= */
+
+function getTransferLocation(transfer, employee) {
+  if (!transfer && !employee) {
+    return "";
+  }
+
+  const value =
+    transfer?.location ??
+    transfer?.transfer_location ??
+    employee?.location ??
+    employee?.location_name ??
+    employee?.work_location ??
+    "";
+
+  return String(value).trim();
+}
+
+/* =========================================================
+   GET ACCOMPLISHMENTS
+========================================================= */
+
+function getTransferAccomplishments(transfer) {
+  if (!transfer) {
+    return "";
+  }
+
+  const value =
+    transfer.accomplishments ??
+    transfer.overall_records ??
+    transfer.overall_records_accomplishments ??
     "";
 
   return String(value).trim();
@@ -113,17 +176,17 @@ function normalizeTransferForForm(transfer) {
       transfer.to_department?.id ??
       "",
 
-    /*
-     * IMPORTANT:
-     *
-     * Always pass the normalized reason
-     * to TransferForm as transfer_reason.
-     */
     transfer_reason:
       getTransferReason(transfer),
 
     effective_date:
       transfer.effective_date ?? "",
+
+    location:
+      transfer.location ?? "",
+
+    accomplishments:
+      getTransferAccomplishments(transfer),
 
     remarks:
       transfer.remarks ?? "",
@@ -306,7 +369,7 @@ function DepartmentBadge({
 }
 
 /* =========================================================
-   FULL TRANSFER DETAILS HOVER CARD
+   DEPARTMENT DETAILS HOVER CARD
 ========================================================= */
 
 function DepartmentDetailsCard({
@@ -320,6 +383,8 @@ function DepartmentDetailsCard({
   effectiveDate,
   duration,
   remarks,
+  location,
+  accomplishments,
   isActive,
 }) {
   const accentTones = {
@@ -393,8 +458,6 @@ function DepartmentDetailsCard({
           </span>
         </div>
 
-        {/* TRANSFER REASON */}
-
         <div className="grid grid-cols-[90px_minmax(0,1fr)] gap-3">
           <span className="text-xs text-slate-400 dark:text-slate-500">
             Transfer Reason
@@ -402,6 +465,16 @@ function DepartmentDetailsCard({
 
           <span className="break-words text-right text-xs font-medium text-slate-700 dark:text-slate-200">
             {reason || "Other"}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-[90px_minmax(0,1fr)] gap-3">
+          <span className="text-xs text-slate-400 dark:text-slate-500">
+            Location
+          </span>
+
+          <span className="break-words text-right text-xs font-medium text-slate-700 dark:text-slate-200">
+            {location || "—"}
           </span>
         </div>
 
@@ -424,6 +497,18 @@ function DepartmentDetailsCard({
             {duration || "—"}
           </span>
         </div>
+      </div>
+
+      <div className="my-3 border-t border-slate-100 dark:border-slate-700" />
+
+      <div>
+        <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
+          Overall Records / Accomplishments
+        </p>
+
+        <p className="break-words text-xs leading-5 text-slate-600 dark:text-slate-300">
+          {accomplishments || "—"}
+        </p>
       </div>
 
       <div className="my-3 border-t border-slate-100 dark:border-slate-700" />
@@ -489,6 +574,65 @@ function DepartmentHoverTrigger({
         {panel}
       </div>
     </div>
+  );
+}
+
+/* =========================================================
+   ACCOMPLISHMENTS HOVER CARD
+========================================================= */
+
+function AccomplishmentsHoverCard({
+  accomplishments,
+}) {
+  return (
+    <div className="w-[340px] max-w-[calc(100vw-32px)] rounded-xl border border-slate-200 border-t-2 border-t-primary-500 bg-white p-4 text-left shadow-xl dark:border-slate-700 dark:bg-slate-800">
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+        Overall Records / Accomplishments
+      </p>
+
+      <div className="mt-2 max-h-[220px] overflow-y-auto">
+        <p className="whitespace-pre-wrap break-words text-xs leading-5 text-slate-600 dark:text-slate-300">
+          {accomplishments || "No accomplishments recorded."}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/* =========================================================
+   ACCOMPLISHMENTS PREVIEW
+========================================================= */
+
+function AccomplishmentsPreview({
+  accomplishments,
+}) {
+  const value =
+    accomplishments || "";
+
+  if (!value) {
+    return (
+      <span className="text-xs text-slate-300 dark:text-slate-600">
+        —
+      </span>
+    );
+  }
+
+  return (
+    <DepartmentHoverTrigger
+      align="right"
+      panel={
+        <AccomplishmentsHoverCard
+          accomplishments={value}
+        />
+      }
+    >
+      <p
+        title={value}
+        className="line-clamp-2 max-w-[260px] cursor-pointer whitespace-normal break-words text-xs leading-4 text-slate-600 dark:text-slate-300"
+      >
+        {value}
+      </p>
+    </DepartmentHoverTrigger>
   );
 }
 
@@ -749,17 +893,19 @@ export default function TransferListPage() {
     useDepartmentOptions();
 
   /* =======================================================
+     EXPORT
+  ======================================================= */
+
+  const { exportToExcel } =
+    useTableExport();
+
+  /* =======================================================
      FILTERS
   ======================================================= */
 
   const [
     filterDepartmentId,
     setFilterDepartmentId,
-  ] = useState("");
-
-  const [
-    filterReason,
-    setFilterReason,
   ] = useState("");
 
   const [search, setSearch] =
@@ -869,11 +1015,6 @@ export default function TransferListPage() {
               transfer.employee_id
             ];
 
-          const transferReason =
-            getTransferReason(
-              transfer
-            );
-
           if (
             filterDepartmentId &&
             String(
@@ -888,14 +1029,6 @@ export default function TransferListPage() {
               String(
                 filterDepartmentId
               )
-          ) {
-            return false;
-          }
-
-          if (
-            filterReason &&
-            transferReason !==
-              String(filterReason)
           ) {
             return false;
           }
@@ -932,6 +1065,22 @@ export default function TransferListPage() {
               ]?.name ||
               "";
 
+            const location =
+              getTransferLocation(
+                transfer,
+                employee
+              );
+
+            const accomplishments =
+              getTransferAccomplishments(
+                transfer
+              );
+
+            const transferReason =
+              getTransferReason(
+                transfer
+              );
+
             const haystack = [
               employeeName,
               employeeCode,
@@ -940,6 +1089,8 @@ export default function TransferListPage() {
                 "",
               fromDepartment,
               toDepartment,
+              location,
+              accomplishments,
             ]
               .join(" ")
               .toLowerCase();
@@ -971,7 +1122,6 @@ export default function TransferListPage() {
       search,
       statusFilter,
       filterDepartmentId,
-      filterReason,
     ]);
 
   /* =======================================================
@@ -1177,11 +1327,6 @@ export default function TransferListPage() {
   const handleEdit = (
     transfer
   ) => {
-    /*
-     * Normalize before opening the form.
-     * This ensures existing Transfer Reason
-     * appears correctly in Edit Transfer.
-     */
     const normalizedTransfer =
       normalizeTransferForForm(
         transfer
@@ -1200,20 +1345,82 @@ export default function TransferListPage() {
   };
 
   /* =======================================================
+     EXPORT HANDLER
+  ======================================================= */
+
+  const handleExport = () => {
+    const rows = filtered.map(
+      (transfer) => {
+        const employee =
+          employeeMap[
+            transfer.employee_id
+          ];
+
+        const fromDepartment =
+          departmentFullMap[
+            transfer.from_department_id
+          ];
+
+        const toDepartment =
+          departmentFullMap[
+            transfer.to_department_id
+          ];
+
+        return {
+          employee_id:
+            employee?.employee_code ||
+            transfer.employee_id,
+
+          from_department_id:
+            fromDepartment?.department_name ||
+            fromDepartment?.name ||
+            transfer.from_department_id,
+
+          to_department_id:
+            toDepartment?.department_name ||
+            toDepartment?.name ||
+            transfer.to_department_id,
+
+          location:
+            getTransferLocation(
+              transfer,
+              employee
+            ),
+
+          effective_date:
+            transfer.effective_date
+              ? formatDate(
+                  transfer.effective_date
+                )
+              : "",
+
+          accomplishments:
+            getTransferAccomplishments(
+              transfer
+            ),
+
+          is_active:
+            transfer.is_active !== false
+              ? "Active"
+              : "Inactive",
+        };
+      }
+    );
+
+    exportToExcel(
+      rows,
+      EXPORT_COLUMNS,
+      "transfers"
+    );
+  };
+
+  /* =======================================================
      SUBMIT
   ======================================================= */
 
   const handleSubmit =
     async (payload) => {
       try {
-        /*
-         * TransferForm should send:
-         *
-         * transfer_reason
-         *
-         * Old reason field is supported only
-         * as a fallback.
-         */
         const transferReason =
           String(
             payload.transfer_reason ??
@@ -1245,11 +1452,6 @@ export default function TransferListPage() {
                 )
               : payload.to_department_id,
 
-          /*
-           * IMPORTANT:
-           * Use transfer_reason as the
-           * actual API field.
-           */
           transfer_reason:
             transferReason,
 
@@ -1257,13 +1459,18 @@ export default function TransferListPage() {
             payload.effective_date ||
             "",
 
+          location:
+            payload.location ??
+            "",
+
+          accomplishments:
+            payload.accomplishments ??
+            "",
+
           remarks:
             payload.remarks ?? "",
         };
 
-        /*
-         * Do not send the legacy reason field.
-         */
         delete normalizedPayload.reason;
 
         if (editing) {
@@ -1375,7 +1582,6 @@ export default function TransferListPage() {
   const clearFilters = () => {
     setSearch("");
     setFilterDepartmentId("");
-    setFilterReason("");
     setStatusFilter("active");
     setPage(1);
   };
@@ -1420,6 +1626,7 @@ export default function TransferListPage() {
           <TableToolbar
             onRefresh={refetch}
             refreshing={isFetching}
+            onExport={handleExport}
           />
 
           <Button
@@ -1498,7 +1705,7 @@ export default function TransferListPage() {
                   );
                   setPage(1);
                 }}
-                placeholder="Search employee, reason or remarks..."
+                placeholder="Search employee, department, location or accomplishments..."
                 className="h-10 w-full rounded-lg border border-slate-300 bg-white pl-9 pr-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
               />
             </div>
@@ -1539,39 +1746,8 @@ export default function TransferListPage() {
               )}
             </select>
 
-            {/* REASON */}
-
-            <select
-              value={
-                filterReason
-              }
-              onChange={(event) => {
-                setFilterReason(
-                  event.target.value
-                );
-                setPage(1);
-              }}
-              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 sm:max-w-[240px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
-            >
-              <option value="">
-                All Transfer Reasons
-              </option>
-
-              {reasonOptions.map(
-                (reason) => (
-                  <option
-                    key={reason}
-                    value={reason}
-                  >
-                    {reason}
-                  </option>
-                )
-              )}
-            </select>
-
             {(search ||
-              filterDepartmentId ||
-              filterReason) && (
+              filterDepartmentId) && (
               <button
                 type="button"
                 onClick={
@@ -1686,12 +1862,13 @@ export default function TransferListPage() {
           <table className="w-full table-fixed border-collapse text-left text-sm">
 
             <colgroup>
-              <col className="w-[25%]" />
-              <col className="w-[23%]" />
-              <col className="w-[23%]" />
-              <col className="w-[14%]" />
-              <col className="w-[8%]" />
-              <col className="w-[7%]" />
+              <col className="w-[21%]" />
+              <col className="w-[19%]" />
+              <col className="w-[19%]" />
+              <col className="w-[11%]" />
+              <col className="w-[19%]" />
+              <col className="w-[5%]" />
+              <col className="w-[6%]" />
             </colgroup>
 
             <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-400">
@@ -1701,15 +1878,19 @@ export default function TransferListPage() {
                 </th>
 
                 <th className="px-4 py-3 font-medium">
-                  Existing Department
-                </th>
-
-                <th className="px-4 py-3 font-medium">
                   Current Department
                 </th>
 
                 <th className="px-4 py-3 font-medium">
-                  Reason
+                  Transfer Department
+                </th>
+
+                <th className="px-4 py-3 font-medium">
+                  Location
+                </th>
+
+                <th className="px-4 py-3 font-medium">
+                  Overall Records / Accomplishments
                 </th>
 
                 <th className="px-4 py-3 font-medium">
@@ -1742,12 +1923,19 @@ export default function TransferListPage() {
                     transfer.is_active !==
                     false;
 
-                  /*
-                   * SINGLE SOURCE OF TRUTH
-                   * FOR TRANSFER REASON
-                   */
                   const transferReason =
                     getTransferReason(
+                      transfer
+                    );
+
+                  const location =
+                    getTransferLocation(
+                      transfer,
+                      employee
+                    );
+
+                  const accomplishments =
+                    getTransferAccomplishments(
                       transfer
                     );
 
@@ -1799,14 +1987,14 @@ export default function TransferListPage() {
                         </div>
                       </td>
 
-                      {/* EXISTING DEPARTMENT */}
+                      {/* CURRENT DEPARTMENT */}
 
                       <td className="relative px-4 py-3">
                         <DepartmentHoverTrigger
                           align="left"
                           panel={
                             <DepartmentDetailsCard
-                              roleLabel="Existing Department"
+                              roleLabel="Current Department"
                               tone="from"
                               department={
                                 fromDepartment
@@ -1830,6 +2018,12 @@ export default function TransferListPage() {
                               remarks={
                                 transfer.remarks
                               }
+                              location={
+                                location
+                              }
+                              accomplishments={
+                                accomplishments
+                              }
                               isActive={
                                 isActive
                               }
@@ -1847,14 +2041,14 @@ export default function TransferListPage() {
                         </DepartmentHoverTrigger>
                       </td>
 
-                      {/* CURRENT DEPARTMENT */}
+                      {/* TRANSFER DEPARTMENT */}
 
                       <td className="relative px-4 py-3">
                         <DepartmentHoverTrigger
                           align="left"
                           panel={
                             <DepartmentDetailsCard
-                              roleLabel="Current Department"
+                              roleLabel="Transfer Department"
                               tone="to"
                               department={
                                 toDepartment
@@ -1878,6 +2072,12 @@ export default function TransferListPage() {
                               remarks={
                                 transfer.remarks
                               }
+                              location={
+                                location
+                              }
+                              accomplishments={
+                                accomplishments
+                              }
                               isActive={
                                 isActive
                               }
@@ -1895,12 +2095,27 @@ export default function TransferListPage() {
                         </DepartmentHoverTrigger>
                       </td>
 
-                      {/* REASON */}
+                      {/* LOCATION */}
 
-                      <td className="min-w-0 overflow-hidden px-4 py-3">
-                        <ReasonBadge
-                          reason={
-                            transferReason
+                      <td className="min-w-0 px-4 py-3">
+                        <span
+                          title={
+                            location ||
+                            "—"
+                          }
+                          className="block truncate text-xs text-slate-600 dark:text-slate-300"
+                        >
+                          {location ||
+                            "—"}
+                        </span>
+                      </td>
+
+                      {/* ACCOMPLISHMENTS */}
+
+                      <td className="min-w-0 px-4 py-3">
+                        <AccomplishmentsPreview
+                          accomplishments={
+                            accomplishments
                           }
                         />
                       </td>
@@ -2049,11 +2264,19 @@ export default function TransferListPage() {
                 transfer.is_active !==
                 false;
 
-              /*
-               * SAME REASON SOURCE AS TABLE
-               */
               const transferReason =
                 getTransferReason(
+                  transfer
+                );
+
+              const location =
+                getTransferLocation(
+                  transfer,
+                  employee
+                );
+
+              const accomplishments =
+                getTransferAccomplishments(
                   transfer
                 );
 
@@ -2129,7 +2352,7 @@ export default function TransferListPage() {
                         align="left"
                         panel={
                           <DepartmentDetailsCard
-                            roleLabel="Existing Department"
+                            roleLabel="Current Department"
                             tone="from"
                             department={
                               fromDepartment
@@ -2153,6 +2376,12 @@ export default function TransferListPage() {
                             remarks={
                               transfer.remarks
                             }
+                            location={
+                              location
+                            }
+                            accomplishments={
+                              accomplishments
+                            }
                             isActive={
                               isActive
                             }
@@ -2175,7 +2404,7 @@ export default function TransferListPage() {
                         align="left"
                         panel={
                           <DepartmentDetailsCard
-                            roleLabel="Current Department"
+                            roleLabel="Transfer Department"
                             tone="to"
                             department={
                               toDepartment
@@ -2199,6 +2428,12 @@ export default function TransferListPage() {
                             remarks={
                               transfer.remarks
                             }
+                            location={
+                              location
+                            }
+                            accomplishments={
+                              accomplishments
+                            }
                             isActive={
                               isActive
                             }
@@ -2216,9 +2451,28 @@ export default function TransferListPage() {
                       </DepartmentHoverTrigger>
                     </div>
 
-                    {/* DATE */}
+                    {/* LOCATION */}
 
                     <div className="mt-2 flex items-center gap-1.5 text-[10px] text-slate-400">
+                      <span className="font-medium">
+                        Location:
+                      </span>
+
+                      <span
+                        className="truncate"
+                        title={
+                          location ||
+                          "—"
+                        }
+                      >
+                        {location ||
+                          "—"}
+                      </span>
+                    </div>
+
+                    {/* DATE */}
+
+                    <div className="mt-1 flex items-center gap-1.5 text-[10px] text-slate-400">
                       <SmallCalendarIcon />
 
                       {formatDate(
@@ -2226,12 +2480,12 @@ export default function TransferListPage() {
                       )}
                     </div>
 
-                    {/* REASON */}
+                    {/* ACCOMPLISHMENTS */}
 
-                    <div className="mt-1.5">
-                      <ReasonBadge
-                        reason={
-                          transferReason
+                    <div className="mt-2 min-h-[32px]">
+                      <AccomplishmentsPreview
+                        accomplishments={
+                          accomplishments
                         }
                       />
                     </div>
