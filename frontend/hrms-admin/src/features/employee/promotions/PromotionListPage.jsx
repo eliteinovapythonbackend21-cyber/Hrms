@@ -272,8 +272,6 @@ function DesignationDetailsCard({
     <div
       className={`w-[300px] max-w-[calc(100vw-32px)] rounded-xl border border-slate-200 border-t-2 bg-white p-4 text-left shadow-xl dark:border-slate-700 dark:bg-slate-800 ${accentTones[tone]}`}
     >
-      {/* HEADER */}
-
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
@@ -297,9 +295,6 @@ function DesignationDetailsCard({
         </span>
       </div>
 
-
-      {/* DESCRIPTION */}
-
       {designation?.description && (
         <>
           <div className="my-3 border-t border-slate-100 dark:border-slate-700" />
@@ -316,16 +311,9 @@ function DesignationDetailsCard({
         </>
       )}
 
-
       <div className="my-3 border-t border-slate-100 dark:border-slate-700" />
 
-
-      {/* DETAILS */}
-
       <div className="space-y-2.5">
-
-        {/* EMPLOYEE */}
-
         <div className="grid grid-cols-[90px_minmax(0,1fr)] gap-3">
           <span className="text-xs text-slate-400 dark:text-slate-500">
             Employee
@@ -339,9 +327,6 @@ function DesignationDetailsCard({
           </span>
         </div>
 
-
-        {/* REASON */}
-
         <div className="grid grid-cols-[90px_minmax(0,1fr)] gap-3">
           <span className="text-xs text-slate-400 dark:text-slate-500">
             Reason
@@ -351,9 +336,6 @@ function DesignationDetailsCard({
             {reason || "Other"}
           </span>
         </div>
-
-
-        {/* EFFECTIVE DATE */}
 
         <div className="grid grid-cols-[90px_minmax(0,1fr)] gap-3">
           <span className="text-xs text-slate-400 dark:text-slate-500">
@@ -365,9 +347,6 @@ function DesignationDetailsCard({
           </span>
         </div>
 
-
-        {/* DURATION */}
-
         <div className="grid grid-cols-[90px_minmax(0,1fr)] gap-3">
           <span className="text-xs text-slate-400 dark:text-slate-500">
             Duration
@@ -377,11 +356,7 @@ function DesignationDetailsCard({
             {duration || "—"}
           </span>
         </div>
-
       </div>
-
-
-      {/* OVERALL RECORDS / ACCOMPLISHMENTS */}
 
       {accomplishments && (
         <>
@@ -398,7 +373,6 @@ function DesignationDetailsCard({
           </div>
         </>
       )}
-
     </div>
   );
 }
@@ -481,6 +455,7 @@ function formatDuration(startDate, endDate) {
   if (!startDate) return "—";
 
   const start = new Date(startDate);
+
   const end = endDate
     ? new Date(endDate)
     : new Date();
@@ -502,11 +477,12 @@ function formatDuration(startDate, endDate) {
   if (days < 0) {
     months -= 1;
 
-    const daysInPrevMonth = new Date(
-      end.getFullYear(),
-      end.getMonth(),
-      0
-    ).getDate();
+    const daysInPrevMonth =
+      new Date(
+        end.getFullYear(),
+        end.getMonth(),
+        0
+      ).getDate();
 
     days += daysInPrevMonth;
   }
@@ -574,7 +550,7 @@ const TableIconButton = ({
       disabled={disabled}
       title={title}
       aria-label={title}
-      className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${tones[tone]}`}
+      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${tones[tone]}`}
     >
       {children}
     </button>
@@ -1022,8 +998,7 @@ export default function PromotionListPage() {
           filterCompanyId &&
           String(
             employee?.department?.company?.id
-          ) !==
-            String(filterCompanyId)
+          ) !== String(filterCompanyId)
         ) {
           return false;
         }
@@ -1032,8 +1007,7 @@ export default function PromotionListPage() {
           filterBranchId &&
           String(
             employee?.department?.branch?.id
-          ) !==
-            String(filterBranchId)
+          ) !== String(filterBranchId)
         ) {
           return false;
         }
@@ -1042,8 +1016,7 @@ export default function PromotionListPage() {
           filterDepartmentId &&
           String(
             employee?.department?.id
-          ) !==
-            String(filterDepartmentId)
+          ) !== String(filterDepartmentId)
         ) {
           return false;
         }
@@ -1325,12 +1298,10 @@ export default function PromotionListPage() {
   ) => {
     try {
       if (editing) {
-        await updateMutation.mutateAsync(
-          {
-            id: editing.id,
-            payload,
-          }
-        );
+        await updateMutation.mutateAsync({
+          id: editing.id,
+          payload,
+        });
 
         showToast(
           "Promotion updated",
@@ -1671,9 +1642,7 @@ export default function PromotionListPage() {
                 (designation) => (
                   <option
                     key={designation.value}
-                    value={
-                      designation.value
-                    }
+                    value={designation.value}
                   >
                     {designation.label}
                   </option>
@@ -1736,8 +1705,6 @@ export default function PromotionListPage() {
 
           <div className="flex flex-wrap items-center justify-between gap-2">
 
-            {/* VIEW MODE */}
-
             <div className="flex w-fit items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
 
               <button
@@ -1772,8 +1739,6 @@ export default function PromotionListPage() {
 
             </div>
 
-
-            {/* STATUS */}
 
             <div className="flex w-fit items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
               {[
@@ -1834,11 +1799,20 @@ export default function PromotionListPage() {
             </p>
           </div>
         ) : (
+
+          /*
+           * IMPORTANT:
+           * The table itself is wrapped in overflow-x-auto.
+           * This prevents the Actions column from getting
+           * compressed when the screen becomes smaller.
+           */
+
           <div
             className="
               w-full
               min-w-0
-              overflow-visible
+              overflow-x-auto
+              overflow-y-visible
               rounded-xl
               border
               border-slate-200
@@ -1848,58 +1822,138 @@ export default function PromotionListPage() {
               dark:bg-slate-900
             "
           >
-            <table className="w-full table-fixed border-collapse text-left text-sm">
+
+            <table
+              className="
+                w-full
+                min-w-[1050px]
+                table-fixed
+                border-collapse
+                text-left
+                text-sm
+              "
+            >
+
+              {/* =================================================
+                  FIXED COLUMN WIDTHS
+              ================================================= */}
+
               <colgroup>
-                <col className="w-[20%]" />
+
+                {/* Employee */}
+                <col className="w-[19%]" />
+
+                {/* Current Designation */}
+                <col className="w-[17%]" />
+
+                {/* Promoted To */}
+                <col className="w-[17%]" />
+
+                {/* Location */}
+                <col className="w-[12%]" />
+
+                {/* Accomplishments */}
                 <col className="w-[18%]" />
-                <col className="w-[18%]" />
-                <col className="w-[13%]" />
-                <col className="w-[18%]" />
-                <col className="w-[7%]" />
-                <col className="w-[6%]" />
+
+                {/* Status */}
+                <col className="w-[9%]" />
+
+                {/* Actions */}
+                <col className="w-[8%]" />
+
               </colgroup>
 
-              <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-400">
+
+              {/* =================================================
+                  TABLE HEADER
+              ================================================= */}
+
+              <thead
+                className="
+                  border-b
+                  border-slate-200
+                  bg-slate-50
+                  text-xs
+                  uppercase
+                  tracking-wide
+                  text-slate-500
+                  dark:border-slate-700
+                  dark:bg-slate-800/60
+                  dark:text-slate-400
+                "
+              >
                 <tr>
-                  <th className="px-4 py-3 font-medium">
+
+                  <th className="whitespace-nowrap px-4 py-3 font-medium">
                     Employee
                   </th>
 
-                  <th className="px-4 py-3 font-medium">
+                  <th className="whitespace-nowrap px-4 py-3 font-medium">
                     Current Designation
                   </th>
 
-                  <th className="px-4 py-3 font-medium">
+                  <th className="whitespace-nowrap px-4 py-3 font-medium">
                     Promoted To
                   </th>
 
-                  <th className="px-4 py-3 font-medium">
+                  <th className="whitespace-nowrap px-4 py-3 font-medium">
                     Location
                   </th>
-
-                  {/* ADDED: OVERALL RECORDS / ACCOMPLISHMENTS */}
 
                   <th className="px-4 py-3 font-medium">
                     Overall Records / Accomplishments
                   </th>
 
-                  <th className="px-4 py-3 font-medium">
+                  <th className="whitespace-nowrap px-4 py-3 font-medium">
                     Status
                   </th>
 
-                  <th className="px-4 py-3 text-right font-medium">
+                  {/* =================================================
+                      FIXED ACTION HEADER
+                  ================================================= */}
+
+                  <th
+                    className="
+                      sticky
+                      right-0
+                      z-30
+                      w-[90px]
+                      min-w-[90px]
+                      whitespace-nowrap
+                      border-l
+                      border-slate-200
+                      bg-slate-50
+                      px-3
+                      py-3
+                      text-center
+                      font-medium
+                      shadow-[-4px_0_8px_-6px_rgba(15,23,42,0.25)]
+                      dark:border-slate-700
+                      dark:bg-slate-800/95
+                      dark:shadow-[-4px_0_8px_-6px_rgba(0,0,0,0.45)]
+                    "
+                  >
                     Actions
                   </th>
+
                 </tr>
               </thead>
 
+
+              {/* =================================================
+                  TABLE BODY
+              ================================================= */}
+
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+
                 {paged.map(
                   (promotion) => {
+
                     const employee =
                       employeeMap[
                         promotion.employee_id
                       ];
+
 
                     const employeeName =
                       employee
@@ -1908,19 +1962,23 @@ export default function PromotionListPage() {
                           }`.trim()
                         : `Employee #${promotion.employee_id}`;
 
+
                     const employeeLocation =
                       getEmployeeLocation(
                         employee
                       );
 
+
                     const isActive =
                       promotion.is_active !==
                       false;
+
 
                     const timeline =
                       employeeTimeline.get(
                         promotion.employee_id
                       ) || [];
+
 
                     const index =
                       timeline.findIndex(
@@ -1929,12 +1987,14 @@ export default function PromotionListPage() {
                           promotion.id
                       );
 
+
                     const previous =
                       index > 0
                         ? timeline[
                             index - 1
                           ]
                         : null;
+
 
                     const next =
                       index >= 0 &&
@@ -1945,16 +2005,19 @@ export default function PromotionListPage() {
                           ]
                         : null;
 
+
                     const previousRoleStart =
                       previous
                         ? previous.effective_date
                         : employee?.joining_date;
+
 
                     const timeInPreviousRole =
                       formatDuration(
                         previousRoleStart,
                         promotion.effective_date
                       );
+
 
                     const timeInNewRole =
                       next
@@ -1967,11 +2030,13 @@ export default function PromotionListPage() {
                             null
                           )} (current)`;
 
+
                     const fromDesignation =
                       designationFullMap[
                         promotion
                           .from_designation_id
                       ];
+
 
                     const toDesignation =
                       designationFullMap[
@@ -1979,16 +2044,25 @@ export default function PromotionListPage() {
                           .to_designation_id
                       ];
 
+
                     return (
                       <tr
                         key={promotion.id}
-                        className="relative hover:bg-slate-50 dark:hover:bg-slate-800/40"
+                        className="
+                          group
+                          relative
+                          hover:bg-slate-50
+                          dark:hover:bg-slate-800/40
+                        "
                       >
 
-                        {/* EMPLOYEE */}
+                        {/* =================================================
+                            EMPLOYEE
+                        ================================================= */}
 
                         <td className="min-w-0 px-4 py-3">
                           <div className="flex min-w-0 items-center gap-2.5">
+
                             <Avatar
                               name={
                                 employeeName
@@ -2008,13 +2082,17 @@ export default function PromotionListPage() {
                                   `#${promotion.employee_id}`}
                               </p>
                             </div>
+
                           </div>
                         </td>
 
 
-                        {/* CURRENT DESIGNATION */}
+                        {/* =================================================
+                            CURRENT DESIGNATION
+                        ================================================= */}
 
-                        <td className="relative px-4 py-3">
+                        <td className="relative min-w-0 px-4 py-3">
+
                           <DesignationHoverTrigger
                             align="left"
                             panel={
@@ -2057,12 +2135,16 @@ export default function PromotionListPage() {
                               }
                             />
                           </DesignationHoverTrigger>
+
                         </td>
 
 
-                        {/* PROMOTED TO */}
+                        {/* =================================================
+                            PROMOTED TO
+                        ================================================= */}
 
-                        <td className="relative px-4 py-3">
+                        <td className="relative min-w-0 px-4 py-3">
+
                           <DesignationHoverTrigger
                             align="left"
                             panel={
@@ -2105,44 +2187,72 @@ export default function PromotionListPage() {
                               }
                             />
                           </DesignationHoverTrigger>
+
                         </td>
 
 
-                        {/* LOCATION */}
+                        {/* =================================================
+                            LOCATION
+                        ================================================= */}
 
                         <td className="min-w-0 overflow-hidden px-4 py-3">
+
                           <span
                             title={
                               employeeLocation
                             }
-                            className="block max-w-full truncate text-xs font-medium text-slate-600 dark:text-slate-300"
+                            className="
+                              block
+                              max-w-full
+                              truncate
+                              text-xs
+                              font-medium
+                              text-slate-600
+                              dark:text-slate-300
+                            "
                           >
                             {
                               employeeLocation
                             }
                           </span>
+
                         </td>
 
 
-                        {/* ADDED: OVERALL RECORDS / ACCOMPLISHMENTS */}
+                        {/* =================================================
+                            OVERALL RECORDS
+                        ================================================= */}
 
                         <td className="min-w-0 px-4 py-3">
+
                           <span
                             title={
                               promotion.accomplishments ||
                               "No overall records / accomplishments"
                             }
-                            className="block max-w-full truncate text-xs font-medium text-slate-600 dark:text-slate-300"
+                            className="
+                              block
+                              max-w-full
+                              truncate
+                              text-xs
+                              font-medium
+                              text-slate-600
+                              dark:text-slate-300
+                            "
                           >
                             {promotion.accomplishments ||
                               "—"}
                           </span>
+
                         </td>
 
 
-                        {/* STATUS */}
+                        {/* =================================================
+                            STATUS
+                        ================================================= */}
 
                         <td className="px-4 py-3">
+
                           <span
                             className={`inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-[10px] font-medium ${
                               isActive
@@ -2150,8 +2260,9 @@ export default function PromotionListPage() {
                                 : "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300"
                             }`}
                           >
+
                             <span
-                              className={`h-1.5 w-1.5 rounded-full ${
+                              className={`h-1.5 w-1.5 shrink-0 rounded-full ${
                                 isActive
                                   ? "bg-emerald-500"
                                   : "bg-red-500"
@@ -2161,16 +2272,52 @@ export default function PromotionListPage() {
                             {isActive
                               ? "Active"
                               : "Inactive"}
+
                           </span>
+
                         </td>
 
 
-                        {/* ACTIONS */}
+                        {/* =================================================
+                            FIXED ACTIONS COLUMN
+                        ================================================= */}
 
-                        <td className="px-4 py-3">
-                          <div className="flex items-center justify-end gap-1">
+                        <td
+                          className="
+                            sticky
+                            right-0
+                            z-20
+                            w-[90px]
+                            min-w-[90px]
+                            border-l
+                            border-slate-200
+                            bg-white
+                            px-2
+                            py-2
+                            align-middle
+                            shadow-[-4px_0_8px_-6px_rgba(15,23,42,0.25)]
+                            group-hover:bg-slate-50
+                            dark:border-slate-700
+                            dark:bg-slate-900
+                            dark:shadow-[-4px_0_8px_-6px_rgba(0,0,0,0.45)]
+                            dark:group-hover:bg-slate-800/90
+                          "
+                        >
 
-                            {/* EDIT */}
+                          <div
+                            className="
+                              flex
+                              w-full
+                              items-center
+                              justify-center
+                              gap-1
+                              whitespace-nowrap
+                            "
+                          >
+
+                            {/* =================================================
+                                EDIT BUTTON
+                            ================================================= */}
 
                             <TableIconButton
                               title="Edit"
@@ -2198,9 +2345,12 @@ export default function PromotionListPage() {
                             </TableIconButton>
 
 
-                            {/* DELETE / REACTIVATE */}
+                            {/* =================================================
+                                DELETE / REACTIVATE
+                            ================================================= */}
 
                             {isActive ? (
+
                               <TableIconButton
                                 title="Delete"
                                 onClick={() =>
@@ -2225,7 +2375,9 @@ export default function PromotionListPage() {
                                   />
                                 </svg>
                               </TableIconButton>
+
                             ) : (
+
                               <TableIconButton
                                 title="Reactivate"
                                 onClick={() =>
@@ -2253,17 +2405,22 @@ export default function PromotionListPage() {
                                   />
                                 </svg>
                               </TableIconButton>
+
                             )}
 
                           </div>
+
                         </td>
 
                       </tr>
                     );
                   }
                 )}
+
               </tbody>
+
             </table>
+
           </div>
         )
 
@@ -2275,6 +2432,7 @@ export default function PromotionListPage() {
 
         pagedGroups.length === 0 ? (
           <div className="flex min-h-[200px] flex-col items-center justify-center rounded-xl border border-slate-200 bg-white px-6 py-10 text-center shadow-sm dark:border-slate-700 dark:bg-slate-900">
+
             <h3 className="text-sm font-semibold text-slate-800 dark:text-white">
               No promotions found
             </h3>
@@ -2282,11 +2440,15 @@ export default function PromotionListPage() {
             <p className="mt-1 max-w-sm text-xs text-slate-500 dark:text-slate-400">
               No records match your current search or filters.
             </p>
+
           </div>
         ) : (
+
           <div className="grid grid-cols-1 items-start gap-4 sm:grid-cols-2 xl:grid-cols-3">
+
             {pagedGroups.map(
               (group) => {
+
                 const employee =
                   group.employee;
 
@@ -2316,6 +2478,7 @@ export default function PromotionListPage() {
                     }
                     className="relative overflow-visible rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900"
                   >
+
                     <div className="absolute inset-x-0 top-0 h-0.5 rounded-t-2xl bg-primary-600" />
 
                     <div className="p-4">
@@ -2323,7 +2486,9 @@ export default function PromotionListPage() {
                       {/* EMPLOYEE */}
 
                       <div className="flex items-start justify-between gap-2.5">
+
                         <div className="flex min-w-0 items-center gap-2.5">
+
                           <Avatar
                             name={
                               employeeName
@@ -2332,6 +2497,7 @@ export default function PromotionListPage() {
                           />
 
                           <div className="min-w-0">
+
                             <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">
                               {
                                 employeeName
@@ -2342,7 +2508,9 @@ export default function PromotionListPage() {
                               {employee?.employee_code ||
                                 `#${group.employeeId}`}
                             </p>
+
                           </div>
+
                         </div>
 
                         <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-500 dark:bg-slate-800 dark:text-slate-400">
@@ -2357,6 +2525,7 @@ export default function PromotionListPage() {
                             ? "s"
                             : ""}
                         </span>
+
                       </div>
 
 
@@ -2366,10 +2535,12 @@ export default function PromotionListPage() {
                       {/* PROMOTION HISTORY */}
 
                       <div className="space-y-2.5">
+
                         {sortedPromotions.map(
                           (
                             promotion
                           ) => {
+
                             const isActive =
                               promotion.is_active !==
                               false;
@@ -2392,14 +2563,14 @@ export default function PromotionListPage() {
                                 }
                                 className="relative overflow-visible rounded-lg border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800/60"
                               >
+
                                 <div className="px-2.5 py-2.5">
 
                                   {/* DESIGNATIONS */}
 
                                   <div className="flex min-w-0 items-start justify-between gap-2">
-                                    <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
 
-                                      {/* EXISTING */}
+                                    <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
 
                                       <DesignationHoverTrigger
                                         align="left"
@@ -2448,8 +2619,6 @@ export default function PromotionListPage() {
                                       <ArrowIcon />
 
 
-                                      {/* CURRENT */}
-
                                       <DesignationHoverTrigger
                                         align="left"
                                         panel={
@@ -2496,8 +2665,6 @@ export default function PromotionListPage() {
                                     </div>
 
 
-                                    {/* STATUS */}
-
                                     <span
                                       className={`inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-[9px] font-medium ${
                                         isActive
@@ -2505,6 +2672,7 @@ export default function PromotionListPage() {
                                           : "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300"
                                       }`}
                                     >
+
                                       <span
                                         className={`h-1 w-1 rounded-full ${
                                           isActive
@@ -2516,6 +2684,7 @@ export default function PromotionListPage() {
                                       {isActive
                                         ? "Active"
                                         : "Inactive"}
+
                                     </span>
 
                                   </div>
@@ -2524,26 +2693,30 @@ export default function PromotionListPage() {
                                   {/* DATE */}
 
                                   <div className="mt-2 flex items-center gap-1.5 text-[10px] text-slate-400">
+
                                     <SmallCalendarIcon />
 
                                     {formatDate(
                                       promotion.effective_date
                                     )}
+
                                   </div>
 
 
                                   {/* REASON */}
 
                                   <div className="mt-1.5">
+
                                     <ReasonBadge
                                       reason={
                                         promotion.reason
                                       }
                                     />
+
                                   </div>
 
 
-                                  {/* OVERALL RECORDS / ACCOMPLISHMENTS */}
+                                  {/* ACCOMPLISHMENTS */}
 
                                   {promotion.accomplishments && (
                                     <p
@@ -2562,6 +2735,7 @@ export default function PromotionListPage() {
                                   {/* DURATION */}
 
                                   <div className="mt-2 grid grid-cols-2 gap-2 text-[10px] text-slate-500 dark:text-slate-400">
+
                                     <div>
                                       <span className="text-slate-400">
                                         Previous:
@@ -2579,6 +2753,7 @@ export default function PromotionListPage() {
                                         timeInNewRole
                                       }
                                     </div>
+
                                   </div>
 
                                 </div>
@@ -2589,6 +2764,7 @@ export default function PromotionListPage() {
                                 <div className="grid grid-cols-2 divide-x divide-slate-100 border-t border-slate-100 dark:divide-slate-700 dark:border-slate-700">
 
                                   <div className="flex items-center justify-center py-1.5">
+
                                     <TableIconButton
                                       title="Edit"
                                       onClick={() =>
@@ -2613,11 +2789,14 @@ export default function PromotionListPage() {
                                         />
                                       </svg>
                                     </TableIconButton>
+
                                   </div>
 
 
                                   <div className="flex items-center justify-center py-1.5">
+
                                     {isActive ? (
+
                                       <TableIconButton
                                         title="Delete"
                                         onClick={() =>
@@ -2642,7 +2821,9 @@ export default function PromotionListPage() {
                                           />
                                         </svg>
                                       </TableIconButton>
+
                                     ) : (
+
                                       <TableIconButton
                                         title="Reactivate"
                                         onClick={() =>
@@ -2666,11 +2847,13 @@ export default function PromotionListPage() {
                                           <path
                                             strokeLinecap="round"
                                             strokeLinejoin="round"
-                                            d="M4 12a8 8 0 018-8 8.5 8.5 0 017 4M20 4v5h-5M20 12a8 8 0 01-8 8 8.5 8.5 0 017-4M4 20v-5h5"
+                                            d="M4 12a8 8 0 018-8 8.5 8.5 0 017 4M20 4v5h-5M20 12a8 8 0 01-8 8 8.5 8.5 0 01-7-4M4 20v-5h5"
                                           />
                                         </svg>
                                       </TableIconButton>
+
                                     )}
+
                                   </div>
 
                                 </div>
@@ -2679,13 +2862,16 @@ export default function PromotionListPage() {
                             );
                           }
                         )}
+
                       </div>
 
                     </div>
+
                   </div>
                 );
               }
             )}
+
           </div>
         )
       )}
@@ -2696,6 +2882,7 @@ export default function PromotionListPage() {
       ===================================================== */}
 
       <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
+
         <span>
           Page {page} of{" "}
           {pageCount}
@@ -2740,6 +2927,7 @@ export default function PromotionListPage() {
           </button>
 
         </div>
+
       </div>
 
 

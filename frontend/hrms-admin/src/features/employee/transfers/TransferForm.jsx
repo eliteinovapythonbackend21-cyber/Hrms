@@ -1,100 +1,29 @@
 import { useEffect, useMemo, useState } from "react";
 
-import GenericForm from "@/components/form/GenericForm";
-
-import {
-  useEmployeeOptions,
-  useDepartmentOptions,
-} from "@/hooks/useLookupOptions";
-
+import Button from "@/components/ui/Button";
 import { employeesApi } from "@/api/employees.api";
+import { masterApi } from "@/api/master.api";
+import { useCompanies } from "@/features/master/company/useCompanies";
 
-const TRANSFER_REASON_OPTIONS = [
-  {
-    value: "Business Requirement",
-    label: "Business Requirement",
-  },
-  {
-    value: "Employee Request",
-    label: "Employee Request",
-  },
-  {
-    value: "Department Requirement",
-    label: "Department Requirement",
-  },
-  {
-    value: "Workforce Planning",
-    label: "Workforce Planning",
-  },
-  {
-    value: "Business Expansion",
-    label: "Business Expansion",
-  },
-  {
-    value: "Operational Requirement",
-    label: "Operational Requirement",
-  },
-  {
-    value: "Project Requirement",
-    label: "Project Requirement",
-  },
-  {
-    value: "Skill Requirement",
-    label: "Skill Requirement",
-  },
-  {
-    value: "Performance",
-    label: "Performance",
-  },
-  {
-    value: "Career Development",
-    label: "Career Development",
-  },
-  {
-    value: "Employee Development",
-    label: "Employee Development",
-  },
-  {
-    value: "Relocation",
-    label: "Relocation",
-  },
-  {
-    value: "Management Decision",
-    label: "Management Decision",
-  },
-  {
-    value: "Other",
-    label: "Other",
-  },
+const COMMON_TRANSFER_REASONS = [
+  "Business Requirement",
+  "Department Requirement",
+  "Employee Request",
+  "Promotion / Career Growth",
+  "Role Change",
+  "Project Requirement",
+  "Branch Requirement",
+  "Relocation",
+  "Performance",
+  "Organizational Restructuring",
+  "Other",
 ];
 
-function normalizeTransferReason(value) {
-  if (value === null || value === undefined) {
-    return "Other";
-  }
+const inputClass =
+  "h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-slate-800 dark:text-white";
 
-  const text = String(value).trim();
-
-  if (!text) {
-    return "Other";
-  }
-
-  const matchedOption = TRANSFER_REASON_OPTIONS.find(
-    (option) => option.value.toLowerCase() === text.toLowerCase()
-  );
-
-  return matchedOption?.value || text;
-}
-
-function getEmployeeDepartmentId(employee) {
-  return (
-    employee?.department?.id ||
-    employee?.department_id ||
-    employee?.current_department?.id ||
-    employee?.current_department_id ||
-    ""
-  );
-}
+const labelClass =
+  "mb-1.5 block text-xs font-medium text-slate-700 dark:text-slate-300";
 
 export default function TransferForm({
   formId = "transfer-form",
@@ -102,226 +31,732 @@ export default function TransferForm({
   onSubmit,
   loading = false,
 }) {
-  const employeeOptions = useEmployeeOptions();
-  const departmentOptions = useDepartmentOptions();
+  const [employees, setEmployees] = useState([]);
+  const [departments, setDepartments] = useState([]);
+  const [companies, setCompanies] = useState([]);
+  const [branches, setBranches] = useState([]);
 
-  const [employeeDetails, setEmployeeDetails] = useState(null);
-  const [loadingEmployee, setLoadingEmployee] = useState(false);
+  const [loadingEmployees, setLoadingEmployees] =
+    useState(false);
 
-  const [selectedEmployeeId, setSelectedEmployeeId] = useState(
-    initialData?.employee_id ? String(initialData.employee_id) : ""
-  );
+  const [loadingDepartments, setLoadingDepartments] =
+    useState(false);
 
-  const normalizedInitialData = useMemo(() => {
-    const employeeId = initialData?.employee_id;
-    const fromDepartmentId = initialData?.from_department_id;
-    const toDepartmentId = initialData?.to_department_id;
+  const [form, setForm] = useState({
+    employee_id:
+      initialData.employee_id || "",
 
-    return {
-      employee_id: employeeId ? String(employeeId) : "",
+    from_department_id:
+      initialData.from_department_id || "",
 
-      from_department_id: fromDepartmentId
-        ? String(fromDepartmentId)
-        : "",
+    to_department_id:
+      initialData.to_department_id || "",
 
-      to_department_id: toDepartmentId
-        ? String(toDepartmentId)
-        : "",
+    transfer_reason:
+      initialData.transfer_reason ||
+      initialData.reason ||
+      "Other",
 
-      transfer_reason: normalizeTransferReason(
-        initialData?.transfer_reason
-      ),
+    effective_date:
+      initialData.effective_date || "",
 
-      effective_date: initialData?.effective_date || "",
+    /*
+     * IMPORTANT:
+     * Transfer location comes only from
+     * the transfer record.
+     *
+     * It must NOT come from employee.location.
+     */
+    location:
+      initialData.location || "",
 
-      remarks: initialData?.remarks || "",
-    };
-  }, [initialData]);
+    accomplishments:
+      initialData.accomplishments || "",
+  });
+
+  const [error, setError] = useState("");
+
+  /* =========================================================
+     LOAD EMPLOYEES
+  ========================================================= */
 
   useEffect(() => {
-    setSelectedEmployeeId(
-      initialData?.employee_id
-        ? String(initialData.employee_id)
-        : ""
-    );
-  }, [initialData?.employee_id]);
+    let mounted = true;
 
-  useEffect(() => {
-    let cancelled = false;
-
-    const fetchEmployee = async () => {
-      if (!selectedEmployeeId) {
-        setEmployeeDetails(null);
-        setLoadingEmployee(false);
-        return;
-      }
-
-      setLoadingEmployee(true);
-
+    const loadEmployees = async () => {
       try {
-        const response = await employeesApi.get(selectedEmployeeId);
+        setLoadingEmployees(true);
 
-        if (cancelled) return;
+        const response =
+          await employeesApi.list({
+            page: 1,
+            per_page: 1000,
+            is_active: true,
+          });
 
-        const employee =
+        if (!mounted) return;
+
+        const data =
           response?.data?.data ||
           response?.data ||
-          null;
+          {};
 
-        setEmployeeDetails(employee);
-      } catch (error) {
-        if (!cancelled) {
-          console.error(
-            "Failed to load employee details:",
-            error
-          );
-
-          setEmployeeDetails(null);
-        }
+        setEmployees(
+          data?.items || []
+        );
+      } catch (err) {
+        console.error(
+          "Failed to load employees",
+          err
+        );
       } finally {
-        if (!cancelled) {
-          setLoadingEmployee(false);
+        if (mounted) {
+          setLoadingEmployees(false);
         }
       }
     };
 
-    fetchEmployee();
+    loadEmployees();
 
     return () => {
-      cancelled = true;
+      mounted = false;
     };
-  }, [selectedEmployeeId]);
+  }, []);
 
-  /*
-   * Existing Department should always come from the
-   * employee's current department.
-   *
-   * During edit, fall back to the saved from_department_id
-   * until employee details are loaded.
-   */
-  const existingDepartmentId =
-    getEmployeeDepartmentId(employeeDetails) ||
-    normalizedInitialData.from_department_id ||
-    "";
+  /* =========================================================
+     LOAD DEPARTMENTS
+  ========================================================= */
 
-  const handleEmployeeChange = (value) => {
-    setSelectedEmployeeId(value ? String(value) : "");
-  };
+  useEffect(() => {
+    let mounted = true;
 
-  const fields = [
-    {
-      name: "employee_id",
-      label: "Employee",
-      type: "select",
-      options: employeeOptions,
-      required: true,
-      onChange: handleEmployeeChange,
-    },
+    const loadDepartments = async () => {
+      try {
+        setLoadingDepartments(true);
 
-    {
-      name: "from_department_id",
-      label: "Existing Department",
-      type: "select",
-      options: departmentOptions,
-      required: true,
-      disabled: true,
-      helperText: loadingEmployee
-        ? "Loading employee department..."
-        : existingDepartmentId
-          ? "Automatically populated from the employee's current department."
-          : "Select an employee to load the existing department.",
-    },
+        const response =
+          await masterApi.listDepartments({
+            page: 1,
+            per_page: 1000,
+          });
 
-    {
-      name: "to_department_id",
-      label: "Current Department",
-      type: "select",
-      options: departmentOptions,
-      required: true,
-      helperText:
-        "Select the department to which the employee is being transferred.",
-    },
+        if (!mounted) return;
 
-    {
-      name: "transfer_reason",
-      label: "Transfer Reason",
-      type: "select",
-      options: TRANSFER_REASON_OPTIONS,
-      required: true,
-    },
+        const data =
+          response?.data?.data ||
+          response?.data ||
+          {};
 
-    {
-      name: "effective_date",
-      label: "Effective Date",
-      type: "date",
-      required: true,
-    },
+        setDepartments(
+          data?.items || []
+        );
+      } catch (err) {
+        console.error(
+          "Failed to load departments",
+          err
+        );
+      } finally {
+        if (mounted) {
+          setLoadingDepartments(false);
+        }
+      }
+    };
 
-    {
-      name: "remarks",
-      label: "Remarks",
-      type: "textarea",
-    },
-  ];
+    loadDepartments();
 
-  const handleSubmit = async (payload) => {
-    const finalPayload = {
-      ...payload,
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
-      employee_id: payload.employee_id
-        ? Number(payload.employee_id)
-        : payload.employee_id,
+  /* =========================================================
+     LOAD COMPANIES
+  ========================================================= */
 
-      from_department_id: existingDepartmentId
-        ? Number(existingDepartmentId)
-        : payload.from_department_id
-          ? Number(payload.from_department_id)
-          : payload.from_department_id,
+  const {
+    data: companyData,
+  } = useCompanies({
+    page: 1,
+    per_page: 1000,
+  });
 
-      to_department_id: payload.to_department_id
-        ? Number(payload.to_department_id)
-        : payload.to_department_id,
+  useEffect(() => {
+    const items =
+      companyData?.items ||
+      companyData?.data ||
+      [];
 
-      transfer_reason: normalizeTransferReason(
-        payload.transfer_reason
+    setCompanies(items);
+  }, [companyData]);
+
+  /* =========================================================
+     BRANCHES
+  ========================================================= */
+
+  useEffect(() => {
+    const map = new Map();
+
+    employees.forEach((employee) => {
+      const branch =
+        employee?.department?.branch;
+
+      if (branch?.id) {
+        map.set(
+          branch.id,
+          branch
+        );
+      }
+    });
+
+    companies.forEach((company) => {
+      (company?.branches || []).forEach(
+        (branch) => {
+          if (branch?.id) {
+            map.set(
+              branch.id,
+              branch
+            );
+          }
+        }
+      );
+    });
+
+    setBranches(
+      Array.from(map.values())
+    );
+  }, [
+    employees,
+    companies,
+  ]);
+
+  /* =========================================================
+     SELECTED EMPLOYEE
+  ========================================================= */
+
+  const selectedEmployee = useMemo(
+    () =>
+      employees.find(
+        (employee) =>
+          String(employee.id) ===
+          String(form.employee_id)
       ),
-
-      effective_date: payload.effective_date || "",
-
-      remarks: payload.remarks || "",
-    };
-
-    await onSubmit(finalPayload);
-  };
-
-  const formInitialData = useMemo(
-    () => ({
-      ...normalizedInitialData,
-
-      employee_id: normalizedInitialData.employee_id,
-
-      from_department_id: existingDepartmentId
-        ? String(existingDepartmentId)
-        : normalizedInitialData.from_department_id,
-
-      to_department_id: normalizedInitialData.to_department_id,
-
-      transfer_reason: normalizedInitialData.transfer_reason,
-
-      effective_date: normalizedInitialData.effective_date,
-
-      remarks: normalizedInitialData.remarks,
-    }),
-    [normalizedInitialData, existingDepartmentId]
+    [
+      employees,
+      form.employee_id,
+    ]
   );
 
+  /* =========================================================
+     DEPARTMENT OPTIONS
+  ========================================================= */
+
+  const departmentOptions =
+    useMemo(() => {
+      return departments
+        .map((department) => ({
+          id: department.id,
+
+          name:
+            department.department_name ||
+            department.name ||
+            `Department #${department.id}`,
+        }))
+        .sort((a, b) =>
+          a.name.localeCompare(
+            b.name
+          )
+        );
+    }, [departments]);
+
+  /* =========================================================
+     EMPLOYEE CHANGE
+  ========================================================= */
+
+  const handleEmployeeChange = (
+    value
+  ) => {
+    const employee =
+      employees.find(
+        (item) =>
+          String(item.id) ===
+          String(value)
+      );
+
+    const currentDepartment =
+      employee?.department?.id ||
+      employee?.department_id ||
+      "";
+
+    /*
+     * IMPORTANT:
+     *
+     * Do NOT populate location here.
+     *
+     * Employee location and transfer location
+     * are two different things.
+     */
+
+    setForm((current) => ({
+      ...current,
+
+      employee_id: value,
+
+      from_department_id:
+        currentDepartment ||
+        current.from_department_id,
+    }));
+  };
+
+  /* =========================================================
+     CHANGE HANDLER
+  ========================================================= */
+
+  const handleChange = (
+    event
+  ) => {
+    const {
+      name,
+      value,
+    } = event.target;
+
+    setForm((current) => ({
+      ...current,
+      [name]: value,
+    }));
+  };
+
+  /* =========================================================
+     SUBMIT
+  ========================================================= */
+
+  const handleSubmit = async (
+    event
+  ) => {
+    event.preventDefault();
+
+    setError("");
+
+    if (!form.employee_id) {
+      setError(
+        "Please select an employee."
+      );
+      return;
+    }
+
+    if (!form.to_department_id) {
+      setError(
+        "Please select the transfer department."
+      );
+      return;
+    }
+
+    if (
+      form.from_department_id &&
+      String(
+        form.from_department_id
+      ) ===
+        String(
+          form.to_department_id
+        )
+    ) {
+      setError(
+        "Current Department and Transfer Department cannot be the same."
+      );
+      return;
+    }
+
+    if (!form.effective_date) {
+      setError(
+        "Please select the effective date."
+      );
+      return;
+    }
+
+    const payload = {
+      employee_id:
+        Number(form.employee_id),
+
+      from_department_id:
+        form.from_department_id
+          ? Number(
+              form.from_department_id
+            )
+          : null,
+
+      to_department_id:
+        Number(
+          form.to_department_id
+        ),
+
+      transfer_reason:
+        form.transfer_reason ||
+        "Other",
+
+      effective_date:
+        form.effective_date,
+
+      /*
+       * Transfer-specific location.
+       */
+      location:
+        form.location?.trim() ||
+        null,
+
+      accomplishments:
+        form.accomplishments?.trim() ||
+        null,
+    };
+
+    try {
+      await onSubmit(payload);
+    } catch (err) {
+      setError(
+        err?.response?.data?.message ||
+          "Failed to save transfer."
+      );
+    }
+  };
+
   return (
-    <GenericForm
-      formId={formId}
-      fields={fields}
-      initialData={formInitialData}
+    <form
+      id={formId}
       onSubmit={handleSubmit}
-      loading={loading}
-    />
+      className="space-y-5"
+    >
+      {error && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600 dark:border-red-900/40 dark:bg-red-950/20 dark:text-red-400">
+          {error}
+        </div>
+      )}
+
+      {/* =====================================================
+          EMPLOYEE
+      ===================================================== */}
+
+      <div>
+        <label
+          htmlFor="employee_id"
+          className={labelClass}
+        >
+          Employee{" "}
+          <span className="text-red-500">
+            *
+          </span>
+        </label>
+
+        <select
+          id="employee_id"
+          name="employee_id"
+          value={form.employee_id}
+          onChange={(event) =>
+            handleEmployeeChange(
+              event.target.value
+            )
+          }
+          disabled={
+            loadingEmployees ||
+            loading
+          }
+          className={inputClass}
+          required
+        >
+          <option value="">
+            {loadingEmployees
+              ? "Loading employees..."
+              : "Select Employee"}
+          </option>
+
+          {employees.map(
+            (employee) => {
+              const name =
+                `${employee.first_name || ""} ${
+                  employee.last_name || ""
+                }`.trim();
+
+              return (
+                <option
+                  key={employee.id}
+                  value={employee.id}
+                >
+                  {name ||
+                    `Employee #${employee.id}`}
+
+                  {employee.employee_code
+                    ? ` (${employee.employee_code})`
+                    : ""}
+                </option>
+              );
+            }
+          )}
+        </select>
+      </div>
+
+      {/* =====================================================
+          EMPLOYEE INFORMATION
+      ===================================================== */}
+
+      {selectedEmployee && (
+        <div className="grid grid-cols-1 gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 sm:grid-cols-3 dark:border-slate-700 dark:bg-slate-800/60">
+          <div>
+            <p className="text-[10px] uppercase tracking-wide text-slate-400">
+              Company
+            </p>
+
+            <p className="mt-0.5 text-xs font-medium text-slate-700 dark:text-slate-200">
+              {selectedEmployee.department?.company
+                ?.name ||
+                selectedEmployee.company?.name ||
+                "—"}
+            </p>
+          </div>
+
+          <div>
+            <p className="text-[10px] uppercase tracking-wide text-slate-400">
+              Branch
+            </p>
+
+            <p className="mt-0.5 text-xs font-medium text-slate-700 dark:text-slate-200">
+              {selectedEmployee.department?.branch
+                ?.name ||
+                selectedEmployee.branch?.name ||
+                "—"}
+            </p>
+          </div>
+
+          <div>
+            <p className="text-[10px] uppercase tracking-wide text-slate-400">
+              Designation
+            </p>
+
+            <p className="mt-0.5 text-xs font-medium text-slate-700 dark:text-slate-200">
+              {selectedEmployee.designation
+                ?.designation_name ||
+                selectedEmployee.designation_name ||
+                "—"}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* =====================================================
+          DEPARTMENTS
+      ===================================================== */}
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div>
+          <label
+            htmlFor="from_department_id"
+            className={labelClass}
+          >
+            Current Department
+          </label>
+
+          <select
+            id="from_department_id"
+            name="from_department_id"
+            value={
+              form.from_department_id
+            }
+            onChange={handleChange}
+            disabled={loading}
+            className={inputClass}
+          >
+            <option value="">
+              Select Current Department
+            </option>
+
+            {departmentOptions.map(
+              (department) => (
+                <option
+                  key={department.id}
+                  value={department.id}
+                >
+                  {department.name}
+                </option>
+              )
+            )}
+          </select>
+        </div>
+
+        <div>
+          <label
+            htmlFor="to_department_id"
+            className={labelClass}
+          >
+            Transfer Department{" "}
+            <span className="text-red-500">
+              *
+            </span>
+          </label>
+
+          <select
+            id="to_department_id"
+            name="to_department_id"
+            value={
+              form.to_department_id
+            }
+            onChange={handleChange}
+            disabled={
+              loading ||
+              loadingDepartments
+            }
+            className={inputClass}
+            required
+          >
+            <option value="">
+              {loadingDepartments
+                ? "Loading departments..."
+                : "Select Transfer Department"}
+            </option>
+
+            {departmentOptions.map(
+              (department) => (
+                <option
+                  key={department.id}
+                  value={department.id}
+                >
+                  {department.name}
+                </option>
+              )
+            )}
+          </select>
+        </div>
+      </div>
+
+      {/* =====================================================
+          REASON + DATE
+      ===================================================== */}
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div>
+          <label
+            htmlFor="transfer_reason"
+            className={labelClass}
+          >
+            Transfer Reason
+          </label>
+
+          <select
+            id="transfer_reason"
+            name="transfer_reason"
+            value={
+              form.transfer_reason
+            }
+            onChange={handleChange}
+            disabled={loading}
+            className={inputClass}
+          >
+            {COMMON_TRANSFER_REASONS.map(
+              (reason) => (
+                <option
+                  key={reason}
+                  value={reason}
+                >
+                  {reason}
+                </option>
+              )
+            )}
+          </select>
+        </div>
+
+        <div>
+          <label
+            htmlFor="effective_date"
+            className={labelClass}
+          >
+            Effective Date{" "}
+            <span className="text-red-500">
+              *
+            </span>
+          </label>
+
+          <input
+            id="effective_date"
+            name="effective_date"
+            type="date"
+            value={
+              form.effective_date
+            }
+            onChange={handleChange}
+            disabled={loading}
+            className={inputClass}
+            required
+          />
+        </div>
+      </div>
+
+      {/* =====================================================
+          TRANSFER LOCATION
+      ===================================================== */}
+
+      <div>
+        <label
+          htmlFor="location"
+          className={labelClass}
+        >
+          Transfer Location
+        </label>
+
+        <input
+          id="location"
+          name="location"
+          type="text"
+          value={form.location}
+          onChange={handleChange}
+          disabled={loading}
+          placeholder="Enter transfer location"
+          className={inputClass}
+        />
+
+        <p className="mt-1 text-[11px] text-slate-400">
+          Enter the location where the employee is being
+          transferred. This is independent of the employee's
+          current location.
+        </p>
+      </div>
+
+      {/* =====================================================
+          ACCOMPLISHMENTS
+      ===================================================== */}
+
+      <div>
+        <label
+          htmlFor="accomplishments"
+          className={labelClass}
+        >
+          Overall Records / Accomplishments
+        </label>
+
+        <textarea
+          id="accomplishments"
+          name="accomplishments"
+          value={
+            form.accomplishments
+          }
+          onChange={handleChange}
+          disabled={loading}
+          rows={4}
+          placeholder="Enter overall records / accomplishments"
+          className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+        />
+      </div>
+
+      {/* =====================================================
+          ACTIONS
+      ===================================================== */}
+
+      <div className="flex justify-end gap-2 border-t border-slate-200 pt-4 dark:border-slate-700">
+        <Button
+          type="submit"
+          disabled={loading}
+        >
+          {loading
+            ? "Saving..."
+            : initialData?.id
+            ? "Update Transfer"
+            : "Add Transfer"}
+        </Button>
+      </div>
+    </form>
   );
 }

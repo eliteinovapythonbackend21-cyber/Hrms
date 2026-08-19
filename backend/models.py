@@ -1006,21 +1006,25 @@ class Transfer(TimestampMixin, db.Model):
     __tablename__ = "transfers"
 
     id = db.Column(db.Integer, primary_key=True)
+
     employee_id = db.Column(
         db.Integer,
         db.ForeignKey("employees.id"),
         nullable=False,
     )
+
     from_department_id = db.Column(
         db.Integer,
         db.ForeignKey("departments.id"),
         nullable=True,
     )
+
     to_department_id = db.Column(
         db.Integer,
         db.ForeignKey("departments.id"),
         nullable=False,
     )
+
     transfer_reason = db.Column(
         db.String(255),
         nullable=False,
@@ -1032,7 +1036,12 @@ class Transfer(TimestampMixin, db.Model):
         nullable=False,
     )
 
-    remarks = db.Column(
+    location = db.Column(
+        db.String(255),
+        nullable=True,
+    )
+
+    accomplishments = db.Column(
         db.Text,
         nullable=True,
     )
@@ -1063,6 +1072,10 @@ class Transfer(TimestampMixin, db.Model):
 
         data["transfer_reason"] = (
             self.transfer_reason or "Other"
+        )
+
+        data["location"] = (
+            self.location or ""
         )
 
         data["employee"] = _summary(

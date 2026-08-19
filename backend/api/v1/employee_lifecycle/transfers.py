@@ -1,10 +1,10 @@
 from models import Transfer
 from utils import register_crud_blueprint
 
-
 transfers_bp = register_crud_blueprint(
     "transfers_bp",
     Transfer,
+
 
     create_fields=[
         "employee_id",
@@ -12,9 +12,11 @@ transfers_bp = register_crud_blueprint(
         "to_department_id",
         "transfer_reason",
         "effective_date",
-        "remarks",
+        "location",
+        "accomplishments",
         "is_active",
     ],
+
 
     update_fields=[
         "employee_id",
@@ -22,18 +24,24 @@ transfers_bp = register_crud_blueprint(
         "to_department_id",
         "transfer_reason",
         "effective_date",
-        "remarks",
+        "location",
+        "accomplishments",
         "is_active",
     ],
 
+
     search_fields=[
         "transfer_reason",
-        "remarks",
+        "location",
+        "accomplishments",
     ],
+
+
 
     url_prefix_singular="",
     editable=True,
     deletable=True,
+
 
     allowed_roles=[
         "admin",
