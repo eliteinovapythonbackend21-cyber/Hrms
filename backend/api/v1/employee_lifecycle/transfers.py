@@ -12,8 +12,6 @@ transfers_bp = register_crud_blueprint(
         "to_department_id",
         "transfer_reason",
         "effective_date",
-        "location",
-        "accomplishments",
         "remarks",
         "is_active",
     ],
@@ -24,21 +22,16 @@ transfers_bp = register_crud_blueprint(
         "to_department_id",
         "transfer_reason",
         "effective_date",
-        "location",
-        "accomplishments",
         "remarks",
         "is_active",
     ],
 
     search_fields=[
         "transfer_reason",
-        "location",
-        "accomplishments",
         "remarks",
     ],
 
     url_prefix_singular="",
-
     editable=True,
     deletable=True,
 

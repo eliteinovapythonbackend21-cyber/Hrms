@@ -1011,19 +1011,16 @@ class Transfer(TimestampMixin, db.Model):
         db.ForeignKey("employees.id"),
         nullable=False,
     )
-    # Employee's department before the transfer
     from_department_id = db.Column(
         db.Integer,
         db.ForeignKey("departments.id"),
+        nullable=True,
     )
-
-    # Department to which the employee is transferred
     to_department_id = db.Column(
         db.Integer,
         db.ForeignKey("departments.id"),
         nullable=False,
     )
-
     transfer_reason = db.Column(
         db.String(255),
         nullable=False,
@@ -1035,16 +1032,6 @@ class Transfer(TimestampMixin, db.Model):
         nullable=False,
     )
 
-    location = db.Column(
-        db.String(255),
-        nullable=True,
-    )
-
-    accomplishments = db.Column(
-        db.Text,
-        nullable=True,
-    )
-
     remarks = db.Column(
         db.Text,
         nullable=True,
@@ -1053,10 +1040,12 @@ class Transfer(TimestampMixin, db.Model):
     is_active = db.Column(
         db.Boolean,
         default=True,
+        nullable=False,
     )
 
     employee = db.relationship(
         "Employee",
+        foreign_keys=[employee_id],
     )
 
     from_department = db.relationship(
@@ -1074,14 +1063,6 @@ class Transfer(TimestampMixin, db.Model):
 
         data["transfer_reason"] = (
             self.transfer_reason or "Other"
-        )
-
-        data["location"] = (
-            self.location or ""
-        )
-
-        data["accomplishments"] = (
-            self.accomplishments or ""
         )
 
         data["employee"] = _summary(
