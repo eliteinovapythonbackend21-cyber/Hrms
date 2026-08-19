@@ -1005,7 +1005,10 @@ class Promotion(TimestampMixin, db.Model):
 class Transfer(TimestampMixin, db.Model):
     __tablename__ = "transfers"
 
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(
+        db.Integer,
+        primary_key=True,
+    )
 
     employee_id = db.Column(
         db.Integer,
@@ -1031,7 +1034,17 @@ class Transfer(TimestampMixin, db.Model):
         default="Other",
     )
 
-    effective_date = db.Column(
+    transfer_apply_date = db.Column(
+        db.Date,
+        nullable=False,
+    )
+
+    releiving_date = db.Column(
+        db.Date,
+        nullable=False,
+    )
+
+    joining_date = db.Column(
         db.Date,
         nullable=False,
     )
@@ -1072,6 +1085,18 @@ class Transfer(TimestampMixin, db.Model):
 
         data["transfer_reason"] = (
             self.transfer_reason or "Other"
+        )
+
+        data["transfer_apply_date"] = (
+            self.transfer_apply_date
+        )
+
+        data["releiving_date"] = (
+            self.releiving_date
+        )
+
+        data["joining_date"] = (
+            self.joining_date
         )
 
         data["location"] = (

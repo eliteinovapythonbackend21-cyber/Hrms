@@ -25,56 +25,128 @@ const inputClass =
 const labelClass =
   "mb-1.5 block text-xs font-medium text-slate-700 dark:text-slate-300";
 
+const DEFAULT_FORM = {
+  employee_id: "",
+  from_department_id: "",
+  to_department_id: "",
+  transfer_reason: "Other",
+  transfer_apply_date: "",
+  joining_date: "",
+  relieving_date: "",
+  location: "",
+  accomplishments: "",
+  is_active: true,
+};
+
+function normalizeDate(value) {
+  if (!value) {
+    return "";
+  }
+
+  return String(value).slice(0, 10);
+}
+
+function normalizeTransferData(initialData = {}) {
+  return {
+    employee_id:
+      initialData?.employee_id ||
+      initialData?.employee?.id ||
+      "",
+
+    from_department_id:
+      initialData?.from_department_id ||
+      initialData?.from_department?.id ||
+      "",
+
+    to_department_id:
+      initialData?.to_department_id ||
+      initialData?.to_department?.id ||
+      "",
+
+    transfer_reason:
+      initialData?.transfer_reason ||
+      initialData?.reason ||
+      "Other",
+
+    transfer_apply_date: normalizeDate(
+      initialData?.transfer_apply_date
+    ),
+
+    joining_date: normalizeDate(
+      initialData?.joining_date
+    ),
+
+    relieving_date: normalizeDate(
+      initialData?.relieving_date
+    ),
+
+    /*
+     * IMPORTANT:
+     * Location belongs to the transfer record.
+     * Never populate this from employee.location.
+     */
+    location:
+      initialData?.location || "",
+
+    accomplishments:
+      initialData?.accomplishments ||
+      "",
+
+    is_active:
+      initialData?.is_active !== false,
+  };
+}
+
 export default function TransferForm({
   formId = "transfer-form",
   initialData = {},
   onSubmit,
   loading = false,
 }) {
-  const [employees, setEmployees] = useState([]);
-  const [departments, setDepartments] = useState([]);
-  const [companies, setCompanies] = useState([]);
-  const [branches, setBranches] = useState([]);
+  const [employees, setEmployees] =
+    useState([]);
 
-  const [loadingEmployees, setLoadingEmployees] =
-    useState(false);
+  const [departments, setDepartments] =
+    useState([]);
 
-  const [loadingDepartments, setLoadingDepartments] =
-    useState(false);
+  const [companies, setCompanies] =
+    useState([]);
 
-  const [form, setForm] = useState({
-    employee_id:
-      initialData.employee_id || "",
+  const [branches, setBranches] =
+    useState([]);
 
-    from_department_id:
-      initialData.from_department_id || "",
+  const [
+    loadingEmployees,
+    setLoadingEmployees,
+  ] = useState(false);
 
-    to_department_id:
-      initialData.to_department_id || "",
+  const [
+    loadingDepartments,
+    setLoadingDepartments,
+  ] = useState(false);
 
-    transfer_reason:
-      initialData.transfer_reason ||
-      initialData.reason ||
-      "Other",
+  const [form, setForm] =
+    useState(() =>
+      normalizeTransferData(
+        initialData
+      )
+    );
 
-    effective_date:
-      initialData.effective_date || "",
+  const [error, setError] =
+    useState("");
 
-    /*
-     * IMPORTANT:
-     * Transfer location comes only from
-     * the transfer record.
-     *
-     * It must NOT come from employee.location.
-     */
-    location:
-      initialData.location || "",
+  /* =========================================================
+     SYNC EDIT DATA
+  ========================================================= */
 
-    accomplishments:
-      initialData.accomplishments || "",
-  });
-
-  const [error, setError] = useState("");
+  useEffect(() => {
+    setForm({
+      ...DEFAULT_FORM,
+      ...normalizeTransferData(
+        initialData
+      ),
+    });
+  }, [initialData]);
 
   /* =========================================================
      LOAD EMPLOYEES
@@ -83,38 +155,41 @@ export default function TransferForm({
   useEffect(() => {
     let mounted = true;
 
-    const loadEmployees = async () => {
-      try {
-        setLoadingEmployees(true);
+    const loadEmployees =
+      async () => {
+        try {
+          setLoadingEmployees(true);
 
-        const response =
-          await employeesApi.list({
-            page: 1,
-            per_page: 1000,
-            is_active: true,
-          });
+          const response =
+            await employeesApi.list({
+              page: 1,
+              per_page: 1000,
+              is_active: true,
+            });
 
-        if (!mounted) return;
+          if (!mounted) {
+            return;
+          }
 
-        const data =
-          response?.data?.data ||
-          response?.data ||
-          {};
+          const data =
+            response?.data?.data ||
+            response?.data ||
+            {};
 
-        setEmployees(
-          data?.items || []
-        );
-      } catch (err) {
-        console.error(
-          "Failed to load employees",
-          err
-        );
-      } finally {
-        if (mounted) {
-          setLoadingEmployees(false);
+          setEmployees(
+            data?.items || []
+          );
+        } catch (err) {
+          console.error(
+            "Failed to load employees",
+            err
+          );
+        } finally {
+          if (mounted) {
+            setLoadingEmployees(false);
+          }
         }
-      }
-    };
+      };
 
     loadEmployees();
 
@@ -130,37 +205,44 @@ export default function TransferForm({
   useEffect(() => {
     let mounted = true;
 
-    const loadDepartments = async () => {
-      try {
-        setLoadingDepartments(true);
+    const loadDepartments =
+      async () => {
+        try {
+          setLoadingDepartments(
+            true
+          );
 
-        const response =
-          await masterApi.listDepartments({
-            page: 1,
-            per_page: 1000,
-          });
+          const response =
+            await masterApi.listDepartments({
+              page: 1,
+              per_page: 1000,
+            });
 
-        if (!mounted) return;
+          if (!mounted) {
+            return;
+          }
 
-        const data =
-          response?.data?.data ||
-          response?.data ||
-          {};
+          const data =
+            response?.data?.data ||
+            response?.data ||
+            {};
 
-        setDepartments(
-          data?.items || []
-        );
-      } catch (err) {
-        console.error(
-          "Failed to load departments",
-          err
-        );
-      } finally {
-        if (mounted) {
-          setLoadingDepartments(false);
+          setDepartments(
+            data?.items || []
+          );
+        } catch (err) {
+          console.error(
+            "Failed to load departments",
+            err
+          );
+        } finally {
+          if (mounted) {
+            setLoadingDepartments(
+              false
+            );
+          }
         }
-      }
-    };
+      };
 
     loadDepartments();
 
@@ -173,12 +255,11 @@ export default function TransferForm({
      LOAD COMPANIES
   ========================================================= */
 
-  const {
-    data: companyData,
-  } = useCompanies({
-    page: 1,
-    per_page: 1000,
-  });
+  const { data: companyData } =
+    useCompanies({
+      page: 1,
+      per_page: 1000,
+    });
 
   useEffect(() => {
     const items =
@@ -196,116 +277,119 @@ export default function TransferForm({
   useEffect(() => {
     const map = new Map();
 
-    employees.forEach((employee) => {
-      const branch =
-        employee?.department?.branch;
+    employees.forEach(
+      (employee) => {
+        const branch =
+          employee?.department
+            ?.branch ||
+          employee?.branch;
 
-      if (branch?.id) {
-        map.set(
-          branch.id,
-          branch
-        );
+        if (branch?.id) {
+          map.set(
+            branch.id,
+            branch
+          );
+        }
       }
-    });
+    );
 
-    companies.forEach((company) => {
-      (company?.branches || []).forEach(
-        (branch) => {
+    companies.forEach(
+      (company) => {
+        (
+          company?.branches || []
+        ).forEach((branch) => {
           if (branch?.id) {
             map.set(
               branch.id,
               branch
             );
           }
-        }
-      );
-    });
+        });
+      }
+    );
 
     setBranches(
       Array.from(map.values())
     );
-  }, [
-    employees,
-    companies,
-  ]);
+  }, [employees, companies]);
 
   /* =========================================================
      SELECTED EMPLOYEE
   ========================================================= */
 
-  const selectedEmployee = useMemo(
-    () =>
-      employees.find(
-        (employee) =>
-          String(employee.id) ===
-          String(form.employee_id)
-      ),
-    [
-      employees,
-      form.employee_id,
-    ]
-  );
+  const selectedEmployee =
+    useMemo(
+      () =>
+        employees.find(
+          (employee) =>
+            String(employee.id) ===
+            String(
+              form.employee_id
+            )
+        ),
+      [
+        employees,
+        form.employee_id,
+      ]
+    );
 
   /* =========================================================
      DEPARTMENT OPTIONS
   ========================================================= */
 
   const departmentOptions =
-    useMemo(() => {
-      return departments
-        .map((department) => ({
-          id: department.id,
+    useMemo(
+      () =>
+        departments
+          .map((department) => ({
+            id: department.id,
 
-          name:
-            department.department_name ||
-            department.name ||
-            `Department #${department.id}`,
-        }))
-        .sort((a, b) =>
-          a.name.localeCompare(
-            b.name
-          )
-        );
-    }, [departments]);
+            name:
+              department.department_name ||
+              department.name ||
+              `Department #${department.id}`,
+          }))
+          .sort((a, b) =>
+            a.name.localeCompare(
+              b.name
+            )
+          ),
+      [departments]
+    );
 
   /* =========================================================
      EMPLOYEE CHANGE
   ========================================================= */
 
-  const handleEmployeeChange = (
-    value
-  ) => {
-    const employee =
-      employees.find(
-        (item) =>
-          String(item.id) ===
-          String(value)
-      );
+  const handleEmployeeChange =
+    (value) => {
+      const employee =
+        employees.find(
+          (item) =>
+            String(item.id) ===
+            String(value)
+        );
 
-    const currentDepartment =
-      employee?.department?.id ||
-      employee?.department_id ||
-      "";
+      const currentDepartment =
+        employee?.department?.id ||
+        employee?.department_id ||
+        "";
 
-    /*
-     * IMPORTANT:
-     *
-     * Do NOT populate location here.
-     *
-     * Employee location and transfer location
-     * are two different things.
-     */
+      /*
+       * Do not populate transfer location
+       * from employee location.
+       */
 
-    setForm((current) => ({
-      ...current,
+      setForm((current) => ({
+        ...current,
 
-      employee_id: value,
+        employee_id: value,
 
-      from_department_id:
-        currentDepartment ||
-        current.from_department_id,
-    }));
-  };
+        from_department_id:
+          currentDepartment ||
+          current.from_department_id,
+      }));
+    };
 
   /* =========================================================
      CHANGE HANDLER
@@ -329,93 +413,143 @@ export default function TransferForm({
      SUBMIT
   ========================================================= */
 
-  const handleSubmit = async (
-    event
-  ) => {
-    event.preventDefault();
+  const handleSubmit =
+    async (event) => {
+      event.preventDefault();
 
-    setError("");
+      setError("");
 
-    if (!form.employee_id) {
-      setError(
-        "Please select an employee."
-      );
-      return;
-    }
+      if (!form.employee_id) {
+        setError(
+          "Please select an employee."
+        );
+        return;
+      }
 
-    if (!form.to_department_id) {
-      setError(
-        "Please select the transfer department."
-      );
-      return;
-    }
+      if (!form.from_department_id) {
+        setError(
+          "Please select the current department."
+        );
+        return;
+      }
 
-    if (
-      form.from_department_id &&
-      String(
-        form.from_department_id
-      ) ===
+      if (!form.to_department_id) {
+        setError(
+          "Please select the transfer department."
+        );
+        return;
+      }
+
+      if (
+        String(
+          form.from_department_id
+        ) ===
         String(
           form.to_department_id
         )
-    ) {
-      setError(
-        "Current Department and Transfer Department cannot be the same."
-      );
-      return;
-    }
+      ) {
+        setError(
+          "Current Department and Transfer Department cannot be the same."
+        );
+        return;
+      }
 
-    if (!form.effective_date) {
-      setError(
-        "Please select the effective date."
-      );
-      return;
-    }
+      if (
+        !form.transfer_apply_date
+      ) {
+        setError(
+          "Please select the transfer apply date."
+        );
+        return;
+      }
 
-    const payload = {
-      employee_id:
-        Number(form.employee_id),
+      if (!form.relieving_date) {
+        setError(
+          "Please select the relieving date."
+        );
+        return;
+      }
 
-      from_department_id:
-        form.from_department_id
-          ? Number(
-              form.from_department_id
-            )
-          : null,
+      if (!form.joining_date) {
+        setError(
+          "Please select the joining date."
+        );
+        return;
+      }
 
-      to_department_id:
-        Number(
-          form.to_department_id
-        ),
+      if (!form.location.trim()) {
+        setError(
+          "Please enter the transfer location."
+        );
+        return;
+      }
 
-      transfer_reason:
-        form.transfer_reason ||
-        "Other",
+      if (
+        new Date(
+          form.joining_date
+        ) <
+        new Date(
+          form.relieving_date
+        )
+      ) {
+        setError(
+          "Joining Date cannot be before Relieving Date."
+        );
+        return;
+      }
 
-      effective_date:
-        form.effective_date,
+      const payload = {
+        employee_id:
+          Number(form.employee_id),
 
-      /*
-       * Transfer-specific location.
-       */
-      location:
-        form.location?.trim() ||
-        null,
+        from_department_id:
+          form.from_department_id
+            ? Number(
+                form.from_department_id
+              )
+            : null,
 
-      accomplishments:
-        form.accomplishments?.trim() ||
-        null,
+        to_department_id:
+          Number(
+            form.to_department_id
+          ),
+
+        transfer_reason:
+          form.transfer_reason ||
+          "Other",
+
+        transfer_apply_date:
+          form.transfer_apply_date,
+
+        joining_date:
+          form.joining_date,
+
+        relieving_date:
+          form.relieving_date,
+
+        /*
+         * Transfer-specific location.
+         */
+        location:
+          form.location.trim(),
+
+        accomplishments:
+          form.accomplishments.trim() ||
+          null,
+
+        is_active:
+          form.is_active,
+      };
+
+      try {
+        await onSubmit(payload);
+      } catch (err) {
+        setError(
+          err?.response?.data?.message ||
+            "Failed to save transfer."
+        );
+      }
     };
-
-    try {
-      await onSubmit(payload);
-    } catch (err) {
-      setError(
-        err?.response?.data?.message ||
-          "Failed to save transfer."
-      );
-    }
-  };
 
   return (
     <form
@@ -447,7 +581,9 @@ export default function TransferForm({
         <select
           id="employee_id"
           name="employee_id"
-          value={form.employee_id}
+          value={
+            form.employee_id
+          }
           onChange={(event) =>
             handleEmployeeChange(
               event.target.value
@@ -475,8 +611,12 @@ export default function TransferForm({
 
               return (
                 <option
-                  key={employee.id}
-                  value={employee.id}
+                  key={
+                    employee.id
+                  }
+                  value={
+                    employee.id
+                  }
                 >
                   {name ||
                     `Employee #${employee.id}`}
@@ -503,9 +643,11 @@ export default function TransferForm({
             </p>
 
             <p className="mt-0.5 text-xs font-medium text-slate-700 dark:text-slate-200">
-              {selectedEmployee.department?.company
+              {selectedEmployee
+                .department?.company
                 ?.name ||
-                selectedEmployee.company?.name ||
+                selectedEmployee
+                  .company?.name ||
                 "—"}
             </p>
           </div>
@@ -516,9 +658,11 @@ export default function TransferForm({
             </p>
 
             <p className="mt-0.5 text-xs font-medium text-slate-700 dark:text-slate-200">
-              {selectedEmployee.department?.branch
+              {selectedEmployee
+                .department?.branch
                 ?.name ||
-                selectedEmployee.branch?.name ||
+                selectedEmployee
+                  .branch?.name ||
                 "—"}
             </p>
           </div>
@@ -529,9 +673,11 @@ export default function TransferForm({
             </p>
 
             <p className="mt-0.5 text-xs font-medium text-slate-700 dark:text-slate-200">
-              {selectedEmployee.designation
+              {selectedEmployee
+                .designation
                 ?.designation_name ||
-                selectedEmployee.designation_name ||
+                selectedEmployee
+                  .designation_name ||
                 "—"}
             </p>
           </div>
@@ -548,7 +694,10 @@ export default function TransferForm({
             htmlFor="from_department_id"
             className={labelClass}
           >
-            Current Department
+            Current Department{" "}
+            <span className="text-red-500">
+              *
+            </span>
           </label>
 
           <select
@@ -557,9 +706,12 @@ export default function TransferForm({
             value={
               form.from_department_id
             }
-            onChange={handleChange}
+            onChange={
+              handleChange
+            }
             disabled={loading}
             className={inputClass}
+            required
           >
             <option value="">
               Select Current Department
@@ -568,10 +720,16 @@ export default function TransferForm({
             {departmentOptions.map(
               (department) => (
                 <option
-                  key={department.id}
-                  value={department.id}
+                  key={
+                    department.id
+                  }
+                  value={
+                    department.id
+                  }
                 >
-                  {department.name}
+                  {
+                    department.name
+                  }
                 </option>
               )
             )}
@@ -595,7 +753,9 @@ export default function TransferForm({
             value={
               form.to_department_id
             }
-            onChange={handleChange}
+            onChange={
+              handleChange
+            }
             disabled={
               loading ||
               loadingDepartments
@@ -612,10 +772,16 @@ export default function TransferForm({
             {departmentOptions.map(
               (department) => (
                 <option
-                  key={department.id}
-                  value={department.id}
+                  key={
+                    department.id
+                  }
+                  value={
+                    department.id
+                  }
                 >
-                  {department.name}
+                  {
+                    department.name
+                  }
                 </option>
               )
             )}
@@ -624,7 +790,7 @@ export default function TransferForm({
       </div>
 
       {/* =====================================================
-          REASON + DATE
+          REASON + APPLY DATE
       ===================================================== */}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -642,7 +808,9 @@ export default function TransferForm({
             value={
               form.transfer_reason
             }
-            onChange={handleChange}
+            onChange={
+              handleChange
+            }
             disabled={loading}
             className={inputClass}
           >
@@ -661,23 +829,85 @@ export default function TransferForm({
 
         <div>
           <label
-            htmlFor="effective_date"
+            htmlFor="transfer_apply_date"
             className={labelClass}
           >
-            Effective Date{" "}
+            Transfer Apply Date{" "}
             <span className="text-red-500">
               *
             </span>
           </label>
 
           <input
-            id="effective_date"
-            name="effective_date"
+            id="transfer_apply_date"
+            name="transfer_apply_date"
             type="date"
             value={
-              form.effective_date
+              form.transfer_apply_date
             }
-            onChange={handleChange}
+            onChange={
+              handleChange
+            }
+            disabled={loading}
+            className={inputClass}
+            required
+          />
+        </div>
+      </div>
+
+      {/* =====================================================
+          RELIEVING + JOINING DATE
+      ===================================================== */}
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div>
+          <label
+            htmlFor="relieving_date"
+            className={labelClass}
+          >
+            Relieving Date{" "}
+            <span className="text-red-500">
+              *
+            </span>
+          </label>
+
+          <input
+            id="relieving_date"
+            name="relieving_date"
+            type="date"
+            value={
+              form.relieving_date
+            }
+            onChange={
+              handleChange
+            }
+            disabled={loading}
+            className={inputClass}
+            required
+          />
+        </div>
+
+        <div>
+          <label
+            htmlFor="joining_date"
+            className={labelClass}
+          >
+            Joining Date{" "}
+            <span className="text-red-500">
+              *
+            </span>
+          </label>
+
+          <input
+            id="joining_date"
+            name="joining_date"
+            type="date"
+            value={
+              form.joining_date
+            }
+            onChange={
+              handleChange
+            }
             disabled={loading}
             className={inputClass}
             required
@@ -694,7 +924,10 @@ export default function TransferForm({
           htmlFor="location"
           className={labelClass}
         >
-          Transfer Location
+          Transfer Location{" "}
+          <span className="text-red-500">
+            *
+          </span>
         </label>
 
         <input
@@ -702,16 +935,18 @@ export default function TransferForm({
           name="location"
           type="text"
           value={form.location}
-          onChange={handleChange}
+          onChange={
+            handleChange
+          }
           disabled={loading}
           placeholder="Enter transfer location"
           className={inputClass}
+          required
         />
 
         <p className="mt-1 text-[11px] text-slate-400">
-          Enter the location where the employee is being
-          transferred. This is independent of the employee's
-          current location.
+          This location belongs to the transfer record
+          and is independent of the employee's location.
         </p>
       </div>
 
@@ -733,7 +968,9 @@ export default function TransferForm({
           value={
             form.accomplishments
           }
-          onChange={handleChange}
+          onChange={
+            handleChange
+          }
           disabled={loading}
           rows={4}
           placeholder="Enter overall records / accomplishments"
@@ -753,8 +990,8 @@ export default function TransferForm({
           {loading
             ? "Saving..."
             : initialData?.id
-            ? "Update Transfer"
-            : "Add Transfer"}
+              ? "Update Transfer"
+              : "Add Transfer"}
         </Button>
       </div>
     </form>

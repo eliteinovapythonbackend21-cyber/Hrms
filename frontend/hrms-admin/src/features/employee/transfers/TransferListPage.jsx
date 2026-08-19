@@ -56,8 +56,16 @@ const EXPORT_COLUMNS = [
     label: "Location",
   },
   {
-    key: "effective_date",
-    label: "Effective Date",
+    key: "transfer_apply_date",
+    label: "Transfer Apply Date",
+  },
+  {
+    key: "relieving_date",
+    label: "Relieving Date",
+  },
+  {
+    key: "joining_date",
+    label: "Joining Date",
   },
   {
     key: "transfer_reason",
@@ -72,6 +80,72 @@ const EXPORT_COLUMNS = [
     label: "Active",
   },
 ];
+
+/* =========================================================
+   HELPERS
+========================================================= */
+
+function getEmployeeName(employee) {
+  if (!employee) {
+    return "";
+  }
+
+  return (
+    `${employee.first_name || ""} ${
+      employee.last_name || ""
+    }`.trim() ||
+    employee.employee_code ||
+    ""
+  );
+}
+
+function getDepartmentName(
+  department,
+  fallback = "—"
+) {
+  return (
+    department?.department_name ||
+    department?.name ||
+    fallback
+  );
+}
+
+function getTransferLocation(
+  transfer
+) {
+  /*
+   * IMPORTANT:
+   *
+   * Transfer location MUST come from
+   * the transfer table.
+   *
+   * Never use employee.location here.
+   */
+  return (
+    String(
+      transfer?.location || ""
+    ).trim() || "—"
+  );
+}
+
+function getAccomplishments(
+  transfer
+) {
+  return String(
+    transfer?.accomplishments ||
+      ""
+  ).trim();
+}
+
+function getTransferReason(
+  transfer
+) {
+  return String(
+    transfer?.transfer_reason ||
+      transfer?.reason ||
+      ""
+  ).trim();
+}
 
 /* =========================================================
    ICONS
@@ -152,6 +226,30 @@ const ArrowIcon = () => (
   </svg>
 );
 
+const SmallCalendarIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className="h-3.5 w-3.5 shrink-0 text-slate-400 dark:text-slate-500"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    strokeWidth={2}
+  >
+    <rect
+      x="3"
+      y="4.5"
+      width="18"
+      height="16"
+      rx="2"
+    />
+
+    <path
+      strokeLinecap="round"
+      d="M3 9h18M8 3v3M16 3v3"
+    />
+  </svg>
+);
+
 /* =========================================================
    STAT CARD
 ========================================================= */
@@ -202,13 +300,13 @@ function DepartmentBadge({
     from:
       "bg-slate-400 dark:bg-slate-500",
 
-    to:
-      "bg-sky-500",
+    to: "bg-sky-500",
   };
 
   return (
     <span
-      className={`inline-flex max-w-full items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset ${tones[tone]}`}
+      title={label}
+      className={`inline-flex max-w-full cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset ${tones[tone]}`}
     >
       <span
         className={`h-1.5 w-1.5 shrink-0 rounded-full ${dots[tone]}`}
@@ -222,6 +320,287 @@ function DepartmentBadge({
 }
 
 /* =========================================================
+   DEPARTMENT DETAILS CARD
+========================================================= */
+
+function DepartmentDetailsCard({
+  roleLabel,
+  tone,
+  department,
+  departmentFallback,
+  employeeName,
+  employeeCode,
+  location,
+  transferReason,
+  transferApplyDate,
+  relievingDate,
+  joiningDate,
+  accomplishments,
+  isActive,
+}) {
+  const accentTones = {
+    from:
+      "border-t-slate-400 dark:border-t-slate-500",
+
+    to:
+      "border-t-sky-500 dark:border-t-sky-400",
+  };
+
+  const departmentName =
+    getDepartmentName(
+      department,
+      departmentFallback
+    );
+
+  return (
+    <div
+      className={`w-[340px] max-w-[calc(100vw-32px)] rounded-xl border border-slate-200 border-t-2 bg-white p-4 text-left shadow-xl dark:border-slate-700 dark:bg-slate-800 ${accentTones[tone]}`}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+            {roleLabel}
+          </p>
+
+          <p className="mt-1 break-words text-sm font-semibold leading-5 text-slate-800 dark:text-white">
+            {departmentName}
+          </p>
+        </div>
+
+        <span
+          className={`shrink-0 rounded-full px-2 py-1 text-[9px] font-semibold ${
+            isActive
+              ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300"
+              : "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300"
+          }`}
+        >
+          {isActive
+            ? "Active"
+            : "Inactive"}
+        </span>
+      </div>
+
+      {department?.description && (
+        <>
+          <div className="my-3 border-t border-slate-100 dark:border-slate-700" />
+
+          <div>
+            <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
+              Description
+            </p>
+
+            <p className="text-xs leading-5 text-slate-600 dark:text-slate-300">
+              {department.description}
+            </p>
+          </div>
+        </>
+      )}
+
+      <div className="my-3 border-t border-slate-100 dark:border-slate-700" />
+
+      <div className="space-y-2.5">
+        <div className="grid grid-cols-[90px_minmax(0,1fr)] gap-3">
+          <span className="text-xs text-slate-400 dark:text-slate-500">
+            Employee
+          </span>
+
+          <span className="break-words text-right text-xs font-medium text-slate-700 dark:text-slate-200">
+            {employeeName}
+
+            {employeeCode
+              ? ` (${employeeCode})`
+              : ""}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-[90px_minmax(0,1fr)] gap-3">
+          <span className="text-xs text-slate-400 dark:text-slate-500">
+            Location
+          </span>
+
+          <span className="break-words text-right text-xs font-medium text-slate-700 dark:text-slate-200">
+            {location || "—"}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-[90px_minmax(0,1fr)] gap-3">
+          <span className="text-xs text-slate-400 dark:text-slate-500">
+            Transfer Reason
+          </span>
+
+          <span className="break-words text-right text-xs font-medium text-slate-700 dark:text-slate-200">
+            {transferReason ||
+              "Other"}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-[90px_minmax(0,1fr)] gap-3">
+          <span className="text-xs text-slate-400 dark:text-slate-500">
+            Apply Date
+          </span>
+
+          <span className="text-right text-xs font-medium text-slate-700 dark:text-slate-200">
+            {formatDate(
+              transferApplyDate
+            )}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-[90px_minmax(0,1fr)] gap-3">
+          <span className="text-xs text-slate-400 dark:text-slate-500">
+            Relieving Date
+          </span>
+
+          <span className="text-right text-xs font-medium text-slate-700 dark:text-slate-200">
+            {formatDate(
+              relievingDate
+            )}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-[90px_minmax(0,1fr)] gap-3">
+          <span className="text-xs text-slate-400 dark:text-slate-500">
+            Joining Date
+          </span>
+
+          <span className="text-right text-xs font-medium text-slate-700 dark:text-slate-200">
+            {formatDate(
+              joiningDate
+            )}
+          </span>
+        </div>
+      </div>
+
+      <div className="my-3 border-t border-slate-100 dark:border-slate-700" />
+
+      <div>
+        <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
+          Overall Records / Accomplishments
+        </p>
+
+        <p className="max-h-[120px] overflow-y-auto whitespace-pre-wrap break-words text-xs leading-5 text-slate-600 dark:text-slate-300">
+          {accomplishments ||
+            "—"}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/* =========================================================
+   HOVER TRIGGER
+========================================================= */
+
+function DepartmentHoverTrigger({
+  children,
+  panel,
+  align = "left",
+}) {
+  const alignClasses = {
+    left: "left-0",
+    center:
+      "left-1/2 -translate-x-1/2",
+    right: "right-0",
+  };
+
+  return (
+    <div
+      tabIndex={0}
+      className="group/department relative inline-flex max-w-full outline-none"
+    >
+      <div className="max-w-full">
+        {children}
+      </div>
+
+      <div
+        className={`
+          pointer-events-none
+          invisible
+          absolute
+          top-full
+          z-[100]
+          mt-2
+          opacity-0
+          transition-all
+          duration-150
+          group-hover/department:pointer-events-auto
+          group-hover/department:visible
+          group-hover/department:opacity-100
+          group-focus/department:pointer-events-auto
+          group-focus/department:visible
+          group-focus/department:opacity-100
+          ${alignClasses[align]}
+        `}
+      >
+        {panel}
+      </div>
+    </div>
+  );
+}
+
+/* =========================================================
+   ACCOMPLISHMENTS HOVER CARD
+========================================================= */
+
+function AccomplishmentsHoverCard({
+  accomplishments,
+}) {
+  return (
+    <div className="w-[340px] max-w-[calc(100vw-32px)] rounded-xl border border-slate-200 border-t-2 border-t-primary-500 bg-white p-4 text-left shadow-xl dark:border-slate-700 dark:bg-slate-800">
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+        Overall Records / Accomplishments
+      </p>
+
+      <div className="mt-2 max-h-[220px] overflow-y-auto">
+        <p className="whitespace-pre-wrap break-words text-xs leading-5 text-slate-600 dark:text-slate-300">
+          {accomplishments ||
+            "No accomplishments recorded."}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/* =========================================================
+   ACCOMPLISHMENTS PREVIEW
+========================================================= */
+
+function AccomplishmentsPreview({
+  accomplishments,
+}) {
+  const value =
+    accomplishments || "";
+
+  if (!value) {
+    return (
+      <span className="text-xs text-slate-300 dark:text-slate-600">
+        —
+      </span>
+    );
+  }
+
+  return (
+    <DepartmentHoverTrigger
+      align="right"
+      panel={
+        <AccomplishmentsHoverCard
+          accomplishments={
+            value
+          }
+        />
+      }
+    >
+      <p
+        title={value}
+        className="line-clamp-2 max-w-full cursor-pointer whitespace-normal break-words text-xs leading-4 text-slate-600 dark:text-slate-300"
+      >
+        {value}
+      </p>
+    </DepartmentHoverTrigger>
+  );
+}
+
+/* =========================================================
    REASON BADGE
 ========================================================= */
 
@@ -230,11 +609,14 @@ function ReasonBadge({
 }) {
   return (
     <span
-      title={reason || "Other"}
+      title={
+        reason || "Other"
+      }
       className="inline-flex max-w-full items-center rounded-full bg-sky-50 px-2.5 py-1 text-xs font-medium text-sky-700 ring-1 ring-inset ring-sky-600/20 dark:bg-sky-500/10 dark:text-sky-400 dark:ring-sky-400/30"
     >
       <span className="max-w-[180px] truncate">
-        {reason || "Other"}
+        {reason ||
+          "Other"}
       </span>
     </span>
   );
@@ -272,7 +654,7 @@ const TableIconButton = ({
       disabled={disabled}
       title={title}
       aria-label={title}
-      className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${tones[tone]}`}
+      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${tones[tone]}`}
     >
       {children}
     </button>
@@ -284,7 +666,8 @@ const TableIconButton = ({
 ========================================================= */
 
 export default function TransferListPage() {
-  const { showToast } = useToast();
+  const { showToast } =
+    useToast();
 
   /* =======================================================
      TRANSFERS
@@ -329,18 +712,19 @@ export default function TransferListPage() {
   const employees =
     employeesData?.items || [];
 
-  const employeeMap = useMemo(
-    () =>
-      Object.fromEntries(
-        employees.map(
-          (employee) => [
-            employee.id,
-            employee,
-          ]
-        )
-      ),
-    [employees]
-  );
+  const employeeMap =
+    useMemo(
+      () =>
+        Object.fromEntries(
+          employees.map(
+            (employee) => [
+              employee.id,
+              employee,
+            ]
+          )
+        ),
+      [employees]
+    );
 
   /* =======================================================
      COMPANIES
@@ -405,122 +789,141 @@ export default function TransferListPage() {
      BRANCH OPTIONS
   ======================================================= */
 
-  const branches = useMemo(() => {
-    const map = new Map();
+  const branches =
+    useMemo(() => {
+      const map = new Map();
 
-    employees.forEach(
-      (employee) => {
-        const branch =
-          employee.department?.branch ||
-          employee.branch;
+      employees.forEach(
+        (employee) => {
+          const branch =
+            employee?.department
+              ?.branch ||
+            employee?.branch;
 
-        if (!branch?.id) return;
-
-        const employeeCompany =
-          employee.department?.company ||
-          employee.company;
-
-        if (
-          filterCompanyId &&
-          String(
-            employeeCompany?.id
-          ) !==
-            String(filterCompanyId)
-        ) {
-          return;
-        }
-
-        map.set(
-          branch.id,
-          branch
-        );
-      }
-    );
-
-    companies.forEach(
-      (company) => {
-        if (
-          filterCompanyId &&
-          String(company.id) !==
-            String(filterCompanyId)
-        ) {
-          return;
-        }
-
-        (
-          company.branches || []
-        ).forEach(
-          (branch) => {
-            if (branch?.id) {
-              map.set(
-                branch.id,
-                branch
-              );
-            }
+          if (!branch?.id) {
+            return;
           }
-        );
-      }
-    );
 
-    return Array.from(
-      map.values()
-    ).sort((a, b) =>
-      (
-        a.name ||
-        a.branch_name ||
-        ""
-      ).localeCompare(
-        b.name ||
-          b.branch_name ||
+          const company =
+            employee
+              ?.department?.company ||
+            employee?.company;
+
+          if (
+            filterCompanyId &&
+            String(
+              company?.id
+            ) !==
+              String(
+                filterCompanyId
+              )
+          ) {
+            return;
+          }
+
+          map.set(
+            branch.id,
+            branch
+          );
+        }
+      );
+
+      companies.forEach(
+        (company) => {
+          if (
+            filterCompanyId &&
+            String(
+              company.id
+            ) !==
+              String(
+                filterCompanyId
+              )
+          ) {
+            return;
+          }
+
+          (
+            company?.branches ||
+            []
+          ).forEach(
+            (branch) => {
+              if (branch?.id) {
+                map.set(
+                  branch.id,
+                  branch
+                );
+              }
+            }
+          );
+        }
+      );
+
+      return Array.from(
+        map.values()
+      ).sort((a, b) =>
+        (
+          a.name ||
+          a.branch_name ||
           ""
-      )
-    );
-  }, [
-    employees,
-    companies,
-    filterCompanyId,
-  ]);
+        ).localeCompare(
+          b.name ||
+            b.branch_name ||
+            ""
+        )
+      );
+    }, [
+      employees,
+      companies,
+      filterCompanyId,
+    ]);
 
   /* =======================================================
      REASONS
   ======================================================= */
 
-  const reasonOptions = useMemo(() => {
-    const reasons = new Set();
+  const reasonOptions =
+    useMemo(() => {
+      const reasons =
+        new Set();
 
-    allTransfers.forEach(
-      (transfer) => {
-        const reason =
-          transfer.transfer_reason ||
-          transfer.reason;
+      allTransfers.forEach(
+        (transfer) => {
+          const reason =
+            getTransferReason(
+              transfer
+            );
 
-        if (reason) {
-          reasons.add(reason);
+          if (reason) {
+            reasons.add(
+              reason
+            );
+          }
         }
-      }
-    );
+      );
 
-    [
-      "Business Requirement",
-      "Department Requirement",
-      "Employee Request",
-      "Promotion / Career Growth",
-      "Role Change",
-      "Project Requirement",
-      "Branch Requirement",
-      "Relocation",
-      "Performance",
-      "Organizational Restructuring",
-      "Other",
-    ].forEach(
-      (reason) =>
-        reasons.add(reason)
-    );
+      [
+        "Business Requirement",
+        "Department Requirement",
+        "Employee Request",
+        "Promotion / Career Growth",
+        "Role Change",
+        "Project Requirement",
+        "Branch Requirement",
+        "Relocation",
+        "Performance",
+        "Organizational Restructuring",
+        "Other",
+      ].forEach(
+        (reason) =>
+          reasons.add(
+            reason
+          )
+      );
 
-    return Array.from(
-      reasons
-    ).sort();
-  }, [allTransfers]);
+      return Array.from(
+        reasons
+      ).sort();
+    }, [allTransfers]);
 
   /* =======================================================
      MUTATIONS
@@ -580,7 +983,8 @@ export default function TransferListPage() {
     exportPDF,
   } = useTableExport({
     fetchAll:
-      employeeLifecycleApi.transfers.list,
+      employeeLifecycleApi
+        .transfers.list,
 
     queryParams: {
       search:
@@ -602,7 +1006,8 @@ export default function TransferListPage() {
   const activeTransfers =
     allTransfers.filter(
       (transfer) =>
-        transfer.is_active !== false
+        transfer.is_active !==
+        false
     );
 
   /* =======================================================
@@ -611,28 +1016,31 @@ export default function TransferListPage() {
 
   const thisMonthCount =
     useMemo(() => {
-      const now = new Date();
+      const now =
+        new Date();
 
-      return activeTransfers.filter(
-        (transfer) => {
-          if (
-            !transfer.effective_date
-          ) {
-            return false;
+      return activeTransfers
+        .filter(
+          (transfer) => {
+            if (
+              !transfer.transfer_apply_date
+            ) {
+              return false;
+            }
+
+            const date =
+              new Date(
+                transfer.transfer_apply_date
+              );
+
+            return (
+              date.getMonth() ===
+                now.getMonth() &&
+              date.getFullYear() ===
+                now.getFullYear()
+            );
           }
-
-          const date = new Date(
-            transfer.effective_date
-          );
-
-          return (
-            date.getMonth() ===
-              now.getMonth() &&
-            date.getFullYear() ===
-              now.getFullYear()
-          );
-        }
-      ).length;
+        ).length;
     }, [activeTransfers]);
 
   const uniqueEmployeeCount =
@@ -651,199 +1059,222 @@ export default function TransferListPage() {
      FILTERED DATA
   ======================================================= */
 
-  const filtered = useMemo(() => {
-    const normalizedSearch =
-      search.trim().toLowerCase();
+  const filtered =
+    useMemo(() => {
+      const normalizedSearch =
+        search
+          .trim()
+          .toLowerCase();
 
-    return allTransfers
-      .filter((transfer) => {
-        /* STATUS */
+      return allTransfers
+        .filter(
+          (transfer) => {
+            /* STATUS */
 
-        if (
-          statusFilter ===
-            "active" &&
-          transfer.is_active === false
-        ) {
-          return false;
-        }
+            if (
+              statusFilter ===
+                "active" &&
+              transfer.is_active ===
+                false
+            ) {
+              return false;
+            }
 
-        if (
-          statusFilter ===
-            "inactive" &&
-          transfer.is_active !== false
-        ) {
-          return false;
-        }
+            if (
+              statusFilter ===
+                "inactive" &&
+              transfer.is_active !==
+                false
+            ) {
+              return false;
+            }
 
-        const employee =
-          employeeMap[
-            transfer.employee_id
-          ];
+            const employee =
+              employeeMap[
+                transfer.employee_id
+              ];
 
-        /* COMPANY */
+            /* COMPANY */
 
-        const employeeCompany =
-          employee?.department?.company ||
-          employee?.company;
+            const employeeCompany =
+              employee
+                ?.department
+                ?.company ||
+              employee?.company;
 
-        if (
-          filterCompanyId &&
-          String(
-            employeeCompany?.id
-          ) !==
-            String(filterCompanyId)
-        ) {
-          return false;
-        }
+            if (
+              filterCompanyId &&
+              String(
+                employeeCompany?.id
+              ) !==
+                String(
+                  filterCompanyId
+                )
+            ) {
+              return false;
+            }
 
-        /* BRANCH */
+            /* BRANCH */
 
-        const employeeBranch =
-          employee?.department?.branch ||
-          employee?.branch;
+            const employeeBranch =
+              employee
+                ?.department
+                ?.branch ||
+              employee?.branch;
 
-        if (
-          filterBranchId &&
-          String(
-            employeeBranch?.id
-          ) !==
-            String(filterBranchId)
-        ) {
-          return false;
-        }
+            if (
+              filterBranchId &&
+              String(
+                employeeBranch?.id
+              ) !==
+                String(
+                  filterBranchId
+                )
+            ) {
+              return false;
+            }
 
-        /* DEPARTMENT */
+            /* DEPARTMENT */
 
-        const employeeDepartment =
-          employee?.department;
+            const employeeDepartment =
+              employee?.department;
 
-        if (
-          filterDepartmentId &&
-          String(
-            employeeDepartment?.id
-          ) !==
-            String(filterDepartmentId)
-        ) {
-          return false;
-        }
+            if (
+              filterDepartmentId &&
+              String(
+                employeeDepartment?.id
+              ) !==
+                String(
+                  filterDepartmentId
+                )
+            ) {
+              return false;
+            }
 
-        /* DESIGNATION */
+            /* DESIGNATION */
 
-        const employeeDesignationId =
-          employee?.designation?.id ||
-          employee?.designation_id;
+            const employeeDesignationId =
+              employee
+                ?.designation?.id ||
+              employee
+                ?.designation_id;
 
-        if (
-          filterDesignationId &&
-          String(
-            employeeDesignationId
-          ) !==
-            String(
-              filterDesignationId
-            )
-        ) {
-          return false;
-        }
+            if (
+              filterDesignationId &&
+              String(
+                employeeDesignationId
+              ) !==
+                String(
+                  filterDesignationId
+                )
+            ) {
+              return false;
+            }
 
-        /* REASON */
+            /* REASON */
 
-        const transferReason =
-          transfer.transfer_reason ||
-          transfer.reason ||
-          "Other";
+            const transferReason =
+              getTransferReason(
+                transfer
+              ) ||
+              "Other";
 
-        if (
-          filterReason &&
-          String(
-            transferReason
-          ) !==
-            String(filterReason)
-        ) {
-          return false;
-        }
+            if (
+              filterReason &&
+              String(
+                transferReason
+              ) !==
+                String(
+                  filterReason
+                )
+            ) {
+              return false;
+            }
 
-        /* SEARCH */
+            /* SEARCH */
 
-        if (normalizedSearch) {
-          const employeeName =
-            employee
-              ? `${employee.first_name || ""} ${
-                  employee.last_name || ""
-                }`
-              : "";
-
-          const employeeCode =
-            employee?.employee_code ||
-            "";
-
-          const fromDepartment =
-            transfer.from_department
-              ?.department_name ||
-            "";
-
-          const toDepartment =
-            transfer.to_department
-              ?.department_name ||
-            "";
-
-          /*
-           * IMPORTANT:
-           * Location now comes directly
-           * from the transfer record.
-           *
-           * Do NOT use employee.location.
-           */
-
-          const location =
-            transfer.location || "";
-
-          const accomplishments =
-            transfer.accomplishments ||
-            "";
-
-          const haystack = [
-            employeeName,
-            employeeCode,
-            fromDepartment,
-            toDepartment,
-            transferReason,
-            location,
-            accomplishments,
-          ]
-            .join(" ")
-            .toLowerCase();
-
-          if (
-            !haystack.includes(
+            if (
               normalizedSearch
-            )
-          ) {
-            return false;
-          }
-        }
+            ) {
+              const employeeName =
+                employee
+                  ? `${employee.first_name || ""} ${
+                      employee.last_name || ""
+                    }`
+                  : "";
 
-        return true;
-      })
-      .sort(
-        (a, b) =>
-          new Date(
-            b.effective_date
-          ) -
-          new Date(
-            a.effective_date
-          )
-      );
-  }, [
-    allTransfers,
-    employeeMap,
-    search,
-    statusFilter,
-    filterCompanyId,
-    filterBranchId,
-    filterDepartmentId,
-    filterDesignationId,
-    filterReason,
-  ]);
+              const employeeCode =
+                employee?.employee_code ||
+                "";
+
+              const fromDepartment =
+                getDepartmentName(
+                  transfer.from_department,
+                  ""
+                );
+
+              const toDepartment =
+                getDepartmentName(
+                  transfer.to_department,
+                  ""
+                );
+
+              /*
+               * Transfer location ONLY.
+               */
+              const location =
+                transfer.location ||
+                "";
+
+              const accomplishments =
+                getAccomplishments(
+                  transfer
+                );
+
+              const haystack = [
+                employeeName,
+                employeeCode,
+                fromDepartment,
+                toDepartment,
+                transferReason,
+                location,
+                accomplishments,
+              ]
+                .join(" ")
+                .toLowerCase();
+
+              if (
+                !haystack.includes(
+                  normalizedSearch
+                )
+              ) {
+                return false;
+              }
+            }
+
+            return true;
+          }
+        )
+        .sort(
+          (a, b) =>
+            new Date(
+              b.transfer_apply_date
+            ) -
+            new Date(
+              a.transfer_apply_date
+            )
+        );
+    }, [
+      allTransfers,
+      employeeMap,
+      search,
+      statusFilter,
+      filterCompanyId,
+      filterBranchId,
+      filterDepartmentId,
+      filterDesignationId,
+      filterReason,
+    ]);
 
   /* =======================================================
      PAGINATION
@@ -854,18 +1285,22 @@ export default function TransferListPage() {
       ? CARD_PAGE_SIZE
       : PAGE_SIZE;
 
-  const pageCount = Math.max(
-    1,
-    Math.ceil(
-      filtered.length /
-        pageSize
-    )
-  );
+  const pageCount =
+    Math.max(
+      1,
+      Math.ceil(
+        filtered.length /
+          pageSize
+      )
+    );
 
-  const paged = filtered.slice(
-    (page - 1) * pageSize,
-    page * pageSize
-  );
+  const paged =
+    filtered.slice(
+      (page - 1) *
+        pageSize,
+      page *
+        pageSize
+    );
 
   /* =======================================================
      HANDLERS
@@ -879,7 +1314,57 @@ export default function TransferListPage() {
   const handleEdit = (
     transfer
   ) => {
-    setEditing(transfer);
+    /*
+     * Pass the full transfer object,
+     * including transfer-specific
+     * location and dates.
+     */
+    setEditing({
+      ...transfer,
+
+      employee_id:
+        transfer.employee_id ||
+        transfer.employee?.id ||
+        "",
+
+      from_department_id:
+        transfer.from_department_id ||
+        transfer.from_department?.id ||
+        "",
+
+      to_department_id:
+        transfer.to_department_id ||
+        transfer.to_department?.id ||
+        "",
+
+      location:
+        transfer.location || "",
+
+      transfer_apply_date:
+        transfer.transfer_apply_date ||
+        "",
+
+      joining_date:
+        transfer.joining_date ||
+        "",
+
+      relieving_date:
+        transfer.relieving_date ||
+        "",
+
+      transfer_reason:
+        transfer.transfer_reason ||
+        "Other",
+
+      accomplishments:
+        transfer.accomplishments ||
+        "",
+
+      is_active:
+        transfer.is_active !==
+        false,
+    });
+
     setModalOpen(true);
   };
 
@@ -888,93 +1373,205 @@ export default function TransferListPage() {
     setEditing(null);
   };
 
-  const handleSubmit = async (
-    payload
-  ) => {
-    try {
-      if (editing) {
+  /* =======================================================
+     SUBMIT
+  ======================================================= */
+
+  const handleSubmit =
+    async (payload) => {
+      try {
+        const normalizedPayload =
+          {
+            ...payload,
+
+            employee_id:
+              payload.employee_id
+                ? Number(
+                    payload.employee_id
+                  )
+                : payload.employee_id,
+
+            from_department_id:
+              payload.from_department_id
+                ? Number(
+                    payload.from_department_id
+                  )
+                : null,
+
+            to_department_id:
+              payload.to_department_id
+                ? Number(
+                    payload.to_department_id
+                  )
+                : payload.to_department_id,
+
+            transfer_reason:
+              payload.transfer_reason ||
+              "Other",
+
+            transfer_apply_date:
+              payload.transfer_apply_date ||
+              "",
+
+            joining_date:
+              payload.joining_date ||
+              "",
+
+            relieving_date:
+              payload.relieving_date ||
+              "",
+
+            /*
+             * Transfer location.
+             */
+            location:
+              payload.location?.trim() ||
+              "",
+
+            accomplishments:
+              payload.accomplishments?.trim() ||
+              null,
+
+            is_active:
+              payload.is_active !==
+              false,
+          };
+
+        /*
+         * Explicitly remove old field.
+         */
+        delete normalizedPayload.effective_date;
+
+        /*
+         * Explicitly remove old field.
+         */
+        delete normalizedPayload.remarks;
+
+        /*
+         * Explicitly remove old fallback.
+         */
+        delete normalizedPayload.reason;
+
+        if (editing) {
+          await updateMutation.mutateAsync(
+            {
+              id: editing.id,
+
+              payload:
+                normalizedPayload,
+            }
+          );
+
+          showToast(
+            "Transfer updated successfully",
+            "success"
+          );
+        } else {
+          await createMutation.mutateAsync(
+            normalizedPayload
+          );
+
+          showToast(
+            "Transfer created successfully",
+            "success"
+          );
+        }
+
+        closeModal();
+
+        await refetch();
+      } catch (err) {
+        showToast(
+          err?.response?.data
+            ?.message ||
+            "Operation failed",
+          "error"
+        );
+      }
+    };
+
+  /* =======================================================
+     DELETE
+  ======================================================= */
+
+  const confirmDelete =
+    async () => {
+      if (!deleteTarget) {
+        return;
+      }
+
+      try {
+        await deactivateMutation.mutateAsync(
+          deleteTarget.id
+        );
+
+        showToast(
+          "Transfer deactivated",
+          "success"
+        );
+
+        setDeleteTarget(
+          null
+        );
+
+        await refetch();
+      } catch (err) {
+        showToast(
+          err?.response?.data
+            ?.message ||
+            "Operation failed",
+          "error"
+        );
+      }
+    };
+
+  /* =======================================================
+     REACTIVATE
+  ======================================================= */
+
+  const handleReactivate =
+    async (
+      transfer
+    ) => {
+      try {
         await updateMutation.mutateAsync(
           {
-            id: editing.id,
-            payload,
+            id: transfer.id,
+
+            payload: {
+              is_active: true,
+            },
           }
         );
 
         showToast(
-          "Transfer updated",
+          "Transfer reactivated",
           "success"
-        );
-      } else {
-        await createMutation.mutateAsync(
-          payload
         );
 
+        await refetch();
+      } catch (err) {
         showToast(
-          "Transfer created",
-          "success"
+          err?.response?.data
+            ?.message ||
+            "Operation failed",
+          "error"
         );
       }
+    };
 
-      closeModal();
-      refetch();
-    } catch (err) {
-      showToast(
-        err?.response?.data?.message ||
-          "Operation failed",
-        "error"
-      );
-    }
-  };
+  /* =======================================================
+     EXPORT
+  ======================================================= */
 
-  const confirmDelete = async () => {
-    if (!deleteTarget) return;
+  /*
+   * Export is handled by useTableExport.
+   * The columns use the new transfer date fields.
+   */
 
-    try {
-      await deactivateMutation.mutateAsync(
-        deleteTarget.id
-      );
-
-      showToast(
-        "Transfer deactivated",
-        "success"
-      );
-
-      setDeleteTarget(null);
-      refetch();
-    } catch (err) {
-      showToast(
-        err?.response?.data?.message ||
-          "Operation failed",
-        "error"
-      );
-    }
-  };
-
-  const handleReactivate = async (
-    transfer
-  ) => {
-    try {
-      await updateMutation.mutateAsync({
-        id: transfer.id,
-        payload: {
-          is_active: true,
-        },
-      });
-
-      showToast(
-        "Transfer reactivated",
-        "success"
-      );
-
-      refetch();
-    } catch (err) {
-      showToast(
-        err?.response?.data?.message ||
-          "Operation failed",
-        "error"
-      );
-    }
-  };
+  /* =======================================================
+     CLEAR FILTERS
+  ======================================================= */
 
   const clearFilters = () => {
     setSearch("");
@@ -1026,25 +1623,34 @@ export default function TransferListPage() {
 
         <div className="flex flex-wrap items-center gap-2">
           <TableToolbar
-            onRefresh={refetch}
-            refreshing={isFetching}
+            onRefresh={
+              refetch
+            }
+            refreshing={
+              isFetching
+            }
             onExportExcel={
               exportExcel
             }
             onExportPDF={
               exportPDF
             }
-            exporting={exporting}
+            exporting={
+              exporting
+            }
           />
 
           <Button
             type="button"
-            onClick={handleAdd}
+            onClick={
+              handleAdd
+            }
             className="h-10 w-full px-4 sm:w-auto"
           >
             <span className="mr-1.5 text-lg">
               +
             </span>
+
             Add Transfer
           </Button>
         </div>
@@ -1056,7 +1662,9 @@ export default function TransferListPage() {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatCard
-          icon={<TransferIcon />}
+          icon={
+            <TransferIcon />
+          }
           value={
             activeTransfers.length
           }
@@ -1064,13 +1672,19 @@ export default function TransferListPage() {
         />
 
         <StatCard
-          icon={<CalendarIcon />}
-          value={thisMonthCount}
+          icon={
+            <CalendarIcon />
+          }
+          value={
+            thisMonthCount
+          }
           label="This Month"
         />
 
         <StatCard
-          icon={<UsersIcon />}
+          icon={
+            <UsersIcon />
+          }
           value={
             uniqueEmployeeCount
           }
@@ -1085,7 +1699,6 @@ export default function TransferListPage() {
       <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-900">
         <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-2.5 lg:flex-row lg:flex-wrap">
-
             {/* SEARCH */}
 
             <div className="relative w-full sm:max-w-xs">
@@ -1108,12 +1721,19 @@ export default function TransferListPage() {
 
               <input
                 type="text"
-                value={search}
-                onChange={(event) => {
+                value={
+                  search
+                }
+                onChange={(
+                  event
+                ) => {
                   setSearch(
                     event.target.value
                   );
-                  setPage(1);
+
+                  setPage(
+                    1
+                  );
                 }}
                 placeholder="Search employee, department, reason..."
                 className="h-10 w-full rounded-lg border border-slate-300 bg-white pl-9 pr-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
@@ -1126,14 +1746,20 @@ export default function TransferListPage() {
               value={
                 filterCompanyId
               }
-              onChange={(event) => {
+              onChange={(
+                event
+              ) => {
                 setFilterCompanyId(
                   event.target.value
                 );
 
-                setFilterBranchId("");
+                setFilterBranchId(
+                  ""
+                );
 
-                setPage(1);
+                setPage(
+                  1
+                );
               }}
               className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 sm:max-w-[180px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
             >
@@ -1142,10 +1768,16 @@ export default function TransferListPage() {
               </option>
 
               {companies.map(
-                (company) => (
+                (
+                  company
+                ) => (
                   <option
-                    key={company.id}
-                    value={company.id}
+                    key={
+                      company.id
+                    }
+                    value={
+                      company.id
+                    }
                   >
                     {company.name ||
                       company.company_name ||
@@ -1161,12 +1793,16 @@ export default function TransferListPage() {
               value={
                 filterBranchId
               }
-              onChange={(event) => {
+              onChange={(
+                event
+              ) => {
                 setFilterBranchId(
                   event.target.value
                 );
 
-                setPage(1);
+                setPage(
+                  1
+                );
               }}
               className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 sm:max-w-[180px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
             >
@@ -1175,10 +1811,16 @@ export default function TransferListPage() {
               </option>
 
               {branches.map(
-                (branch) => (
+                (
+                  branch
+                ) => (
                   <option
-                    key={branch.id}
-                    value={branch.id}
+                    key={
+                      branch.id
+                    }
+                    value={
+                      branch.id
+                    }
                   >
                     {branch.name ||
                       branch.branch_name ||
@@ -1194,12 +1836,16 @@ export default function TransferListPage() {
               value={
                 filterDepartmentId
               }
-              onChange={(event) => {
+              onChange={(
+                event
+              ) => {
                 setFilterDepartmentId(
                   event.target.value
                 );
 
-                setPage(1);
+                setPage(
+                  1
+                );
               }}
               className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 sm:max-w-[180px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
             >
@@ -1208,7 +1854,9 @@ export default function TransferListPage() {
               </option>
 
               {departmentOptions.map(
-                (department) => (
+                (
+                  department
+                ) => (
                   <option
                     key={
                       department.value
@@ -1217,7 +1865,9 @@ export default function TransferListPage() {
                       department.value
                     }
                   >
-                    {department.label}
+                    {
+                      department.label
+                    }
                   </option>
                 )
               )}
@@ -1229,12 +1879,16 @@ export default function TransferListPage() {
               value={
                 filterDesignationId
               }
-              onChange={(event) => {
+              onChange={(
+                event
+              ) => {
                 setFilterDesignationId(
                   event.target.value
                 );
 
-                setPage(1);
+                setPage(
+                  1
+                );
               }}
               className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 sm:max-w-[180px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
             >
@@ -1243,7 +1897,9 @@ export default function TransferListPage() {
               </option>
 
               {designationOptions.map(
-                (designation) => (
+                (
+                  designation
+                ) => (
                   <option
                     key={
                       designation.value
@@ -1252,7 +1908,9 @@ export default function TransferListPage() {
                       designation.value
                     }
                   >
-                    {designation.label}
+                    {
+                      designation.label
+                    }
                   </option>
                 )
               )}
@@ -1264,12 +1922,16 @@ export default function TransferListPage() {
               value={
                 filterReason
               }
-              onChange={(event) => {
+              onChange={(
+                event
+              ) => {
                 setFilterReason(
                   event.target.value
                 );
 
-                setPage(1);
+                setPage(
+                  1
+                );
               }}
               className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 sm:max-w-[240px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
             >
@@ -1278,12 +1940,20 @@ export default function TransferListPage() {
               </option>
 
               {reasonOptions.map(
-                (reason) => (
+                (
+                  reason
+                ) => (
                   <option
-                    key={reason}
-                    value={reason}
+                    key={
+                      reason
+                    }
+                    value={
+                      reason
+                    }
                   >
-                    {reason}
+                    {
+                      reason
+                    }
                   </option>
                 )
               )}
@@ -1321,7 +1991,10 @@ export default function TransferListPage() {
                   setViewMode(
                     "table"
                   );
-                  setPage(1);
+
+                  setPage(
+                    1
+                  );
                 }}
                 className={`rounded-md px-3 py-1.5 text-xs font-medium transition ${
                   viewMode ===
@@ -1339,7 +2012,10 @@ export default function TransferListPage() {
                   setViewMode(
                     "card"
                   );
-                  setPage(1);
+
+                  setPage(
+                    1
+                  );
                 }}
                 className={`rounded-md px-3 py-1.5 text-xs font-medium transition ${
                   viewMode ===
@@ -1357,26 +2033,37 @@ export default function TransferListPage() {
                 "active",
                 "inactive",
                 "all",
-              ].map((status) => (
-                <button
-                  key={status}
-                  type="button"
-                  onClick={() => {
-                    setStatusFilter(
+              ].map(
+                (
+                  status
+                ) => (
+                  <button
+                    key={
                       status
-                    );
-                    setPage(1);
-                  }}
-                  className={`rounded-md px-3 py-1.5 text-xs font-medium capitalize transition ${
-                    statusFilter ===
-                    status
-                      ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
-                      : "text-slate-500 hover:text-slate-700 dark:text-slate-400"
-                  }`}
-                >
-                  {status}
-                </button>
-              ))}
+                    }
+                    type="button"
+                    onClick={() => {
+                      setStatusFilter(
+                        status
+                      );
+
+                      setPage(
+                        1
+                      );
+                    }}
+                    className={`rounded-md px-3 py-1.5 text-xs font-medium capitalize transition ${
+                      statusFilter ===
+                      status
+                        ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
+                        : "text-slate-500 hover:text-slate-700 dark:text-slate-400"
+                    }`}
+                  >
+                    {
+                      status
+                    }
+                  </button>
+                )
+              )}
             </div>
           </div>
         </div>
@@ -1436,7 +2123,7 @@ export default function TransferListPage() {
                 </th>
 
                 <th className="px-4 py-3 font-medium">
-                  Effective Date
+                  Transfer Dates
                 </th>
 
                 <th className="px-4 py-3 font-medium">
@@ -1458,11 +2145,10 @@ export default function TransferListPage() {
                     ];
 
                   const employeeName =
-                    employee
-                      ? `${employee.first_name || ""} ${
-                          employee.last_name || ""
-                        }`.trim()
-                      : `Employee #${transfer.employee_id}`;
+                    getEmployeeName(
+                      employee
+                    ) ||
+                    `Employee #${transfer.employee_id}`;
 
                   const isActive =
                     transfer.is_active !==
@@ -1474,22 +2160,27 @@ export default function TransferListPage() {
                   const toDepartment =
                     transfer.to_department;
 
-                  /*
-                   * IMPORTANT:
-                   * Location belongs to the transfer.
-                   * It must NOT come from employee.
-                   */
-
                   const transferLocation =
-                    transfer.location ||
-                    "—";
+                    getTransferLocation(
+                      transfer
+                    );
+
+                  const transferReason =
+                    getTransferReason(
+                      transfer
+                    );
+
+                  const accomplishments =
+                    getAccomplishments(
+                      transfer
+                    );
 
                   return (
                     <tr
                       key={
                         transfer.id
                       }
-                      className="hover:bg-slate-50 dark:hover:bg-slate-800/40"
+                      className="relative hover:bg-slate-50 dark:hover:bg-slate-800/40"
                     >
                       {/* EMPLOYEE */}
 
@@ -1519,29 +2210,111 @@ export default function TransferListPage() {
 
                       {/* CURRENT DEPARTMENT */}
 
-                      <td className="px-4 py-3">
-                        <DepartmentBadge
-                          tone="from"
-                          label={
-                            fromDepartment?.department_name ||
-                            `#${transfer.from_department_id || "—"}`
+                      <td className="relative px-4 py-3">
+                        <DepartmentHoverTrigger
+                          align="left"
+                          panel={
+                            <DepartmentDetailsCard
+                              roleLabel="Current Department"
+                              tone="from"
+                              department={
+                                fromDepartment
+                              }
+                              departmentFallback={`#${transfer.from_department_id || "—"}`}
+                              employeeName={
+                                employeeName
+                              }
+                              employeeCode={
+                                employee?.employee_code
+                              }
+                              location={
+                                transferLocation
+                              }
+                              transferReason={
+                                transferReason
+                              }
+                              transferApplyDate={
+                                transfer.transfer_apply_date
+                              }
+                              relievingDate={
+                                transfer.relieving_date
+                              }
+                              joiningDate={
+                                transfer.joining_date
+                              }
+                              accomplishments={
+                                accomplishments
+                              }
+                              isActive={
+                                isActive
+                              }
+                            />
                           }
-                        />
+                        >
+                          <DepartmentBadge
+                            tone="from"
+                            label={getDepartmentName(
+                              fromDepartment,
+                              `#${transfer.from_department_id || "—"}`
+                            )}
+                          />
+                        </DepartmentHoverTrigger>
                       </td>
 
                       {/* TRANSFER DEPARTMENT */}
 
-                      <td className="px-4 py-3">
-                        <DepartmentBadge
-                          tone="to"
-                          label={
-                            toDepartment?.department_name ||
-                            `#${transfer.to_department_id}`
+                      <td className="relative px-4 py-3">
+                        <DepartmentHoverTrigger
+                          align="left"
+                          panel={
+                            <DepartmentDetailsCard
+                              roleLabel="Transfer Department"
+                              tone="to"
+                              department={
+                                toDepartment
+                              }
+                              departmentFallback={`#${transfer.to_department_id || "—"}`}
+                              employeeName={
+                                employeeName
+                              }
+                              employeeCode={
+                                employee?.employee_code
+                              }
+                              location={
+                                transferLocation
+                              }
+                              transferReason={
+                                transferReason
+                              }
+                              transferApplyDate={
+                                transfer.transfer_apply_date
+                              }
+                              relievingDate={
+                                transfer.relieving_date
+                              }
+                              joiningDate={
+                                transfer.joining_date
+                              }
+                              accomplishments={
+                                accomplishments
+                              }
+                              isActive={
+                                isActive
+                              }
+                            />
                           }
-                        />
+                        >
+                          <DepartmentBadge
+                            tone="to"
+                            label={getDepartmentName(
+                              toDepartment,
+                              `#${transfer.to_department_id || "—"}`
+                            )}
+                          />
+                        </DepartmentHoverTrigger>
                       </td>
 
-                      {/* TRANSFER LOCATION */}
+                      {/* LOCATION */}
 
                       <td className="min-w-0 overflow-hidden px-4 py-3">
                         <span
@@ -1556,44 +2329,69 @@ export default function TransferListPage() {
                         </span>
                       </td>
 
-                      {/* DATE */}
+                      {/* TRANSFER DATES */}
 
                       <td className="px-4 py-3">
-                        <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
-                          {formatDate(
-                            transfer.effective_date
-                          )}
-                        </span>
+                        <div className="space-y-0.5 text-[10px] leading-4 text-slate-500 dark:text-slate-400">
+                          <p>
+                            <span className="font-medium text-slate-400">
+                              Apply:
+                            </span>{" "}
+                            {formatDate(
+                              transfer.transfer_apply_date
+                            )}
+                          </p>
+
+                          <p>
+                            <span className="font-medium text-slate-400">
+                              Relieve:
+                            </span>{" "}
+                            {formatDate(
+                              transfer.relieving_date
+                            )}
+                          </p>
+
+                          <p>
+                            <span className="font-medium text-slate-400">
+                              Join:
+                            </span>{" "}
+                            {formatDate(
+                              transfer.joining_date
+                            )}
+                          </p>
+                        </div>
                       </td>
 
                       {/* STATUS */}
 
                       <td className="px-4 py-3">
-                        <span
-                          className={`inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-[10px] font-medium ${
-                            isActive
-                              ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300"
-                              : "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300"
-                          }`}
-                        >
+                        <div className="flex justify-start">
                           <span
-                            className={`h-1.5 w-1.5 rounded-full ${
+                            className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2 py-1 text-[10px] font-medium ${
                               isActive
-                                ? "bg-emerald-500"
-                                : "bg-red-500"
+                                ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300"
+                                : "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300"
                             }`}
-                          />
+                          >
+                            <span
+                              className={`h-1.5 w-1.5 shrink-0 rounded-full ${
+                                isActive
+                                  ? "bg-emerald-500"
+                                  : "bg-red-500"
+                              }`}
+                            />
 
-                          {isActive
-                            ? "Active"
-                            : "Inactive"}
-                        </span>
+                            {isActive
+                              ? "Active"
+                              : "Inactive"}
+                          </span>
+                        </div>
                       </td>
 
                       {/* ACTIONS */}
 
-                      <td className="px-4 py-3">
-                        <div className="flex items-center justify-end gap-1">
+                      <td className="px-2 py-3">
+                        <div className="flex w-full items-center justify-end gap-0.5">
                           <TableIconButton
                             title="Edit"
                             onClick={() =>
@@ -1668,7 +2466,7 @@ export default function TransferListPage() {
                                 <path
                                   strokeLinecap="round"
                                   strokeLinejoin="round"
-                                  d="M4 12a8 8 0 018-8 8.5 8.5 0 017 4M20 4v5h-5M20 12a8 8 0 01-8 8 8.5 8.5 0 01-7-4M4 20v-5h5"
+                                  d="M4 12a8 8 0 018-8 8.5 8.5 0 017 4M20 4v5h-5M20 12a8 8 0 01-8 8 8.5 8.5 0 017-4M4 20v-5h5"
                                 />
                               </svg>
                             </TableIconButton>
@@ -1696,11 +2494,10 @@ export default function TransferListPage() {
                 ];
 
               const employeeName =
-                employee
-                  ? `${employee.first_name || ""} ${
-                      employee.last_name || ""
-                    }`.trim()
-                  : `Employee #${transfer.employee_id}`;
+                getEmployeeName(
+                  employee
+                ) ||
+                `Employee #${transfer.employee_id}`;
 
               const isActive =
                 transfer.is_active !==
@@ -1712,19 +2509,27 @@ export default function TransferListPage() {
               const toDepartment =
                 transfer.to_department;
 
-              /*
-               * IMPORTANT:
-               * Use Transfer.location only.
-               */
-
               const location =
-                transfer.location ||
-                "—";
+                getTransferLocation(
+                  transfer
+                );
+
+              const transferReason =
+                getTransferReason(
+                  transfer
+                );
+
+              const accomplishments =
+                getAccomplishments(
+                  transfer
+                );
 
               return (
                 <div
-                  key={transfer.id}
-                  className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900"
+                  key={
+                    transfer.id
+                  }
+                  className="overflow-visible rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900"
                 >
                   <div className="h-0.5 bg-primary-600" />
 
@@ -1772,36 +2577,142 @@ export default function TransferListPage() {
                     {/* DEPARTMENTS */}
 
                     <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-                      <DepartmentBadge
-                        tone="from"
-                        label={
-                          fromDepartment?.department_name ||
-                          `#${transfer.from_department_id || "—"}`
+                      <DepartmentHoverTrigger
+                        align="left"
+                        panel={
+                          <DepartmentDetailsCard
+                            roleLabel="Current Department"
+                            tone="from"
+                            department={
+                              fromDepartment
+                            }
+                            departmentFallback={`#${transfer.from_department_id || "—"}`}
+                            employeeName={
+                              employeeName
+                            }
+                            employeeCode={
+                              employee?.employee_code
+                            }
+                            location={
+                              location
+                            }
+                            transferReason={
+                              transferReason
+                            }
+                            transferApplyDate={
+                              transfer.transfer_apply_date
+                            }
+                            relievingDate={
+                              transfer.relieving_date
+                            }
+                            joiningDate={
+                              transfer.joining_date
+                            }
+                            accomplishments={
+                              accomplishments
+                            }
+                            isActive={
+                              isActive
+                            }
+                          />
                         }
-                      />
+                      >
+                        <DepartmentBadge
+                          tone="from"
+                          label={getDepartmentName(
+                            fromDepartment,
+                            `#${transfer.from_department_id || "—"}`
+                          )}
+                        />
+                      </DepartmentHoverTrigger>
 
                       <ArrowIcon />
 
-                      <DepartmentBadge
-                        tone="to"
-                        label={
-                          toDepartment?.department_name ||
-                          `#${transfer.to_department_id}`
+                      <DepartmentHoverTrigger
+                        align="left"
+                        panel={
+                          <DepartmentDetailsCard
+                            roleLabel="Transfer Department"
+                            tone="to"
+                            department={
+                              toDepartment
+                            }
+                            departmentFallback={`#${transfer.to_department_id || "—"}`}
+                            employeeName={
+                              employeeName
+                            }
+                            employeeCode={
+                              employee?.employee_code
+                            }
+                            location={
+                              location
+                            }
+                            transferReason={
+                              transferReason
+                            }
+                            transferApplyDate={
+                              transfer.transfer_apply_date
+                            }
+                            relievingDate={
+                              transfer.relieving_date
+                            }
+                            joiningDate={
+                              transfer.joining_date
+                            }
+                            accomplishments={
+                              accomplishments
+                            }
+                            isActive={
+                              isActive
+                            }
+                          />
                         }
-                      />
+                      >
+                        <DepartmentBadge
+                          tone="to"
+                          label={getDepartmentName(
+                            toDepartment,
+                            `#${transfer.to_department_id || "—"}`
+                          )}
+                        />
+                      </DepartmentHoverTrigger>
                     </div>
 
-                    {/* DATE */}
+                    {/* APPLY DATE */}
 
                     <div className="mt-3 flex items-center gap-1.5 text-[10px] text-slate-400">
-                      <CalendarIcon />
+                      <SmallCalendarIcon />
 
                       {formatDate(
-                        transfer.effective_date
+                        transfer.transfer_apply_date
                       )}
                     </div>
 
-                    {/* TRANSFER LOCATION */}
+                    {/* RELIEVING DATE */}
+
+                    <div className="mt-1 flex items-center gap-1.5 text-[10px] text-slate-400">
+                      <span className="font-medium">
+                        Relieving:
+                      </span>
+
+                      {formatDate(
+                        transfer.relieving_date
+                      )}
+                    </div>
+
+                    {/* JOINING DATE */}
+
+                    <div className="mt-1 flex items-center gap-1.5 text-[10px] text-slate-400">
+                      <span className="font-medium">
+                        Joining:
+                      </span>
+
+                      {formatDate(
+                        transfer.joining_date
+                      )}
+                    </div>
+
+                    {/* LOCATION */}
 
                     <div className="mt-2">
                       <p className="text-[10px] uppercase tracking-wide text-slate-400">
@@ -1823,30 +2734,24 @@ export default function TransferListPage() {
                     <div className="mt-2">
                       <ReasonBadge
                         reason={
-                          transfer.transfer_reason ||
-                          transfer.reason
+                          transferReason
                         }
                       />
                     </div>
 
                     {/* ACCOMPLISHMENTS */}
 
-                    {transfer.accomplishments && (
+                    {accomplishments && (
                       <div className="mt-2">
                         <p className="text-[10px] uppercase tracking-wide text-slate-400">
                           Overall Records / Accomplishments
                         </p>
 
-                        <p
-                          title={
-                            transfer.accomplishments
+                        <AccomplishmentsPreview
+                          accomplishments={
+                            accomplishments
                           }
-                          className="mt-0.5 line-clamp-2 text-xs text-slate-500 dark:text-slate-400"
-                        >
-                          {
-                            transfer.accomplishments
-                          }
-                        </p>
+                        />
                       </div>
                     )}
                   </div>
@@ -1958,10 +2863,14 @@ export default function TransferListPage() {
         <div className="flex gap-2">
           <button
             type="button"
-            disabled={page <= 1}
+            disabled={
+              page <= 1
+            }
             onClick={() =>
               setPage(
-                (current) =>
+                (
+                  current
+                ) =>
                   Math.max(
                     1,
                     current - 1
@@ -1976,11 +2885,14 @@ export default function TransferListPage() {
           <button
             type="button"
             disabled={
-              page >= pageCount
+              page >=
+              pageCount
             }
             onClick={() =>
               setPage(
-                (current) =>
+                (
+                  current
+                ) =>
                   Math.min(
                     pageCount,
                     current + 1
@@ -2012,8 +2924,12 @@ export default function TransferListPage() {
           initialData={
             editing || {}
           }
-          onSubmit={handleSubmit}
-          loading={isSaving}
+          onSubmit={
+            handleSubmit
+          }
+          loading={
+            isSaving
+          }
         />
       </Modal>
 
@@ -2026,7 +2942,9 @@ export default function TransferListPage() {
           !!deleteTarget
         }
         onClose={() =>
-          setDeleteTarget(null)
+          setDeleteTarget(
+            null
+          )
         }
         onConfirm={
           confirmDelete

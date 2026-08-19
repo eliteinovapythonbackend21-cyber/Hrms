@@ -1897,7 +1897,7 @@ export default function PromotionListPage() {
                   </th>
 
                   <th className="whitespace-nowrap px-4 py-3 font-medium">
-                    Location
+                    Employee Location
                   </th>
 
                   <th className="px-4 py-3 font-medium">
