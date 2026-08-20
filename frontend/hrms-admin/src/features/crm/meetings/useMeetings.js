@@ -7,6 +7,8 @@ import {
   useCrudGet,
 } from "@/hooks/useCrudResource";
 
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+
 const api = crmApi.meetings;
 
 /* =========================================================
@@ -48,6 +50,11 @@ export const useCreateMeeting =
 
 /* =========================================================
    DEACTIVATE / REMOVE
+   NOTE: hits the generic DELETE /meetings/:id route, which is
+   intentionally blocked (deletable=False on meetings_bp) - kept
+   here only for parity with the sibling files. Actual deactivation
+   goes through PUT with { is_active: false }, same as leads,
+   customers, and follow-ups.
 ========================================================= */
 
 export const useDeactivateMeeting =
@@ -56,3 +63,62 @@ export const useDeactivateMeeting =
       "meetings",
       api
     );
+
+/* =========================================================
+   UPDATE
+========================================================= */
+
+export function useUpdateMeeting() {
+  const queryClient =
+    useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      id,
+      payload,
+    }) =>
+      api.update(
+        id,
+        payload
+      ),
+
+    onSuccess: () => {
+      queryClient.invalidateQueries(
+        {
+          queryKey: [
+            "meetings",
+          ],
+        }
+      );
+    },
+  });
+}
+
+/* =========================================================
+   REACTIVATE
+   Goes through the same PUT /meetings/:id route as edit - the
+   generic CRUD update handler only sets fields present in the
+   request body, so a partial { is_active: true } payload is enough.
+========================================================= */
+
+export function useReactivateMeeting() {
+  const queryClient =
+    useQueryClient();
+
+  return useMutation({
+    mutationFn: (id) =>
+      api.update(id, {
+        is_active: true,
+      }),
+
+    onSuccess: () => {
+      queryClient.invalidateQueries(
+        {
+          queryKey: [
+            "meetings",
+          ],
+        }
+      );
+    },
+  });
+}

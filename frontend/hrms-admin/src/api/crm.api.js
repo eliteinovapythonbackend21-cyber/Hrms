@@ -17,23 +17,12 @@ export const crmApi = {
       itemUrl: C.LEADS_ITEM,
     }),
 
-    /*
-     * Explicit update method for Leads.
-     *
-     * PUT /leads/:id
-     */
     update: (id, payload) =>
       axiosClient.put(
         C.LEADS_ITEM(id),
         payload
       ),
 
-    /*
-     * Explicit soft-deactivate method.
-     *
-     * PUT /leads/:id
-     * { is_active: false }
-     */
     deactivate: (id) =>
       axiosClient.put(
         C.LEADS_ITEM(id),
@@ -42,12 +31,6 @@ export const crmApi = {
         }
       ),
 
-    /*
-     * Explicit reactivate method.
-     *
-     * PUT /leads/:id
-     * { is_active: true }
-     */
     reactivate: (id) =>
       axiosClient.put(
         C.LEADS_ITEM(id),
@@ -56,9 +39,6 @@ export const crmApi = {
         }
       ),
 
-    /*
-     * Convert Lead → Customer.
-     */
     convert: (
       id,
       payload
@@ -79,23 +59,12 @@ export const crmApi = {
       itemUrl: C.CUSTOMERS_ITEM,
     }),
 
-    /*
-     * Explicit update method for Customers.
-     *
-     * PUT /customers/:id
-     */
     update: (id, payload) =>
       axiosClient.put(
         C.CUSTOMERS_ITEM(id),
         payload
       ),
 
-    /*
-     * Explicit soft-deactivate method.
-     *
-     * PUT /customers/:id
-     * { is_active: false }
-     */
     deactivate: (id) =>
       axiosClient.put(
         C.CUSTOMERS_ITEM(id),
@@ -104,12 +73,6 @@ export const crmApi = {
         }
       ),
 
-    /*
-     * Explicit reactivate method.
-     *
-     * PUT /customers/:id
-     * { is_active: true }
-     */
     reactivate: (id) =>
       axiosClient.put(
         C.CUSTOMERS_ITEM(id),
@@ -129,30 +92,12 @@ export const crmApi = {
       itemUrl: C.FOLLOW_UPS_ITEM,
     }),
 
-    /*
-     * Explicit update method for Follow-ups.
-     *
-     * PUT /follow-ups/:id
-     *
-     * IMPORTANT: this was previously missing entirely (followUps
-     * was just the bare createCrudApi() output), which is why
-     * Edit / Deactivate / Reactivate for follow-ups never worked -
-     * crmApi.followUps.update / .deactivate were undefined, so
-     * updateFollowUpRecord() in FollowUpListPage.jsx immediately
-     * threw "Follow-up update API method is not configured."
-     */
     update: (id, payload) =>
       axiosClient.put(
         C.FOLLOW_UPS_ITEM(id),
         payload
       ),
 
-    /*
-     * Explicit soft-deactivate method.
-     *
-     * PUT /follow-ups/:id
-     * { is_active: false }
-     */
     deactivate: (id) =>
       axiosClient.put(
         C.FOLLOW_UPS_ITEM(id),
@@ -161,12 +106,6 @@ export const crmApi = {
         }
       ),
 
-    /*
-     * Explicit reactivate method.
-     *
-     * PUT /follow-ups/:id
-     * { is_active: true }
-     */
     reactivate: (id) =>
       axiosClient.put(
         C.FOLLOW_UPS_ITEM(id),
@@ -180,11 +119,56 @@ export const crmApi = {
      MEETINGS
   ========================================================= */
 
-  meetings:
-    createCrudApi({
+  meetings: {
+    ...createCrudApi({
       listUrl: C.MEETINGS,
       itemUrl: C.MEETINGS_ITEM,
     }),
+
+    /*
+     * Explicit update method for Meetings.
+     *
+     * PUT /meetings/:id
+     *
+     * IMPORTANT: this was previously missing entirely (meetings
+     * was just the bare createCrudApi() output), which is why
+     * Edit / Deactivate / Reactivate for meetings never worked -
+     * crmApi.meetings.update / .deactivate were undefined.
+     */
+    update: (id, payload) =>
+      axiosClient.put(
+        C.MEETINGS_ITEM(id),
+        payload
+      ),
+
+    /*
+     * Explicit soft-deactivate method.
+     *
+     * PUT /meetings/:id
+     * { is_active: false }
+     */
+    deactivate: (id) =>
+      axiosClient.put(
+        C.MEETINGS_ITEM(id),
+        {
+          is_active: false,
+        }
+      ),
+
+    /*
+     * Explicit reactivate method.
+     *
+     * PUT /meetings/:id
+     * { is_active: true }
+     */
+    reactivate: (id) =>
+      axiosClient.put(
+        C.MEETINGS_ITEM(id),
+        {
+          is_active: true,
+        }
+      ),
+  },
 
   /* =========================================================
      QUOTATIONS
