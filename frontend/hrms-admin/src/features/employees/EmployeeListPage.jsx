@@ -1,20 +1,25 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
+
 import {
   useEmployees,
   useUpdateEmployee,
   useDeactivateEmployee,
 } from "./useEmployees";
+
 import EmployeeTable from "./components/EmployeeTable";
+
 import { usePagination } from "@/hooks/usePagination";
 import { useDebouncedSearch } from "@/hooks/useDebouncedSearch";
 import { useTableExport } from "@/hooks/useTableExport";
+
 import TableSearchBar from "@/components/table/TableSearchBar";
 import TablePagination from "@/components/table/TablePagination";
 import TableToolbar from "@/components/table/TableToolbar";
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
+
 import { employeesApi } from "@/api/employees.api";
 import { masterApi } from "@/api/master.api";
 import { formatCurrency } from "@/utils/formatCurrency";
@@ -23,12 +28,15 @@ import { useModulePermissions } from "@/hooks/useModulePermissions";
 const EXPORT_COLUMNS = [
   {
     header: "Code",
-    accessor: (r) => r.employee_code,
+    accessor: (r) =>
+      r.employee_code,
   },
   {
     header: "Name",
     accessor: (r) =>
-      `${r.first_name || ""} ${r.last_name || ""}`.trim(),
+      `${r.first_name || ""} ${
+        r.last_name || ""
+      }`.trim(),
   },
   {
     header: "Company",
@@ -79,7 +87,9 @@ export default function EmployeeListPage({
   crmOnly = false,
 }) {
   if (crmOnly) {
-    return <CrmEmployeeView />;
+    return (
+      <CrmEmployeeView />
+    );
   }
 
   const {
@@ -97,15 +107,21 @@ export default function EmployeeListPage({
     value,
     setValue,
     debouncedValue,
-  } = useDebouncedSearch();
+  } =
+    useDebouncedSearch();
 
-  const [statusFilter, setStatusFilter] =
-    useState("active");
+  const [
+    statusFilter,
+    setStatusFilter,
+  ] = useState(
+    "active"
+  );
 
   const queryParams = {
     ...params,
     search:
-      debouncedValue || undefined,
+      debouncedValue ||
+      undefined,
   };
 
   const {
@@ -114,7 +130,9 @@ export default function EmployeeListPage({
     isError,
     isFetching,
     refetch,
-  } = useEmployees(queryParams);
+  } = useEmployees(
+    queryParams
+  );
 
   const { canAdd } =
     useModulePermissions(
@@ -125,44 +143,56 @@ export default function EmployeeListPage({
     exporting,
     exportExcel,
     exportPDF,
-  } = useTableExport({
-    fetchAll:
-      employeesApi.list,
-    queryParams,
-    exportColumns:
-      EXPORT_COLUMNS,
-    filename: "employees",
-    title: "Employees",
-  });
+  } =
+    useTableExport({
+      fetchAll:
+        employeesApi.list,
+      queryParams,
+      exportColumns:
+        EXPORT_COLUMNS,
+      filename:
+        "employees",
+      title: "Employees",
+    });
 
   const employees =
     data?.items || [];
 
   const activeEmployees =
     employees.filter(
-      (e) => e.is_active
+      (employee) =>
+        employee.is_active !==
+        false
     );
 
   const inactiveEmployees =
     employees.filter(
-      (e) => !e.is_active
+      (employee) =>
+        employee.is_active ===
+        false
     );
 
   const filteredEmployees =
     employees.filter(
-      (e) => {
+      (employee) => {
         if (
           statusFilter ===
           "active"
         ) {
-          return e.is_active;
+          return (
+            employee.is_active !==
+            false
+          );
         }
 
         if (
           statusFilter ===
           "inactive"
         ) {
-          return !e.is_active;
+          return (
+            employee.is_active ===
+            false
+          );
         }
 
         return true;
@@ -195,12 +225,18 @@ export default function EmployeeListPage({
         <div className="flex flex-wrap items-center gap-2">
           <TableToolbar
             onRefresh={refetch}
-            refreshing={isFetching}
+            refreshing={
+              isFetching
+            }
             onExportExcel={
               exportExcel
             }
-            onExportPDF={exportPDF}
-            exporting={exporting}
+            onExportPDF={
+              exportPDF
+            }
+            exporting={
+              exporting
+            }
           />
 
           {canAdd && (
@@ -348,12 +384,24 @@ export default function EmployeeListPage({
             data={
               filteredEmployees
             }
-            loading={isLoading}
-            sortBy={sortBy}
-            sortDir={sortDir}
-            onSort={toggleSort}
-            restricted={restricted}
-            hideSalary={hideSalary}
+            loading={
+              isLoading
+            }
+            sortBy={
+              sortBy
+            }
+            sortDir={
+              sortDir
+            }
+            onSort={
+              toggleSort
+            }
+            restricted={
+              restricted
+            }
+            hideSalary={
+              hideSalary
+            }
             hideActions={
               hideActions
             }
@@ -369,7 +417,9 @@ export default function EmployeeListPage({
             total={
               data?.total || 0
             }
-            perPage={perPage}
+            perPage={
+              perPage
+            }
             onPageChange={
               setPage
             }
@@ -444,21 +494,29 @@ function getEmployeeFullName(
 }
 
 function CrmEmployeeView() {
-  const [page, setPage] =
-    useState(1);
+  const [
+    page,
+    setPage,
+  ] = useState(1);
 
-  const [search, setSearch] =
-    useState("");
+  const [
+    search,
+    setSearch,
+  ] = useState("");
 
   const [
     statusFilter,
     setStatusFilter,
-  ] = useState("active");
+  ] = useState(
+    "active"
+  );
 
   const [
     viewMode,
     setViewMode,
-  ] = useState("card");
+  ] = useState(
+    "card"
+  );
 
   const [
     companyFilterId,
@@ -523,7 +581,9 @@ function CrmEmployeeView() {
             .toLowerCase() ===
           CRM_DEPARTMENT_NAME.toLowerCase()
       );
-    }, [departmentsData]);
+    }, [
+      departmentsData,
+    ]);
 
   const crmDepartmentIds =
     useMemo(() => {
@@ -535,7 +595,9 @@ function CrmEmployeeView() {
             )
         )
       );
-    }, [crmDepartments]);
+    }, [
+      crmDepartments,
+    ]);
 
   const {
     data: employeesData,
@@ -581,25 +643,30 @@ function CrmEmployeeView() {
   const activeCrmEmployees =
     crmEmployees.filter(
       (employee) =>
-        employee.is_active !== false
+        employee.is_active !==
+        false
     );
 
   const inactiveCrmEmployees =
     crmEmployees.filter(
       (employee) =>
-        employee.is_active === false
+        employee.is_active ===
+        false
     );
 
   const companyOptions =
     useMemo(() => {
-      const map = new Map();
+      const map =
+        new Map();
 
       crmDepartments.forEach(
         (department) => {
           const company =
             department.company;
 
-          if (company?.id) {
+          if (
+            company?.id
+          ) {
             map.set(
               company.id,
               company
@@ -618,11 +685,14 @@ function CrmEmployeeView() {
             b.name || ""
           )
       );
-    }, [crmDepartments]);
+    }, [
+      crmDepartments,
+    ]);
 
   const branchOptions =
     useMemo(() => {
-      const map = new Map();
+      const map =
+        new Map();
 
       crmDepartments.forEach(
         (department) => {
@@ -635,8 +705,8 @@ function CrmEmployeeView() {
           if (
             companyFilterId &&
             String(
-              department
-                .company?.id
+              department.company
+                ?.id
             ) !==
               String(
                 companyFilterId
@@ -674,8 +744,8 @@ function CrmEmployeeView() {
           if (
             companyFilterId &&
             String(
-              department
-                .company?.id
+              department.company
+                ?.id
             ) !==
               String(
                 companyFilterId
@@ -687,8 +757,8 @@ function CrmEmployeeView() {
           if (
             branchFilterId &&
             String(
-              department
-                .branch?.id
+              department.branch
+                ?.id
             ) !==
               String(
                 branchFilterId
@@ -740,7 +810,6 @@ function CrmEmployeeView() {
       setCompanyFilterId(
         event.target.value
       );
-
       setBranchFilterId("");
       setDepartmentFilterId("");
       setDesignationFilterId("");
@@ -752,7 +821,6 @@ function CrmEmployeeView() {
       setBranchFilterId(
         event.target.value
       );
-
       setDepartmentFilterId("");
       setDesignationFilterId("");
       setPage(1);
@@ -763,7 +831,6 @@ function CrmEmployeeView() {
       setDepartmentFilterId(
         event.target.value
       );
-
       setDesignationFilterId("");
       setPage(1);
     };
@@ -773,7 +840,6 @@ function CrmEmployeeView() {
       setDesignationFilterId(
         event.target.value
       );
-
       setPage(1);
     };
 
@@ -936,7 +1002,9 @@ function CrmEmployeeView() {
 
       try {
         await deactivateEmployee.mutateAsync(
-          employee.id
+          Number(
+            employee.id
+          )
         );
 
         await refetch();
@@ -955,14 +1023,14 @@ function CrmEmployeeView() {
       }
 
       try {
-        await updateEmployee.mutateAsync(
-          {
-            id: employee.id,
-            payload: {
-              is_active: true,
-            },
-          }
-        );
+        await updateEmployee.mutateAsync({
+          id: Number(
+            employee.id
+          ),
+          payload: {
+            is_active: true,
+          },
+        });
 
         await refetch();
       } catch (error) {
@@ -977,20 +1045,22 @@ function CrmEmployeeView() {
     exporting,
     exportExcel,
     exportPDF,
-  } = useTableExport({
-    fetchAll:
-      employeesApi.list,
-    queryParams: {
-      search:
-        search || undefined,
-    },
-    exportColumns:
-      CRM_EXPORT_COLUMNS,
-    filename:
-      "crm-employees",
-    title:
-      "CRM Employees",
-  });
+  } =
+    useTableExport({
+      fetchAll:
+        employeesApi.list,
+      queryParams: {
+        search:
+          search ||
+          undefined,
+      },
+      exportColumns:
+        CRM_EXPORT_COLUMNS,
+      filename:
+        "crm-employees",
+      title:
+        "CRM Employees",
+    });
 
   const statusBadge =
     (isActive) => (
@@ -1050,12 +1120,18 @@ function CrmEmployeeView() {
 
         <TableToolbar
           onRefresh={refetch}
-          refreshing={isFetching}
+          refreshing={
+            isFetching
+          }
           onExportExcel={
             exportExcel
           }
-          onExportPDF={exportPDF}
-          exporting={exporting}
+          onExportPDF={
+            exportPDF
+          }
+          exporting={
+            exporting
+          }
         />
       </div>
 
@@ -1064,6 +1140,7 @@ function CrmEmployeeView() {
           <p className="text-xs text-slate-500">
             Total CRM Employees
           </p>
+
           <p className="mt-1 text-2xl font-bold text-slate-900 dark:text-white">
             {
               crmEmployees.length
@@ -1075,6 +1152,7 @@ function CrmEmployeeView() {
           <p className="text-xs text-slate-500">
             Active
           </p>
+
           <p className="mt-1 text-2xl font-bold text-emerald-600 dark:text-emerald-400">
             {
               activeCrmEmployees.length
@@ -1086,6 +1164,7 @@ function CrmEmployeeView() {
           <p className="text-xs text-slate-500">
             Inactive
           </p>
+
           <p className="mt-1 text-2xl font-bold text-red-600 dark:text-red-400">
             {
               inactiveCrmEmployees.length
@@ -1098,9 +1177,9 @@ function CrmEmployeeView() {
         <div className="flex flex-wrap gap-2">
           <input
             value={search}
-            onChange={(e) => {
+            onChange={(event) => {
               setSearch(
-                e.target.value
+                event.target.value
               );
               setPage(1);
             }}
@@ -1363,6 +1442,10 @@ function CrmEmployeeView() {
                       ) ||
                       `Employee #${employee.id}`;
 
+                    const isActive =
+                      employee.is_active !==
+                      false;
+
                     return (
                       <tr
                         key={
@@ -1434,8 +1517,7 @@ function CrmEmployeeView() {
 
                         <td className="px-4 py-3">
                           {statusBadge(
-                            employee.is_active !==
-                              false
+                            isActive
                           )}
                         </td>
 
@@ -1459,6 +1541,7 @@ function CrmEmployeeView() {
                                   strokeLinejoin="round"
                                   d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"
                                 />
+
                                 <path
                                   strokeLinecap="round"
                                   strokeLinejoin="round"
@@ -1475,8 +1558,7 @@ function CrmEmployeeView() {
                               }
                               onClick={() => {
                                 if (
-                                  employee.is_active !==
-                                  false
+                                  isActive
                                 ) {
                                   handleCrmDeactivate(
                                     employee
@@ -1488,23 +1570,24 @@ function CrmEmployeeView() {
                                 }
                               }}
                               title={
-                                employee.is_active !==
-                                false
+                                isActive
                                   ? "Deactivate"
                                   : "Reactivate"
                               }
                               className={`rounded-full p-1.5 disabled:opacity-40 ${
-                                employee.is_active !==
-                                false
+                                isActive
                                   ? "text-red-500 hover:bg-red-50 dark:text-red-400"
                                   : "text-emerald-600 hover:bg-emerald-50 dark:text-emerald-400"
                               }`}
                             >
-                              {employee.is_active !==
-                              false ? (
-                                <span>×</span>
+                              {isActive ? (
+                                <span>
+                                  ×
+                                </span>
                               ) : (
-                                <span>↻</span>
+                                <span>
+                                  ↻
+                                </span>
                               )}
                             </button>
                           </div>
@@ -1526,6 +1609,10 @@ function CrmEmployeeView() {
                   employee
                 ) ||
                 `Employee #${employee.id}`;
+
+              const isActive =
+                employee.is_active !==
+                false;
 
               return (
                 <div
@@ -1558,8 +1645,7 @@ function CrmEmployeeView() {
                     </div>
 
                     {statusBadge(
-                      employee.is_active !==
-                        false
+                      isActive
                     )}
                   </div>
 
@@ -1627,8 +1713,7 @@ function CrmEmployeeView() {
                       }
                       onClick={() => {
                         if (
-                          employee.is_active !==
-                          false
+                          isActive
                         ) {
                           handleCrmDeactivate(
                             employee
@@ -1640,14 +1725,12 @@ function CrmEmployeeView() {
                         }
                       }}
                       className={`rounded-lg px-3 py-2 text-xs font-semibold disabled:opacity-40 ${
-                        employee.is_active !==
-                        false
+                        isActive
                           ? "bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400"
                           : "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400"
                       }`}
                     >
-                      {employee.is_active !==
-                      false
+                      {isActive
                         ? "Deactivate"
                         : "Reactivate"}
                     </button>

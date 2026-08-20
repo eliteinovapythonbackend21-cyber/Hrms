@@ -56,7 +56,7 @@ export default function EmployeeFormPage() {
         if (isEdit) {
           await updateEmployee.mutateAsync(
             {
-              id,
+              id: Number(id),
               payload,
             }
           );

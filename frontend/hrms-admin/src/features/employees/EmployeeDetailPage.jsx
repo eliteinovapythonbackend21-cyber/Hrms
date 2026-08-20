@@ -212,8 +212,7 @@ function HierarchyTrail({
             </span>
 
             {index <
-              steps.length -
-                1 && (
+              steps.length - 1 && (
               <span className="text-slate-300 dark:text-slate-600">
                 ›
               </span>
