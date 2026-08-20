@@ -235,28 +235,12 @@ export const crmApi = {
       itemUrl: C.PAYMENTS_ITEM,
     }),
 
-    /*
-     * Explicit update method for Payments.
-     *
-     * PUT /payments/:id
-     *
-     * IMPORTANT: this was previously missing entirely (payments
-     * was just the bare createCrudApi() output), which is why
-     * Edit / Deactivate / Reactivate for payments never worked -
-     * crmApi.payments.update / .deactivate were undefined.
-     */
     update: (id, payload) =>
       axiosClient.put(
         C.PAYMENTS_ITEM(id),
         payload
       ),
 
-    /*
-     * Explicit soft-deactivate method.
-     *
-     * PUT /payments/:id
-     * { is_active: false }
-     */
     deactivate: (id) =>
       axiosClient.put(
         C.PAYMENTS_ITEM(id),
@@ -265,12 +249,6 @@ export const crmApi = {
         }
       ),
 
-    /*
-     * Explicit reactivate method.
-     *
-     * PUT /payments/:id
-     * { is_active: true }
-     */
     reactivate: (id) =>
       axiosClient.put(
         C.PAYMENTS_ITEM(id),
@@ -284,11 +262,65 @@ export const crmApi = {
      SUPPORT TICKETS
   ========================================================= */
 
-  supportTickets:
-    createCrudApi({
+  supportTickets: {
+    ...createCrudApi({
       listUrl:
         C.SUPPORT_TICKETS,
       itemUrl:
         C.SUPPORT_TICKETS_ITEM,
     }),
+
+    /*
+     * Explicit update method for Support Tickets.
+     *
+     * PUT /support-tickets/:id
+     *
+     * IMPORTANT: this was previously missing entirely (supportTickets
+     * was just the bare createCrudApi() output), which is why
+     * Edit / Deactivate / Reactivate for support tickets never
+     * worked - crmApi.supportTickets.update / .deactivate were
+     * undefined. This completes the fix across all 8 CRM entities:
+     * leads, customers, followUps, meetings, quotations, invoices,
+     * payments, supportTickets.
+     */
+    update: (id, payload) =>
+      axiosClient.put(
+        C.SUPPORT_TICKETS_ITEM(
+          id
+        ),
+        payload
+      ),
+
+    /*
+     * Explicit soft-deactivate method.
+     *
+     * PUT /support-tickets/:id
+     * { is_active: false }
+     */
+    deactivate: (id) =>
+      axiosClient.put(
+        C.SUPPORT_TICKETS_ITEM(
+          id
+        ),
+        {
+          is_active: false,
+        }
+      ),
+
+    /*
+     * Explicit reactivate method.
+     *
+     * PUT /support-tickets/:id
+     * { is_active: true }
+     */
+    reactivate: (id) =>
+      axiosClient.put(
+        C.SUPPORT_TICKETS_ITEM(
+          id
+        ),
+        {
+          is_active: true,
+        }
+      ),
+  },
 };
