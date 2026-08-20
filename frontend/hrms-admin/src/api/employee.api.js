@@ -23,10 +23,32 @@ export const employeeLifecycleApi = {
   },
   permissions: createCrudApi({ listUrl: L.PERMISSIONS, itemUrl: L.PERMISSIONS_ITEM }),
   overtime: createCrudApi({ listUrl: L.OVERTIME, itemUrl: L.OVERTIME_ITEM }),
+  // payroll: {
+  //   ...createCrudApi({ listUrl: L.PAYROLL, itemUrl: L.PAYROLL_ITEM }),
+  //   report: (params) => axiosClient.get(L.PAYROLL_REPORT, { params, responseType: "blob" }),
+  // },
   payroll: {
-    ...createCrudApi({ listUrl: L.PAYROLL, itemUrl: L.PAYROLL_ITEM }),
-    report: (params) => axiosClient.get(L.PAYROLL_REPORT, { params, responseType: "blob" }),
+    ...createCrudApi({
+      listUrl: L.PAYROLL,
+      itemUrl: L.PAYROLL_ITEM,
+    }),
+
+    update: (id, payload) =>
+      axiosClient.put(
+        L.PAYROLL_ITEM(id),
+        payload
+      ),
+
+    report: (params) =>
+      axiosClient.get(
+        L.PAYROLL_REPORT,
+        {
+          params,
+          responseType: "blob",
+        }
+      ),
   },
+  
   performance: createCrudApi({ listUrl: L.PERFORMANCE, itemUrl: L.PERFORMANCE_ITEM }),
   training: createCrudApi({ listUrl: L.TRAINING, itemUrl: L.TRAINING_ITEM }),
   promotions: {
