@@ -125,28 +125,12 @@ export const crmApi = {
       itemUrl: C.MEETINGS_ITEM,
     }),
 
-    /*
-     * Explicit update method for Meetings.
-     *
-     * PUT /meetings/:id
-     *
-     * IMPORTANT: this was previously missing entirely (meetings
-     * was just the bare createCrudApi() output), which is why
-     * Edit / Deactivate / Reactivate for meetings never worked -
-     * crmApi.meetings.update / .deactivate were undefined.
-     */
     update: (id, payload) =>
       axiosClient.put(
         C.MEETINGS_ITEM(id),
         payload
       ),
 
-    /*
-     * Explicit soft-deactivate method.
-     *
-     * PUT /meetings/:id
-     * { is_active: false }
-     */
     deactivate: (id) =>
       axiosClient.put(
         C.MEETINGS_ITEM(id),
@@ -155,12 +139,6 @@ export const crmApi = {
         }
       ),
 
-    /*
-     * Explicit reactivate method.
-     *
-     * PUT /meetings/:id
-     * { is_active: true }
-     */
     reactivate: (id) =>
       axiosClient.put(
         C.MEETINGS_ITEM(id),
@@ -174,11 +152,56 @@ export const crmApi = {
      QUOTATIONS
   ========================================================= */
 
-  quotations:
-    createCrudApi({
+  quotations: {
+    ...createCrudApi({
       listUrl: C.QUOTATIONS,
       itemUrl: C.QUOTATIONS_ITEM,
     }),
+
+    /*
+     * Explicit update method for Quotations.
+     *
+     * PUT /quotations/:id
+     *
+     * IMPORTANT: this was previously missing entirely (quotations
+     * was just the bare createCrudApi() output), which is why
+     * Edit / Deactivate / Reactivate for quotations never worked -
+     * crmApi.quotations.update / .deactivate were undefined.
+     */
+    update: (id, payload) =>
+      axiosClient.put(
+        C.QUOTATIONS_ITEM(id),
+        payload
+      ),
+
+    /*
+     * Explicit soft-deactivate method.
+     *
+     * PUT /quotations/:id
+     * { is_active: false }
+     */
+    deactivate: (id) =>
+      axiosClient.put(
+        C.QUOTATIONS_ITEM(id),
+        {
+          is_active: false,
+        }
+      ),
+
+    /*
+     * Explicit reactivate method.
+     *
+     * PUT /quotations/:id
+     * { is_active: true }
+     */
+    reactivate: (id) =>
+      axiosClient.put(
+        C.QUOTATIONS_ITEM(id),
+        {
+          is_active: true,
+        }
+      ),
+  },
 
   /* =========================================================
      INVOICES
