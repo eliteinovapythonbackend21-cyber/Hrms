@@ -9,7 +9,7 @@ import { useToast } from "@/components/feedback/Toast";
 
 import CustomerForm from "./CustomerForm";
 
-import { useCustomers, useCreateCustomer } from "./useCustomers";
+import { useCustomers, useCreateCustomer, useUpdateCustomer, useReactivateCustomer } from "./useCustomers";
 
 import { crmApi } from "@/api/crm.api";
 import { useTableExport } from "@/hooks/useTableExport";
@@ -79,34 +79,17 @@ function formatDateTime(value) {
 
 /* =========================================================
    API HELPERS
-   Now that crmApi.customers has explicit update / deactivate /
-   reactivate methods (see crm.api.js), these thin wrappers just
-   call them directly - mirroring how LeadListPage.jsx calls
-   crmApi.leads.update / .deactivate / .reactivate.
+   Deactivate still calls crmApi.customers.deactivate() directly
+   (a PUT to /customers/:id with { is_active: false }, same pattern
+   leads uses) since there's no bespoke hook for it. Edit and
+   Reactivate now go through useUpdateCustomer / useReactivateCustomer
+   from useCustomers.js instead, mirroring useLeads.js.
 ========================================================= */
-
-async function updateCustomerRecord(
-  id,
-  payload
-) {
-  return crmApi.customers.update(
-    id,
-    payload
-  );
-}
 
 async function deactivateCustomerRecord(
   id
 ) {
   return crmApi.customers.deactivate(
-    id
-  );
-}
-
-async function reactivateCustomerRecord(
-  id
-) {
-  return crmApi.customers.reactivate(
     id
   );
 }
@@ -583,6 +566,12 @@ export default function CustomerListPage() {
   const createCustomer =
     useCreateCustomer();
 
+  const updateCustomer =
+    useUpdateCustomer();
+
+  const reactivateCustomer =
+    useReactivateCustomer();
+
   const [search, setSearch] =
     useState("");
 
@@ -776,9 +765,12 @@ export default function CustomerListPage() {
         };
 
         if (editingCustomer) {
-          await updateCustomerRecord(
-            editingCustomer.id,
-            normalizedPayload
+          await updateCustomer.mutateAsync(
+            {
+              id: editingCustomer.id,
+              payload:
+                normalizedPayload,
+            }
           );
 
           showToast(
@@ -872,7 +864,7 @@ export default function CustomerListPage() {
           customer.id
         );
 
-        await reactivateCustomerRecord(
+        await reactivateCustomer.mutateAsync(
           customer.id
         );
 
@@ -909,7 +901,8 @@ export default function CustomerListPage() {
 
   const isSaving =
     saving ||
-    createCustomer.isPending;
+    createCustomer.isPending ||
+    updateCustomer.isPending;
 
   if (isError) {
     return (
