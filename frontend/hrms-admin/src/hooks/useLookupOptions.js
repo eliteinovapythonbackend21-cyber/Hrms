@@ -30,6 +30,19 @@ export function useEmployeeOptions() {
   }));
 }
 
+export function useCRMEmployeeOptions() {
+  const { data } = useQuery({
+    queryKey: ["lookup", "crm-employees"],
+    queryFn: async () => (await employeesApi.list(ACTIVE_ONLY)).data.data,
+  });
+  return (data?.items || [])
+    .filter((e) => e.department?.department_name === "CRM")
+    .map((e) => ({
+      value: e.id,
+      label: `${e.first_name || ""} ${e.last_name || ""}`.trim() || e.employee_code || `Employee #${e.id}`,
+    }));
+}
+
 export function useDepartmentOptions() {
   const { data } = useQuery({
     queryKey: ["lookup", "departments"],

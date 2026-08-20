@@ -1,5 +1,5 @@
 import GenericForm from "@/components/form/GenericForm";
-import { useEmployeeOptions } from "@/hooks/useLookupOptions";
+import { useCRMEmployeeOptions } from "@/hooks/useLookupOptions";
 
 const STATUS_OPTIONS = [
   { value: "New", label: "New" },
@@ -10,13 +10,7 @@ const STATUS_OPTIONS = [
 ];
 
 export default function LeadForm({ formId = "leads-form", initialData, onSubmit, loading }) {
-  // NOTE: useEmployeeOptions() as used elsewhere in this app (see
-  // TransferForm / PromotionForm) returns all active employees, not
-  // scoped to CRM only. If you need this restricted to CRM Voice /
-  // Non-Voice staff specifically, that filtering needs to happen
-  // where useEmployeeOptions is defined (or via a CRM-specific
-  // variant), since it isn't scoped here.
-  const employeeOptions = useEmployeeOptions();
+  const employeeOptions = useCRMEmployeeOptions();
 
   const fields = [
     { name: "lead_name", label: "Lead Name", type: "text", required: true },
@@ -30,27 +24,17 @@ export default function LeadForm({ formId = "leads-form", initialData, onSubmit,
       type: "select",
       options: employeeOptions,
     },
-    {
-      name: "assigned_to",
-      label: "Assigned To (CRM Employee)",
-      type: "select",
-      options: employeeOptions,
-    },
   ];
 
-  // Normalize both employee references the same way TransferForm /
+  // Normalize employee reference the same way TransferForm /
   // PromotionForm do: fall back from the flat id field to the nested
   // relationship object's id, so editing an existing lead pre-fills
-  // both dropdowns correctly.
+  // the dropdown correctly.
   const normalizedInitialData = {
     ...initialData,
     created_by:
       initialData?.created_by ??
       initialData?.creator?.id ??
-      "",
-    assigned_to:
-      initialData?.assigned_to ??
-      initialData?.assignee?.id ??
       "",
   };
 

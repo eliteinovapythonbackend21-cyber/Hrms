@@ -1,34 +1,12 @@
 import { useState, useCallback } from "react";
+
 import {
   exportToExcel as exportExcelFile,
   exportToPDF as exportPDFFile,
 } from "@/utils/exportTable";
+
 import { useToast } from "@/components/feedback/Toast";
 
-/**
- * Table export hook.
- *
- * Supports two export modes:
- *
- * 1. Direct export:
- *
- * const { exportToExcel } = useTableExport();
- *
- * exportToExcel(rows, columns, "transfers");
- *
- * 2. Fetch-all export:
- *
- * const {
- *   exportExcel,
- *   exportPDF,
- * } = useTableExport({
- *   fetchAll: employeesApi.list,
- *   queryParams,
- *   exportColumns,
- *   filename: "employees",
- *   title: "Employees",
- * });
- */
 export function useTableExport(options = {}) {
   const {
     fetchAll = null,
@@ -40,13 +18,8 @@ export function useTableExport(options = {}) {
 
   const { showToast } = useToast();
 
-  const [exporting, setExporting] = useState(false);
-
-  /* =========================================================
-     DIRECT EXCEL EXPORT
-     Used by TransferListPage and other pages that already
-     have the rows available.
-  ========================================================= */
+  const [exporting, setExporting] =
+    useState(false);
 
   const exportToExcel = useCallback(
     async (
@@ -54,7 +27,10 @@ export function useTableExport(options = {}) {
       columns = [],
       fileName = "export"
     ) => {
-      if (!Array.isArray(rows) || rows.length === 0) {
+      if (
+        !Array.isArray(rows) ||
+        rows.length === 0
+      ) {
         showToast(
           "No data to export",
           "info"
@@ -66,9 +42,9 @@ export function useTableExport(options = {}) {
         setExporting(true);
 
         exportExcelFile(
-          rows,
+          fileName,
           columns,
-          fileName
+          rows
         );
       } catch (error) {
         console.error(
@@ -87,10 +63,6 @@ export function useTableExport(options = {}) {
     [showToast]
   );
 
-  /* =========================================================
-     DIRECT PDF EXPORT
-  ========================================================= */
-
   const exportToPDF = useCallback(
     async (
       rows = [],
@@ -98,7 +70,10 @@ export function useTableExport(options = {}) {
       fileName = "export",
       exportTitle = ""
     ) => {
-      if (!Array.isArray(rows) || rows.length === 0) {
+      if (
+        !Array.isArray(rows) ||
+        rows.length === 0
+      ) {
         showToast(
           "No data to export",
           "info"
@@ -110,10 +85,10 @@ export function useTableExport(options = {}) {
         setExporting(true);
 
         exportPDFFile(
-          rows,
+          fileName,
           exportTitle,
           columns,
-          fileName
+          rows
         );
       } catch (error) {
         console.error(
@@ -132,13 +107,11 @@ export function useTableExport(options = {}) {
     [showToast]
   );
 
-  /* =========================================================
-     FETCH ALL ROWS
-  ========================================================= */
-
   const getRows = useCallback(
     async () => {
-      if (typeof fetchAll !== "function") {
+      if (
+        typeof fetchAll !== "function"
+      ) {
         throw new Error(
           "fetchAll is required for fetch-based export"
         );
@@ -152,16 +125,12 @@ export function useTableExport(options = {}) {
         });
 
       return (
-        response?.data?.data?.items ||
-        []
+        response?.data?.data
+          ?.items || []
       );
     },
     [fetchAll, queryParams]
   );
-
-  /* =========================================================
-     FETCH-BASED EXPORT
-  ========================================================= */
 
   const withRows = useCallback(
     async (run) => {
@@ -197,10 +166,6 @@ export function useTableExport(options = {}) {
     [getRows, showToast]
   );
 
-  /* =========================================================
-     FETCH-BASED EXCEL
-  ========================================================= */
-
   const exportExcel = useCallback(
     () =>
       withRows((rows) =>
@@ -216,10 +181,6 @@ export function useTableExport(options = {}) {
       exportColumns,
     ]
   );
-
-  /* =========================================================
-     FETCH-BASED PDF
-  ========================================================= */
 
   const exportPDF = useCallback(
     () =>
@@ -241,12 +202,8 @@ export function useTableExport(options = {}) {
 
   return {
     exporting,
-
-    // Direct export API
     exportToExcel,
     exportToPDF,
-
-    // Fetch-all export API
     exportExcel,
     exportPDF,
   };
