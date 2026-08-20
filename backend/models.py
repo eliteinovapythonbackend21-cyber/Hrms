@@ -1377,13 +1377,61 @@ class Lead(TimestampMixin, db.Model):
     source = db.Column(db.String(50))
     status = db.Column(db.String(20), default="New")
     assigned_to = db.Column(db.Integer, db.ForeignKey("employees.id"))
+    created_by = db.Column(db.Integer, db.ForeignKey("employees.id"))
     is_active = db.Column(db.Boolean, default=True)
-    assignee = db.relationship("Employee")
+    assignee = db.relationship("Employee", foreign_keys=[assigned_to])
+    creator = db.relationship("Employee", foreign_keys=[created_by])
     customers = db.relationship("Customer", back_populates="lead")
+
+    @staticmethod
+    def _derive_team_type(department_name):
+        """Classify a department as Voice / Non-Voice so a lead can be
+        traced back to which CRM sub-team it came from.
+
+        Matches on the department name text (e.g. "CRM - Voice",
+        "CRM Non-Voice") rather than a dedicated column, since the
+        Department model doesn't currently carry a separate team-type
+        field. If/when one is added, swap this for a direct field read.
+        """
+        if not department_name:
+            return None
+        normalized = department_name.strip().lower()
+        if "non" in normalized and "voice" in normalized:
+            return "Non-Voice"
+        if "voice" in normalized:
+            return "Voice"
+        return None
+
+    @classmethod
+    def _employee_hierarchy(cls, employee):
+        """Build a company / branch / department / designation summary
+        (plus a derived Voice / Non-Voice team_type) for a given
+        Employee. Used for both the creator and the assignee so either
+        can be traced through the CRM org structure."""
+        if not employee:
+            return None
+
+        department = getattr(employee, "department", None)
+        designation = getattr(employee, "designation", None)
+        company = getattr(department, "company", None) if department else None
+        branch = getattr(department, "branch", None) if department else None
+        department_name = getattr(department, "department_name", None)
+
+        return {
+            "company": _summary(company, ["id", "name"]),
+            "branch": _summary(branch, ["id", "name"]),
+            "department": _summary(department, ["id", "department_name"]),
+            "designation": _summary(designation, ["id", "designation_name"]),
+            "team_type": cls._derive_team_type(department_name),
+        }
 
     def to_dict(self):
         data = super().to_dict()
         data["assignee"] = _summary(self.assignee, ["id", "employee_code", "first_name", "last_name"])
+        data["creator"] = _summary(self.creator, ["id", "employee_code", "first_name", "last_name"])
+        data["assignee_hierarchy"] = self._employee_hierarchy(self.assignee)
+        data["creator_hierarchy"] = self._employee_hierarchy(self.creator)
+
         return data
 
 

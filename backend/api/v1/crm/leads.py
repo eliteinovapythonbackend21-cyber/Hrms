@@ -20,11 +20,18 @@ from utils import (
 leads_bp = register_crud_blueprint(
     "leads_bp",
     Lead,
-    create_fields=["lead_name", "contact_number", "email", "source", "status", "assigned_to", "is_active"],
+    create_fields=["lead_name", "contact_number", "email", "source", "status", "assigned_to", "created_by", "is_active"],
     search_fields=["lead_name", "contact_number", "email"],
     url_prefix_singular="",
-    editable=False,
-    deletable=False,
+    # BUG FIX: these were previously False, which made the generic
+    # PUT (edit) and DELETE (deactivate) routes both return
+    # 405 "not permitted" for every request - regardless of what the
+    # frontend sent. Edit, Deactivate, and Reactivate (PUT with
+    # { is_active: true } - "is_active" is already in create_fields,
+    # which register_crud_blueprint also uses as the default
+    # update_fields list) now work correctly.
+    editable=True,
+    deletable=True,
     admin_only=True,
 )
 
