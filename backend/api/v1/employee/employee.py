@@ -454,6 +454,12 @@ def update_employee(employee_id, token_response):
             return jsonify({"message": "Status must be a boolean value"}), 400
         employee.status = status_value
 
+    if "is_active" in data:
+        is_active_value = _parse_bool(data.get("is_active"))
+        if is_active_value is None:
+            return jsonify({"message": "is_active must be a boolean value"}), 400
+        employee.is_active = is_active_value
+
     try:
         db.session.commit()
     except IntegrityError as exc:

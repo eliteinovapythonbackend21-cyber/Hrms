@@ -245,6 +245,24 @@ export default function EmployeeDetailPage() {
       "from"
     ) === "crm";
 
+  /*
+   * IMPORTANT:
+   *
+   * "restricted" hides Edit / Payslip for regular
+   * restricted views (e.g. read-only role access).
+   * CRM employees are also opened with
+   * restricted=1&from=crm so the Payslip action stays
+   * hidden for them, but CRM users still need a way to
+   * Edit the employee record - so Edit is shown whenever
+   * the view is NOT restricted at all, OR it came from
+   * the CRM module.
+   */
+  const canEdit =
+    !restricted || fromCrm;
+
+  const canViewPayslip =
+    !restricted;
+
   const {
     data: employee,
     isLoading,
@@ -325,6 +343,17 @@ export default function EmployeeDetailPage() {
       );
     };
 
+  const handleEdit =
+    () => {
+      navigate(
+        `/employees/${id}/edit${
+          fromCrm
+            ? "?from=crm"
+            : ""
+        }`
+      );
+    };
+
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -400,31 +429,41 @@ export default function EmployeeDetailPage() {
               )}
             </div>
 
-            {!restricted && (
-              <div className="mt-5 grid grid-cols-2 gap-2">
-                <Button
-                  variant="secondary"
-                  onClick={() =>
-                    navigate(
-                      `/employees/${id}/edit`
-                    )
-                  }
-                  className="w-full text-sm"
-                >
-                  Edit
-                </Button>
+            {(canEdit ||
+              canViewPayslip) && (
+              <div
+                className={`mt-5 grid gap-2 ${
+                  canEdit &&
+                  canViewPayslip
+                    ? "grid-cols-2"
+                    : "grid-cols-1"
+                }`}
+              >
+                {canEdit && (
+                  <Button
+                    variant="secondary"
+                    onClick={
+                      handleEdit
+                    }
+                    className="w-full text-sm"
+                  >
+                    Edit
+                  </Button>
+                )}
 
-                <Button
-                  variant="secondary"
-                  onClick={() =>
-                    navigate(
-                      `/employees/${id}/payslip`
-                    )
-                  }
-                  className="w-full text-sm"
-                >
-                  Payslip
-                </Button>
+                {canViewPayslip && (
+                  <Button
+                    variant="secondary"
+                    onClick={() =>
+                      navigate(
+                        `/employees/${id}/payslip`
+                      )
+                    }
+                    className="w-full text-sm"
+                  >
+                    Payslip
+                  </Button>
+                )}
               </div>
             )}
           </div>

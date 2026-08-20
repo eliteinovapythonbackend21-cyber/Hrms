@@ -20,6 +20,8 @@ import TableToolbar from "@/components/table/TableToolbar";
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 
+import { useToast } from "@/components/feedback/Toast";
+
 import { employeesApi } from "@/api/employees.api";
 import { masterApi } from "@/api/master.api";
 import { formatCurrency } from "@/utils/formatCurrency";
@@ -493,6 +495,72 @@ function getEmployeeFullName(
   }`.trim();
 }
 
+/**
+ * Build a full update payload for an employee record.
+ *
+ * IMPORTANT / BUG FIX:
+ *
+ * The CRM "Reactivate" action previously sent only
+ * `{ is_active: true }` to the generic update mutation.
+ * Deactivate worked because it hits a dedicated
+ * deactivate endpoint that only needs an employee id -
+ * but the generic update endpoint (the same one
+ * EmployeeFormPage uses for "Edit") expects the FULL
+ * employee record. Sending a partial payload either
+ * fails backend validation (missing required fields)
+ * or silently wipes out fields that weren't included -
+ * which is why reactivate looked like it "did nothing".
+ *
+ * This mirrors what the Edit form does: take the
+ * existing employee record, strip out server-only /
+ * nested / read-only fields (id, nested department &
+ * designation objects, timestamps, aggregated counts),
+ * normalize department_id / designation_id to plain
+ * numeric ids, and send everything else back along
+ * with the field being changed (is_active).
+ */
+function buildEmployeeUpdatePayload(
+  employee,
+  overrides = {}
+) {
+  if (!employee) {
+    return { ...overrides };
+  }
+
+  const {
+    id,
+    department,
+    designation,
+    created_at,
+    updated_at,
+    attendance_count,
+    leave_count,
+    network_log_count,
+    ...rest
+  } = employee;
+
+  return {
+    ...rest,
+
+    department_id:
+      employee.department_id ??
+      department?.id ??
+      null,
+
+    designation_id:
+      employee.designation_id ??
+      designation?.id ??
+      null,
+
+    /*
+     * Spread LAST so overrides (e.g. is_active: true)
+     * always win over any stale value that came through
+     * `...rest` from the original employee object.
+     */
+    ...overrides,
+  };
+}
+
 function CrmEmployeeView() {
   const [
     page,
@@ -537,6 +605,9 @@ function CrmEmployeeView() {
     designationFilterId,
     setDesignationFilterId,
   ] = useState("");
+
+  const { showToast } =
+    useToast();
 
   const updateEmployee =
     useUpdateEmployee();
@@ -994,6 +1065,10 @@ function CrmEmployeeView() {
         pageSize
     );
 
+  /* =======================================================
+     DEACTIVATE
+  ======================================================= */
+
   const handleCrmDeactivate =
     async (employee) => {
       if (!employee?.id) {
@@ -1007,14 +1082,31 @@ function CrmEmployeeView() {
           )
         );
 
+        showToast(
+          "Employee deactivated",
+          "success"
+        );
+
         await refetch();
       } catch (error) {
         console.error(
           "Failed to deactivate CRM employee:",
           error
         );
+
+        showToast(
+          error?.response
+            ?.data
+            ?.message ||
+            "Failed to deactivate employee",
+          "error"
+        );
       }
     };
+
+  /* =======================================================
+     REACTIVATE
+  ======================================================= */
 
   const handleCrmReactivate =
     async (employee) => {
@@ -1023,20 +1115,56 @@ function CrmEmployeeView() {
       }
 
       try {
-        await updateEmployee.mutateAsync({
-          id: Number(
-            employee.id
-          ),
-          payload: {
-            is_active: true,
-          },
-        });
+        const payload =
+          buildEmployeeUpdatePayload(
+            employee,
+            {
+              is_active: true,
+            }
+          );
+
+        const response =
+          await updateEmployee.mutateAsync(
+            {
+              id: Number(
+                employee.id
+              ),
+              payload,
+            }
+          );
+
+        /*
+         * TEMP DEBUG:
+         *
+         * Confirms what the server actually persisted.
+         * Open DevTools console after clicking
+         * Reactivate and check whether is_active
+         * comes back as true in the response.
+         * Remove this line once confirmed.
+         */
+        console.log(
+          "Reactivate response:",
+          response?.data
+        );
+
+        showToast(
+          "Employee reactivated",
+          "success"
+        );
 
         await refetch();
       } catch (error) {
         console.error(
           "Failed to reactivate CRM employee:",
           error
+        );
+
+        showToast(
+          error?.response
+            ?.data
+            ?.message ||
+            "Failed to reactivate employee",
+          "error"
         );
       }
     };
@@ -1088,6 +1216,10 @@ function CrmEmployeeView() {
   const isLoading =
     employeesLoading ||
     departmentsLoading;
+
+  const isMutating =
+    deactivateEmployee.isPending ||
+    updateEmployee.isPending;
 
   if (isError) {
     return (
@@ -1550,11 +1682,31 @@ function CrmEmployeeView() {
                               </svg>
                             </Link>
 
+                            <Link
+                              to={`/employees/${employee.id}/edit?from=crm`}
+                              title="Edit"
+                              className="rounded-full p-1.5 text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-700"
+                            >
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-4 w-4"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                strokeWidth={2}
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M16.862 4.487l1.687-1.688a2.121 2.121 0 013 3l-9.9 9.9-4.137 1.034 1.034-4.137 9.9-9.9z"
+                                />
+                              </svg>
+                            </Link>
+
                             <button
                               type="button"
                               disabled={
-                                deactivateEmployee.isPending ||
-                                updateEmployee.isPending
+                                isMutating
                               }
                               onClick={() => {
                                 if (
@@ -1697,7 +1849,7 @@ function CrmEmployeeView() {
                     </p>
                   </div>
 
-                  <div className="mt-4 grid grid-cols-2 gap-2">
+                  <div className="mt-4 grid grid-cols-3 gap-2">
                     <Link
                       to={`/employees/${employee.id}?restricted=1&from=crm`}
                       className="rounded-lg border border-slate-200 px-3 py-2 text-center text-xs font-semibold dark:border-slate-700"
@@ -1705,11 +1857,17 @@ function CrmEmployeeView() {
                       View
                     </Link>
 
+                    <Link
+                      to={`/employees/${employee.id}/edit?from=crm`}
+                      className="rounded-lg border border-slate-200 px-3 py-2 text-center text-xs font-semibold dark:border-slate-700"
+                    >
+                      Edit
+                    </Link>
+
                     <button
                       type="button"
                       disabled={
-                        deactivateEmployee.isPending ||
-                        updateEmployee.isPending
+                        isMutating
                       }
                       onClick={() => {
                         if (
