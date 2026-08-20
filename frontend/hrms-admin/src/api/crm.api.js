@@ -73,11 +73,62 @@ export const crmApi = {
      CUSTOMERS
   ========================================================= */
 
-  customers:
-    createCrudApi({
+  customers: {
+    ...createCrudApi({
       listUrl: C.CUSTOMERS,
       itemUrl: C.CUSTOMERS_ITEM,
     }),
+
+    /*
+     * Explicit update method for Customers.
+     *
+     * PUT /customers/:id
+     *
+     * NOTE: this mirrors leads.update() above. createCrudApi()
+     * already spreads in first, so this override takes
+     * precedence - added explicitly (rather than relying on
+     * whatever the factory's default update does) for the same
+     * reason leads has one: CustomerListPage.jsx calls
+     * crmApi.customers.update(id, payload) directly for Edit.
+     */
+    update: (id, payload) =>
+      axiosClient.put(
+        C.CUSTOMERS_ITEM(id),
+        payload
+      ),
+
+    /*
+     * Explicit soft-deactivate method.
+     *
+     * PUT /customers/:id
+     * { is_active: false }
+     *
+     * IMPORTANT: this was previously missing entirely, which is
+     * why Deactivate for customers never worked -
+     * crmApi.customers.deactivate was undefined.
+     */
+    deactivate: (id) =>
+      axiosClient.put(
+        C.CUSTOMERS_ITEM(id),
+        {
+          is_active: false,
+        }
+      ),
+
+    /*
+     * Explicit reactivate method.
+     *
+     * PUT /customers/:id
+     * { is_active: true }
+     */
+    reactivate: (id) =>
+      axiosClient.put(
+        C.CUSTOMERS_ITEM(id),
+        {
+          is_active: true,
+        }
+      ),
+  },
 
   /* =========================================================
      FOLLOW UPS

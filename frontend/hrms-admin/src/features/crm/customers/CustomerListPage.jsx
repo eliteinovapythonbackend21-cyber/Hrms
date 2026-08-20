@@ -9,11 +9,7 @@ import { useToast } from "@/components/feedback/Toast";
 
 import CustomerForm from "./CustomerForm";
 
-import {
-  useCustomers,
-  useCreateCustomer,
-  useDeactivateCustomer,
-} from "./useCustomers";
+import { useCustomers, useCreateCustomer } from "./useCustomers";
 
 import { crmApi } from "@/api/crm.api";
 import { useTableExport } from "@/hooks/useTableExport";
@@ -79,6 +75,40 @@ function formatDateTime(value) {
   }
 
   return date.toLocaleString();
+}
+
+/* =========================================================
+   API HELPERS
+   Now that crmApi.customers has explicit update / deactivate /
+   reactivate methods (see crm.api.js), these thin wrappers just
+   call them directly - mirroring how LeadListPage.jsx calls
+   crmApi.leads.update / .deactivate / .reactivate.
+========================================================= */
+
+async function updateCustomerRecord(
+  id,
+  payload
+) {
+  return crmApi.customers.update(
+    id,
+    payload
+  );
+}
+
+async function deactivateCustomerRecord(
+  id
+) {
+  return crmApi.customers.deactivate(
+    id
+  );
+}
+
+async function reactivateCustomerRecord(
+  id
+) {
+  return crmApi.customers.reactivate(
+    id
+  );
 }
 
 /* =========================================================
@@ -553,9 +583,6 @@ export default function CustomerListPage() {
   const createCustomer =
     useCreateCustomer();
 
-  const deactivateCustomer =
-    useDeactivateCustomer();
-
   const [search, setSearch] =
     useState("");
 
@@ -749,17 +776,7 @@ export default function CustomerListPage() {
         };
 
         if (editingCustomer) {
-          if (
-            typeof crmApi
-              ?.customers?.update !==
-            "function"
-          ) {
-            throw new Error(
-              "Customer update API method is not configured."
-            );
-          }
-
-          await crmApi.customers.update(
+          await updateCustomerRecord(
             editingCustomer.id,
             normalizedPayload
           );
@@ -813,7 +830,7 @@ export default function CustomerListPage() {
           deleteTarget.id
         );
 
-        await deactivateCustomer.mutateAsync(
+        await deactivateCustomerRecord(
           deleteTarget.id
         );
 
@@ -855,21 +872,8 @@ export default function CustomerListPage() {
           customer.id
         );
 
-        if (
-          typeof crmApi
-            ?.customers?.update !==
-          "function"
-        ) {
-          throw new Error(
-            "Customer update API method is not configured."
-          );
-        }
-
-        await crmApi.customers.update(
-          customer.id,
-          {
-            is_active: true,
-          }
+        await reactivateCustomerRecord(
+          customer.id
         );
 
         showToast(
@@ -1485,7 +1489,7 @@ export default function CustomerListPage() {
                                 <path
                                   strokeLinecap="round"
                                   strokeLinejoin="round"
-                                  d="M4 12a8 8 0 018-8 8.5 8.5 0 017 4M20 4v5h-5M20 12a8 8 0 01-8 8 8.5 8.5 0 017 4M4 20v-5h5"
+                                  d="M4 12a8 8 0 018-8 8.5 8.5 0 017 4M20 4v5h-5M20 12a8 8 0 01-8 8 8.5 8.5 0 01-7-4M4 20v-5h5"
                                 />
                               </svg>
                             </IconButton>
