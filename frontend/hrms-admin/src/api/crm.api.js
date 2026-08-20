@@ -158,28 +158,12 @@ export const crmApi = {
       itemUrl: C.QUOTATIONS_ITEM,
     }),
 
-    /*
-     * Explicit update method for Quotations.
-     *
-     * PUT /quotations/:id
-     *
-     * IMPORTANT: this was previously missing entirely (quotations
-     * was just the bare createCrudApi() output), which is why
-     * Edit / Deactivate / Reactivate for quotations never worked -
-     * crmApi.quotations.update / .deactivate were undefined.
-     */
     update: (id, payload) =>
       axiosClient.put(
         C.QUOTATIONS_ITEM(id),
         payload
       ),
 
-    /*
-     * Explicit soft-deactivate method.
-     *
-     * PUT /quotations/:id
-     * { is_active: false }
-     */
     deactivate: (id) =>
       axiosClient.put(
         C.QUOTATIONS_ITEM(id),
@@ -188,12 +172,6 @@ export const crmApi = {
         }
       ),
 
-    /*
-     * Explicit reactivate method.
-     *
-     * PUT /quotations/:id
-     * { is_active: true }
-     */
     reactivate: (id) =>
       axiosClient.put(
         C.QUOTATIONS_ITEM(id),
@@ -213,6 +191,54 @@ export const crmApi = {
       itemUrl: C.INVOICES_ITEM,
     }),
 
+    /*
+     * Explicit update method for Invoices.
+     *
+     * PUT /invoices/:id
+     *
+     * IMPORTANT: this was previously missing entirely (invoices
+     * only had the spread createCrudApi() output plus `report`),
+     * which is why Edit / Deactivate / Reactivate for invoices
+     * never worked - crmApi.invoices.update / .deactivate were
+     * undefined.
+     */
+    update: (id, payload) =>
+      axiosClient.put(
+        C.INVOICES_ITEM(id),
+        payload
+      ),
+
+    /*
+     * Explicit soft-deactivate method.
+     *
+     * PUT /invoices/:id
+     * { is_active: false }
+     */
+    deactivate: (id) =>
+      axiosClient.put(
+        C.INVOICES_ITEM(id),
+        {
+          is_active: false,
+        }
+      ),
+
+    /*
+     * Explicit reactivate method.
+     *
+     * PUT /invoices/:id
+     * { is_active: true }
+     */
+    reactivate: (id) =>
+      axiosClient.put(
+        C.INVOICES_ITEM(id),
+        {
+          is_active: true,
+        }
+      ),
+
+    /*
+     * Existing CRM report export - unchanged.
+     */
     report: (
       params
     ) =>
