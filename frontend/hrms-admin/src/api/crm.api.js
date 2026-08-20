@@ -83,13 +83,6 @@ export const crmApi = {
      * Explicit update method for Customers.
      *
      * PUT /customers/:id
-     *
-     * NOTE: this mirrors leads.update() above. createCrudApi()
-     * already spreads in first, so this override takes
-     * precedence - added explicitly (rather than relying on
-     * whatever the factory's default update does) for the same
-     * reason leads has one: CustomerListPage.jsx calls
-     * crmApi.customers.update(id, payload) directly for Edit.
      */
     update: (id, payload) =>
       axiosClient.put(
@@ -102,10 +95,6 @@ export const crmApi = {
      *
      * PUT /customers/:id
      * { is_active: false }
-     *
-     * IMPORTANT: this was previously missing entirely, which is
-     * why Deactivate for customers never worked -
-     * crmApi.customers.deactivate was undefined.
      */
     deactivate: (id) =>
       axiosClient.put(
@@ -134,11 +123,58 @@ export const crmApi = {
      FOLLOW UPS
   ========================================================= */
 
-  followUps:
-    createCrudApi({
+  followUps: {
+    ...createCrudApi({
       listUrl: C.FOLLOW_UPS,
       itemUrl: C.FOLLOW_UPS_ITEM,
     }),
+
+    /*
+     * Explicit update method for Follow-ups.
+     *
+     * PUT /follow-ups/:id
+     *
+     * IMPORTANT: this was previously missing entirely (followUps
+     * was just the bare createCrudApi() output), which is why
+     * Edit / Deactivate / Reactivate for follow-ups never worked -
+     * crmApi.followUps.update / .deactivate were undefined, so
+     * updateFollowUpRecord() in FollowUpListPage.jsx immediately
+     * threw "Follow-up update API method is not configured."
+     */
+    update: (id, payload) =>
+      axiosClient.put(
+        C.FOLLOW_UPS_ITEM(id),
+        payload
+      ),
+
+    /*
+     * Explicit soft-deactivate method.
+     *
+     * PUT /follow-ups/:id
+     * { is_active: false }
+     */
+    deactivate: (id) =>
+      axiosClient.put(
+        C.FOLLOW_UPS_ITEM(id),
+        {
+          is_active: false,
+        }
+      ),
+
+    /*
+     * Explicit reactivate method.
+     *
+     * PUT /follow-ups/:id
+     * { is_active: true }
+     */
+    reactivate: (id) =>
+      axiosClient.put(
+        C.FOLLOW_UPS_ITEM(id),
+        {
+          is_active: true,
+        }
+      ),
+  },
 
   /* =========================================================
      MEETINGS
