@@ -1,13 +1,16 @@
 """
 Invoice records track billing for a Customer (optionally linked to a
-Quotation). Deactivation mirrors leads.py's / customers.py's /
-follow_ups.py's / meetings.py's / quotations.py's dedicated
-/deactivate route rather than the generic DELETE route, which is
-intentionally blocked (deletable=False).
+Quotation). Deactivation mirrors the dedicated /deactivate route used
+across the rest of the CRM module rather than the generic DELETE
+route, which is intentionally blocked (deletable=False).
 """
+
+import io
 
 from flask import jsonify, request, send_file
 from flask_jwt_extended import jwt_required
+from openpyxl import Workbook
+from openpyxl.utils import get_column_letter
 
 from extensions import db
 from models import Invoice
@@ -116,5 +119,122 @@ def export_crm_report(token_response):
         workbook,
         as_attachment=True,
         download_name="crm_report.xlsx",
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+
+
+@invoices_bp.route(
+    "/<int:invoice_id>/download",
+    methods=["GET"],
+)
+@jwt_required()
+@with_token
+def download_invoice(
+    invoice_id,
+    token_response,
+):
+    """
+    Generates a single-invoice report (.xlsx) for download from the
+    UI - the per-card / per-row "Download" action on
+    InvoiceListPage.jsx, distinct from /report above (which generates
+    an aggregate multi-invoice CRM report across a date range).
+
+    Built directly with openpyxl rather than relying on
+    Invoice.generate_crm_report, since that method is designed for a
+    multi-row date-range export, not a single-record document.
+    """
+    invoice, error_response = fetch_or_404(
+        Invoice,
+        invoice_id,
+    )
+
+    if error_response:
+        return error_response
+
+    customer = getattr(invoice, "customer", None)
+    quotation = getattr(invoice, "quotation", None)
+
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.title = "Invoice"
+
+    sheet.append(["Field", "Value"])
+
+    rows = [
+        (
+            "Invoice Number",
+            invoice.invoice_number or f"INV{invoice.id:05d}",
+        ),
+        (
+            "Customer",
+            getattr(customer, "customer_name", None)
+            or f"Customer #{invoice.customer_id}",
+        ),
+        (
+            "Customer Contact",
+            getattr(customer, "contact_number", None) or "-",
+        ),
+        (
+            "Customer Email",
+            getattr(customer, "email", None) or "-",
+        ),
+        (
+            "Customer Address",
+            getattr(customer, "address", None) or "-",
+        ),
+        (
+            "Quotation",
+            getattr(quotation, "quotation_number", None)
+            or (
+                f"Quotation #{invoice.quotation_id}"
+                if invoice.quotation_id
+                else "No quotation"
+            ),
+        ),
+        (
+            "Amount",
+            float(invoice.amount) if invoice.amount is not None else 0,
+        ),
+        (
+            "Due Date",
+            invoice.due_date.isoformat() if invoice.due_date else "-",
+        ),
+        (
+            "Status",
+            invoice.status or "Unpaid",
+        ),
+        (
+            "Active",
+            "Yes" if invoice.is_active is not False else "No",
+        ),
+        (
+            "Created At",
+            invoice.created_at.isoformat() if getattr(invoice, "created_at", None) else "-",
+        ),
+    ]
+
+    for label, value in rows:
+        sheet.append([label, value])
+
+    for column_cells in sheet.columns:
+        values = [
+            str(cell.value)
+            for cell in column_cells
+            if cell.value is not None
+        ]
+        max_length = max((len(v) for v in values), default=10)
+        column_letter = get_column_letter(column_cells[0].column)
+        sheet.column_dimensions[column_letter].width = max(14, max_length + 2)
+
+    buffer = io.BytesIO()
+    workbook.save(buffer)
+    buffer.seek(0)
+
+    filename = f"invoice_{invoice.invoice_number or invoice.id}.xlsx"
+
+    return send_file(
+        buffer,
+        as_attachment=True,
+        download_name=filename,
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )

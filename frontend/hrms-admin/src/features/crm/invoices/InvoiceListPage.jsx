@@ -14,6 +14,7 @@ import {
   useInvoices,
   useCreateInvoice,
   useDeactivateInvoice,
+  useDownloadInvoice,
 } from "./useInvoices";
 
 import { useCustomerOptions } from "@/hooks/useLookupOptions";
@@ -554,6 +555,23 @@ const InactiveStatIcon = () => (
   </svg>
 );
 
+const DownloadIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className="h-4 w-4"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    strokeWidth={2}
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"
+    />
+  </svg>
+);
+
 /* =========================================================
    STAT CARD
 ========================================================= */
@@ -658,6 +676,8 @@ function HoverDetailsTrigger({
 
 function InvoiceDetailsCard({
   invoice,
+  onDownload,
+  downloading,
 }) {
   const customer =
     invoice?.customer ||
@@ -863,6 +883,27 @@ function InvoiceDetailsCard({
             : "No"}
         </span>
       </div>
+
+      {onDownload && (
+        <>
+          <div className="my-3 border-t border-slate-100 dark:border-slate-700" />
+
+          <button
+            type="button"
+            disabled={downloading}
+            onClick={(event) => {
+              event.stopPropagation();
+              onDownload(invoice);
+            }}
+            className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-primary-50 py-2 text-xs font-semibold text-primary-600 hover:bg-primary-100 disabled:opacity-40 dark:bg-primary-500/10 dark:text-primary-400 dark:hover:bg-primary-500/20"
+          >
+            <DownloadIcon />
+            {downloading
+              ? "Downloading..."
+              : "Download Invoice Report"}
+          </button>
+        </>
+      )}
     </div>
   );
 }
@@ -935,6 +976,9 @@ export default function InvoiceListPage() {
   const deactivateInvoice =
     useDeactivateInvoice();
 
+  const downloadInvoice =
+    useDownloadInvoice();
+
   const customerOptions =
     useCustomerOptions();
 
@@ -983,6 +1027,11 @@ export default function InvoiceListPage() {
   const [
     mutatingInvoiceId,
     setMutatingInvoiceId,
+  ] = useState(null);
+
+  const [
+    downloadingInvoiceId,
+    setDownloadingInvoiceId,
   ] = useState(null);
 
   /* =======================================================
@@ -1381,6 +1430,40 @@ export default function InvoiceListPage() {
       }
     };
 
+  const handleDownload =
+    async (invoice) => {
+      if (!invoice?.id) {
+        return;
+      }
+
+      try {
+        setDownloadingInvoiceId(
+          invoice.id
+        );
+
+        await downloadInvoice.mutateAsync(
+          invoice
+        );
+      } catch (error) {
+        console.error(
+          "Invoice download failed:",
+          error
+        );
+
+        showToast(
+          error?.response
+            ?.data?.message ||
+            error?.message ||
+            "Failed to download invoice report",
+          "error"
+        );
+      } finally {
+        setDownloadingInvoiceId(
+          null
+        );
+      }
+    };
+
   const clearFilters =
     () => {
       setSearch("");
@@ -1745,6 +1828,10 @@ export default function InvoiceListPage() {
                   invoice
                 );
 
+              const isDownloading =
+                downloadingInvoiceId ===
+                invoice.id;
+
               return (
                 <div
                   key={
@@ -1771,6 +1858,12 @@ export default function InvoiceListPage() {
                             <InvoiceDetailsCard
                               invoice={
                                 invoice
+                              }
+                              onDownload={
+                                handleDownload
+                              }
+                              downloading={
+                                isDownloading
                               }
                             />
                           }
@@ -1844,7 +1937,7 @@ export default function InvoiceListPage() {
                     </div>
                   </div>
 
-                  <div className="absolute inset-x-0 bottom-0 z-30 grid h-11 grid-cols-3 gap-px border-t border-slate-100 bg-slate-100 dark:border-slate-700 dark:bg-slate-800">
+                  <div className="absolute inset-x-0 bottom-0 z-30 grid h-11 grid-cols-4 gap-px border-t border-slate-100 bg-slate-100 dark:border-slate-700 dark:bg-slate-800">
                     <button
                       type="button"
                       onClick={() =>
@@ -1890,6 +1983,22 @@ export default function InvoiceListPage() {
                         Reactivate
                       </button>
                     )}
+
+                    <button
+                      type="button"
+                      disabled={
+                        isDownloading
+                      }
+                      onClick={() =>
+                        handleDownload(
+                          invoice
+                        )
+                      }
+                      title="Download Invoice Report"
+                      className="flex items-center justify-center gap-1 bg-white text-xs font-semibold text-primary-600 hover:bg-primary-50 disabled:opacity-40 dark:bg-slate-900 dark:text-primary-400"
+                    >
+                      <DownloadIcon />
+                    </button>
 
                     <button
                       type="button"
@@ -1963,6 +2072,10 @@ export default function InvoiceListPage() {
                       invoice
                     );
 
+                  const isDownloading =
+                    downloadingInvoiceId ===
+                    invoice.id;
+
                   return (
                     <tr
                       key={
@@ -1977,6 +2090,12 @@ export default function InvoiceListPage() {
                             <InvoiceDetailsCard
                               invoice={
                                 invoice
+                              }
+                              onDownload={
+                                handleDownload
+                              }
+                              downloading={
+                                isDownloading
                               }
                             />
                           }
@@ -2084,6 +2203,21 @@ export default function InvoiceListPage() {
                                 d="M16.862 4.487l1.687-1.688a2.121 2.121 0 013 3l-9.9 9.9-4.137 1.034 1.034-4.137 9.9-9.9z"
                               />
                             </svg>
+                          </IconButton>
+
+                          <IconButton
+                            title="Download Invoice Report"
+                            tone="primary"
+                            disabled={
+                              isDownloading
+                            }
+                            onClick={() =>
+                              handleDownload(
+                                invoice
+                              )
+                            }
+                          >
+                            <DownloadIcon />
                           </IconButton>
 
                           {isActive ? (

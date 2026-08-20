@@ -56,8 +56,8 @@ export const useCreateInvoice =
    NOTE: hits the generic DELETE /invoices/:id route, which is
    intentionally blocked (deletable=False on invoices_bp) - kept
    here only for parity with the sibling files. Actual deactivation
-   goes through PUT with { is_active: false }, same as leads,
-   customers, follow-ups, meetings, and quotations.
+   goes through PUT with { is_active: false }, same as the rest of
+   the CRM module.
 ========================================================= */
 
 export const useDeactivateInvoice =
@@ -128,6 +128,7 @@ export function useReactivateInvoice() {
 
 /* =========================================================
    INVOICE REPORT
+   Aggregate multi-invoice CRM report across a date range.
 ========================================================= */
 
 export function useInvoiceReport() {
@@ -147,6 +148,47 @@ export function useInvoiceReport() {
       downloadBlob(
         res,
         "crm_report.xlsx"
+      );
+
+      return res;
+    },
+  });
+}
+
+/* =========================================================
+   SINGLE INVOICE DOWNLOAD
+   Downloads a single invoice's details as a file - used by the
+   per-card / per-row "Download" action on InvoiceListPage.jsx.
+   Distinct from useInvoiceReport() above, which covers a
+   multi-invoice date-range export.
+========================================================= */
+
+export function useDownloadInvoice() {
+  const {
+    downloadBlob,
+  } = useFileDownload();
+
+  return useMutation({
+    mutationFn: async (
+      invoiceOrId
+    ) => {
+      const id =
+        invoiceOrId?.id ??
+        invoiceOrId;
+
+      const res =
+        await api.download(
+          id
+        );
+
+      const filename =
+        invoiceOrId?.invoice_number
+          ? `invoice_${invoiceOrId.invoice_number}.xlsx`
+          : `invoice_${id}.xlsx`;
+
+      downloadBlob(
+        res,
+        filename
       );
 
       return res;

@@ -130,6 +130,10 @@ export const API = {
     INVOICES: "/invoices/",
     INVOICES_ITEM: (id) => `/invoices/${id}`,
     INVOICES_REPORT: "/invoices/report",
+    // NEW: per-invoice single-record download, distinct from the
+    // aggregate INVOICES_REPORT above (date-range, multi-invoice).
+    // Matches the new /invoices/<id>/download route in invoices.py.
+    INVOICES_DOWNLOAD: (id) => `/invoices/${id}/download`,
     PAYMENTS: "/payments/",
     PAYMENTS_ITEM: (id) => `/payments/${id}`,
     SUPPORT_TICKETS: "/support-tickets/",

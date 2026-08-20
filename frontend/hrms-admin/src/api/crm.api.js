@@ -213,6 +213,9 @@ export const crmApi = {
         }
       ),
 
+    /*
+     * Aggregate multi-invoice CRM report (date-range).
+     */
     report: (
       params
     ) =>
@@ -220,6 +223,23 @@ export const crmApi = {
         C.INVOICES_REPORT,
         {
           params,
+          responseType: "blob",
+        }
+      ),
+
+    /*
+     * NEW: per-invoice single-record download.
+     *
+     * GET /invoices/:id/download
+     *
+     * Distinct from `report` above - this downloads one invoice's
+     * details as a file, used by the Download action on
+     * InvoiceListPage.jsx (card, table, and details hover panel).
+     */
+    download: (id) =>
+      axiosClient.get(
+        C.INVOICES_DOWNLOAD(id),
+        {
           responseType: "blob",
         }
       ),
@@ -270,19 +290,6 @@ export const crmApi = {
         C.SUPPORT_TICKETS_ITEM,
     }),
 
-    /*
-     * Explicit update method for Support Tickets.
-     *
-     * PUT /support-tickets/:id
-     *
-     * IMPORTANT: this was previously missing entirely (supportTickets
-     * was just the bare createCrudApi() output), which is why
-     * Edit / Deactivate / Reactivate for support tickets never
-     * worked - crmApi.supportTickets.update / .deactivate were
-     * undefined. This completes the fix across all 8 CRM entities:
-     * leads, customers, followUps, meetings, quotations, invoices,
-     * payments, supportTickets.
-     */
     update: (id, payload) =>
       axiosClient.put(
         C.SUPPORT_TICKETS_ITEM(
@@ -291,12 +298,6 @@ export const crmApi = {
         payload
       ),
 
-    /*
-     * Explicit soft-deactivate method.
-     *
-     * PUT /support-tickets/:id
-     * { is_active: false }
-     */
     deactivate: (id) =>
       axiosClient.put(
         C.SUPPORT_TICKETS_ITEM(
@@ -307,12 +308,6 @@ export const crmApi = {
         }
       ),
 
-    /*
-     * Explicit reactivate method.
-     *
-     * PUT /support-tickets/:id
-     * { is_active: true }
-     */
     reactivate: (id) =>
       axiosClient.put(
         C.SUPPORT_TICKETS_ITEM(
