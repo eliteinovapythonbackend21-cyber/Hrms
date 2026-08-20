@@ -16,6 +16,8 @@ import {
   useConvertLead,
 } from "./useLeads";
 
+import { useCRMEmployeeOptions } from "@/hooks/useLookupOptions";
+
 import { useTableExport } from "@/hooks/useTableExport";
 import { crmApi } from "@/api/crm.api";
 
@@ -25,6 +27,7 @@ import { crmApi } from "@/api/crm.api";
 
 const PAGE_SIZE = 10;
 const CARD_PAGE_SIZE = 6;
+const CARD_HEIGHT = "h-[270px]";
 
 const EXPORT_COLUMNS = [
   {
@@ -49,11 +52,13 @@ const EXPORT_COLUMNS = [
   },
   {
     header: "Created By",
-    accessor: (r) => getEmployeeDisplayName(r.creator),
+    accessor: (r) =>
+      getEmployeeDisplayName(r.creator),
   },
   {
     header: "Assigned To",
-    accessor: (r) => getEmployeeDisplayName(r.assignee),
+    accessor: (r) =>
+      getEmployeeDisplayName(r.assignee),
   },
   {
     header: "Active",
@@ -63,48 +68,43 @@ const EXPORT_COLUMNS = [
 ];
 
 const PIPELINE_STATUS_OPTIONS = [
-  {
-    value: "",
-    label: "All Pipeline Statuses",
-  },
-  {
-    value: "New",
-    label: "New",
-  },
-  {
-    value: "Contacted",
-    label: "Contacted",
-  },
-  {
-    value: "Qualified",
-    label: "Qualified",
-  },
-  {
-    value: "Converted",
-    label: "Converted",
-  },
-  {
-    value: "Lost",
-    label: "Lost",
-  },
+  { value: "", label: "All Pipeline Statuses" },
+  { value: "New", label: "New" },
+  { value: "Contacted", label: "Contacted" },
+  { value: "Qualified", label: "Qualified" },
+  { value: "Converted", label: "Converted" },
+  { value: "Lost", label: "Lost" },
 ];
 
 const STATUS_BADGE_CLASS = {
   New:
     "bg-slate-100 text-slate-700 dark:bg-white/10 dark:text-slate-300",
-
   Contacted:
     "bg-sky-50 text-sky-700 dark:bg-sky-500/10 dark:text-sky-400",
-
   Qualified:
     "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400",
-
   Converted:
     "bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300",
-
   Lost:
     "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400",
 };
+
+const TEAM_TYPE_FILTER_OPTIONS = [
+  { value: "", label: "All Teams" },
+  { value: "Voice", label: "Voice" },
+  { value: "Non-Voice", label: "Non-Voice" },
+];
+
+const TEAM_TYPE_BADGE_CLASS = {
+  Voice:
+    "bg-sky-50 text-sky-700 dark:bg-sky-500/10 dark:text-sky-400",
+  "Non-Voice":
+    "bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400",
+};
+
+/* =========================================================
+   HELPERS
+========================================================= */
 
 function getStatusBadgeClass(status) {
   return (
@@ -112,29 +112,6 @@ function getStatusBadgeClass(status) {
     STATUS_BADGE_CLASS.New
   );
 }
-
-const TEAM_TYPE_FILTER_OPTIONS = [
-  {
-    value: "",
-    label: "All Teams",
-  },
-  {
-    value: "Voice",
-    label: "Voice",
-  },
-  {
-    value: "Non-Voice",
-    label: "Non-Voice",
-  },
-];
-
-const TEAM_TYPE_BADGE_CLASS = {
-  Voice:
-    "bg-sky-50 text-sky-700 dark:bg-sky-500/10 dark:text-sky-400",
-
-  "Non-Voice":
-    "bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400",
-};
 
 function getEmployeeDisplayName(employee) {
   if (!employee) {
@@ -150,47 +127,46 @@ function getEmployeeDisplayName(employee) {
   );
 }
 
+function formatDateTime(value) {
+  if (!value) {
+    return "-";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return String(value);
+  }
+
+  return date.toLocaleString();
+}
+
 /* =========================================================
-   LEAD API HELPERS
+   API HELPERS
 ========================================================= */
 
-/*
- * The old useUpdateLead hook expects crmApi.leads.update(),
- * but your current crmApi.leads object does not expose that
- * method. This helper supports the common method names that
- * may already exist in your crmApi.leads implementation.
- */
 async function updateLeadRecord(id, payload) {
-  const leadsApi = crmApi?.leads;
-
-  const updateMethod =
-    leadsApi?.update ||
-    leadsApi?.updateLead ||
-    leadsApi?.edit ||
-    leadsApi?.put ||
-    leadsApi?.patch;
-
-  if (typeof updateMethod !== "function") {
+  if (
+    typeof crmApi?.leads?.update !== "function"
+  ) {
     throw new Error(
-      "Lead update API method is not configured. Add update/updateLead/put/patch to crmApi.leads."
+      "Lead update API method is not configured."
     );
   }
 
-  return updateMethod.call(
-    leadsApi,
-    id,
-    payload
-  );
+  return crmApi.leads.update(id, payload);
 }
 
-/*
- * Leads use soft deletion through is_active=false.
- * DELETE should not be used here.
- */
 async function deactivateLeadRecord(id) {
-  return updateLeadRecord(id, {
-    is_active: false,
-  });
+  if (
+    typeof crmApi?.leads?.deactivate !== "function"
+  ) {
+    throw new Error(
+      "Lead deactivate API method is not configured."
+    );
+  }
+
+  return crmApi.leads.deactivate(id);
 }
 
 async function reactivateLeadRecord(id) {
@@ -270,12 +246,7 @@ const UserSmallIcon = () => (
     stroke="currentColor"
     strokeWidth="1.4"
   >
-    <circle
-      cx="10"
-      cy="7"
-      r="3"
-    />
-
+    <circle cx="10" cy="7" r="3" />
     <path
       strokeLinecap="round"
       d="M3.5 17c1-3.3 4-5 6.5-5s5.5 1.7 6.5 5"
@@ -364,13 +335,10 @@ function StatCard({
   const tones = {
     sky:
       "bg-sky-50 text-sky-600 dark:bg-sky-500/10 dark:text-sky-400",
-
     emerald:
       "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400",
-
     red:
       "bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400",
-
     green:
       "bg-green-50 text-green-600 dark:bg-green-500/10 dark:text-green-400",
   };
@@ -379,9 +347,7 @@ function StatCard({
     <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
       <div className="flex items-center gap-3">
         <div
-          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${
-            tones[tone]
-          }`}
+          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${tones[tone]}`}
         >
           {icon}
         </div>
@@ -401,12 +367,10 @@ function StatCard({
 }
 
 /* =========================================================
-   CREATED-BY HIERARCHY
+   CREATOR HIERARCHY
 ========================================================= */
 
-function CreatorHierarchyRow({
-  hierarchy,
-}) {
+function CreatorHierarchyRow({ hierarchy }) {
   if (!hierarchy) {
     return null;
   }
@@ -448,7 +412,241 @@ function CreatorHierarchyRow({
 }
 
 /* =========================================================
-   TABLE ICON BUTTON
+   HOVER TRIGGER
+   Same pattern as TransferListPage
+========================================================= */
+
+function HoverDetailsTrigger({
+  children,
+  panel,
+  align = "left",
+}) {
+  const alignClasses = {
+    left: "left-0",
+    center:
+      "left-1/2 -translate-x-1/2",
+    right: "right-0",
+  };
+
+  return (
+    <div
+      tabIndex={0}
+      className="group/lead-details relative inline-flex max-w-full outline-none"
+    >
+      <div className="max-w-full">
+        {children}
+      </div>
+
+      <div
+        className={`
+          pointer-events-none
+          invisible
+          absolute
+          top-full
+          z-[100]
+          mt-2
+          opacity-0
+          transition-all
+          duration-150
+          group-hover/lead-details:pointer-events-auto
+          group-hover/lead-details:visible
+          group-hover/lead-details:opacity-100
+          group-focus/lead-details:pointer-events-auto
+          group-focus/lead-details:visible
+          group-focus/lead-details:opacity-100
+          ${alignClasses[align]}
+        `}
+      >
+        {panel}
+      </div>
+    </div>
+  );
+}
+
+/* =========================================================
+   LEAD DETAILS CARD
+========================================================= */
+
+function LeadDetailsCard({ lead }) {
+  const creatorName =
+    getEmployeeDisplayName(
+      lead?.creator
+    );
+
+  const assigneeName =
+    getEmployeeDisplayName(
+      lead?.assignee
+    );
+
+  const isActive =
+    lead?.is_active !== false;
+
+  return (
+    <div className="w-[360px] max-w-[calc(100vw-32px)] rounded-xl border border-slate-200 border-t-2 border-t-primary-500 bg-white p-4 text-left shadow-xl dark:border-slate-700 dark:bg-slate-800">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+            Lead Details
+          </p>
+
+          <p className="mt-1 break-words text-sm font-semibold leading-5 text-slate-800 dark:text-white">
+            {lead?.lead_name ||
+              "Untitled Lead"}
+          </p>
+        </div>
+
+        <span
+          className={`shrink-0 rounded-full px-2 py-1 text-[9px] font-semibold ${
+            isActive
+              ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300"
+              : "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300"
+          }`}
+        >
+          {isActive
+            ? "Active"
+            : "Inactive"}
+        </span>
+      </div>
+
+      <div className="my-3 border-t border-slate-100 dark:border-slate-700" />
+
+      <div className="space-y-2.5">
+        <div className="grid grid-cols-[100px_minmax(0,1fr)] gap-3">
+          <span className="text-xs text-slate-400 dark:text-slate-500">
+            Lead ID
+          </span>
+
+          <span className="text-right text-xs font-medium text-slate-700 dark:text-slate-200">
+            #{lead?.id ?? "—"}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-[100px_minmax(0,1fr)] gap-3">
+          <span className="text-xs text-slate-400 dark:text-slate-500">
+            Contact
+          </span>
+
+          <span className="break-words text-right text-xs font-medium text-slate-700 dark:text-slate-200">
+            {lead?.contact_number ||
+              "—"}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-[100px_minmax(0,1fr)] gap-3">
+          <span className="text-xs text-slate-400 dark:text-slate-500">
+            Email
+          </span>
+
+          <span className="break-words text-right text-xs font-medium text-slate-700 dark:text-slate-200">
+            {lead?.email || "—"}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-[100px_minmax(0,1fr)] gap-3">
+          <span className="text-xs text-slate-400 dark:text-slate-500">
+            Source
+          </span>
+
+          <span className="break-words text-right text-xs font-medium text-slate-700 dark:text-slate-200">
+            {lead?.source || "—"}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-[100px_minmax(0,1fr)] gap-3">
+          <span className="text-xs text-slate-400 dark:text-slate-500">
+            Status
+          </span>
+
+          <span className="text-right text-xs font-medium text-slate-700 dark:text-slate-200">
+            {lead?.status || "New"}
+          </span>
+        </div>
+      </div>
+
+      <div className="my-3 border-t border-slate-100 dark:border-slate-700" />
+
+      <div>
+        <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
+          Lead Created By
+        </p>
+
+        <p className="text-xs font-semibold text-slate-800 dark:text-white">
+          {creatorName || "—"}
+        </p>
+
+        {lead?.creator?.employee_code && (
+          <p className="mt-0.5 text-[10px] text-slate-400">
+            Employee Code:{" "}
+            {lead.creator.employee_code}
+          </p>
+        )}
+
+        <div className="mt-1">
+          <CreatorHierarchyRow
+            hierarchy={
+              lead?.creator_hierarchy
+            }
+          />
+        </div>
+      </div>
+
+      <div className="mt-3 grid grid-cols-2 gap-3">
+        <div>
+          <p className="text-[10px] text-slate-400">
+            Assigned To
+          </p>
+
+          <p className="mt-0.5 text-xs font-medium text-slate-700 dark:text-slate-200">
+            {assigneeName ||
+              "Not Assigned"}
+          </p>
+        </div>
+
+        <div>
+          <p className="text-[10px] text-slate-400">
+            Team
+          </p>
+
+          <p className="mt-0.5 text-xs font-medium text-slate-700 dark:text-slate-200">
+            {lead?.creator_hierarchy?.team_type ||
+              "—"}
+          </p>
+        </div>
+      </div>
+
+      <div className="my-3 border-t border-slate-100 dark:border-slate-700" />
+
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <p className="text-[10px] text-slate-400">
+            Created
+          </p>
+
+          <p className="mt-0.5 text-[10px] font-medium text-slate-700 dark:text-slate-200">
+            {formatDateTime(
+              lead?.created_at
+            )}
+          </p>
+        </div>
+
+        <div>
+          <p className="text-[10px] text-slate-400">
+            Updated
+          </p>
+
+          <p className="mt-0.5 text-[10px] font-medium text-slate-700 dark:text-slate-200">
+            {formatDateTime(
+              lead?.updated_at
+            )}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* =========================================================
+   TABLE ICON
 ========================================================= */
 
 const IconButton = ({
@@ -461,13 +659,10 @@ const IconButton = ({
   const tones = {
     slate:
       "text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-700",
-
     primary:
       "text-primary-600 hover:bg-primary-50 dark:text-primary-400 dark:hover:bg-primary-500/10",
-
     red:
       "text-red-500 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10",
-
     emerald:
       "text-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-500/10",
   };
@@ -491,11 +686,8 @@ const IconButton = ({
 ========================================================= */
 
 export default function LeadListPage() {
-  const { showToast } = useToast();
-
-  /* =======================================================
-     DATA
-  ======================================================= */
+  const { showToast } =
+    useToast();
 
   const {
     data: allData,
@@ -511,19 +703,14 @@ export default function LeadListPage() {
   const allLeads =
     allData?.items || [];
 
-  /* =======================================================
-     CREATE / CONVERT
-  ======================================================= */
-
   const createLead =
     useCreateLead();
 
   const convertLead =
     useConvertLead();
 
-  /* =======================================================
-     PAGE STATE
-  ======================================================= */
+  const creatorOptions =
+    useCRMEmployeeOptions();
 
   const [search, setSearch] =
     useState("");
@@ -533,18 +720,15 @@ export default function LeadListPage() {
     exportExcel,
     exportPDF,
   } = useTableExport({
-    fetchAll: crmApi.leads.list,
-
+    fetchAll:
+      crmApi.leads.list,
     queryParams: {
       search:
         search || undefined,
     },
-
     exportColumns:
       EXPORT_COLUMNS,
-
     filename: "leads",
-
     title: "Leads",
   });
 
@@ -563,153 +747,166 @@ export default function LeadListPage() {
     setTeamTypeFilter,
   ] = useState("");
 
+  const [
+    createdByFilter,
+    setCreatedByFilter,
+  ] = useState("");
+
   const [viewMode, setViewMode] =
     useState("card");
 
   const [page, setPage] =
     useState(1);
 
-  const [modalOpen, setModalOpen] =
-    useState(false);
+  const [
+    modalOpen,
+    setModalOpen,
+  ] = useState(false);
 
-  const [editingLead, setEditingLead] =
-    useState(null);
+  const [
+    editingLead,
+    setEditingLead,
+  ] = useState(null);
 
-  const [deleteTarget, setDeleteTarget] =
-    useState(null);
+  const [
+    deleteTarget,
+    setDeleteTarget,
+  ] = useState(null);
 
-  const [confirmConvert, setConfirmConvert] =
-    useState(null);
+  const [
+    confirmConvert,
+    setConfirmConvert,
+  ] = useState(null);
 
   const [saving, setSaving] =
     useState(false);
 
-  const [mutatingLeadId, setMutatingLeadId] =
-    useState(null);
+  const [
+    mutatingLeadId,
+    setMutatingLeadId,
+  ] = useState(null);
 
-  /* =======================================================
-     STATISTICS
-  ======================================================= */
+  const activeLeads =
+    useMemo(
+      () =>
+        allLeads.filter(
+          (lead) =>
+            lead.is_active !== false
+        ),
+      [allLeads]
+    );
 
-  const activeLeads = useMemo(
-    () =>
-      allLeads.filter(
-        (lead) =>
-          lead.is_active !== false
-      ),
-    [allLeads]
-  );
+  const inactiveLeads =
+    useMemo(
+      () =>
+        allLeads.filter(
+          (lead) =>
+            lead.is_active === false
+        ),
+      [allLeads]
+    );
 
-  const inactiveLeads = useMemo(
-    () =>
-      allLeads.filter(
-        (lead) =>
-          lead.is_active === false
-      ),
-    [allLeads]
-  );
+  const convertedLeads =
+    useMemo(
+      () =>
+        allLeads.filter(
+          (lead) =>
+            lead.status ===
+            "Converted"
+        ),
+      [allLeads]
+    );
 
-  const convertedLeads = useMemo(
-    () =>
-      allLeads.filter(
-        (lead) =>
-          lead.status ===
-          "Converted"
-      ),
-    [allLeads]
-  );
+  const filtered =
+    useMemo(() => {
+      const normalizedSearch =
+        search.trim().toLowerCase();
 
-  /* =======================================================
-     FILTERED DATA
-  ======================================================= */
-
-  const filtered = useMemo(() => {
-    const normalizedSearch =
-      search
-        .trim()
-        .toLowerCase();
-
-    return allLeads.filter(
-      (lead) => {
-        const isActive =
-          lead.is_active !== false;
-
-        if (
-          activeFilter ===
-            "active" &&
-          !isActive
-        ) {
-          return false;
-        }
-
-        if (
-          activeFilter ===
-            "inactive" &&
-          isActive
-        ) {
-          return false;
-        }
-
-        if (
-          pipelineStatusFilter &&
-          (lead.status ||
-            "New") !==
-            pipelineStatusFilter
-        ) {
-          return false;
-        }
-
-        if (
-          teamTypeFilter &&
-          lead.creator_hierarchy
-            ?.team_type !==
-            teamTypeFilter
-        ) {
-          return false;
-        }
-
-        if (
-          normalizedSearch
-        ) {
-          const haystack = [
-            lead.lead_name,
-            lead.contact_number,
-            lead.email,
-            lead.source,
-            lead.status,
-            getEmployeeDisplayName(
-              lead.creator
-            ),
-            getEmployeeDisplayName(
-              lead.assignee
-            ),
-          ]
-            .join(" ")
-            .toLowerCase();
+      return allLeads.filter(
+        (lead) => {
+          const isActive =
+            lead.is_active !== false;
 
           if (
-            !haystack.includes(
-              normalizedSearch
-            )
+            activeFilter === "active" &&
+            !isActive
           ) {
             return false;
           }
+
+          if (
+            activeFilter === "inactive" &&
+            isActive
+          ) {
+            return false;
+          }
+
+          if (
+            pipelineStatusFilter &&
+            (lead.status || "New") !==
+              pipelineStatusFilter
+          ) {
+            return false;
+          }
+
+          if (
+            teamTypeFilter &&
+            lead.creator_hierarchy
+              ?.team_type !== teamTypeFilter
+          ) {
+            return false;
+          }
+
+          if (createdByFilter) {
+            const creatorId =
+              lead.creator?.id ??
+              lead.created_by;
+
+            if (
+              String(creatorId) !==
+              String(createdByFilter)
+            ) {
+              return false;
+            }
+          }
+
+          if (normalizedSearch) {
+            const haystack = [
+              lead.lead_name,
+              lead.contact_number,
+              lead.email,
+              lead.source,
+              lead.status,
+              getEmployeeDisplayName(
+                lead.creator
+              ),
+              getEmployeeDisplayName(
+                lead.assignee
+              ),
+            ]
+              .join(" ")
+              .toLowerCase();
+
+            if (
+              !haystack.includes(
+                normalizedSearch
+              )
+            ) {
+              return false;
+            }
+          }
+
+          return true;
         }
-
-        return true;
-      }
-    );
-  }, [
-    allLeads,
-    search,
-    pipelineStatusFilter,
-    activeFilter,
-    teamTypeFilter,
-  ]);
-
-  /* =======================================================
-     PAGINATION
-  ======================================================= */
+      );
+    }, [
+      allLeads,
+      search,
+      pipelineStatusFilter,
+      activeFilter,
+      teamTypeFilter,
+      createdByFilter,
+    ]);
 
   const pageSize =
     viewMode === "card"
@@ -719,8 +916,7 @@ export default function LeadListPage() {
   const pageCount = Math.max(
     1,
     Math.ceil(
-      filtered.length /
-        pageSize
+      filtered.length / pageSize
     )
   );
 
@@ -729,17 +925,21 @@ export default function LeadListPage() {
     page * pageSize
   );
 
-  /* =======================================================
-     HANDLERS
-  ======================================================= */
-
   const handleAdd = () => {
     setEditingLead(null);
     setModalOpen(true);
   };
 
   const handleEdit = (lead) => {
-    setEditingLead(lead);
+    setEditingLead({
+      ...lead,
+      created_by:
+        lead.created_by ??
+        lead.creator_id ??
+        lead.creator?.id ??
+        "",
+    });
+
     setModalOpen(true);
   };
 
@@ -752,79 +952,73 @@ export default function LeadListPage() {
     setEditingLead(null);
   };
 
-  /* =======================================================
-     CREATE / UPDATE
-  ======================================================= */
+  const handleSubmit =
+    async (payload) => {
+      try {
+        setSaving(true);
 
-  const handleSubmit = async (
-    payload
-  ) => {
-    try {
-      setSaving(true);
+        const creatorId =
+          payload?.created_by ??
+          editingLead?.created_by ??
+          editingLead?.creator_id ??
+          editingLead?.creator?.id ??
+          null;
 
-      const normalizedPayload = {
-        ...payload,
-
-        created_by:
-          payload.created_by
-            ? Number(
-                payload.created_by
-              )
+        const normalizedPayload = {
+          ...payload,
+          created_by: creatorId
+            ? Number(creatorId)
             : null,
+          assigned_to:
+            payload?.assigned_to
+              ? Number(
+                  payload.assigned_to
+                )
+              : editingLead?.assigned_to ??
+                null,
+        };
 
-        assigned_to:
-          payload.assigned_to
-            ? Number(
-                payload.assigned_to
-              )
-            : null,
-      };
+        if (editingLead) {
+          await updateLeadRecord(
+            editingLead.id,
+            normalizedPayload
+          );
 
-      if (editingLead) {
-        await updateLeadRecord(
-          editingLead.id,
-          normalizedPayload
+          showToast(
+            "Lead updated",
+            "success"
+          );
+        } else {
+          await createLead.mutateAsync(
+            normalizedPayload
+          );
+
+          showToast(
+            "Lead created",
+            "success"
+          );
+        }
+
+        setModalOpen(false);
+        setEditingLead(null);
+
+        await refetch();
+      } catch (error) {
+        console.error(
+          "Lead save failed:",
+          error
         );
 
         showToast(
-          "Lead updated",
-          "success"
+          error?.response?.data?.message ||
+            error?.message ||
+            "Failed to save lead",
+          "error"
         );
-      } else {
-        await createLead.mutateAsync(
-          normalizedPayload
-        );
-
-        showToast(
-          "Lead created",
-          "success"
-        );
+      } finally {
+        setSaving(false);
       }
-
-      closeModal();
-
-      await refetch();
-    } catch (err) {
-      console.error(
-        "Lead save failed:",
-        err
-      );
-
-      showToast(
-        err?.response?.data
-          ?.message ||
-          err?.message ||
-          "Failed to save lead",
-        "error"
-      );
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  /* =======================================================
-     DEACTIVATE
-  ======================================================= */
+    };
 
   const confirmDeactivate =
     async () => {
@@ -832,16 +1026,13 @@ export default function LeadListPage() {
         return;
       }
 
-      const leadId =
-        deleteTarget.id;
-
       try {
         setMutatingLeadId(
-          leadId
+          deleteTarget.id
         );
 
         await deactivateLeadRecord(
-          leadId
+          deleteTarget.id
         );
 
         showToast(
@@ -852,16 +1043,15 @@ export default function LeadListPage() {
         setDeleteTarget(null);
 
         await refetch();
-      } catch (err) {
+      } catch (error) {
         console.error(
           "Lead deactivation failed:",
-          err
+          error
         );
 
         showToast(
-          err?.response?.data
-            ?.message ||
-            err?.message ||
+          error?.response?.data?.message ||
+            error?.message ||
             "Failed to deactivate lead",
           "error"
         );
@@ -869,10 +1059,6 @@ export default function LeadListPage() {
         setMutatingLeadId(null);
       }
     };
-
-  /* =======================================================
-     REACTIVATE
-  ======================================================= */
 
   const handleReactivate =
     async (lead) => {
@@ -895,16 +1081,15 @@ export default function LeadListPage() {
         );
 
         await refetch();
-      } catch (err) {
+      } catch (error) {
         console.error(
           "Lead reactivation failed:",
-          err
+          error
         );
 
         showToast(
-          err?.response?.data
-            ?.message ||
-            err?.message ||
+          error?.response?.data?.message ||
+            error?.message ||
             "Failed to reactivate lead",
           "error"
         );
@@ -913,10 +1098,6 @@ export default function LeadListPage() {
       }
     };
 
-  /* =======================================================
-     CONVERT
-  ======================================================= */
-
   const handleConvert =
     async () => {
       if (!confirmConvert) {
@@ -924,12 +1105,10 @@ export default function LeadListPage() {
       }
 
       try {
-        await convertLead.mutateAsync(
-          {
-            id: confirmConvert.id,
-            payload: {},
-          }
-        );
+        await convertLead.mutateAsync({
+          id: confirmConvert.id,
+          payload: {},
+        });
 
         showToast(
           "Lead converted to customer",
@@ -939,16 +1118,15 @@ export default function LeadListPage() {
         setConfirmConvert(null);
 
         await refetch();
-      } catch (err) {
+      } catch (error) {
         console.error(
           "Lead conversion failed:",
-          err
+          error
         );
 
         showToast(
-          err?.response?.data
-            ?.message ||
-            err?.message ||
+          error?.response?.data?.message ||
+            error?.message ||
             "Failed to convert lead",
           "error"
         );
@@ -959,6 +1137,7 @@ export default function LeadListPage() {
     setSearch("");
     setPipelineStatusFilter("");
     setTeamTypeFilter("");
+    setCreatedByFilter("");
     setActiveFilter("active");
     setPage(1);
   };
@@ -967,14 +1146,6 @@ export default function LeadListPage() {
     saving ||
     createLead.isPending;
 
-  const isMutating =
-    mutatingLeadId !==
-    null;
-
-  /* =======================================================
-     ERROR
-  ======================================================= */
-
   if (isError) {
     return (
       <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-600 dark:border-red-900/40 dark:bg-red-950/20 dark:text-red-400">
@@ -982,10 +1153,6 @@ export default function LeadListPage() {
       </div>
     );
   }
-
-  /* =======================================================
-     RETURN
-  ======================================================= */
 
   return (
     <div className="min-w-0 space-y-5">
@@ -1006,12 +1173,8 @@ export default function LeadListPage() {
           <TableToolbar
             onRefresh={refetch}
             refreshing={isFetching}
-            onExportExcel={
-              exportExcel
-            }
-            onExportPDF={
-              exportPDF
-            }
+            onExportExcel={exportExcel}
+            onExportPDF={exportPDF}
             exporting={exporting}
           />
 
@@ -1023,7 +1186,6 @@ export default function LeadListPage() {
             <span className="mr-1.5 text-lg">
               +
             </span>
-
             Add Lead
           </Button>
         </div>
@@ -1034,40 +1196,28 @@ export default function LeadListPage() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           icon={<LeadsStatIcon />}
-          value={
-            allLeads.length
-          }
+          value={allLeads.length}
           label="Total Leads"
           tone="sky"
         />
 
         <StatCard
           icon={<ActiveStatIcon />}
-          value={
-            activeLeads.length
-          }
+          value={activeLeads.length}
           label="Active Leads"
           tone="emerald"
         />
 
         <StatCard
-          icon={
-            <InactiveStatIcon />
-          }
-          value={
-            inactiveLeads.length
-          }
+          icon={<InactiveStatIcon />}
+          value={inactiveLeads.length}
           label="Inactive Leads"
           tone="red"
         />
 
         <StatCard
-          icon={
-            <ConvertedStatIcon />
-          }
-          value={
-            convertedLeads.length
-          }
+          icon={<ConvertedStatIcon />}
+          value={convertedLeads.length}
           label="Converted to Customer"
           tone="green"
         />
@@ -1103,72 +1253,78 @@ export default function LeadListPage() {
                   setSearch(
                     event.target.value
                   );
-
                   setPage(1);
                 }}
                 placeholder="Search by name, phone, email, or team member..."
-                className="h-10 w-full rounded-lg border border-slate-300 bg-white pl-9 pr-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                className="h-10 w-full rounded-lg border border-slate-300 bg-white pl-9 pr-3 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
               />
             </div>
 
             <select
-              value={
-                pipelineStatusFilter
-              }
+              value={pipelineStatusFilter}
               onChange={(event) => {
                 setPipelineStatusFilter(
                   event.target.value
                 );
-
                 setPage(1);
               }}
-              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 sm:max-w-[220px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm sm:max-w-[220px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
             >
               {PIPELINE_STATUS_OPTIONS.map(
                 (option) => (
                   <option
-                    key={
-                      option.value
-                    }
-                    value={
-                      option.value
-                    }
+                    key={option.value}
+                    value={option.value}
                   >
-                    {
-                      option.label
-                    }
+                    {option.label}
                   </option>
                 )
               )}
             </select>
 
             <select
-              value={
-                teamTypeFilter
-              }
+              value={teamTypeFilter}
               onChange={(event) => {
                 setTeamTypeFilter(
                   event.target.value
                 );
-
                 setPage(1);
               }}
-              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 sm:max-w-[160px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
-              title="Filter by which CRM sub-team created the lead"
+              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm sm:max-w-[160px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
             >
               {TEAM_TYPE_FILTER_OPTIONS.map(
                 (option) => (
                   <option
-                    key={
-                      option.value
-                    }
-                    value={
-                      option.value
-                    }
+                    key={option.value}
+                    value={option.value}
                   >
-                    {
-                      option.label
-                    }
+                    {option.label}
+                  </option>
+                )
+              )}
+            </select>
+
+            <select
+              value={createdByFilter}
+              onChange={(event) => {
+                setCreatedByFilter(
+                  event.target.value
+                );
+                setPage(1);
+              }}
+              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm sm:max-w-[220px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+            >
+              <option value="">
+                All Lead Creators
+              </option>
+
+              {creatorOptions.map(
+                (employee) => (
+                  <option
+                    key={employee.value}
+                    value={employee.value}
+                  >
+                    {employee.label}
                   </option>
                 )
               )}
@@ -1177,14 +1333,13 @@ export default function LeadListPage() {
             {(search ||
               pipelineStatusFilter ||
               teamTypeFilter ||
+              createdByFilter ||
               activeFilter !==
                 "active") && (
               <button
                 type="button"
-                onClick={
-                  clearFilters
-                }
-                className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-xs font-medium text-slate-600 transition hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                onClick={clearFilters}
+                className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-xs font-medium text-slate-600 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300"
               >
                 Clear Filters
               </button>
@@ -1192,53 +1347,44 @@ export default function LeadListPage() {
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex w-fit items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
+            <div className="flex items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
               {[
                 "active",
                 "inactive",
                 "all",
-              ].map(
-                (status) => (
-                  <button
-                    key={status}
-                    type="button"
-                    onClick={() => {
-                      setActiveFilter(
-                        status
-                      );
-
-                      setPage(1);
-                    }}
-                    className={`rounded-md px-3 py-1.5 text-xs font-medium capitalize transition ${
-                      activeFilter ===
+              ].map((status) => (
+                <button
+                  key={status}
+                  type="button"
+                  onClick={() => {
+                    setActiveFilter(
                       status
-                        ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
-                        : "text-slate-500 hover:text-slate-700 dark:text-slate-400"
-                    }`}
-                  >
-                    {
-                      status
-                    }
-                  </button>
-                )
-              )}
+                    );
+                    setPage(1);
+                  }}
+                  className={`rounded-md px-3 py-1.5 text-xs font-medium capitalize ${
+                    activeFilter ===
+                    status
+                      ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
+                      : "text-slate-500 dark:text-slate-400"
+                  }`}
+                >
+                  {status}
+                </button>
+              ))}
             </div>
 
-            <div className="flex w-fit items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
+            <div className="flex items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
               <button
                 type="button"
                 onClick={() => {
-                  setViewMode(
-                    "card"
-                  );
-
+                  setViewMode("card");
                   setPage(1);
                 }}
-                className={`rounded-md px-3 py-1.5 text-xs font-medium transition ${
-                  viewMode ===
-                  "card"
+                className={`rounded-md px-3 py-1.5 text-xs font-medium ${
+                  viewMode === "card"
                     ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
-                    : "text-slate-500 hover:text-slate-700 dark:text-slate-400"
+                    : "text-slate-500 dark:text-slate-400"
                 }`}
               >
                 Card
@@ -1247,17 +1393,13 @@ export default function LeadListPage() {
               <button
                 type="button"
                 onClick={() => {
-                  setViewMode(
-                    "table"
-                  );
-
+                  setViewMode("table");
                   setPage(1);
                 }}
-                className={`rounded-md px-3 py-1.5 text-xs font-medium transition ${
-                  viewMode ===
-                  "table"
+                className={`rounded-md px-3 py-1.5 text-xs font-medium ${
+                  viewMode === "table"
                     ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
-                    : "text-slate-500 hover:text-slate-700 dark:text-slate-400"
+                    : "text-slate-500 dark:text-slate-400"
                 }`}
               >
                 Table
@@ -1283,39 +1425,28 @@ export default function LeadListPage() {
             No records match your current search or filters.
           </p>
         </div>
-      ) : viewMode ===
-        "card" ? (
-        /* ===================================================
-           CARD VIEW
-        =================================================== */
-
+      ) : viewMode === "card" ? (
         <div className="grid grid-cols-1 items-start gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {paged.map((lead) => {
             const isActive =
-              lead.is_active !==
-              false;
+              lead.is_active !== false;
 
             const canConvert =
               isActive &&
               lead.status !==
                 "Converted";
 
-            const actionCount =
-              canConvert ? 3 : 2;
-
             return (
               <div
-                key={
-                  lead.id
-                }
-                className={`overflow-hidden rounded-2xl border bg-white shadow-sm dark:bg-slate-900 ${
+                key={lead.id}
+                className={`relative ${CARD_HEIGHT} min-w-0 overflow-visible rounded-2xl border bg-white shadow-sm transition-shadow hover:shadow-lg dark:bg-slate-900 ${
                   isActive
                     ? "border-slate-200 dark:border-slate-700"
                     : "border-red-100 dark:border-red-900/30"
                 }`}
               >
                 <div
-                  className={`p-4 ${
+                  className={`h-full p-4 pb-12 ${
                     !isActive
                       ? "opacity-75"
                       : ""
@@ -1323,71 +1454,60 @@ export default function LeadListPage() {
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">
-                        {lead.lead_name ||
-                          "Untitled Lead"}
-                      </p>
+                      <HoverDetailsTrigger
+                        align="left"
+                        panel={
+                          <LeadDetailsCard
+                            lead={lead}
+                          />
+                        }
+                      >
+                        <p className="max-w-[220px] cursor-pointer truncate text-sm font-semibold text-slate-900 dark:text-white">
+                          {lead.lead_name ||
+                            "Untitled Lead"}
+                        </p>
+                      </HoverDetailsTrigger>
 
                       {lead.source && (
                         <div className="mt-0.5 flex items-center gap-1 text-[11px] text-slate-400">
                           <SourceIcon />
-                          {
-                            lead.source
-                          }
+                          {lead.source}
                         </div>
                       )}
                     </div>
 
-                    <div className="flex shrink-0 flex-col items-end gap-1">
-                      <Badge
-                        className={getStatusBadgeClass(
-                          lead.status
-                        )}
-                      >
-                        {
-                          lead.status ||
-                          "New"
-                        }
-                      </Badge>
-
-                      {!isActive && (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-[9px] font-medium text-red-700 dark:bg-red-500/10 dark:text-red-300">
-                          <span className="h-1 w-1 rounded-full bg-red-500" />
-                          Inactive
-                        </span>
+                    <Badge
+                      className={getStatusBadgeClass(
+                        lead.status
                       )}
-                    </div>
+                    >
+                      {lead.status ||
+                        "New"}
+                    </Badge>
                   </div>
 
                   <div className="my-3 border-t border-slate-100 dark:border-slate-800" />
 
-                  <div className="space-y-1.5 text-xs text-slate-600 dark:text-slate-300">
+                  <div className="space-y-2 text-xs text-slate-600 dark:text-slate-300">
                     <div className="flex items-center gap-1.5">
                       <PhoneIcon />
-
                       <span className="truncate">
-                        {
-                          lead.contact_number ||
-                          "-"
-                        }
+                        {lead.contact_number ||
+                          "-"}
                       </span>
                     </div>
 
                     <div className="flex items-center gap-1.5">
                       <MailIcon />
-
                       <span className="truncate">
-                        {
-                          lead.email ||
-                          "-"
-                        }
+                        {lead.email ||
+                          "-"}
                       </span>
                     </div>
 
                     {lead.assignee && (
                       <div className="flex items-center gap-1.5">
                         <UserSmallIcon />
-
                         <span className="truncate">
                           Assigned to{" "}
                           {getEmployeeDisplayName(
@@ -1404,15 +1524,10 @@ export default function LeadListPage() {
                         Lead Created By
                       </p>
 
-                      <p className="mt-0.5 text-xs font-medium text-slate-700 dark:text-slate-200">
+                      <p className="mt-0.5 truncate text-xs font-medium text-slate-700 dark:text-slate-200">
                         {getEmployeeDisplayName(
                           lead.creator
                         )}
-
-                        {lead.creator
-                          .employee_code
-                          ? ` (${lead.creator.employee_code})`
-                          : ""}
                       </p>
 
                       <div className="mt-1">
@@ -1426,14 +1541,7 @@ export default function LeadListPage() {
                   )}
                 </div>
 
-                <div
-                  className={`grid gap-px border-t border-slate-100 bg-slate-100 dark:border-slate-700 dark:bg-slate-800 ${
-                    actionCount ===
-                    3
-                      ? "grid-cols-3"
-                      : "grid-cols-2"
-                  }`}
-                >
+                <div className="absolute inset-x-0 bottom-0 z-30 grid h-11 grid-cols-3 gap-px border-t border-slate-100 bg-slate-100 dark:border-slate-700 dark:bg-slate-800">
                   <button
                     type="button"
                     onClick={() =>
@@ -1441,24 +1549,25 @@ export default function LeadListPage() {
                         lead
                       )
                     }
-                    className="bg-white py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+                    className="bg-white text-xs font-semibold text-slate-600 hover:bg-slate-50 dark:bg-slate-900 dark:text-slate-300"
                   >
                     Edit
                   </button>
 
-                  {canConvert && (
-                    <button
-                      type="button"
-                      onClick={() =>
+                  <button
+                    type="button"
+                    disabled={!canConvert}
+                    onClick={() => {
+                      if (canConvert) {
                         setConfirmConvert(
                           lead
-                        )
+                        );
                       }
-                      className="bg-white py-2 text-xs font-semibold text-primary-600 hover:bg-primary-50 dark:bg-slate-900 dark:text-primary-400 dark:hover:bg-primary-500/10"
-                    >
-                      Convert
-                    </button>
-                  )}
+                    }}
+                    className="bg-white text-xs font-semibold text-primary-600 hover:bg-primary-50 disabled:cursor-default disabled:text-slate-300 dark:bg-slate-900 dark:text-primary-400"
+                  >
+                    Convert
+                  </button>
 
                   {isActive ? (
                     <button
@@ -1472,7 +1581,7 @@ export default function LeadListPage() {
                           lead
                         )
                       }
-                      className="bg-white py-2 text-xs font-semibold text-red-500 hover:bg-red-50 disabled:opacity-40 dark:bg-slate-900 dark:text-red-400 dark:hover:bg-red-500/10"
+                      className="bg-white text-xs font-semibold text-red-500 hover:bg-red-50 disabled:opacity-40 dark:bg-slate-900 dark:text-red-400"
                     >
                       Deactivate
                     </button>
@@ -1488,7 +1597,7 @@ export default function LeadListPage() {
                           lead
                         )
                       }
-                      className="bg-white py-2 text-xs font-semibold text-emerald-600 hover:bg-emerald-50 disabled:opacity-40 dark:bg-slate-900 dark:text-emerald-400 dark:hover:bg-emerald-500/10"
+                      className="bg-white text-xs font-semibold text-emerald-600 hover:bg-emerald-50 disabled:opacity-40 dark:bg-slate-900 dark:text-emerald-400"
                     >
                       Reactivate
                     </button>
@@ -1499,10 +1608,6 @@ export default function LeadListPage() {
           })}
         </div>
       ) : (
-        /* ===================================================
-           TABLE VIEW
-        =================================================== */
-
         <div className="w-full min-w-0 overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
           <table className="w-full text-left text-sm">
             <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-400">
@@ -1510,31 +1615,24 @@ export default function LeadListPage() {
                 <th className="px-4 py-3 font-medium">
                   Lead Name
                 </th>
-
                 <th className="px-4 py-3 font-medium">
                   Contact
                 </th>
-
                 <th className="px-4 py-3 font-medium">
                   Source
                 </th>
-
                 <th className="px-4 py-3 font-medium">
                   Created By
                 </th>
-
                 <th className="px-4 py-3 font-medium">
                   Assigned To
                 </th>
-
                 <th className="px-4 py-3 font-medium">
                   Pipeline Status
                 </th>
-
                 <th className="px-4 py-3 font-medium">
                   Active
                 </th>
-
                 <th className="px-4 py-3 text-right font-medium">
                   Actions
                 </th>
@@ -1542,134 +1640,147 @@ export default function LeadListPage() {
             </thead>
 
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {paged.map(
-                (lead) => {
-                  const isActive =
-                    lead.is_active !==
-                    false;
+              {paged.map((lead) => {
+                const isActive =
+                  lead.is_active !==
+                  false;
 
-                  const canConvert =
-                    isActive &&
-                    lead.status !==
-                      "Converted";
+                const canConvert =
+                  isActive &&
+                  lead.status !==
+                    "Converted";
 
-                  return (
-                    <tr
-                      key={
-                        lead.id
-                      }
-                      className="hover:bg-slate-50 dark:hover:bg-slate-800/40"
-                    >
-                      <td className="px-4 py-3 font-medium text-slate-800 dark:text-slate-100">
-                        {
-                          lead.lead_name ||
-                          "-"
+                return (
+                  <tr
+                    key={lead.id}
+                    className="hover:bg-slate-50 dark:hover:bg-slate-800/40"
+                  >
+                    <td className="px-4 py-3">
+                      <HoverDetailsTrigger
+                        align="left"
+                        panel={
+                          <LeadDetailsCard
+                            lead={lead}
+                          />
                         }
-                      </td>
+                      >
+                        <span className="cursor-pointer font-medium text-slate-800 dark:text-slate-100">
+                          {lead.lead_name ||
+                            "-"}
+                        </span>
+                      </HoverDetailsTrigger>
+                    </td>
 
-                      <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
+                      <div>
+                        {lead.contact_number ||
+                          "-"}
+                      </div>
+
+                      <div className="text-[11px] text-slate-400">
+                        {lead.email || ""}
+                      </div>
+                    </td>
+
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
+                      {lead.source || "-"}
+                    </td>
+
+                    <td className="px-4 py-3">
+                      {lead.creator ? (
                         <div>
-                          {
-                            lead.contact_number ||
-                            "-"
-                          }
+                          <p className="text-xs font-medium text-slate-700 dark:text-slate-200">
+                            {getEmployeeDisplayName(
+                              lead.creator
+                            )}
+                          </p>
+
+                          <CreatorHierarchyRow
+                            hierarchy={
+                              lead.creator_hierarchy
+                            }
+                          />
                         </div>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
 
-                        <div className="text-[11px] text-slate-400">
-                          {
-                            lead.email ||
-                            ""
-                          }
-                        </div>
-                      </td>
-
-                      <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
-                        {
-                          lead.source ||
-                          "-"
-                        }
-                      </td>
-
-                      <td className="px-4 py-3">
-                        {lead.creator ? (
-                          <div>
-                            <p className="text-xs font-medium text-slate-700 dark:text-slate-200">
-                              {getEmployeeDisplayName(
-                                lead.creator
-                              )}
-                            </p>
-
-                            <CreatorHierarchyRow
-                              hierarchy={
-                                lead.creator_hierarchy
-                              }
-                            />
-                          </div>
-                        ) : (
-                          <span className="text-xs text-slate-300 dark:text-slate-600">
-                            —
-                          </span>
-                        )}
-                      </td>
-
-                      <td className="px-4 py-3 text-xs text-slate-600 dark:text-slate-300">
-                        {lead.assignee ? (
-                          getEmployeeDisplayName(
+                    <td className="px-4 py-3 text-xs text-slate-600 dark:text-slate-300">
+                      {lead.assignee
+                        ? getEmployeeDisplayName(
                             lead.assignee
                           )
-                        ) : (
-                          <span className="text-slate-300 dark:text-slate-600">
-                            —
-                          </span>
+                        : "—"}
+                    </td>
+
+                    <td className="px-4 py-3">
+                      <Badge
+                        className={getStatusBadgeClass(
+                          lead.status
                         )}
-                      </td>
+                      >
+                        {lead.status ||
+                          "New"}
+                      </Badge>
+                    </td>
 
-                      <td className="px-4 py-3">
-                        <Badge
-                          className={getStatusBadgeClass(
-                            lead.status
-                          )}
-                        >
-                          {
-                            lead.status ||
-                            "New"
-                          }
-                        </Badge>
-                      </td>
-
-                      <td className="px-4 py-3">
+                    <td className="px-4 py-3">
+                      <span
+                        className={`inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-[10px] font-medium ${
+                          isActive
+                            ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300"
+                            : "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300"
+                        }`}
+                      >
                         <span
-                          className={`inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-[10px] font-medium ${
+                          className={`h-1.5 w-1.5 rounded-full ${
                             isActive
-                              ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300"
-                              : "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300"
+                              ? "bg-emerald-500"
+                              : "bg-red-500"
                           }`}
+                        />
+
+                        {isActive
+                          ? "Active"
+                          : "Inactive"}
+                      </span>
+                    </td>
+
+                    <td className="px-2 py-3">
+                      <div className="flex items-center justify-end gap-0.5">
+                        <IconButton
+                          title="Edit"
+                          onClick={() =>
+                            handleEdit(
+                              lead
+                            )
+                          }
                         >
-                          <span
-                            className={`h-1.5 w-1.5 rounded-full ${
-                              isActive
-                                ? "bg-emerald-500"
-                                : "bg-red-500"
-                            }`}
-                          />
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-4 w-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth={2}
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M16.862 4.487l1.687-1.688a2.121 2.121 0 013 3l-9.9 9.9-4.137 1.034 1.034-4.137 9.9-9.9z"
+                            />
+                          </svg>
+                        </IconButton>
 
-                          {isActive
-                            ? "Active"
-                            : "Inactive"}
-                        </span>
-                      </td>
-
-                      <td className="px-2 py-3">
-                        <div className="flex items-center justify-end gap-0.5">
+                        {canConvert && (
                           <IconButton
-                            title="Edit"
+                            title="Convert to Customer"
+                            tone="primary"
                             onClick={() =>
-                              handleEdit(
+                              setConfirmConvert(
                                 lead
                               )
-                            }
-                            disabled={
-                              saving
                             }
                           >
                             <svg
@@ -1683,103 +1794,76 @@ export default function LeadListPage() {
                               <path
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
-                                d="M16.862 4.487l1.687-1.688a2.121 2.121 0 013 3l-9.9 9.9-4.137 1.034 1.034-4.137 9.9-9.9z"
+                                d="M4.5 12.75l6 6 9-13.5"
                               />
                             </svg>
                           </IconButton>
+                        )}
 
-                          {canConvert && (
-                            <IconButton
-                              title="Convert to Customer"
-                              tone="primary"
-                              onClick={() =>
-                                setConfirmConvert(
-                                  lead
-                                )
-                              }
+                        {isActive ? (
+                          <IconButton
+                            title="Deactivate"
+                            tone="red"
+                            disabled={
+                              mutatingLeadId ===
+                              lead.id
+                            }
+                            onClick={() =>
+                              setDeleteTarget(
+                                lead
+                              )
+                            }
+                          >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-4 w-4"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                              strokeWidth={2}
                             >
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                className="h-4 w-4"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                                strokeWidth={2}
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  d="M4.5 12.75l6 6 9-13.5"
-                                />
-                              </svg>
-                            </IconButton>
-                          )}
-
-                          {isActive ? (
-                            <IconButton
-                              title="Deactivate"
-                              tone="red"
-                              disabled={
-                                mutatingLeadId ===
-                                lead.id
-                              }
-                              onClick={() =>
-                                setDeleteTarget(
-                                  lead
-                                )
-                              }
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M6 7h12M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m2 0v12a2 2 0 01-2 2H8a2 2 0 01-2-2V7h12z"
+                              />
+                            </svg>
+                          </IconButton>
+                        ) : (
+                          <IconButton
+                            title="Reactivate"
+                            tone="emerald"
+                            disabled={
+                              mutatingLeadId ===
+                              lead.id
+                            }
+                            onClick={() =>
+                              handleReactivate(
+                                lead
+                              )
+                            }
+                          >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-4 w-4"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                              strokeWidth={2}
                             >
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                className="h-4 w-4"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                                strokeWidth={2}
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  d="M6 7h12M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m2 0v12a2 2 0 01-2 2H8a2 2 0 01-2-2V7h12z"
-                                />
-                              </svg>
-                            </IconButton>
-                          ) : (
-                            <IconButton
-                              title="Reactivate"
-                              tone="emerald"
-                              disabled={
-                                mutatingLeadId ===
-                                lead.id
-                              }
-                              onClick={() =>
-                                handleReactivate(
-                                  lead
-                                )
-                              }
-                            >
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                className="h-4 w-4"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                                strokeWidth={2}
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  d="M4 12a8 8 0 018-8 8.5 8.5 0 017 4M20 4v5h-5M20 12a8 8 0 01-8 8 8.5 8.5 0 01-7-4M4 20v-5h5"
-                                />
-                              </svg>
-                            </IconButton>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                }
-              )}
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M4 12a8 8 0 018-8 8.5 8.5 0 017 4M20 4v5h-5M20 12a8 8 0 01-8 8 8.5 8.5 0 01-7-4M4 20v-5h5"
+                              />
+                            </svg>
+                          </IconButton>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -1789,26 +1873,22 @@ export default function LeadListPage() {
 
       <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
         <span>
-          Page {page} of{" "}
-          {pageCount}
+          Page {page} of {pageCount}
         </span>
 
         <div className="flex gap-2">
           <button
             type="button"
-            disabled={
-              page <= 1
-            }
+            disabled={page <= 1}
             onClick={() =>
-              setPage(
-                (current) =>
-                  Math.max(
-                    1,
-                    current - 1
-                  )
+              setPage((current) =>
+                Math.max(
+                  1,
+                  current - 1
+                )
               )
             }
-            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium transition hover:bg-slate-50 disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700"
+            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800"
           >
             Previous
           </button>
@@ -1816,34 +1896,28 @@ export default function LeadListPage() {
           <button
             type="button"
             disabled={
-              page >=
-              pageCount
+              page >= pageCount
             }
             onClick={() =>
-              setPage(
-                (current) =>
-                  Math.min(
-                    pageCount,
-                    current + 1
-                  )
+              setPage((current) =>
+                Math.min(
+                  pageCount,
+                  current + 1
+                )
               )
             }
-            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium transition hover:bg-slate-50 disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700"
+            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800"
           >
             Next
           </button>
         </div>
       </div>
 
-      {/* ADD / EDIT MODAL */}
+      {/* ADD / EDIT */}
 
       <Modal
-        open={
-          modalOpen
-        }
-        onClose={
-          closeModal
-        }
+        open={modalOpen}
+        onClose={closeModal}
         title={
           editingLead
             ? "Edit Lead"
@@ -1851,33 +1925,27 @@ export default function LeadListPage() {
         }
       >
         <LeadForm
+          key={
+            editingLead?.id ??
+            "new-lead"
+          }
           formId="leads-form"
           initialData={
             editingLead || {}
           }
-          onSubmit={
-            handleSubmit
-          }
-          loading={
-            isSaving
-          }
+          onSubmit={handleSubmit}
+          loading={isSaving}
         />
       </Modal>
 
-      {/* DEACTIVATE CONFIRM */}
+      {/* DEACTIVATE */}
 
       <ConfirmDialog
-        open={
-          !!deleteTarget
-        }
+        open={!!deleteTarget}
         onClose={() =>
-          setDeleteTarget(
-            null
-          )
+          setDeleteTarget(null)
         }
-        onConfirm={
-          confirmDeactivate
-        }
+        onConfirm={confirmDeactivate}
         title="Deactivate Lead"
         message={
           deleteTarget
@@ -1886,25 +1954,18 @@ export default function LeadListPage() {
         }
         confirmText="Deactivate"
         loading={
-          mutatingLeadId !==
-          null
+          mutatingLeadId !== null
         }
       />
 
-      {/* CONVERT CONFIRM */}
+      {/* CONVERT */}
 
       <ConfirmDialog
-        open={
-          !!confirmConvert
-        }
+        open={!!confirmConvert}
         onClose={() =>
-          setConfirmConvert(
-            null
-          )
+          setConfirmConvert(null)
         }
-        onConfirm={
-          handleConvert
-        }
+        onConfirm={handleConvert}
         title="Convert Lead to Customer"
         message={`Convert "${confirmConvert?.lead_name}" into a customer record?`}
         confirmText="Convert"
