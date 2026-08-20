@@ -1,6 +1,10 @@
 import GenericForm from "@/components/form/GenericForm";
 import { useCustomerOptions } from "@/hooks/useLookupOptions";
 
+/* =========================================================
+   CONSTANTS
+========================================================= */
+
 const STATUS_OPTIONS = [
   { value: "Draft", label: "Draft" },
   { value: "Sent", label: "Sent" },
@@ -8,13 +12,153 @@ const STATUS_OPTIONS = [
   { value: "Rejected", label: "Rejected" },
 ];
 
-export default function QuotationForm({ formId = "quotations-form", initialData, onSubmit, loading }) {
-  const customerOptions = useCustomerOptions();
+/* =========================================================
+   HELPERS
+========================================================= */
+
+function normalizeCustomerId(value) {
+  if (
+    value === null ||
+    value === undefined ||
+    value === ""
+  ) {
+    return "";
+  }
+
+  const numericValue = Number(value);
+
+  return Number.isFinite(numericValue)
+    ? numericValue
+    : "";
+}
+
+function normalizeAmount(value) {
+  if (
+    value === null ||
+    value === undefined ||
+    value === ""
+  ) {
+    return "";
+  }
+
+  const numericValue = Number(value);
+
+  return Number.isFinite(numericValue)
+    ? numericValue
+    : "";
+}
+
+/* =========================================================
+   FORM
+========================================================= */
+
+export default function QuotationForm({
+  formId = "quotations-form",
+  initialData,
+  onSubmit,
+  loading,
+}) {
+  const customerOptions =
+    useCustomerOptions();
+
   const fields = [
-    { name: "customer_id", label: "Customer", type: "select", options: customerOptions, required: true },
-    { name: "quotation_number", label: "Quotation Number (auto if blank)", type: "text" },
-    { name: "amount", label: "Amount", type: "number", required: true },
-    { name: "status", label: "Status", type: "select", options: STATUS_OPTIONS, defaultValue: "Draft" },
+    {
+      name: "customer_id",
+      label: "Customer",
+      type: "select",
+      options: customerOptions,
+      required: true,
+    },
+
+    {
+      name: "quotation_number",
+      label: "Quotation Number",
+      type: "text",
+    },
+
+    {
+      name: "amount",
+      label: "Amount",
+      type: "number",
+      required: true,
+    },
+
+    {
+      name: "status",
+      label: "Status",
+      type: "select",
+      options: STATUS_OPTIONS,
+      defaultValue: "Draft",
+    },
   ];
-  return <GenericForm formId={formId} fields={fields} initialData={initialData} onSubmit={onSubmit} loading={loading} />;
+
+  /* =======================================================
+     NORMALIZE EDIT DATA
+  ======================================================= */
+
+  const customerId =
+    initialData?.customer_id ??
+    initialData?.customer_id_fk ??
+    initialData?.customer?.id ??
+    "";
+
+  const normalizedInitialData = {
+    ...(initialData || {}),
+
+    customer_id:
+      normalizeCustomerId(
+        customerId
+      ),
+
+    amount:
+      normalizeAmount(
+        initialData?.amount
+      ),
+
+    status:
+      initialData?.status ||
+      "Draft",
+  };
+
+  /* =======================================================
+     SUBMIT
+  ======================================================= */
+
+  const handleSubmit = async (
+    payload
+  ) => {
+    const normalizedPayload = {
+      ...payload,
+
+      customer_id:
+        normalizeCustomerId(
+          payload?.customer_id
+        ),
+
+      amount:
+        normalizeAmount(
+          payload?.amount
+        ),
+
+      status:
+        payload?.status ||
+        "Draft",
+    };
+
+    await onSubmit(
+      normalizedPayload
+    );
+  };
+
+  return (
+    <GenericForm
+      formId={formId}
+      fields={fields}
+      initialData={
+        normalizedInitialData
+      }
+      onSubmit={handleSubmit}
+      loading={loading}
+    />
+  );
 }
