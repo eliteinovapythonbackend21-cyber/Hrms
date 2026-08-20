@@ -191,29 +191,12 @@ export const crmApi = {
       itemUrl: C.INVOICES_ITEM,
     }),
 
-    /*
-     * Explicit update method for Invoices.
-     *
-     * PUT /invoices/:id
-     *
-     * IMPORTANT: this was previously missing entirely (invoices
-     * only had the spread createCrudApi() output plus `report`),
-     * which is why Edit / Deactivate / Reactivate for invoices
-     * never worked - crmApi.invoices.update / .deactivate were
-     * undefined.
-     */
     update: (id, payload) =>
       axiosClient.put(
         C.INVOICES_ITEM(id),
         payload
       ),
 
-    /*
-     * Explicit soft-deactivate method.
-     *
-     * PUT /invoices/:id
-     * { is_active: false }
-     */
     deactivate: (id) =>
       axiosClient.put(
         C.INVOICES_ITEM(id),
@@ -222,12 +205,6 @@ export const crmApi = {
         }
       ),
 
-    /*
-     * Explicit reactivate method.
-     *
-     * PUT /invoices/:id
-     * { is_active: true }
-     */
     reactivate: (id) =>
       axiosClient.put(
         C.INVOICES_ITEM(id),
@@ -236,9 +213,6 @@ export const crmApi = {
         }
       ),
 
-    /*
-     * Existing CRM report export - unchanged.
-     */
     report: (
       params
     ) =>
@@ -255,11 +229,56 @@ export const crmApi = {
      PAYMENTS
   ========================================================= */
 
-  payments:
-    createCrudApi({
+  payments: {
+    ...createCrudApi({
       listUrl: C.PAYMENTS,
       itemUrl: C.PAYMENTS_ITEM,
     }),
+
+    /*
+     * Explicit update method for Payments.
+     *
+     * PUT /payments/:id
+     *
+     * IMPORTANT: this was previously missing entirely (payments
+     * was just the bare createCrudApi() output), which is why
+     * Edit / Deactivate / Reactivate for payments never worked -
+     * crmApi.payments.update / .deactivate were undefined.
+     */
+    update: (id, payload) =>
+      axiosClient.put(
+        C.PAYMENTS_ITEM(id),
+        payload
+      ),
+
+    /*
+     * Explicit soft-deactivate method.
+     *
+     * PUT /payments/:id
+     * { is_active: false }
+     */
+    deactivate: (id) =>
+      axiosClient.put(
+        C.PAYMENTS_ITEM(id),
+        {
+          is_active: false,
+        }
+      ),
+
+    /*
+     * Explicit reactivate method.
+     *
+     * PUT /payments/:id
+     * { is_active: true }
+     */
+    reactivate: (id) =>
+      axiosClient.put(
+        C.PAYMENTS_ITEM(id),
+        {
+          is_active: true,
+        }
+      ),
+  },
 
   /* =========================================================
      SUPPORT TICKETS
