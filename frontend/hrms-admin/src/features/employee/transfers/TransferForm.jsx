@@ -54,16 +54,77 @@ const DEFAULT_FORM = {
    HELPERS
 ========================================================= */
 
+/**
+ * Normalize any date value coming from the API (or a JS Date
+ * object) into the strict YYYY-MM-DD format required by
+ * HTML <input type="date">.
+ *
+ * Handles:
+ *  - "" / null / undefined                -> ""
+ *  - Date instances                        -> local YYYY-MM-DD
+ *  - "YYYY-MM-DD"                          -> as-is
+ *  - "YYYY-MM-DDT00:00:00[.000Z]"          -> date part only
+ *  - "YYYY-MM-DD 00:00:00"                 -> date part only
+ *  - Any other parseable date string       -> local YYYY-MM-DD
+ *  - Anything unparseable                  -> ""
+ *
+ * IMPORTANT: When falling back to `new Date(value)`, we rebuild
+ * the string from getFullYear()/getMonth()/getDate() (LOCAL
+ * time) rather than toISOString() (UTC), so the date never
+ * shifts by a day due to timezone conversion. This was the
+ * root cause of the Transfer Apply Date / Relieving Date /
+ * Joining Date fields sometimes appearing blank when editing.
+ */
 function normalizeDate(value) {
   if (!value) {
     return "";
   }
 
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) {
+      return "";
+    }
+
+    const year = value.getFullYear();
+    const month = String(value.getMonth() + 1).padStart(2, "0");
+    const day = String(value.getDate()).padStart(2, "0");
+
+    return `${year}-${month}-${day}`;
+  }
+
+  const stringValue = String(value).trim();
+
+  if (!stringValue) {
+    return "";
+  }
+
   /*
-   * HTML date input requires exactly:
-   * YYYY-MM-DD
+   * Fast path: value already starts with YYYY-MM-DD
+   * (covers "YYYY-MM-DD", "YYYY-MM-DDT...", "YYYY-MM-DD ...").
    */
-  return String(value).slice(0, 10);
+  const isoMatch = stringValue.match(
+    /^(\d{4})-(\d{2})-(\d{2})/
+  );
+
+  if (isoMatch) {
+    return `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`;
+  }
+
+  /*
+   * Fallback: try to parse whatever format was given
+   * and rebuild using LOCAL date parts.
+   */
+  const parsed = new Date(stringValue);
+
+  if (!Number.isNaN(parsed.getTime())) {
+    const year = parsed.getFullYear();
+    const month = String(parsed.getMonth() + 1).padStart(2, "0");
+    const day = String(parsed.getDate()).padStart(2, "0");
+
+    return `${year}-${month}-${day}`;
+  }
+
+  return "";
 }
 
 function normalizeTransferData(
@@ -90,6 +151,11 @@ function normalizeTransferData(
       initialData?.reason ||
       "Other",
 
+    /*
+     * Support both the new field name and
+     * a possible misspelled legacy field
+     * (releiving_date) coming from the API.
+     */
     transfer_apply_date:
       normalizeDate(
         initialData?.transfer_apply_date
@@ -97,7 +163,8 @@ function normalizeTransferData(
 
     relieving_date:
       normalizeDate(
-        initialData?.relieving_date
+        initialData?.relieving_date ??
+          initialData?.releiving_date
       ),
 
     joining_date:

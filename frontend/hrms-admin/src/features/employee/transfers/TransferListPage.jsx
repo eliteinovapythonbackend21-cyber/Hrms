@@ -85,22 +85,78 @@ const EXPORT_COLUMNS = [
    HELPERS
 ========================================================= */
 
+/**
+ * Normalize any date value coming from the API (or a JS Date
+ * object) into the strict YYYY-MM-DD format required by
+ * HTML <input type="date">.
+ *
+ * Handles:
+ *  - "" / null / undefined                -> ""
+ *  - Date instances                        -> local YYYY-MM-DD
+ *  - "YYYY-MM-DD"                          -> as-is
+ *  - "YYYY-MM-DDT00:00:00[.000Z]"          -> date part only
+ *  - "YYYY-MM-DD 00:00:00"                 -> date part only
+ *  - Any other parseable date string       -> local YYYY-MM-DD
+ *  - Anything unparseable                  -> ""
+ *
+ * IMPORTANT: When we fall back to `new Date(value)`, we rebuild
+ * the string from getFullYear()/getMonth()/getDate() (LOCAL
+ * time) rather than toISOString() (UTC), so the date never
+ * shifts by a day due to timezone conversion. This was the
+ * root cause of dates sometimes appearing blank or one day
+ * off when editing Transfers / Promotions.
+ */
 function normalizeDateForInput(value) {
   if (!value) {
     return "";
   }
 
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) {
+      return "";
+    }
+
+    const year = value.getFullYear();
+    const month = String(value.getMonth() + 1).padStart(2, "0");
+    const day = String(value.getDate()).padStart(2, "0");
+
+    return `${year}-${month}-${day}`;
+  }
+
+  const stringValue = String(value).trim();
+
+  if (!stringValue) {
+    return "";
+  }
+
   /*
-   * HTML <input type="date"> accepts:
-   *
-   * YYYY-MM-DD
-   *
-   * API may return:
-   * YYYY-MM-DD
-   * YYYY-MM-DDT00:00:00
-   * YYYY-MM-DD 00:00:00
+   * Fast path: value already starts with YYYY-MM-DD
+   * (covers "YYYY-MM-DD", "YYYY-MM-DDT...", "YYYY-MM-DD ...").
    */
-  return String(value).slice(0, 10);
+  const isoMatch = stringValue.match(
+    /^(\d{4})-(\d{2})-(\d{2})/
+  );
+
+  if (isoMatch) {
+    return `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`;
+  }
+
+  /*
+   * Fallback: try to parse whatever format was given
+   * (e.g. "MM/DD/YYYY", "DD-MM-YYYY", etc.) and rebuild
+   * using LOCAL date parts.
+   */
+  const parsed = new Date(stringValue);
+
+  if (!Number.isNaN(parsed.getTime())) {
+    const year = parsed.getFullYear();
+    const month = String(parsed.getMonth() + 1).padStart(2, "0");
+    const day = String(parsed.getDate()).padStart(2, "0");
+
+    return `${year}-${month}-${day}`;
+  }
+
+  return "";
 }
 
 function getEmployeeName(employee) {
@@ -1353,6 +1409,11 @@ export default function TransferListPage() {
      * - Transfer Apply Date
      * - Relieving Date
      * - Joining Date
+     *
+     * normalizeDateForInput() now robustly handles
+     * Date objects, ISO strings with a time component,
+     * and other date-like strings instead of relying
+     * on a naive string slice.
      */
 
     const normalizedTransfer = {
