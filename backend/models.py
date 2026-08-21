@@ -903,19 +903,164 @@ class Overtime(TimestampMixin, db.Model):
 class Payroll(TimestampMixin, db.Model):
     __tablename__ = "payroll"
 
-    id = db.Column(db.Integer, primary_key=True)
-    employee_id = db.Column(db.Integer, db.ForeignKey("employees.id"), nullable=False)
-    pay_month = db.Column(db.String(7), nullable=False)
-    gross_salary = db.Column(db.Numeric(12, 2), default=0)
-    deductions = db.Column(db.Numeric(12, 2), default=0)
-    net_salary = db.Column(db.Numeric(12, 2), default=0)
-    status = db.Column(db.String(20), default="Draft")
-    is_active = db.Column(db.Boolean, default=True)
-    employee = db.relationship("Employee")
+    id = db.Column(
+        db.Integer,
+        primary_key=True,
+    )
+
+    employee_id = db.Column(
+        db.Integer,
+        db.ForeignKey("employees.id"),
+        nullable=False,
+    )
+
+    pay_month = db.Column(
+        db.String(7),
+        nullable=False,
+    )
+
+    gross_salary = db.Column(
+        db.Numeric(12, 2),
+        default=0,
+    )
+
+    deductions = db.Column(
+        db.Numeric(12, 2),
+        default=0,
+    )
+
+    net_salary = db.Column(
+        db.Numeric(12, 2),
+        default=0,
+    )
+
+    status = db.Column(
+        db.String(20),
+        default="Draft",
+    )
+
+    is_active = db.Column(
+        db.Boolean,
+        default=True,
+    )
+
+    employee = db.relationship(
+        "Employee"
+    )
 
     def to_dict(self):
         data = super().to_dict()
-        data["employee"] = _summary(self.employee, ["id", "employee_code", "first_name", "last_name"])
+
+        employee = self.employee
+
+        if not employee:
+            data["employee"] = None
+            data["company_id"] = None
+            data["branch_id"] = None
+            data["department_id"] = None
+            data["designation_id"] = None
+            return data
+
+        employee_data = _summary(
+            employee,
+            [
+                "id",
+                "employee_code",
+                "first_name",
+                "last_name",
+            ],
+        )
+        
+        company = getattr(
+            employee,
+            "company",
+            None,
+        )
+
+        if company:
+            employee_data["company"] = _summary(
+                company,
+                [
+                    "id",
+                    "name",
+                    "company_name",
+                ],
+            )
+
+        branch = getattr(
+            employee,
+            "branch",
+            None,
+        )
+
+        if branch:
+            employee_data["branch"] = _summary(
+                branch,
+                [
+                    "id",
+                    "name",
+                    "branch_name",
+                ],
+            )
+
+
+        department = getattr(
+            employee,
+            "department",
+            None,
+        )
+
+        if department:
+            employee_data["department"] = _summary(
+                department,
+                [
+                    "id",
+                    "department_name",
+                    "department_code",
+                ],
+            )
+
+        designation = getattr(
+            employee,
+            "designation",
+            None,
+        )
+
+        if designation:
+            employee_data["designation"] = _summary(
+                designation,
+                [
+                    "id",
+                    "designation_name",
+                    "designation_code",
+                ],
+            )
+
+        data["employee"] = employee_data
+        data["company_id"] = getattr(
+            employee,
+            "company_id",
+            None,
+        )
+
+        data["branch_id"] = getattr(
+            employee,
+            "branch_id",
+            None,
+        )
+
+        data["department_id"] = getattr(
+            employee,
+            "department_id",
+            None,
+        )
+
+        data["designation_id"] = getattr(
+            employee,
+            "designation_id",
+            None,
+        )
+
         return data
 
     @classmethod

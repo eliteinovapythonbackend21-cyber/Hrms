@@ -14,7 +14,6 @@ import { useCompanies } from "@/features/master/company/useCompanies";
 import { useCompanyBranches } from "@/features/master/branches/useBranches";
 
 import { masterApi } from "@/api/master.api";
-
 import { employeeLifecycleApi } from "@/api/employee.api";
 
 import Badge from "@/components/ui/Badge";
@@ -35,90 +34,32 @@ import { formatCurrency } from "@/utils/formatCurrency";
 const PAGE_SIZE = 10;
 const CARD_PAGE_SIZE = 6;
 
-const CARD_HEIGHT = "h-[365px]";
-
 /* =========================================================
-   EXPORT
+   RESPONSE HELPERS
 ========================================================= */
 
-const EXPORT_COLUMNS = [
-  {
-    header: "Employee ID",
-    accessor: (r) =>
-      r.employee_id || "-",
-  },
+function getItems(data) {
+  if (Array.isArray(data)) {
+    return data;
+  }
 
-  {
-    header: "Employee",
-    accessor: (r) =>
-      getEmployeeName(r),
-  },
+  if (Array.isArray(data?.items)) {
+    return data.items;
+  }
 
-  {
-    header: "Company",
-    accessor: (r) =>
-      getCompanyName(r),
-  },
+  if (Array.isArray(data?.data)) {
+    return data.data;
+  }
 
-  {
-    header: "Branch",
-    accessor: (r) =>
-      getBranchName(r),
-  },
+  if (Array.isArray(data?.data?.items)) {
+    return data.data.items;
+  }
 
-  {
-    header: "Department",
-    accessor: (r) =>
-      getDepartmentName(r),
-  },
-
-  {
-    header: "Pay Month",
-    accessor: (r) =>
-      r.pay_month || "-",
-  },
-
-  {
-    header: "Gross Salary",
-    accessor: (r) =>
-      formatCurrency(
-        r.gross_salary
-      ),
-  },
-
-  {
-    header: "Deductions",
-    accessor: (r) =>
-      formatCurrency(
-        r.deductions
-      ),
-  },
-
-  {
-    header: "Net Salary",
-    accessor: (r) =>
-      formatCurrency(
-        r.net_salary
-      ),
-  },
-
-  {
-    header: "Status",
-    accessor: (r) =>
-      r.status || "Pending",
-  },
-
-  {
-    header: "Active",
-    accessor: (r) =>
-      r.is_active !== false
-        ? "Yes"
-        : "No",
-  },
-];
+  return [];
+}
 
 /* =========================================================
-   DATA HELPERS
+   EMPLOYEE
 ========================================================= */
 
 function getEmployee(payroll) {
@@ -128,6 +69,10 @@ function getEmployee(payroll) {
     null
   );
 }
+
+/* =========================================================
+   DEPARTMENT
+========================================================= */
 
 function getDepartment(payroll) {
   const employee =
@@ -141,6 +86,10 @@ function getDepartment(payroll) {
     null
   );
 }
+
+/* =========================================================
+   BRANCH
+========================================================= */
 
 function getBranch(payroll) {
   const employee =
@@ -159,6 +108,10 @@ function getBranch(payroll) {
     null
   );
 }
+
+/* =========================================================
+   COMPANY
+========================================================= */
 
 function getCompany(payroll) {
   const employee =
@@ -183,34 +136,61 @@ function getCompany(payroll) {
   );
 }
 
+/* =========================================================
+   DESIGNATION
+========================================================= */
+
+function getDesignation(payroll) {
+  const employee =
+    getEmployee(payroll);
+
+  return (
+    payroll?.designation ||
+    payroll?.designation_details ||
+    employee?.designation ||
+    employee?.designation_details ||
+    null
+  );
+}
+
+/* =========================================================
+   EMPLOYEE NAME
+========================================================= */
+
 function getEmployeeName(payroll) {
   const employee =
     getEmployee(payroll);
 
   if (employee) {
+    const fullName = [
+      employee.first_name,
+      employee.last_name,
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .trim();
+
     return (
       employee.full_name ||
       employee.employee_name ||
       employee.name ||
-      [
-        employee.first_name,
-        employee.last_name,
-      ]
-        .filter(Boolean)
-        .join(" ") ||
+      fullName ||
       `Employee #${
-        employee.id ||
-        payroll?.employee_id ||
+        employee.id ??
+        payroll?.employee_id ??
         "-"
       }`
     );
   }
 
   return `Employee #${
-    payroll?.employee_id ??
-    "-"
+    payroll?.employee_id ?? "-"
   }`;
 }
+
+/* =========================================================
+   EMPLOYEE CODE
+========================================================= */
 
 function getEmployeeCode(payroll) {
   const employee =
@@ -225,6 +205,10 @@ function getEmployeeCode(payroll) {
   );
 }
 
+/* =========================================================
+   COMPANY NAME / ID
+========================================================= */
+
 function getCompanyName(payroll) {
   const company =
     getCompany(payroll);
@@ -232,10 +216,30 @@ function getCompanyName(payroll) {
   return (
     company?.name ||
     company?.company_name ||
+    company?.companyName ||
     payroll?.company_name ||
     "-"
   );
 }
+
+function getCompanyId(payroll) {
+  const company =
+    getCompany(payroll);
+
+  const employee =
+    getEmployee(payroll);
+
+  return (
+    payroll?.company_id ??
+    company?.id ??
+    employee?.company_id ??
+    null
+  );
+}
+
+/* =========================================================
+   BRANCH NAME / ID
+========================================================= */
 
 function getBranchName(payroll) {
   const branch =
@@ -244,10 +248,30 @@ function getBranchName(payroll) {
   return (
     branch?.name ||
     branch?.branch_name ||
+    branch?.branchName ||
     payroll?.branch_name ||
     "-"
   );
 }
+
+function getBranchId(payroll) {
+  const branch =
+    getBranch(payroll);
+
+  const employee =
+    getEmployee(payroll);
+
+  return (
+    payroll?.branch_id ??
+    branch?.id ??
+    employee?.branch_id ??
+    null
+  );
+}
+
+/* =========================================================
+   DEPARTMENT NAME / CODE / ID
+========================================================= */
 
 function getDepartmentName(
   payroll
@@ -258,6 +282,7 @@ function getDepartmentName(
   return (
     department?.department_name ||
     department?.name ||
+    department?.departmentName ||
     payroll?.department_name ||
     "-"
   );
@@ -271,30 +296,9 @@ function getDepartmentCode(
 
   return (
     department?.department_code ||
+    department?.code ||
     payroll?.department_code ||
     "-"
-  );
-}
-
-function getCompanyId(payroll) {
-  const company =
-    getCompany(payroll);
-
-  return (
-    company?.id ||
-    payroll?.company_id ||
-    null
-  );
-}
-
-function getBranchId(payroll) {
-  const branch =
-    getBranch(payroll);
-
-  return (
-    branch?.id ||
-    payroll?.branch_id ||
-    null
   );
 }
 
@@ -304,30 +308,89 @@ function getDepartmentId(
   const department =
     getDepartment(payroll);
 
+  const employee =
+    getEmployee(payroll);
+
   return (
-    department?.id ||
-    payroll?.department_id ||
+    payroll?.department_id ??
+    department?.id ??
+    employee?.department_id ??
     null
   );
 }
+
+/* =========================================================
+   DESIGNATION NAME / CODE / ID
+========================================================= */
+
+function getDesignationName(
+  payroll
+) {
+  const designation =
+    getDesignation(payroll);
+
+  return (
+    designation?.designation_name ||
+    designation?.name ||
+    designation?.designationName ||
+    payroll?.designation_name ||
+    "-"
+  );
+}
+
+function getDesignationCode(
+  payroll
+) {
+  const designation =
+    getDesignation(payroll);
+
+  return (
+    designation?.designation_code ||
+    designation?.code ||
+    payroll?.designation_code ||
+    "-"
+  );
+}
+
+function getDesignationId(
+  payroll
+) {
+  const designation =
+    getDesignation(payroll);
+
+  const employee =
+    getEmployee(payroll);
+
+  return (
+    payroll?.designation_id ??
+    designation?.id ??
+    employee?.designation_id ??
+    null
+  );
+}
+
+/* =========================================================
+   AMOUNT
+========================================================= */
 
 function normalizeAmount(value) {
   const numeric =
     Number(value);
 
-  return Number.isFinite(
-    numeric
-  )
+  return Number.isFinite(numeric)
     ? numeric
     : 0;
 }
+
+/* =========================================================
+   STATUS
+========================================================= */
 
 function getPayrollStatus(
   payroll
 ) {
   if (
-    payroll?.is_active ===
-    false
+    payroll?.is_active === false
   ) {
     return "Inactive";
   }
@@ -345,6 +408,9 @@ function getStatusClass(
     Pending:
       "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300",
 
+    Draft:
+      "bg-slate-100 text-slate-700 dark:bg-white/10 dark:text-slate-300",
+
     Paid:
       "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300",
 
@@ -357,10 +423,6 @@ function getStatusClass(
     classes.Pending
   );
 }
-
-/* =========================================================
-   STATUS BADGE
-========================================================= */
 
 function statusBadge(
   payroll
@@ -380,9 +442,10 @@ function statusBadge(
         className={`h-1.5 w-1.5 rounded-full ${
           status === "Paid"
             ? "bg-emerald-500"
-            : status ===
-              "Inactive"
+            : status === "Inactive"
             ? "bg-red-500"
+            : status === "Draft"
+            ? "bg-slate-500"
             : "bg-amber-500"
         }`}
       />
@@ -393,7 +456,7 @@ function statusBadge(
 }
 
 /* =========================================================
-   PERIOD HELPERS
+   PAY MONTH
 ========================================================= */
 
 function formatPayMonth(
@@ -438,7 +501,7 @@ function formatPayMonth(
 }
 
 /* =========================================================
-   HOVER DETAILS
+   HOVER TRIGGER
 ========================================================= */
 
 function HoverDetailsTrigger({
@@ -488,43 +551,36 @@ function HoverDetailsTrigger({
   );
 }
 
+/* =========================================================
+   DETAILS CARD
+========================================================= */
+
 function PayrollDetailsCard({
   payroll,
 }) {
   const employeeName =
-    getEmployeeName(
-      payroll
-    );
+    getEmployeeName(payroll);
 
   const employeeCode =
-    getEmployeeCode(
-      payroll
-    );
+    getEmployeeCode(payroll);
 
   const companyName =
-    getCompanyName(
-      payroll
-    );
+    getCompanyName(payroll);
 
   const branchName =
-    getBranchName(
-      payroll
-    );
+    getBranchName(payroll);
 
   const departmentName =
-    getDepartmentName(
-      payroll
-    );
+    getDepartmentName(payroll);
 
   const departmentCode =
-    getDepartmentCode(
-      payroll
-    );
+    getDepartmentCode(payroll);
 
-  const status =
-    getPayrollStatus(
-      payroll
-    );
+  const designationName =
+    getDesignationName(payroll);
+
+  const designationCode =
+    getDesignationCode(payroll);
 
   const gross =
     normalizeAmount(
@@ -542,7 +598,7 @@ function PayrollDetailsCard({
     );
 
   return (
-    <div className="w-[390px] max-w-[calc(100vw-32px)] rounded-xl border border-slate-200 border-t-2 border-t-primary-500 bg-white p-4 text-left shadow-xl dark:border-slate-700 dark:bg-slate-800">
+    <div className="w-[420px] max-w-[calc(100vw-32px)] rounded-xl border border-slate-200 border-t-2 border-t-primary-500 bg-white p-4 text-left shadow-xl dark:border-slate-700 dark:bg-slate-800">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
@@ -566,7 +622,7 @@ function PayrollDetailsCard({
       <div className="my-3 border-t border-slate-100 dark:border-slate-700" />
 
       <div className="space-y-2.5">
-        <div className="grid grid-cols-[100px_minmax(0,1fr)] gap-3">
+        <div className="grid grid-cols-[110px_minmax(0,1fr)] gap-3">
           <span className="text-xs text-slate-400">
             Company
           </span>
@@ -576,7 +632,7 @@ function PayrollDetailsCard({
           </span>
         </div>
 
-        <div className="grid grid-cols-[100px_minmax(0,1fr)] gap-3">
+        <div className="grid grid-cols-[110px_minmax(0,1fr)] gap-3">
           <span className="text-xs text-slate-400">
             Branch
           </span>
@@ -586,7 +642,7 @@ function PayrollDetailsCard({
           </span>
         </div>
 
-        <div className="grid grid-cols-[100px_minmax(0,1fr)] gap-3">
+        <div className="grid grid-cols-[110px_minmax(0,1fr)] gap-3">
           <span className="text-xs text-slate-400">
             Department
           </span>
@@ -598,7 +654,7 @@ function PayrollDetailsCard({
 
         {departmentCode !==
           "-" && (
-          <div className="grid grid-cols-[100px_minmax(0,1fr)] gap-3">
+          <div className="grid grid-cols-[110px_minmax(0,1fr)] gap-3">
             <span className="text-xs text-slate-400">
               Dept. Code
             </span>
@@ -609,7 +665,30 @@ function PayrollDetailsCard({
           </div>
         )}
 
-        <div className="grid grid-cols-[100px_minmax(0,1fr)] gap-3">
+        <div className="grid grid-cols-[110px_minmax(0,1fr)] gap-3">
+          <span className="text-xs text-slate-400">
+            Designation
+          </span>
+
+          <span className="truncate text-right text-xs font-semibold text-violet-600 dark:text-violet-400">
+            {designationName}
+          </span>
+        </div>
+
+        {designationCode !==
+          "-" && (
+          <div className="grid grid-cols-[110px_minmax(0,1fr)] gap-3">
+            <span className="text-xs text-slate-400">
+              Designation Code
+            </span>
+
+            <span className="text-right font-mono text-[10px] font-medium text-violet-600 dark:text-violet-400">
+              {designationCode}
+            </span>
+          </div>
+        )}
+
+        <div className="grid grid-cols-[110px_minmax(0,1fr)] gap-3">
           <span className="text-xs text-slate-400">
             Pay Month
           </span>
@@ -684,8 +763,7 @@ function PayrollDetailsCard({
 
           <p className="mt-0.5 text-[10px] font-semibold text-slate-700 dark:text-slate-200">
             #
-            {payroll?.id ??
-              "-"}
+            {payroll?.id ?? "-"}
           </p>
         </div>
       </div>
@@ -706,10 +784,12 @@ const PayrollIcon = () => (
     stroke="currentColor"
     strokeWidth={1.8}
   >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      d="M5 4h14v16H5z"
+    <rect
+      x="5"
+      y="4"
+      width="14"
+      height="16"
+      rx="1.5"
     />
 
     <path
@@ -736,7 +816,7 @@ const MoneyIcon = () => (
 
     <path
       strokeLinecap="round"
-      d="M12 7v10M15 9c-.5-1-1.5-1.5-3-1.5-1.7 0-3 .8-3 2s1.2 1.8 3 2.2 3 .9 3 2.3-1.3 2.3-3 2.3c-1.5 0-2.6-.5-3.2-1.5"
+      d="M12 7v10M15 9c-.5-1.5-1.5-2-3-2-1.7 0-3 .8-3 2s1.2 1.8 3 2.2 3 .9 3 2.3-1.3 2.3-3 2.3c-1.5 0-2.6-.5-3.2-1.5"
     />
   </svg>
 );
@@ -841,6 +921,30 @@ const DepartmentIcon = () => (
   </svg>
 );
 
+const DesignationIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className="h-3.5 w-3.5"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    strokeWidth={1.8}
+  >
+    <rect
+      x="4"
+      y="4"
+      width="16"
+      height="16"
+      rx="2"
+    />
+
+    <path
+      strokeLinecap="round"
+      d="M8 9h8M8 12h8M8 15h5"
+    />
+  </svg>
+);
+
 const EmployeeIcon = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -850,12 +954,6 @@ const EmployeeIcon = () => (
     stroke="currentColor"
     strokeWidth={1.8}
   >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"
-    />
-
     <circle
       cx="9"
       cy="7"
@@ -865,7 +963,12 @@ const EmployeeIcon = () => (
     <path
       strokeLinecap="round"
       strokeLinejoin="round"
-      d="M22 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"
+      d="M2 21v-2a4 4 0 014-4h6a4 4 0 014 4v2"
+    />
+
+    <path
+      strokeLinecap="round"
+      d="M16 11a4 4 0 100-8M19 21v-2a4 4 0 00-3-3.87"
     />
   </svg>
 );
@@ -890,9 +993,6 @@ function StatCard({
 
     amber:
       "bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400",
-
-    red:
-      "bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400",
   };
 
   return (
@@ -987,6 +1087,11 @@ export default function PayrollRecordListPage() {
   ] = useState("");
 
   const [
+    designationFilterId,
+    setDesignationFilterId,
+  ] = useState("");
+
+  const [
     employeeFilterId,
     setEmployeeFilterId,
   ] = useState("");
@@ -1009,8 +1114,10 @@ export default function PayrollRecordListPage() {
      MODAL STATE
   ======================================================= */
 
-  const [modalOpen, setModalOpen] =
-    useState(false);
+  const [
+    modalOpen,
+    setModalOpen,
+  ] = useState(false);
 
   const [
     selectedPayroll,
@@ -1023,7 +1130,7 @@ export default function PayrollRecordListPage() {
   ] = useState(null);
 
   /* =======================================================
-     MASTER FILTER DATA
+     COMPANY
   ======================================================= */
 
   const {
@@ -1033,6 +1140,10 @@ export default function PayrollRecordListPage() {
     per_page: 100,
     is_active: true,
   });
+
+  /* =======================================================
+     BRANCH
+  ======================================================= */
 
   const {
     data: branchData,
@@ -1044,6 +1155,10 @@ export default function PayrollRecordListPage() {
       is_active: true,
     }
   );
+
+  /* =======================================================
+     DEPARTMENT
+  ======================================================= */
 
   const {
     data: departmentData,
@@ -1066,34 +1181,20 @@ export default function PayrollRecordListPage() {
         );
 
       return (
-        response?.data
-          ?.data ||
+        response?.data?.data ||
         response?.data ||
         {}
       );
     },
 
     enabled:
-      !!branchFilterId,
+      Boolean(
+        branchFilterId
+      ),
   });
 
-  const filterCompanies =
-    companyData?.items ||
-    companyData?.data ||
-    [];
-
-  const filterBranches =
-    branchData?.items ||
-    branchData?.data ||
-    [];
-
-  const filterDepartments =
-    departmentData?.items ||
-    departmentData?.data ||
-    [];
-
   /* =======================================================
-     PAYROLL DATA
+     PAYROLL
   ======================================================= */
 
   const {
@@ -1111,93 +1212,81 @@ export default function PayrollRecordListPage() {
   });
 
   const allPayroll =
-    data?.items ||
-    data?.data ||
-    [];
+    getItems(data);
 
   /* =======================================================
-     MUTATIONS
+     FILTER MASTER DATA
   ======================================================= */
 
-  const createPayroll =
-    useCreatePayrollRecord();
+  const filterCompanies =
+    getItems(
+      companyData
+    );
 
-  const updatePayroll =
-    useUpdatePayrollRecord();
+  const filterBranches =
+    getItems(
+      branchData
+    );
 
-  const deactivatePayroll =
-    useDeactivatePayrollRecord();
+  const filterDepartments =
+    getItems(
+      departmentData
+    );
 
   /* =======================================================
-     EXPORT
+     DESIGNATION OPTIONS
   ======================================================= */
 
-  const {
-    exporting,
-    exportExcel,
-    exportPDF,
-  } = useTableExport({
-    fetchAll:
-      employeeLifecycleApi
-        .payroll.list,
+  const designationOptions =
+    useMemo(() => {
+      const map =
+        new Map();
 
-    queryParams: {
-      search:
-        search || undefined,
-    },
+      allPayroll.forEach(
+        (payroll) => {
+          const designation =
+            getDesignation(
+              payroll
+            );
 
-    exportColumns:
-      EXPORT_COLUMNS,
+          if (
+            !designation?.id
+          ) {
+            return;
+          }
 
-    filename:
-      "payroll",
+          map.set(
+            String(
+              designation.id
+            ),
+            {
+              value:
+                designation.id,
 
-    title:
-      "Payroll Records",
-  });
+              label:
+                designation.designation_name ||
+                designation.name ||
+                `Designation #${designation.id}`,
+            }
+          );
+        }
+      );
+
+      return [
+        ...map.values(),
+      ].sort((a, b) =>
+        String(
+          a.label
+        ).localeCompare(
+          String(
+            b.label
+          )
+        )
+      );
+    }, [allPayroll]);
 
   /* =======================================================
-     FILTER HANDLERS
-  ======================================================= */
-
-  const handleCompanyFilterChange =
-    (event) => {
-      setCompanyFilterId(
-        event.target.value
-      );
-
-      setBranchFilterId("");
-      setDepartmentFilterId("");
-      setEmployeeFilterId("");
-
-      setPage(1);
-    };
-
-  const handleBranchFilterChange =
-    (event) => {
-      setBranchFilterId(
-        event.target.value
-      );
-
-      setDepartmentFilterId("");
-      setEmployeeFilterId("");
-
-      setPage(1);
-    };
-
-  const handleDepartmentFilterChange =
-    (event) => {
-      setDepartmentFilterId(
-        event.target.value
-      );
-
-      setEmployeeFilterId("");
-
-      setPage(1);
-    };
-
-  /* =======================================================
-     UNIQUE EMPLOYEES
+     EMPLOYEE OPTIONS
   ======================================================= */
 
   const employeeOptions =
@@ -1207,34 +1296,33 @@ export default function PayrollRecordListPage() {
 
       allPayroll.forEach(
         (payroll) => {
+          const employee =
+            getEmployee(
+              payroll
+            );
+
           const employeeId =
-            payroll?.employee_id;
+            payroll?.employee_id ??
+            employee?.id;
 
           if (!employeeId) {
             return;
           }
 
-          if (
-            !map.has(
-              String(
-                employeeId
-              )
-            )
-          ) {
-            map.set(
-              String(
-                employeeId
-              ),
-              {
-                value:
-                  employeeId,
-                label:
-                  getEmployeeName(
-                    payroll
-                  ),
-              }
-            );
-          }
+          map.set(
+            String(
+              employeeId
+            ),
+            {
+              value:
+                employeeId,
+
+              label:
+                getEmployeeName(
+                  payroll
+                ),
+            }
+          );
         }
       );
 
@@ -1257,10 +1345,15 @@ export default function PayrollRecordListPage() {
 
   const filteredPayroll =
     useMemo(() => {
+      const normalizedSearch =
+        search
+          .trim()
+          .toLowerCase();
+
       return allPayroll.filter(
         (payroll) => {
           const isActive =
-            payroll.is_active !==
+            payroll?.is_active !==
             false;
 
           if (
@@ -1322,9 +1415,23 @@ export default function PayrollRecordListPage() {
           }
 
           if (
+            designationFilterId &&
+            String(
+              getDesignationId(
+                payroll
+              )
+            ) !==
+              String(
+                designationFilterId
+              )
+          ) {
+            return false;
+          }
+
+          if (
             employeeFilterId &&
             String(
-              payroll.employee_id
+              payroll?.employee_id
             ) !==
               String(
                 employeeFilterId
@@ -1333,69 +1440,68 @@ export default function PayrollRecordListPage() {
             return false;
           }
 
+          if (
+            normalizedSearch
+          ) {
+            const haystack = [
+              payroll?.id,
+              payroll?.employee_id,
+
+              getEmployeeName(
+                payroll
+              ),
+
+              getEmployeeCode(
+                payroll
+              ),
+
+              getCompanyName(
+                payroll
+              ),
+
+              getBranchName(
+                payroll
+              ),
+
+              getDepartmentName(
+                payroll
+              ),
+
+              getDesignationName(
+                payroll
+              ),
+
+              getDesignationCode(
+                payroll
+              ),
+
+              payroll?.pay_month,
+              payroll?.status,
+            ]
+              .join(" ")
+              .toLowerCase();
+
+            if (
+              !haystack.includes(
+                normalizedSearch
+              )
+            ) {
+              return false;
+            }
+          }
+
           return true;
         }
       );
     }, [
       allPayroll,
-      statusFilter,
       companyFilterId,
       branchFilterId,
       departmentFilterId,
+      designationFilterId,
       employeeFilterId,
-    ]);
-
-  /* =======================================================
-     CLIENT SEARCH
-  ======================================================= */
-
-  const normalizedSearch =
-    search
-      .trim()
-      .toLowerCase();
-
-  const searchedPayroll =
-    useMemo(() => {
-      if (
-        !normalizedSearch
-      ) {
-        return filteredPayroll;
-      }
-
-      return filteredPayroll.filter(
-        (payroll) => {
-          const haystack = [
-            payroll.id,
-            payroll.employee_id,
-            getEmployeeName(
-              payroll
-            ),
-            getEmployeeCode(
-              payroll
-            ),
-            getCompanyName(
-              payroll
-            ),
-            getBranchName(
-              payroll
-            ),
-            getDepartmentName(
-              payroll
-            ),
-            payroll.pay_month,
-            payroll.status,
-          ]
-            .join(" ")
-            .toLowerCase();
-
-          return haystack.includes(
-            normalizedSearch
-          );
-        }
-      );
-    }, [
-      filteredPayroll,
-      normalizedSearch,
+      statusFilter,
+      search,
     ]);
 
   /* =======================================================
@@ -1411,13 +1517,13 @@ export default function PayrollRecordListPage() {
     Math.max(
       1,
       Math.ceil(
-        searchedPayroll.length /
+        filteredPayroll.length /
           pageSize
       )
     );
 
   const pagedPayroll =
-    searchedPayroll.slice(
+    filteredPayroll.slice(
       (page - 1) *
         pageSize,
       page * pageSize
@@ -1430,33 +1536,24 @@ export default function PayrollRecordListPage() {
   const activePayroll =
     allPayroll.filter(
       (item) =>
-        item.is_active !==
-        false
-    );
-
-  const inactivePayroll =
-    allPayroll.filter(
-      (item) =>
-        item.is_active ===
+        item?.is_active !==
         false
     );
 
   const paidPayroll =
     activePayroll.filter(
       (item) =>
-        String(
-          item.status
-        ).toLowerCase() ===
-        "paid"
+        getPayrollStatus(
+          item
+        ) === "Paid"
     );
 
   const pendingPayroll =
     activePayroll.filter(
       (item) =>
-        String(
-          item.status
-        ).toLowerCase() !==
-        "paid"
+        getPayrollStatus(
+          item
+        ) !== "Paid"
     );
 
   const totalGross =
@@ -1464,7 +1561,7 @@ export default function PayrollRecordListPage() {
       (sum, item) =>
         sum +
         normalizeAmount(
-          item.gross_salary
+          item?.gross_salary
         ),
       0
     );
@@ -1474,13 +1571,220 @@ export default function PayrollRecordListPage() {
       (sum, item) =>
         sum +
         normalizeAmount(
-          item.net_salary
+          item?.net_salary
         ),
       0
     );
 
   /* =======================================================
-     HANDLERS
+     MUTATIONS
+  ======================================================= */
+
+  const createPayroll =
+    useCreatePayrollRecord();
+
+  const updatePayroll =
+    useUpdatePayrollRecord();
+
+  const deactivatePayroll =
+    useDeactivatePayrollRecord();
+
+  /* =======================================================
+     EXPORT
+  ======================================================= */
+
+  const exportColumns =
+    useMemo(
+      () => [
+        {
+          header:
+            "Employee ID",
+          accessor: (r) =>
+            r?.employee_id ||
+            "-",
+        },
+
+        {
+          header:
+            "Employee",
+          accessor: (r) =>
+            getEmployeeName(r),
+        },
+
+        {
+          header:
+            "Company",
+          accessor: (r) =>
+            getCompanyName(r),
+        },
+
+        {
+          header:
+            "Branch",
+          accessor: (r) =>
+            getBranchName(r),
+        },
+
+        {
+          header:
+            "Department",
+          accessor: (r) =>
+            getDepartmentName(
+              r
+            ),
+        },
+
+        {
+          header:
+            "Designation",
+          accessor: (r) =>
+            getDesignationName(
+              r
+            ),
+        },
+
+        {
+          header:
+            "Pay Month",
+          accessor: (r) =>
+            r?.pay_month ||
+            "-",
+        },
+
+        {
+          header:
+            "Gross Salary",
+          accessor: (r) =>
+            formatCurrency(
+              r?.gross_salary
+            ),
+        },
+
+        {
+          header:
+            "Deductions",
+          accessor: (r) =>
+            formatCurrency(
+              r?.deductions
+            ),
+        },
+
+        {
+          header:
+            "Net Salary",
+          accessor: (r) =>
+            formatCurrency(
+              r?.net_salary
+            ),
+        },
+
+        {
+          header:
+            "Status",
+          accessor: (r) =>
+            getPayrollStatus(
+              r
+            ),
+        },
+
+        {
+          header:
+            "Active",
+          accessor: (r) =>
+            r?.is_active !==
+            false
+              ? "Yes"
+              : "No",
+        },
+      ],
+      []
+    );
+
+  const {
+    exporting,
+    exportExcel,
+    exportPDF,
+  } = useTableExport({
+    fetchAll:
+      employeeLifecycleApi
+        .payroll.list,
+
+    queryParams: {
+      search:
+        search || undefined,
+    },
+
+    exportColumns:
+      exportColumns,
+
+    filename:
+      "payroll",
+
+    title:
+      "Payroll Records",
+  });
+
+  /* =======================================================
+     FILTER HANDLERS
+  ======================================================= */
+
+  const handleCompanyFilterChange =
+    (event) => {
+      setCompanyFilterId(
+        event.target.value
+      );
+
+      setBranchFilterId("");
+      setDepartmentFilterId("");
+      setDesignationFilterId("");
+      setEmployeeFilterId("");
+      setPage(1);
+    };
+
+  const handleBranchFilterChange =
+    (event) => {
+      setBranchFilterId(
+        event.target.value
+      );
+
+      setDepartmentFilterId("");
+      setDesignationFilterId("");
+      setEmployeeFilterId("");
+      setPage(1);
+    };
+
+  const handleDepartmentFilterChange =
+    (event) => {
+      setDepartmentFilterId(
+        event.target.value
+      );
+
+      setDesignationFilterId("");
+      setEmployeeFilterId("");
+      setPage(1);
+    };
+
+  const handleDesignationFilterChange =
+    (event) => {
+      setDesignationFilterId(
+        event.target.value
+      );
+
+      setEmployeeFilterId("");
+      setPage(1);
+    };
+
+  const handleEmployeeFilterChange =
+    (event) => {
+      setEmployeeFilterId(
+        event.target.value
+      );
+
+      setPage(1);
+    };
+
+  /* =======================================================
+     CRUD HANDLERS
   ======================================================= */
 
   const handleAdd = () => {
@@ -1491,9 +1795,14 @@ export default function PayrollRecordListPage() {
   const handleEdit = (
     payroll
   ) => {
-    setSelectedPayroll(
-      payroll
-    );
+    setSelectedPayroll({
+      ...payroll,
+
+      employee_id:
+        payroll?.employee_id ??
+        payroll?.employee?.id ??
+        "",
+    });
 
     setModalOpen(true);
   };
@@ -1507,6 +1816,52 @@ export default function PayrollRecordListPage() {
   const handleSubmit =
     async (payload) => {
       try {
+        const normalizedPayload =
+          {
+            ...payload,
+
+            employee_id:
+              payload?.employee_id
+                ? Number(
+                    payload.employee_id
+                  )
+                : null,
+
+            gross_salary:
+              payload?.gross_salary !==
+                "" &&
+              payload?.gross_salary !==
+                null
+                ? Number(
+                    payload.gross_salary
+                  )
+                : 0,
+
+            deductions:
+              payload?.deductions !==
+                "" &&
+              payload?.deductions !==
+                null
+                ? Number(
+                    payload.deductions
+                  )
+                : 0,
+
+            net_salary:
+              payload?.net_salary !==
+                "" &&
+              payload?.net_salary !==
+                null
+                ? Number(
+                    payload.net_salary
+                  )
+                : 0,
+
+            status:
+              payload?.status ||
+              "Draft",
+          };
+
         if (
           selectedPayroll
         ) {
@@ -1514,7 +1869,8 @@ export default function PayrollRecordListPage() {
             {
               id:
                 selectedPayroll.id,
-              payload,
+              payload:
+                normalizedPayload,
             }
           );
 
@@ -1524,7 +1880,7 @@ export default function PayrollRecordListPage() {
           );
         } else {
           await createPayroll.mutateAsync(
-            payload
+            normalizedPayload
           );
 
           showToast(
@@ -1534,13 +1890,19 @@ export default function PayrollRecordListPage() {
         }
 
         handleCloseModal();
-        refetch();
+
+        await refetch();
       } catch (err) {
+        console.error(
+          "Payroll save failed:",
+          err
+        );
+
         showToast(
           err?.response
             ?.data?.message ||
             err?.message ||
-            "Operation failed",
+            "Failed to save payroll record",
           "error"
         );
       }
@@ -1576,13 +1938,18 @@ export default function PayrollRecordListPage() {
           null
         );
 
-        refetch();
+        await refetch();
       } catch (err) {
+        console.error(
+          "Payroll deactivation failed:",
+          err
+        );
+
         showToast(
           err?.response
             ?.data?.message ||
             err?.message ||
-            "Operation failed",
+            "Failed to deactivate payroll record",
           "error"
         );
       }
@@ -1595,6 +1962,7 @@ export default function PayrollRecordListPage() {
           {
             id:
               payroll.id,
+
             payload: {
               is_active:
                 true,
@@ -1607,16 +1975,37 @@ export default function PayrollRecordListPage() {
           "success"
         );
 
-        refetch();
+        await refetch();
       } catch (err) {
+        console.error(
+          "Payroll reactivation failed:",
+          err
+        );
+
         showToast(
           err?.response
             ?.data?.message ||
             err?.message ||
-            "Operation failed",
+            "Failed to reactivate payroll record",
           "error"
         );
       }
+    };
+
+  /* =======================================================
+     CLEAR FILTERS
+  ======================================================= */
+
+  const clearFilters =
+    () => {
+      setSearch("");
+      setCompanyFilterId("");
+      setBranchFilterId("");
+      setDepartmentFilterId("");
+      setDesignationFilterId("");
+      setEmployeeFilterId("");
+      setStatusFilter("active");
+      setPage(1);
     };
 
   /* =======================================================
@@ -1648,7 +2037,7 @@ export default function PayrollRecordListPage() {
   ======================================================= */
 
   return (
-    <div className="space-y-5">
+    <div className="min-w-0 space-y-5">
       {/* ===================================================
           HEADER
       =================================================== */}
@@ -1672,9 +2061,7 @@ export default function PayrollRecordListPage() {
 
         <div className="flex flex-wrap items-center gap-2">
           <TableToolbar
-            onRefresh={
-              refetch
-            }
+            onRefresh={refetch}
             refreshing={
               isFetching
             }
@@ -1762,57 +2149,51 @@ export default function PayrollRecordListPage() {
       </div>
 
       {/* ===================================================
-          HIERARCHY FILTER BAR
+          FILTER BAR
       =================================================== */}
 
       <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-        <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-          <div className="flex w-full flex-col gap-2.5 sm:flex-row xl:max-w-5xl">
-            {/* SEARCH */}
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-2.5">
+            <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2 xl:grid-cols-6">
+              {/* SEARCH */}
 
-            <div className="relative w-full sm:max-w-xs">
-              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-4 w-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M21 21l-4.35-4.35m2.35-5.65a8 8 0 11-16 0 8 8 0 0116 0z"
-                  />
-                </svg>
-              </span>
+              <div className="relative md:col-span-2 xl:col-span-2">
+                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M21 21l-4.35-4.35m2.35-5.65a8 8 0 11-16 0 8 8 0 0116 0z"
+                    />
+                  </svg>
+                </span>
 
-              <input
-                type="text"
-                value={
-                  search
-                }
-                onChange={(
-                  event
-                ) => {
-                  setSearch(
-                    event.target
-                      .value
-                  );
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(
+                    event
+                  ) => {
+                    setSearch(
+                      event.target.value
+                    );
+                    setPage(1);
+                  }}
+                  placeholder="Search employee, designation, month..."
+                  className="h-10 w-full rounded-lg border border-slate-300 bg-white pl-9 pr-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                />
+              </div>
 
-                  setPage(
-                    1
-                  );
-                }}
-                placeholder="Search employee, month..."
-                className="h-10 w-full rounded-lg border border-slate-300 bg-white pl-9 pr-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
-              />
-            </div>
+              {/* COMPANY */}
 
-            {/* COMPANY */}
-
-            <div className="relative w-full">
               <select
                 value={
                   companyFilterId
@@ -1820,7 +2201,7 @@ export default function PayrollRecordListPage() {
                 onChange={
                   handleCompanyFilterChange
                 }
-                className="h-10 w-full rounded-lg border border-slate-300 bg-white pl-9 pr-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
               >
                 <option value="">
                   All Companies
@@ -1845,14 +2226,8 @@ export default function PayrollRecordListPage() {
                 )}
               </select>
 
-              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
-                <CompanyIcon />
-              </span>
-            </div>
+              {/* BRANCH */}
 
-            {/* BRANCH */}
-
-            <div className="relative w-full">
               <select
                 value={
                   branchFilterId
@@ -1863,7 +2238,7 @@ export default function PayrollRecordListPage() {
                 disabled={
                   !companyFilterId
                 }
-                className="h-10 w-full rounded-lg border border-slate-300 bg-white pl-9 pr-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
               >
                 <option value="">
                   {companyFilterId
@@ -1890,14 +2265,8 @@ export default function PayrollRecordListPage() {
                 )}
               </select>
 
-              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
-                <BranchIcon />
-              </span>
-            </div>
+              {/* DEPARTMENT */}
 
-            {/* DEPARTMENT */}
-
-            <div className="relative w-full">
               <select
                 value={
                   departmentFilterId
@@ -1908,7 +2277,7 @@ export default function PayrollRecordListPage() {
                 disabled={
                   !branchFilterId
                 }
-                className="h-10 w-full rounded-lg border border-slate-300 bg-white pl-9 pr-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
               >
                 <option value="">
                   {branchFilterId
@@ -1936,31 +2305,51 @@ export default function PayrollRecordListPage() {
                 )}
               </select>
 
-              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
-                <DepartmentIcon />
-              </span>
-            </div>
+              {/* DESIGNATION */}
 
-            {/* EMPLOYEE */}
+              <select
+                value={
+                  designationFilterId
+                }
+                onChange={
+                  handleDesignationFilterChange
+                }
+                className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+              >
+                <option value="">
+                  All Designations
+                </option>
 
-            <div className="relative w-full">
+                {designationOptions.map(
+                  (
+                    designation
+                  ) => (
+                    <option
+                      key={
+                        designation.value
+                      }
+                      value={
+                        designation.value
+                      }
+                    >
+                      {
+                        designation.label
+                      }
+                    </option>
+                  )
+                )}
+              </select>
+
+              {/* EMPLOYEE */}
+
               <select
                 value={
                   employeeFilterId
                 }
-                onChange={(
-                  event
-                ) => {
-                  setEmployeeFilterId(
-                    event.target
-                      .value
-                  );
-
-                  setPage(
-                    1
-                  );
-                }}
-                className="h-10 w-full rounded-lg border border-slate-300 bg-white pl-9 pr-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                onChange={
+                  handleEmployeeFilterChange
+                }
+                className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none dark:border-slate-600 dark:bg-slate-800 dark:text-white"
               >
                 <option value="">
                   All Employees
@@ -1985,124 +2374,111 @@ export default function PayrollRecordListPage() {
                   )
                 )}
               </select>
-
-              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
-                <EmployeeIcon />
-              </span>
             </div>
           </div>
 
-          {/* VIEW + STATUS */}
+          {/* VIEW / STATUS / CLEAR */}
 
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="flex w-fit items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
-              <button
-                type="button"
-                onClick={() =>
-                  setViewMode(
+          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3 dark:border-slate-800">
+            <div className="flex flex-wrap items-center gap-2">
+              {/* VIEW */}
+
+              <div className="flex items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setViewMode(
+                      "table"
+                    );
+                    setPage(1);
+                  }}
+                  className={`rounded-md px-3 py-1.5 text-xs font-medium ${
+                    viewMode ===
                     "table"
-                  )
-                }
-                className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition ${
-                  viewMode ===
-                  "table"
-                    ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
-                    : "text-slate-500 dark:text-slate-400"
-                }`}
-              >
-                Table
-              </button>
+                      ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
+                      : "text-slate-500 dark:text-slate-400"
+                  }`}
+                >
+                  Table
+                </button>
 
+                <button
+                  type="button"
+                  onClick={() => {
+                    setViewMode(
+                      "card"
+                    );
+                    setPage(1);
+                  }}
+                  className={`rounded-md px-3 py-1.5 text-xs font-medium ${
+                    viewMode ===
+                    "card"
+                      ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
+                      : "text-slate-500 dark:text-slate-400"
+                  }`}
+                >
+                  Card
+                </button>
+              </div>
+
+              {/* STATUS */}
+
+              <div className="flex items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
+                {[
+                  "active",
+                  "inactive",
+                  "all",
+                ].map(
+                  (
+                    status
+                  ) => (
+                    <button
+                      key={
+                        status
+                      }
+                      type="button"
+                      onClick={() => {
+                        setStatusFilter(
+                          status
+                        );
+                        setPage(1);
+                      }}
+                      className={`rounded-md px-3 py-1.5 text-xs font-medium capitalize ${
+                        statusFilter ===
+                        status
+                          ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
+                          : "text-slate-500 dark:text-slate-400"
+                      }`}
+                    >
+                      {
+                        status
+                      }
+                    </button>
+                  )
+                )}
+              </div>
+            </div>
+
+            {(search ||
+              companyFilterId ||
+              branchFilterId ||
+              departmentFilterId ||
+              designationFilterId ||
+              employeeFilterId ||
+              statusFilter !==
+                "active") && (
               <button
                 type="button"
-                onClick={() =>
-                  setViewMode(
-                    "card"
-                  )
+                onClick={
+                  clearFilters
                 }
-                className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition ${
-                  viewMode ===
-                  "card"
-                    ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
-                    : "text-slate-500 dark:text-slate-400"
-                }`}
+                className="h-9 rounded-lg border border-slate-300 bg-white px-3 text-xs font-medium text-slate-600 transition hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300"
               >
-                Card
+                Clear Filters
               </button>
-            </div>
-
-            <div className="flex w-fit items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
-              {[
-                "active",
-                "inactive",
-                "all",
-              ].map(
-                (status) => (
-                  <button
-                    key={
-                      status
-                    }
-                    type="button"
-                    onClick={() => {
-                      setStatusFilter(
-                        status
-                      );
-
-                      setPage(
-                        1
-                      );
-                    }}
-                    className={`rounded-md px-3 py-1.5 text-xs font-medium capitalize transition ${
-                      statusFilter ===
-                      status
-                        ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
-                        : "text-slate-500 dark:text-slate-400"
-                    }`}
-                  >
-                    {status}
-                  </button>
-                )
-              )}
-            </div>
+            )}
           </div>
         </div>
-
-        {/* ACTIVE HIERARCHY */}
-        {(companyFilterId ||
-          branchFilterId ||
-          departmentFilterId ||
-          employeeFilterId ||
-          search) && (
-          <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3 dark:border-slate-800">
-            <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
-              Current scope:
-            </span>
-
-            {companyFilterId && (
-              <span className="rounded-full bg-primary-50 px-2.5 py-1 text-[10px] font-medium text-primary-700 dark:bg-primary-500/10 dark:text-primary-300">
-                Company
-              </span>
-            )}
-
-            {branchFilterId && (
-              <span className="rounded-full bg-sky-50 px-2.5 py-1 text-[10px] font-medium text-sky-700 dark:bg-sky-500/10 dark:text-sky-300">
-                Branch
-              </span>
-            )}
-
-            {departmentFilterId && (
-              <span className="rounded-full bg-violet-50 px-2.5 py-1 text-[10px] font-medium text-violet-700 dark:bg-violet-500/10 dark:text-violet-300">
-                Department
-              </span>
-            )}
-
-            {employeeFilterId && (
-              <span className="rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-medium text-amber-700 dark:bg-amber-500/10 dark:text-amber-300">
-                Employee
-              </span>
-            )}
-          </div>
-        )}
       </div>
 
       {/* ===================================================
@@ -2111,11 +2487,9 @@ export default function PayrollRecordListPage() {
 
       {isLoading && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {Array.from(
-            {
-              length: 6,
-            }
-          ).map(
+          {Array.from({
+            length: 6,
+          }).map(
             (_, index) => (
               <div
                 key={index}
@@ -2135,8 +2509,8 @@ export default function PayrollRecordListPage() {
           "table" &&
         pagedPayroll.length >
           0 && (
-          <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
-            <table className="w-full text-left text-sm">
+          <div className="w-full min-w-0 overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+            <table className="w-full min-w-[1250px] text-left text-sm">
               <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-400">
                 <tr>
                   <th className="px-4 py-3 font-medium">
@@ -2144,7 +2518,19 @@ export default function PayrollRecordListPage() {
                   </th>
 
                   <th className="px-4 py-3 font-medium">
-                    Organization
+                    Company
+                  </th>
+
+                  <th className="px-4 py-3 font-medium">
+                    Branch
+                  </th>
+
+                  <th className="px-4 py-3 font-medium">
+                    Department
+                  </th>
+
+                  <th className="px-4 py-3 font-medium">
+                    Designation
                   </th>
 
                   <th className="px-4 py-3 font-medium">
@@ -2178,15 +2564,15 @@ export default function PayrollRecordListPage() {
                   (
                     payroll
                   ) => {
-                    const firstLetter =
+                    const employeeName =
                       getEmployeeName(
                         payroll
-                      )
-                        .charAt(
-                          0
-                        )
-                        .toUpperCase() ||
-                      "E";
+                      );
+
+                    const employeeCode =
+                      getEmployeeCode(
+                        payroll
+                      );
 
                     return (
                       <tr
@@ -2209,25 +2595,24 @@ export default function PayrollRecordListPage() {
                           >
                             <div className="flex cursor-pointer items-center gap-2.5">
                               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-sm font-bold text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
-                                {
-                                  firstLetter
-                                }
+                                {employeeName
+                                  .charAt(
+                                    0
+                                  )
+                                  .toUpperCase() ||
+                                  "E"}
                               </div>
 
                               <div className="min-w-0">
                                 <p className="truncate text-sm font-medium text-slate-800 dark:text-slate-100">
                                   {
-                                    getEmployeeName(
-                                      payroll
-                                    )
+                                    employeeName
                                   }
                                 </p>
 
                                 <p className="font-mono text-[10px] text-slate-400">
                                   {
-                                    getEmployeeCode(
-                                      payroll
-                                    )
+                                    employeeCode
                                   }
                                 </p>
                               </div>
@@ -2235,34 +2620,60 @@ export default function PayrollRecordListPage() {
                           </HoverDetailsTrigger>
                         </td>
 
-                        {/* ORGANIZATION */}
+                        {/* COMPANY */}
+
+                        <td className="px-4 py-3 text-sm font-semibold text-slate-700 dark:text-slate-200">
+                          {getCompanyName(
+                            payroll
+                          )}
+                        </td>
+
+                        {/* BRANCH */}
+
+                        <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-300">
+                          {getBranchName(
+                            payroll
+                          )}
+                        </td>
+
+                        {/* DEPARTMENT */}
 
                         <td className="px-4 py-3">
-                          <div className="space-y-0.5">
-                            <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">
-                              {
-                                getCompanyName(
-                                  payroll
-                                )
-                              }
-                            </p>
+                          <p className="text-sm text-slate-600 dark:text-slate-300">
+                            {getDepartmentName(
+                              payroll
+                            )}
+                          </p>
 
-                            <p className="text-[10px] text-slate-500 dark:text-slate-400">
-                              {
-                                getBranchName(
-                                  payroll
-                                )
-                              }
+                          {getDepartmentCode(
+                            payroll
+                          ) !== "-" && (
+                            <p className="font-mono text-[9px] text-slate-400">
+                              {getDepartmentCode(
+                                payroll
+                              )}
                             </p>
+                          )}
+                        </td>
 
-                            <p className="text-[10px] text-primary-600 dark:text-primary-400">
-                              {
-                                getDepartmentName(
-                                  payroll
-                                )
-                              }
+                        {/* DESIGNATION */}
+
+                        <td className="px-4 py-3">
+                          <p className="text-sm font-semibold text-violet-600 dark:text-violet-400">
+                            {getDesignationName(
+                              payroll
+                            )}
+                          </p>
+
+                          {getDesignationCode(
+                            payroll
+                          ) !== "-" && (
+                            <p className="font-mono text-[9px] text-violet-400 dark:text-violet-500">
+                              {getDesignationCode(
+                                payroll
+                              )}
                             </p>
-                          </div>
+                          )}
                         </td>
 
                         {/* PAY MONTH */}
@@ -2270,7 +2681,7 @@ export default function PayrollRecordListPage() {
                         <td className="px-4 py-3">
                           <span className="rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-200">
                             {formatPayMonth(
-                              payroll.pay_month
+                              payroll?.pay_month
                             )}
                           </span>
                         </td>
@@ -2279,7 +2690,7 @@ export default function PayrollRecordListPage() {
 
                         <td className="px-4 py-3 text-sm font-semibold text-slate-700 dark:text-slate-200">
                           {formatCurrency(
-                            payroll.gross_salary
+                            payroll?.gross_salary
                           )}
                         </td>
 
@@ -2287,7 +2698,7 @@ export default function PayrollRecordListPage() {
 
                         <td className="px-4 py-3 text-sm font-medium text-red-600 dark:text-red-400">
                           {formatCurrency(
-                            payroll.deductions
+                            payroll?.deductions
                           )}
                         </td>
 
@@ -2295,7 +2706,7 @@ export default function PayrollRecordListPage() {
 
                         <td className="px-4 py-3 text-sm font-bold text-emerald-600 dark:text-emerald-400">
                           {formatCurrency(
-                            payroll.net_salary
+                            payroll?.net_salary
                           )}
                         </td>
 
@@ -2335,7 +2746,7 @@ export default function PayrollRecordListPage() {
                               </svg>
                             </IconButton>
 
-                            {payroll.is_active !==
+                            {payroll?.is_active !==
                             false ? (
                               <IconButton
                                 title="Deactivate"
@@ -2448,32 +2859,34 @@ export default function PayrollRecordListPage() {
                     payroll
                   );
 
+                const designationName =
+                  getDesignationName(
+                    payroll
+                  );
+
+                const designationCode =
+                  getDesignationCode(
+                    payroll
+                  );
+
                 const gross =
                   normalizeAmount(
-                    payroll.gross_salary
+                    payroll?.gross_salary
                   );
 
                 const deductions =
                   normalizeAmount(
-                    payroll.deductions
+                    payroll?.deductions
                   );
 
                 const net =
                   normalizeAmount(
-                    payroll.net_salary
+                    payroll?.net_salary
                   );
 
                 const isActive =
-                  payroll.is_active !==
+                  payroll?.is_active !==
                   false;
-
-                const firstLetter =
-                  employeeName
-                    .charAt(
-                      0
-                    )
-                    .toUpperCase() ||
-                  "E";
 
                 return (
                   <div
@@ -2494,10 +2907,8 @@ export default function PayrollRecordListPage() {
                       }`}
                     />
 
-                    {/* CARD CONTENT */}
-
                     <div className="p-4">
-                      {/* TOP */}
+                      {/* EMPLOYEE */}
 
                       <div className="flex items-start justify-between gap-2.5">
                         <div className="flex min-w-0 items-center gap-2.5">
@@ -2511,9 +2922,12 @@ export default function PayrollRecordListPage() {
                             }
                           >
                             <div className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-xl bg-primary-50 text-base font-bold text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
-                              {
-                                firstLetter
-                              }
+                              {employeeName
+                                .charAt(
+                                  0
+                                )
+                                .toUpperCase() ||
+                                "E"}
                             </div>
                           </HoverDetailsTrigger>
 
@@ -2552,7 +2966,7 @@ export default function PayrollRecordListPage() {
 
                       <div className="my-3 border-t border-slate-100 dark:border-slate-800" />
 
-                      {/* HIERARCHY */}
+                      {/* COMPANY */}
 
                       <div className="space-y-2.5">
                         <div className="flex items-center gap-2.5">
@@ -2578,65 +2992,107 @@ export default function PayrollRecordListPage() {
                           </div>
                         </div>
 
+                        {/* BRANCH */}
+
                         <div className="ml-3.5 border-l border-dashed border-slate-200 pl-4 dark:border-slate-700">
-                          <div className="space-y-2">
+                          <div className="flex items-center gap-2.5">
+                            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                              <BranchIcon />
+                            </div>
+
+                            <div className="min-w-0 flex-1">
+                              <p className="text-[9px] font-medium uppercase tracking-wide text-slate-400">
+                                Branch
+                              </p>
+
+                              <p
+                                title={
+                                  branchName
+                                }
+                                className="truncate text-[11px] font-medium text-slate-700 dark:text-slate-200"
+                              >
+                                {
+                                  branchName
+                                }
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* DEPARTMENT */}
+
+                          <div className="mt-2 ml-3.5 border-l border-dashed border-slate-200 pl-4 dark:border-slate-700">
                             <div className="flex items-center gap-2.5">
                               <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
-                                <BranchIcon />
+                                <DepartmentIcon />
                               </div>
 
                               <div className="min-w-0 flex-1">
                                 <p className="text-[9px] font-medium uppercase tracking-wide text-slate-400">
-                                  Branch
+                                  Department
                                 </p>
 
-                                <p
-                                  title={
-                                    branchName
-                                  }
-                                  className="truncate text-[11px] font-medium text-slate-700 dark:text-slate-200"
-                                >
-                                  {
-                                    branchName
-                                  }
-                                </p>
+                                <div className="flex min-w-0 items-center gap-1.5">
+                                  <p
+                                    title={
+                                      departmentName
+                                    }
+                                    className="truncate text-[11px] font-semibold text-slate-700 dark:text-slate-200"
+                                  >
+                                    {
+                                      departmentName
+                                    }
+                                  </p>
+
+                                  {departmentCode !==
+                                    "-" && (
+                                    <span className="shrink-0 rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[8px] text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                                      {
+                                        departmentCode
+                                      }
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                             </div>
 
-                            <div className="ml-3.5 border-l border-dashed border-slate-200 pl-4 dark:border-slate-700">
+                            {/* DESIGNATION */}
+
+                            <div className="mt-2 ml-3.5 border-l border-dashed border-violet-200 pl-4 dark:border-violet-500/20">
                               <div className="flex items-center gap-2.5">
-                                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
-                                  <DepartmentIcon />
+                                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-violet-50 text-violet-600 dark:bg-violet-500/10 dark:text-violet-400">
+                                  <DesignationIcon />
                                 </div>
 
                                 <div className="min-w-0 flex-1">
                                   <p className="text-[9px] font-medium uppercase tracking-wide text-slate-400">
-                                    Department
+                                    Designation
                                   </p>
 
                                   <div className="flex min-w-0 items-center gap-1.5">
                                     <p
                                       title={
-                                        departmentName
+                                        designationName
                                       }
-                                      className="truncate text-[11px] font-semibold text-slate-700 dark:text-slate-200"
+                                      className="truncate text-[11px] font-semibold text-violet-600 dark:text-violet-400"
                                     >
                                       {
-                                        departmentName
+                                        designationName
                                       }
                                     </p>
 
-                                    {departmentCode !==
+                                    {designationCode !==
                                       "-" && (
-                                      <span className="shrink-0 rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[8px] text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                                      <span className="shrink-0 rounded bg-violet-50 px-1.5 py-0.5 font-mono text-[8px] text-violet-600 dark:bg-violet-500/10 dark:text-violet-400">
                                         {
-                                          departmentCode
+                                          designationCode
                                         }
                                       </span>
                                     )}
                                   </div>
                                 </div>
                               </div>
+
+                              {/* EMPLOYEE */}
 
                               <div className="mt-2 ml-3.5 border-l border-dashed border-primary-200 pl-4 dark:border-primary-500/20">
                                 <div className="flex items-center gap-2.5">
@@ -2673,7 +3129,7 @@ export default function PayrollRecordListPage() {
 
                             <p className="mt-0.5 text-xs font-semibold text-slate-800 dark:text-white">
                               {formatPayMonth(
-                                payroll.pay_month
+                                payroll?.pay_month
                               )}
                             </p>
                           </div>
@@ -2686,7 +3142,7 @@ export default function PayrollRecordListPage() {
                             <p className="text-right text-[10px] font-bold text-primary-600 dark:text-primary-400">
                               #
                               {
-                                payroll.id
+                                payroll?.id
                               }
                             </p>
                           </div>
@@ -2743,27 +3199,6 @@ export default function PayrollRecordListPage() {
                           }
                           className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] font-semibold text-slate-700 transition-all hover:border-primary-200 hover:bg-primary-50 hover:text-primary-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-primary-500/40 dark:hover:bg-primary-500/10 dark:hover:text-primary-400"
                         >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-3.5 w-3.5"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            strokeWidth="1.8"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M16.862 4.487l1.687-1.688a2.121 2.121 0 013 3l-9.9 9.9-4.137 1.034 1.034-4.137 9.9-9.9z"
-                            />
-
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M19 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6"
-                            />
-                          </svg>
-
                           Edit
                         </button>
 
@@ -2775,7 +3210,10 @@ export default function PayrollRecordListPage() {
                                 payroll
                               )
                             }
-                            className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-2 text-[11px] font-semibold text-red-600 transition-all hover:bg-red-50 dark:border-red-900/40 dark:bg-slate-800 dark:text-red-400 dark:hover:bg-red-500/10"
+                            disabled={
+                              deactivatePayroll.isPending
+                            }
+                            className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-2 text-[11px] font-semibold text-red-600 transition-all hover:bg-red-50 disabled:opacity-50 dark:border-red-900/40 dark:bg-slate-800 dark:text-red-400 dark:hover:bg-red-500/10"
                           >
                             Deactivate
                           </button>
@@ -2790,7 +3228,7 @@ export default function PayrollRecordListPage() {
                             disabled={
                               updatePayroll.isPending
                             }
-                            className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-emerald-200 bg-white px-3 py-2 text-[11px] font-semibold text-emerald-600 transition-all hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-emerald-900/40 dark:bg-slate-800 dark:text-emerald-400 dark:hover:bg-emerald-500/10"
+                            className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-emerald-200 bg-white px-3 py-2 text-[11px] font-semibold text-emerald-600 transition-all hover:bg-emerald-50 disabled:opacity-50 dark:border-emerald-900/40 dark:bg-slate-800 dark:text-emerald-400 dark:hover:bg-emerald-500/10"
                           >
                             Reactivate
                           </button>
@@ -2835,7 +3273,8 @@ export default function PayrollRecordListPage() {
                     </div>
                   </div>
                 );
-              })}
+              }
+            )}
           </div>
         )}
 
@@ -2844,7 +3283,7 @@ export default function PayrollRecordListPage() {
       =================================================== */}
 
       {!isLoading &&
-        searchedPayroll.length ===
+        filteredPayroll.length ===
           0 && (
           <div className="flex min-h-[280px] flex-col items-center justify-center rounded-xl border border-slate-200 bg-white px-6 py-10 text-center shadow-sm dark:border-slate-700 dark:bg-slate-900">
             <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800">
@@ -2858,8 +3297,9 @@ export default function PayrollRecordListPage() {
             <p className="mt-1 max-w-md text-xs text-slate-500 dark:text-slate-400">
               No payroll records match
               your current hierarchy,
-              employee, search, or
-              status filters.
+              designation, employee,
+              search, or status
+              filters.
             </p>
 
             <Button
@@ -2879,8 +3319,7 @@ export default function PayrollRecordListPage() {
 
       <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
         <span>
-          Page {page} of{" "}
-          {pageCount}
+          Page {page} of {pageCount}
         </span>
 
         <div className="flex gap-2">
@@ -2891,13 +3330,10 @@ export default function PayrollRecordListPage() {
             }
             onClick={() =>
               setPage(
-                (
-                  current
-                ) =>
+                (current) =>
                   Math.max(
                     1,
-                    current -
-                      1
+                    current - 1
                   )
               )
             }
@@ -2914,13 +3350,10 @@ export default function PayrollRecordListPage() {
             }
             onClick={() =>
               setPage(
-                (
-                  current
-                ) =>
+                (current) =>
                   Math.min(
                     pageCount,
-                    current +
-                      1
+                    current + 1
                   )
               )
             }
@@ -2932,13 +3365,11 @@ export default function PayrollRecordListPage() {
       </div>
 
       {/* ===================================================
-          EDIT / ADD MODAL
+          ADD / EDIT MODAL
       =================================================== */}
 
       <Modal
-        open={
-          modalOpen
-        }
+        open={modalOpen}
         onClose={
           handleCloseModal
         }
@@ -2949,12 +3380,18 @@ export default function PayrollRecordListPage() {
         }
       >
         <PayrollRecordForm
+          key={
+            selectedPayroll?.id ??
+            "new-payroll"
+          }
           initialData={
             selectedPayroll ||
             {}
           }
           isEdit={
-            !!selectedPayroll
+            Boolean(
+              selectedPayroll
+            )
           }
           onSubmit={
             handleSubmit
@@ -2975,7 +3412,9 @@ export default function PayrollRecordListPage() {
 
       <ConfirmDialog
         open={
-          !!payrollToDelete
+          Boolean(
+            payrollToDelete
+          )
         }
         onClose={() =>
           setPayrollToDelete(
@@ -2991,7 +3430,7 @@ export default function PayrollRecordListPage() {
             ? `Are you sure you want to deactivate the payroll record for ${getEmployeeName(
                 payrollToDelete
               )} for ${formatPayMonth(
-                payrollToDelete.pay_month
+                payrollToDelete?.pay_month
               )}?`
             : ""
         }
