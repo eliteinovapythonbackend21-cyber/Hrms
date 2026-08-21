@@ -107,8 +107,6 @@ def monthly_summary(token_response):
             return error_response
         data = [Attendance.get_monthly_summary(employee.id, month, year)]
     else:
-        if not _is_admin(current_user) and current_user.role != "finance":
-            return jsonify({"message": "Admin or Finance privileges required"}), 403
         data = Attendance.get_monthly_summary_list(month, year)
 
     return jsonify({

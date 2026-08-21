@@ -147,7 +147,7 @@ export const navConfig = [
       // { label: "Income", path: "/finance/income", icon: "finance" },
       { label: "Employees", path: "/master/employees", icon: "employees" },
       { label: "Payroll", path: "/employee/payroll", icon: "employeeLifecycle", roles: PAYROLL_ROLES },
-      { label: "Attendance", path: "/attendance", icon: "attendance", roles: ["admin", ...EMPLOYEE_LIKE_ROLES] },
+      { label: "Attendance", path: "/finance/attendance", icon: "attendance", roles: ["admin", ...EMPLOYEE_LIKE_ROLES] },
     ],
   },
   {

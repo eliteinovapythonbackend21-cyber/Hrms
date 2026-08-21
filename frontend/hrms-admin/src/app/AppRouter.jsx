@@ -77,6 +77,7 @@ import AccountListPage from "@/features/finance/accounts/AccountListPage";
 import VendorListPage from "@/features/finance/vendors/VendorListPage";
 import ExpenseListPage from "@/features/finance/expenses/ExpenseListPage";
 import IncomeListPage from "@/features/finance/income/IncomeListPage";
+import FinanceAttendanceMonthlyPage from "@/features/attendance/FinanceAttendanceMonthlyPage";
 
 // Reports
 import ReportsPage from "@/features/reports/ReportsPage";
@@ -181,6 +182,8 @@ export default function AppRouter() {
         <Route path="/finance/vendors" element={<RoleGuard><VendorListPage /></RoleGuard>} />
         <Route path="/finance/expenses" element={<RoleGuard><ExpenseListPage /></RoleGuard>} />
         <Route path="/finance/income" element={<RoleGuard><IncomeListPage /></RoleGuard>} />
+         
+        <Route path="/finance/attendance" element={<RoleGuard><FinanceAttendanceMonthlyPage /></RoleGuard>} />
 
         {/* Reports */}
         <Route path="/reports" element={<RoleGuard><ReportsPage /></RoleGuard>} />
