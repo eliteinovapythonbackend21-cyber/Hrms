@@ -1293,6 +1293,7 @@ class Transfer(TimestampMixin, db.Model):
         nullable=False,
     )
 
+    # Transfer destination / new location
     location = db.Column(
         db.String(255),
         nullable=True,
@@ -1351,30 +1352,144 @@ class Transfer(TimestampMixin, db.Model):
             self.accomplishments or ""
         )
 
-        data["employee"] = _summary(
-            self.employee,
-            [
-                "id",
-                "employee_code",
-                "first_name",
-                "last_name",
-            ],
+        employee = self.employee
+
+        if employee:
+            data["employee"] = _summary(
+                employee,
+                [
+                    "id",
+                    "employee_code",
+                    "first_name",
+                    "last_name",
+                    "city",
+                    "state",
+                    "country",
+                    "address",
+                ],
+            )
+
+
+            employee_location = getattr(
+                employee,
+                "location",
+                None,
+            )
+
+            if (
+                isinstance(
+                    employee_location,
+                    str,
+                )
+                and employee_location.strip()
+            ):
+                data["current_location"] = (
+                    employee_location.strip()
+                )
+
+            else:
+                location_parts = [
+                    getattr(
+                        employee,
+                        "city",
+                        None,
+                    ),
+                    getattr(
+                        employee,
+                        "state",
+                        None,
+                    ),
+                    getattr(
+                        employee,
+                        "country",
+                        None,
+                    ),
+                ]
+
+                location_parts = [
+                    str(value).strip()
+                    for value in location_parts
+                    if value is not None
+                    and str(value).strip()
+                ]
+
+                if location_parts:
+                    data["current_location"] = (
+                        ", ".join(
+                            location_parts
+                        )
+                    )
+
+                elif (
+                    getattr(
+                        employee,
+                        "address",
+                        None,
+                    )
+                    and str(
+                        employee.address
+                    ).strip()
+                ):
+                    data["current_location"] = (
+                        str(
+                            employee.address
+                        ).strip()
+                    )
+
+                else:
+                    data["current_location"] = ""
+
+            data["employee_id"] = (
+                employee.id
+            )
+
+            data["employee_code"] = (
+                employee.employee_code
+            )
+
+        else:
+            data["employee"] = None
+            data["current_location"] = ""
+            data["employee_id"] = (
+                self.employee_id
+            )
+            data["employee_code"] = ""
+
+        if self.from_department:
+            data["from_department"] = _summary(
+                self.from_department,
+                [
+                    "id",
+                    "department_name",
+                    "department_code",
+                ],
+            )
+        else:
+            data["from_department"] = None
+
+        data["from_department_id"] = (
+            self.from_department_id
         )
 
-        data["from_department"] = _summary(
-            self.from_department,
-            [
-                "id",
-                "department_name",
-            ],
+        if self.to_department:
+            data["to_department"] = _summary(
+                self.to_department,
+                [
+                    "id",
+                    "department_name",
+                    "department_code",
+                ],
+            )
+        else:
+            data["to_department"] = None
+
+        data["to_department_id"] = (
+            self.to_department_id
         )
 
-        data["to_department"] = _summary(
-            self.to_department,
-            [
-                "id",
-                "department_name",
-            ],
+
+        data["is_active"] = (
+            self.is_active
         )
 
         return data
