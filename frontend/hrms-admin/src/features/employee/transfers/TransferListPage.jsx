@@ -38,74 +38,10 @@ import { formatDate } from "@/utils/formatDate";
 const PAGE_SIZE = 10;
 const CARD_PAGE_SIZE = 6;
 
-const EXPORT_COLUMNS = [
-  {
-    key: "employee_id",
-    label: "Employee ID",
-  },
-  {
-    key: "from_department_id",
-    label: "Current Department",
-  },
-  {
-    key: "to_department_id",
-    label: "Transfer Department",
-  },
-  {
-    key: "location",
-    label: "Location",
-  },
-  {
-    key: "transfer_apply_date",
-    label: "Transfer Apply Date",
-  },
-  {
-    key: "relieving_date",
-    label: "Relieving Date",
-  },
-  {
-    key: "joining_date",
-    label: "Joining Date",
-  },
-  {
-    key: "transfer_reason",
-    label: "Transfer Reason",
-  },
-  {
-    key: "accomplishments",
-    label: "Overall Records / Accomplishments",
-  },
-  {
-    key: "is_active",
-    label: "Active",
-  },
-];
-
 /* =========================================================
    HELPERS
 ========================================================= */
 
-/**
- * Normalize any date value coming from the API (or a JS Date
- * object) into the strict YYYY-MM-DD format required by
- * HTML <input type="date">.
- *
- * Handles:
- *  - "" / null / undefined                -> ""
- *  - Date instances                        -> local YYYY-MM-DD
- *  - "YYYY-MM-DD"                          -> as-is
- *  - "YYYY-MM-DDT00:00:00[.000Z]"          -> date part only
- *  - "YYYY-MM-DD 00:00:00"                 -> date part only
- *  - Any other parseable date string       -> local YYYY-MM-DD
- *  - Anything unparseable                  -> ""
- *
- * IMPORTANT: When we fall back to `new Date(value)`, we rebuild
- * the string from getFullYear()/getMonth()/getDate() (LOCAL
- * time) rather than toISOString() (UTC), so the date never
- * shifts by a day due to timezone conversion. This was the
- * root cause of dates sometimes appearing blank or one day
- * off when editing Transfers / Promotions.
- */
 function normalizeDateForInput(value) {
   if (!value) {
     return "";
@@ -117,47 +53,56 @@ function normalizeDateForInput(value) {
     }
 
     const year = value.getFullYear();
-    const month = String(value.getMonth() + 1).padStart(2, "0");
-    const day = String(value.getDate()).padStart(2, "0");
+    const month = String(
+      value.getMonth() + 1
+    ).padStart(2, "0");
+    const day = String(
+      value.getDate()
+    ).padStart(2, "0");
 
     return `${year}-${month}-${day}`;
   }
 
-  const stringValue = String(value).trim();
+  const stringValue =
+    String(value).trim();
 
   if (!stringValue) {
     return "";
   }
 
-  /*
-   * Fast path: value already starts with YYYY-MM-DD
-   * (covers "YYYY-MM-DD", "YYYY-MM-DDT...", "YYYY-MM-DD ...").
-   */
-  const isoMatch = stringValue.match(
-    /^(\d{4})-(\d{2})-(\d{2})/
-  );
+  const isoMatch =
+    stringValue.match(
+      /^(\d{4})-(\d{2})-(\d{2})/
+    );
 
   if (isoMatch) {
     return `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`;
   }
 
-  /*
-   * Fallback: try to parse whatever format was given
-   * (e.g. "MM/DD/YYYY", "DD-MM-YYYY", etc.) and rebuild
-   * using LOCAL date parts.
-   */
-  const parsed = new Date(stringValue);
+  const parsed =
+    new Date(stringValue);
 
   if (!Number.isNaN(parsed.getTime())) {
-    const year = parsed.getFullYear();
-    const month = String(parsed.getMonth() + 1).padStart(2, "0");
-    const day = String(parsed.getDate()).padStart(2, "0");
+    const year =
+      parsed.getFullYear();
+
+    const month = String(
+      parsed.getMonth() + 1
+    ).padStart(2, "0");
+
+    const day = String(
+      parsed.getDate()
+    ).padStart(2, "0");
 
     return `${year}-${month}-${day}`;
   }
 
   return "";
 }
+
+/* =========================================================
+   EMPLOYEE HELPERS
+========================================================= */
 
 function getEmployeeName(employee) {
   if (!employee) {
@@ -173,6 +118,10 @@ function getEmployeeName(employee) {
   );
 }
 
+/* =========================================================
+   DEPARTMENT HELPERS
+========================================================= */
+
 function getDepartmentName(
   department,
   fallback = "—"
@@ -184,15 +133,81 @@ function getDepartmentName(
   );
 }
 
+/* =========================================================
+   CURRENT LOCATION
+========================================================= */
+
+/*
+ * Current Location comes from the employee record.
+ *
+ * Priority:
+ *
+ * 1. employee.location
+ * 2. employee.current_location
+ * 3. employee.city + state + country
+ * 4. employee.address
+ * 5. —
+ */
+function getCurrentEmployeeLocation(
+  employee
+) {
+  if (!employee) {
+    return "—";
+  }
+
+  if (
+    typeof employee.location ===
+      "string" &&
+    employee.location.trim()
+  ) {
+    return employee.location.trim();
+  }
+
+  if (
+    typeof employee.current_location ===
+      "string" &&
+    employee.current_location.trim()
+  ) {
+    return employee.current_location.trim();
+  }
+
+  const locationParts = [
+    employee.city,
+    employee.state,
+    employee.country,
+  ]
+    .map((value) =>
+      String(value || "").trim()
+    )
+    .filter(Boolean);
+
+  if (locationParts.length > 0) {
+    return locationParts.join(", ");
+  }
+
+  if (
+    typeof employee.address ===
+      "string" &&
+    employee.address.trim()
+  ) {
+    return employee.address.trim();
+  }
+
+  return "—";
+}
+
+/* =========================================================
+   TRANSFER LOCATION
+========================================================= */
+
+/*
+ * Transfer Location comes directly from:
+ *
+ * transfer.location
+ *
+ * This is the location entered in Add/Edit Transfer.
+ */
 function getTransferLocation(transfer) {
-  /*
-   * IMPORTANT:
-   *
-   * Transfer location MUST come from
-   * the transfer record.
-   *
-   * Never use employee.location here.
-   */
   return (
     String(
       transfer?.location || ""
@@ -200,17 +215,27 @@ function getTransferLocation(transfer) {
   );
 }
 
-function getAccomplishments(transfer) {
-  return String(
-    transfer?.accomplishments || ""
-  ).trim();
-}
+/* =========================================================
+   REASON
+========================================================= */
 
 function getTransferReason(transfer) {
   return String(
     transfer?.transfer_reason ||
       transfer?.reason ||
       ""
+  ).trim();
+}
+
+/* =========================================================
+   ACCOMPLISHMENTS
+========================================================= */
+
+function getAccomplishments(
+  transfer
+) {
+  return String(
+    transfer?.accomplishments || ""
   ).trim();
 }
 
@@ -367,7 +392,8 @@ function DepartmentBadge({
     from:
       "bg-slate-400 dark:bg-slate-500",
 
-    to: "bg-sky-500",
+    to:
+      "bg-sky-500",
   };
 
   return (
@@ -383,180 +409,6 @@ function DepartmentBadge({
         {label}
       </span>
     </span>
-  );
-}
-
-/* =========================================================
-   DEPARTMENT DETAILS CARD
-========================================================= */
-
-function DepartmentDetailsCard({
-  roleLabel,
-  tone,
-  department,
-  departmentFallback,
-  employeeName,
-  employeeCode,
-  location,
-  transferReason,
-  transferApplyDate,
-  relievingDate,
-  joiningDate,
-  accomplishments,
-  isActive,
-}) {
-  const accentTones = {
-    from:
-      "border-t-slate-400 dark:border-t-slate-500",
-
-    to:
-      "border-t-sky-500 dark:border-t-sky-400",
-  };
-
-  const departmentName =
-    getDepartmentName(
-      department,
-      departmentFallback
-    );
-
-  return (
-    <div
-      className={`w-[340px] max-w-[calc(100vw-32px)] rounded-xl border border-slate-200 border-t-2 bg-white p-4 text-left shadow-xl dark:border-slate-700 dark:bg-slate-800 ${accentTones[tone]}`}
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-            {roleLabel}
-          </p>
-
-          <p className="mt-1 break-words text-sm font-semibold leading-5 text-slate-800 dark:text-white">
-            {departmentName}
-          </p>
-        </div>
-
-        <span
-          className={`shrink-0 rounded-full px-2 py-1 text-[9px] font-semibold ${
-            isActive
-              ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300"
-              : "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300"
-          }`}
-        >
-          {isActive
-            ? "Active"
-            : "Inactive"}
-        </span>
-      </div>
-
-      {department?.description && (
-        <>
-          <div className="my-3 border-t border-slate-100 dark:border-slate-700" />
-
-          <div>
-            <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
-              Description
-            </p>
-
-            <p className="text-xs leading-5 text-slate-600 dark:text-slate-300">
-              {department.description}
-            </p>
-          </div>
-        </>
-      )}
-
-      <div className="my-3 border-t border-slate-100 dark:border-slate-700" />
-
-      <div className="space-y-2.5">
-        <div className="grid grid-cols-[90px_minmax(0,1fr)] gap-3">
-          <span className="text-xs text-slate-400 dark:text-slate-500">
-            Employee
-          </span>
-
-          <span className="break-words text-right text-xs font-medium text-slate-700 dark:text-slate-200">
-            {employeeName}
-
-            {employeeCode
-              ? ` (${employeeCode})`
-              : ""}
-          </span>
-        </div>
-
-        <div className="grid grid-cols-[90px_minmax(0,1fr)] gap-3">
-          <span className="text-xs text-slate-400 dark:text-slate-500">
-            Location
-          </span>
-
-          <span className="break-words text-right text-xs font-medium text-slate-700 dark:text-slate-200">
-            {location || "—"}
-          </span>
-        </div>
-
-        <div className="grid grid-cols-[90px_minmax(0,1fr)] gap-3">
-          <span className="text-xs text-slate-400 dark:text-slate-500">
-            Transfer Reason
-          </span>
-
-          <span className="break-words text-right text-xs font-medium text-slate-700 dark:text-slate-200">
-            {transferReason ||
-              "Other"}
-          </span>
-        </div>
-
-        <div className="grid grid-cols-[90px_minmax(0,1fr)] gap-3">
-          <span className="text-xs text-slate-400 dark:text-slate-500">
-            Apply Date
-          </span>
-
-          <span className="text-right text-xs font-medium text-slate-700 dark:text-slate-200">
-            {transferApplyDate
-              ? formatDate(
-                  transferApplyDate
-                )
-              : "—"}
-          </span>
-        </div>
-
-        <div className="grid grid-cols-[90px_minmax(0,1fr)] gap-3">
-          <span className="text-xs text-slate-400 dark:text-slate-500">
-            Relieving Date
-          </span>
-
-          <span className="text-right text-xs font-medium text-slate-700 dark:text-slate-200">
-            {relievingDate
-              ? formatDate(
-                  relievingDate
-                )
-              : "—"}
-          </span>
-        </div>
-
-        <div className="grid grid-cols-[90px_minmax(0,1fr)] gap-3">
-          <span className="text-xs text-slate-400 dark:text-slate-500">
-            Joining Date
-          </span>
-
-          <span className="text-right text-xs font-medium text-slate-700 dark:text-slate-200">
-            {joiningDate
-              ? formatDate(
-                  joiningDate
-                )
-              : "—"}
-          </span>
-        </div>
-      </div>
-
-      <div className="my-3 border-t border-slate-100 dark:border-slate-700" />
-
-      <div>
-        <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
-          Overall Records / Accomplishments
-        </p>
-
-        <p className="max-h-[120px] overflow-y-auto whitespace-pre-wrap break-words text-xs leading-5 text-slate-600 dark:text-slate-300">
-          {accomplishments ||
-            "—"}
-        </p>
-      </div>
-    </div>
   );
 }
 
@@ -612,6 +464,177 @@ function DepartmentHoverTrigger({
 }
 
 /* =========================================================
+   DEPARTMENT DETAILS CARD
+========================================================= */
+
+function DepartmentDetailsCard({
+  roleLabel,
+  tone,
+  department,
+  departmentFallback,
+  employeeName,
+  employeeCode,
+  currentLocation,
+  transferLocation,
+  transferReason,
+  transferApplyDate,
+  relievingDate,
+  joiningDate,
+  accomplishments,
+  isActive,
+}) {
+  const accentTones = {
+    from:
+      "border-t-slate-400 dark:border-t-slate-500",
+
+    to:
+      "border-t-sky-500 dark:border-t-sky-400",
+  };
+
+  const departmentName =
+    getDepartmentName(
+      department,
+      departmentFallback
+    );
+
+  return (
+    <div
+      className={`w-[360px] max-w-[calc(100vw-32px)] rounded-xl border border-slate-200 border-t-2 bg-white p-4 text-left shadow-xl dark:border-slate-700 dark:bg-slate-800 ${accentTones[tone]}`}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+            {roleLabel}
+          </p>
+
+          <p className="mt-1 break-words text-sm font-semibold leading-5 text-slate-800 dark:text-white">
+            {departmentName}
+          </p>
+        </div>
+
+        <span
+          className={`shrink-0 rounded-full px-2 py-1 text-[9px] font-semibold ${
+            isActive
+              ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300"
+              : "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300"
+          }`}
+        >
+          {isActive
+            ? "Active"
+            : "Inactive"}
+        </span>
+      </div>
+
+      <div className="my-3 border-t border-slate-100 dark:border-slate-700" />
+
+      <div className="space-y-2.5">
+        <div className="grid grid-cols-[105px_minmax(0,1fr)] gap-3">
+          <span className="text-xs text-slate-400 dark:text-slate-500">
+            Employee
+          </span>
+
+          <span className="break-words text-right text-xs font-medium text-slate-700 dark:text-slate-200">
+            {employeeName}
+
+            {employeeCode
+              ? ` (${employeeCode})`
+              : ""}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-[105px_minmax(0,1fr)] gap-3">
+          <span className="text-xs text-slate-400 dark:text-slate-500">
+            Current Location
+          </span>
+
+          <span className="break-words text-right text-xs font-medium text-slate-700 dark:text-slate-200">
+            {currentLocation ||
+              "—"}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-[105px_minmax(0,1fr)] gap-3">
+          <span className="text-xs text-slate-400 dark:text-slate-500">
+            Transfer Location
+          </span>
+
+          <span className="break-words text-right text-xs font-semibold text-sky-600 dark:text-sky-400">
+            {transferLocation ||
+              "—"}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-[105px_minmax(0,1fr)] gap-3">
+          <span className="text-xs text-slate-400 dark:text-slate-500">
+            Transfer Reason
+          </span>
+
+          <span className="break-words text-right text-xs font-medium text-slate-700 dark:text-slate-200">
+            {transferReason ||
+              "Other"}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-[105px_minmax(0,1fr)] gap-3">
+          <span className="text-xs text-slate-400 dark:text-slate-500">
+            Apply Date
+          </span>
+
+          <span className="text-right text-xs font-medium text-slate-700 dark:text-slate-200">
+            {transferApplyDate
+              ? formatDate(
+                  transferApplyDate
+                )
+              : "—"}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-[105px_minmax(0,1fr)] gap-3">
+          <span className="text-xs text-slate-400 dark:text-slate-500">
+            Relieving Date
+          </span>
+
+          <span className="text-right text-xs font-medium text-slate-700 dark:text-slate-200">
+            {relievingDate
+              ? formatDate(
+                  relievingDate
+                )
+              : "—"}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-[105px_minmax(0,1fr)] gap-3">
+          <span className="text-xs text-slate-400 dark:text-slate-500">
+            Joining Date
+          </span>
+
+          <span className="text-right text-xs font-medium text-slate-700 dark:text-slate-200">
+            {joiningDate
+              ? formatDate(
+                  joiningDate
+                )
+              : "—"}
+          </span>
+        </div>
+      </div>
+
+      <div className="my-3 border-t border-slate-100 dark:border-slate-700" />
+
+      <div>
+        <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
+          Overall Records / Accomplishments
+        </p>
+
+        <p className="max-h-[120px] overflow-y-auto whitespace-pre-wrap break-words text-xs leading-5 text-slate-600 dark:text-slate-300">
+          {accomplishments ||
+            "—"}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/* =========================================================
    ACCOMPLISHMENTS HOVER CARD
 ========================================================= */
 
@@ -657,9 +680,7 @@ function AccomplishmentsPreview({
       align="right"
       panel={
         <AccomplishmentsHoverCard
-          accomplishments={
-            value
-          }
+          accomplishments={value}
         />
       }
     >
@@ -682,14 +703,11 @@ function ReasonBadge({
 }) {
   return (
     <span
-      title={
-        reason || "Other"
-      }
+      title={reason || "Other"}
       className="inline-flex max-w-full items-center rounded-full bg-sky-50 px-2.5 py-1 text-xs font-medium text-sky-700 ring-1 ring-inset ring-sky-600/20 dark:bg-sky-500/10 dark:text-sky-400 dark:ring-sky-400/30"
     >
       <span className="max-w-[180px] truncate">
-        {reason ||
-          "Other"}
+        {reason || "Other"}
       </span>
     </span>
   );
@@ -864,8 +882,7 @@ export default function TransferListPage() {
 
   const branches =
     useMemo(() => {
-      const map =
-        new Map();
+      const map = new Map();
 
       employees.forEach(
         (employee) => {
@@ -1048,34 +1065,6 @@ export default function TransferListPage() {
   ] = useState(null);
 
   /* =======================================================
-     EXPORT
-  ======================================================= */
-
-  const {
-    exporting,
-    exportExcel,
-    exportPDF,
-  } = useTableExport({
-    fetchAll:
-      employeeLifecycleApi
-        .transfers.list,
-
-    queryParams: {
-      search:
-        search || undefined,
-    },
-
-    exportColumns:
-      EXPORT_COLUMNS,
-
-    filename:
-      "transfers",
-
-    title:
-      "Transfers",
-  });
-
-  /* =======================================================
      ACTIVE TRANSFERS
   ======================================================= */
 
@@ -1095,29 +1084,27 @@ export default function TransferListPage() {
       const now =
         new Date();
 
-      return activeTransfers
-        .filter(
-          (transfer) => {
-            if (
-              !transfer.transfer_apply_date
-            ) {
-              return false;
-            }
-
-            const date =
-              new Date(
-                transfer.transfer_apply_date
-              );
-
-            return (
-              date.getMonth() ===
-                now.getMonth() &&
-              date.getFullYear() ===
-                now.getFullYear()
-            );
+      return activeTransfers.filter(
+        (transfer) => {
+          if (
+            !transfer.transfer_apply_date
+          ) {
+            return false;
           }
-        )
-        .length;
+
+          const date =
+            new Date(
+              transfer.transfer_apply_date
+            );
+
+          return (
+            date.getMonth() ===
+              now.getMonth() &&
+            date.getFullYear() ===
+              now.getFullYear()
+          );
+        }
+      ).length;
     }, [activeTransfers]);
 
   const uniqueEmployeeCount =
@@ -1146,8 +1133,6 @@ export default function TransferListPage() {
       return allTransfers
         .filter(
           (transfer) => {
-            /* STATUS */
-
             if (
               statusFilter ===
                 "active" &&
@@ -1171,8 +1156,6 @@ export default function TransferListPage() {
                 transfer.employee_id
               ];
 
-            /* COMPANY */
-
             const employeeCompany =
               employee
                 ?.department
@@ -1190,8 +1173,6 @@ export default function TransferListPage() {
             ) {
               return false;
             }
-
-            /* BRANCH */
 
             const employeeBranch =
               employee
@@ -1211,8 +1192,6 @@ export default function TransferListPage() {
               return false;
             }
 
-            /* DEPARTMENT */
-
             const employeeDepartment =
               employee?.department;
 
@@ -1227,8 +1206,6 @@ export default function TransferListPage() {
             ) {
               return false;
             }
-
-            /* DESIGNATION */
 
             const employeeDesignationId =
               employee
@@ -1248,8 +1225,6 @@ export default function TransferListPage() {
               return false;
             }
 
-            /* REASON */
-
             const transferReason =
               getTransferReason(
                 transfer
@@ -1266,8 +1241,6 @@ export default function TransferListPage() {
             ) {
               return false;
             }
-
-            /* SEARCH */
 
             if (
               normalizedSearch
@@ -1295,9 +1268,15 @@ export default function TransferListPage() {
                   ""
                 );
 
-              const location =
-                transfer.location ||
-                "";
+              const currentLocation =
+                getCurrentEmployeeLocation(
+                  employee
+                );
+
+              const transferLocation =
+                getTransferLocation(
+                  transfer
+                );
 
               const accomplishments =
                 getAccomplishments(
@@ -1310,7 +1289,8 @@ export default function TransferListPage() {
                 fromDepartment,
                 toDepartment,
                 transferReason,
-                location,
+                currentLocation,
+                transferLocation,
                 accomplishments,
                 transfer.transfer_apply_date ||
                   "",
@@ -1377,8 +1357,7 @@ export default function TransferListPage() {
     filtered.slice(
       (page - 1) *
         pageSize,
-      page *
-        pageSize
+      page * pageSize
     );
 
   /* =======================================================
@@ -1397,25 +1376,6 @@ export default function TransferListPage() {
   const handleEdit = (
     transfer
   ) => {
-    /*
-     * IMPORTANT:
-     *
-     * Convert API date values to YYYY-MM-DD
-     * before passing them to the date inputs.
-     *
-     * This fixes edit popup values not being
-     * populated for:
-     *
-     * - Transfer Apply Date
-     * - Relieving Date
-     * - Joining Date
-     *
-     * normalizeDateForInput() now robustly handles
-     * Date objects, ISO strings with a time component,
-     * and other date-like strings instead of relying
-     * on a naive string slice.
-     */
-
     const normalizedTransfer = {
       ...transfer,
 
@@ -1444,13 +1404,6 @@ export default function TransferListPage() {
           transfer.transfer_apply_date
         ),
 
-      /*
-       * Frontend key is relieving_date.
-       *
-       * Support releiving_date too in case
-       * an older API response/model uses the
-       * misspelled form.
-       */
       relieving_date:
         normalizeDateForInput(
           transfer.relieving_date ||
@@ -1474,9 +1427,6 @@ export default function TransferListPage() {
         false,
     };
 
-    /*
-     * Remove obsolete fields from edit data.
-     */
     delete normalizedTransfer.effective_date;
     delete normalizedTransfer.remarks;
     delete normalizedTransfer.reason;
@@ -1501,66 +1451,62 @@ export default function TransferListPage() {
   const handleSubmit =
     async (payload) => {
       try {
-        const normalizedPayload =
-          {
-            ...payload,
+        const normalizedPayload = {
+          ...payload,
 
-            employee_id:
-              payload.employee_id
-                ? Number(
-                    payload.employee_id
-                  )
-                : payload.employee_id,
+          employee_id:
+            payload.employee_id
+              ? Number(
+                  payload.employee_id
+                )
+              : payload.employee_id,
 
-            from_department_id:
-              payload.from_department_id
-                ? Number(
-                    payload.from_department_id
-                  )
-                : null,
+          from_department_id:
+            payload.from_department_id
+              ? Number(
+                  payload.from_department_id
+                )
+              : null,
 
-            to_department_id:
-              payload.to_department_id
-                ? Number(
-                    payload.to_department_id
-                  )
-                : payload.to_department_id,
+          to_department_id:
+            payload.to_department_id
+              ? Number(
+                  payload.to_department_id
+                )
+              : payload.to_department_id,
 
-            transfer_reason:
-              payload.transfer_reason ||
-              "Other",
+          transfer_reason:
+            payload.transfer_reason ||
+            "Other",
 
-            transfer_apply_date:
-              normalizeDateForInput(
-                payload.transfer_apply_date
-              ),
+          transfer_apply_date:
+            normalizeDateForInput(
+              payload.transfer_apply_date
+            ),
 
-            relieving_date:
-              normalizeDateForInput(
-                payload.relieving_date
-              ),
+          relieving_date:
+            normalizeDateForInput(
+              payload.relieving_date
+            ),
 
-            joining_date:
-              normalizeDateForInput(
-                payload.joining_date
-              ),
+          joining_date:
+            normalizeDateForInput(
+              payload.joining_date
+            ),
 
-            location:
-              payload.location?.trim() ||
-              "",
+          location:
+            payload.location
+              ?.trim() || "",
 
-            accomplishments:
-              payload.accomplishments?.trim() ||
-              null,
+          accomplishments:
+            payload.accomplishments
+              ?.trim() || null,
 
-            is_active:
-              payload.is_active !==
-              false,
-          };
+          is_active:
+            payload.is_active !==
+            false,
+        };
 
-        /*
-         * Remove obsolete transfer fields.
-         */
         delete normalizedPayload.effective_date;
         delete normalizedPayload.remarks;
         delete normalizedPayload.reason;
@@ -1570,7 +1516,6 @@ export default function TransferListPage() {
           await updateMutation.mutateAsync(
             {
               id: editing.id,
-
               payload:
                 normalizedPayload,
             }
@@ -1644,9 +1589,7 @@ export default function TransferListPage() {
   ======================================================= */
 
   const handleReactivate =
-    async (
-      transfer
-    ) => {
+    async (transfer) => {
       try {
         await updateMutation.mutateAsync(
           {
@@ -1711,9 +1654,9 @@ export default function TransferListPage() {
 
   return (
     <div className="min-w-0 space-y-5">
-      {/* =====================================================
+      {/* ===================================================
           HEADER
-      ===================================================== */}
+      =================================================== */}
 
       <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
         <div>
@@ -1730,22 +1673,14 @@ export default function TransferListPage() {
           <TableToolbar
             onRefresh={refetch}
             refreshing={isFetching}
-            onExportExcel={
-              exportExcel
-            }
-            onExportPDF={
-              exportPDF
-            }
-            exporting={
-              exporting
-            }
+            exporting={false}
+            onExportExcel={() => {}}
+            onExportPDF={() => {}}
           />
 
           <Button
             type="button"
-            onClick={
-              handleAdd
-            }
+            onClick={handleAdd}
             className="h-10 w-full px-4 sm:w-auto"
           >
             <span className="mr-1.5 text-lg">
@@ -1757,15 +1692,13 @@ export default function TransferListPage() {
         </div>
       </div>
 
-      {/* =====================================================
+      {/* ===================================================
           STAT CARDS
-      ===================================================== */}
+      =================================================== */}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatCard
-          icon={
-            <TransferIcon />
-          }
+          icon={<TransferIcon />}
           value={
             activeTransfers.length
           }
@@ -1773,9 +1706,7 @@ export default function TransferListPage() {
         />
 
         <StatCard
-          icon={
-            <CalendarIcon />
-          }
+          icon={<CalendarIcon />}
           value={
             thisMonthCount
           }
@@ -1783,9 +1714,7 @@ export default function TransferListPage() {
         />
 
         <StatCard
-          icon={
-            <UsersIcon />
-          }
+          icon={<UsersIcon />}
           value={
             uniqueEmployeeCount
           }
@@ -1793,9 +1722,9 @@ export default function TransferListPage() {
         />
       </div>
 
-      {/* =====================================================
+      {/* ===================================================
           FILTERS
-      ===================================================== */}
+      =================================================== */}
 
       <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-900">
         <div className="flex flex-col gap-3">
@@ -1822,21 +1751,15 @@ export default function TransferListPage() {
 
               <input
                 type="text"
-                value={
-                  search
-                }
-                onChange={(
-                  event
-                ) => {
+                value={search}
+                onChange={(event) => {
                   setSearch(
                     event.target.value
                   );
 
-                  setPage(
-                    1
-                  );
+                  setPage(1);
                 }}
-                placeholder="Search employee, department, reason..."
+                placeholder="Search employee, location, department..."
                 className="h-10 w-full rounded-lg border border-slate-300 bg-white pl-9 pr-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
               />
             </div>
@@ -1847,38 +1770,26 @@ export default function TransferListPage() {
               value={
                 filterCompanyId
               }
-              onChange={(
-                event
-              ) => {
+              onChange={(event) => {
                 setFilterCompanyId(
                   event.target.value
                 );
 
-                setFilterBranchId(
-                  ""
-                );
+                setFilterBranchId("");
 
-                setPage(
-                  1
-                );
+                setPage(1);
               }}
-              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 sm:max-w-[180px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none sm:max-w-[180px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
             >
               <option value="">
                 All Companies
               </option>
 
               {companies.map(
-                (
-                  company
-                ) => (
+                (company) => (
                   <option
-                    key={
-                      company.id
-                    }
-                    value={
-                      company.id
-                    }
+                    key={company.id}
+                    value={company.id}
                   >
                     {company.name ||
                       company.company_name ||
@@ -1894,34 +1805,24 @@ export default function TransferListPage() {
               value={
                 filterBranchId
               }
-              onChange={(
-                event
-              ) => {
+              onChange={(event) => {
                 setFilterBranchId(
                   event.target.value
                 );
 
-                setPage(
-                  1
-                );
+                setPage(1);
               }}
-              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 sm:max-w-[180px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none sm:max-w-[180px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
             >
               <option value="">
                 All Branches
               </option>
 
               {branches.map(
-                (
-                  branch
-                ) => (
+                (branch) => (
                   <option
-                    key={
-                      branch.id
-                    }
-                    value={
-                      branch.id
-                    }
+                    key={branch.id}
+                    value={branch.id}
                   >
                     {branch.name ||
                       branch.branch_name ||
@@ -1937,27 +1838,21 @@ export default function TransferListPage() {
               value={
                 filterDepartmentId
               }
-              onChange={(
-                event
-              ) => {
+              onChange={(event) => {
                 setFilterDepartmentId(
                   event.target.value
                 );
 
-                setPage(
-                  1
-                );
+                setPage(1);
               }}
-              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 sm:max-w-[180px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none sm:max-w-[180px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
             >
               <option value="">
                 All Departments
               </option>
 
               {departmentOptions.map(
-                (
-                  department
-                ) => (
+                (department) => (
                   <option
                     key={
                       department.value
@@ -1980,27 +1875,21 @@ export default function TransferListPage() {
               value={
                 filterDesignationId
               }
-              onChange={(
-                event
-              ) => {
+              onChange={(event) => {
                 setFilterDesignationId(
                   event.target.value
                 );
 
-                setPage(
-                  1
-                );
+                setPage(1);
               }}
-              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 sm:max-w-[180px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none sm:max-w-[180px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
             >
               <option value="">
                 All Designations
               </option>
 
               {designationOptions.map(
-                (
-                  designation
-                ) => (
+                (designation) => (
                   <option
                     key={
                       designation.value
@@ -2020,41 +1909,27 @@ export default function TransferListPage() {
             {/* REASON */}
 
             <select
-              value={
-                filterReason
-              }
-              onChange={(
-                event
-              ) => {
+              value={filterReason}
+              onChange={(event) => {
                 setFilterReason(
                   event.target.value
                 );
 
-                setPage(
-                  1
-                );
+                setPage(1);
               }}
-              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 sm:max-w-[240px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none sm:max-w-[240px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
             >
               <option value="">
                 All Transfer Reasons
               </option>
 
               {reasonOptions.map(
-                (
-                  reason
-                ) => (
+                (reason) => (
                   <option
-                    key={
-                      reason
-                    }
-                    value={
-                      reason
-                    }
+                    key={reason}
+                    value={reason}
                   >
-                    {
-                      reason
-                    }
+                    {reason}
                   </option>
                 )
               )}
@@ -2062,20 +1937,18 @@ export default function TransferListPage() {
 
             {/* CLEAR */}
 
-            {(
-              search ||
+            {(search ||
               filterCompanyId ||
               filterBranchId ||
               filterDepartmentId ||
               filterDesignationId ||
-              filterReason
-            ) && (
+              filterReason) && (
               <button
                 type="button"
                 onClick={
                   clearFilters
                 }
-                className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-xs font-medium text-slate-600 transition hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-xs font-medium text-slate-600 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300"
               >
                 Clear Filters
               </button>
@@ -2092,16 +1965,13 @@ export default function TransferListPage() {
                   setViewMode(
                     "table"
                   );
-
-                  setPage(
-                    1
-                  );
+                  setPage(1);
                 }}
-                className={`rounded-md px-3 py-1.5 text-xs font-medium transition ${
+                className={`rounded-md px-3 py-1.5 text-xs font-medium ${
                   viewMode ===
                   "table"
                     ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
-                    : "text-slate-500 hover:text-slate-700 dark:text-slate-400"
+                    : "text-slate-500 dark:text-slate-400"
                 }`}
               >
                 Table
@@ -2113,16 +1983,13 @@ export default function TransferListPage() {
                   setViewMode(
                     "card"
                   );
-
-                  setPage(
-                    1
-                  );
+                  setPage(1);
                 }}
-                className={`rounded-md px-3 py-1.5 text-xs font-medium transition ${
+                className={`rounded-md px-3 py-1.5 text-xs font-medium ${
                   viewMode ===
                   "card"
                     ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
-                    : "text-slate-500 hover:text-slate-700 dark:text-slate-400"
+                    : "text-slate-500 dark:text-slate-400"
                 }`}
               >
                 Card
@@ -2135,33 +2002,24 @@ export default function TransferListPage() {
                 "inactive",
                 "all",
               ].map(
-                (
-                  status
-                ) => (
+                (status) => (
                   <button
-                    key={
-                      status
-                    }
+                    key={status}
                     type="button"
                     onClick={() => {
                       setStatusFilter(
                         status
                       );
-
-                      setPage(
-                        1
-                      );
+                      setPage(1);
                     }}
-                    className={`rounded-md px-3 py-1.5 text-xs font-medium capitalize transition ${
+                    className={`rounded-md px-3 py-1.5 text-xs font-medium capitalize ${
                       statusFilter ===
                       status
                         ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
-                        : "text-slate-500 hover:text-slate-700 dark:text-slate-400"
+                        : "text-slate-500 dark:text-slate-400"
                     }`}
                   >
-                    {
-                      status
-                    }
+                    {status}
                   </button>
                 )
               )}
@@ -2170,15 +2028,16 @@ export default function TransferListPage() {
         </div>
       </div>
 
-      {/* =====================================================
+      {/* ===================================================
           DATA
-      ===================================================== */}
+      =================================================== */}
 
       {isLoading ? (
         <div className="py-10 text-center text-sm text-slate-400">
           Loading...
         </div>
-      ) : paged.length === 0 ? (
+      ) : paged.length ===
+        0 ? (
         <div className="flex min-h-[200px] flex-col items-center justify-center rounded-xl border border-slate-200 bg-white px-6 py-10 text-center shadow-sm dark:border-slate-700 dark:bg-slate-900">
           <h3 className="text-sm font-semibold text-slate-800 dark:text-white">
             No transfers found
@@ -2188,7 +2047,8 @@ export default function TransferListPage() {
             No records match your current search or filters.
           </p>
         </div>
-      ) : viewMode === "table" ? (
+      ) : viewMode ===
+        "table" ? (
         /* ===================================================
            TABLE VIEW
         =================================================== */
@@ -2196,13 +2056,14 @@ export default function TransferListPage() {
         <div className="w-full min-w-0 overflow-visible rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
           <table className="w-full table-fixed border-collapse text-left text-sm">
             <colgroup>
-              <col className="w-[20%]" />
-              <col className="w-[17%]" />
               <col className="w-[17%]" />
               <col className="w-[13%]" />
               <col className="w-[13%]" />
-              <col className="w-[8%]" />
               <col className="w-[12%]" />
+              <col className="w-[12%]" />
+              <col className="w-[14%]" />
+              <col className="w-[7%]" />
+              <col className="w-[7%]" />
             </colgroup>
 
             <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-400">
@@ -2220,7 +2081,11 @@ export default function TransferListPage() {
                 </th>
 
                 <th className="px-4 py-3 font-medium">
-                  Location
+                  Current Location
+                </th>
+
+                <th className="px-4 py-3 font-medium">
+                  Transfer Location
                 </th>
 
                 <th className="px-4 py-3 font-medium">
@@ -2251,6 +2116,20 @@ export default function TransferListPage() {
                     ) ||
                     `Employee #${transfer.employee_id}`;
 
+                  const employeeCode =
+                    employee?.employee_code ||
+                    "";
+
+                  const currentLocation =
+                    getCurrentEmployeeLocation(
+                      employee
+                    );
+
+                  const transferLocation =
+                    getTransferLocation(
+                      transfer
+                    );
+
                   const isActive =
                     transfer.is_active !==
                     false;
@@ -2260,11 +2139,6 @@ export default function TransferListPage() {
 
                   const toDepartment =
                     transfer.to_department;
-
-                  const transferLocation =
-                    getTransferLocation(
-                      transfer
-                    );
 
                   const transferReason =
                     getTransferReason(
@@ -2278,9 +2152,7 @@ export default function TransferListPage() {
 
                   return (
                     <tr
-                      key={
-                        transfer.id
-                      }
+                      key={transfer.id}
                       className="relative hover:bg-slate-50 dark:hover:bg-slate-800/40"
                     >
                       {/* EMPLOYEE */}
@@ -2302,7 +2174,7 @@ export default function TransferListPage() {
                             </p>
 
                             <p className="truncate text-[10px] text-slate-400">
-                              {employee?.employee_code ||
+                              {employeeCode ||
                                 `#${transfer.employee_id}`}
                             </p>
                           </div>
@@ -2326,9 +2198,12 @@ export default function TransferListPage() {
                                 employeeName
                               }
                               employeeCode={
-                                employee?.employee_code
+                                employeeCode
                               }
-                              location={
+                              currentLocation={
+                                currentLocation
+                              }
+                              transferLocation={
                                 transferLocation
                               }
                               transferReason={
@@ -2380,9 +2255,12 @@ export default function TransferListPage() {
                                 employeeName
                               }
                               employeeCode={
-                                employee?.employee_code
+                                employeeCode
                               }
-                              location={
+                              currentLocation={
+                                currentLocation
+                              }
+                              transferLocation={
                                 transferLocation
                               }
                               transferReason={
@@ -2417,14 +2295,29 @@ export default function TransferListPage() {
                         </DepartmentHoverTrigger>
                       </td>
 
-                      {/* LOCATION */}
+                      {/* CURRENT LOCATION */}
+
+                      <td className="min-w-0 overflow-hidden px-4 py-3">
+                        <span
+                          title={
+                            currentLocation
+                          }
+                          className="block max-w-full truncate text-xs font-medium text-slate-600 dark:text-slate-300"
+                        >
+                          {
+                            currentLocation
+                          }
+                        </span>
+                      </td>
+
+                      {/* TRANSFER LOCATION */}
 
                       <td className="min-w-0 overflow-hidden px-4 py-3">
                         <span
                           title={
                             transferLocation
                           }
-                          className="block max-w-full truncate text-xs font-medium text-slate-600 dark:text-slate-300"
+                          className="block max-w-full truncate text-xs font-semibold text-sky-600 dark:text-sky-400"
                         >
                           {
                             transferLocation
@@ -2469,27 +2362,25 @@ export default function TransferListPage() {
                       {/* STATUS */}
 
                       <td className="px-4 py-3">
-                        <div className="flex justify-start">
+                        <span
+                          className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2 py-1 text-[10px] font-medium ${
+                            isActive
+                              ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300"
+                              : "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300"
+                          }`}
+                        >
                           <span
-                            className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2 py-1 text-[10px] font-medium ${
+                            className={`h-1.5 w-1.5 shrink-0 rounded-full ${
                               isActive
-                                ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300"
-                                : "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300"
+                                ? "bg-emerald-500"
+                                : "bg-red-500"
                             }`}
-                          >
-                            <span
-                              className={`h-1.5 w-1.5 shrink-0 rounded-full ${
-                                isActive
-                                  ? "bg-emerald-500"
-                                  : "bg-red-500"
-                              }`}
-                            />
+                          />
 
-                            {isActive
-                              ? "Active"
-                              : "Inactive"}
-                          </span>
-                        </div>
+                          {isActive
+                            ? "Active"
+                            : "Inactive"}
+                        </span>
                       </td>
 
                       {/* ACTIONS */}
@@ -2570,7 +2461,7 @@ export default function TransferListPage() {
                                 <path
                                   strokeLinecap="round"
                                   strokeLinejoin="round"
-                                  d="M4 12a8 8 0 018-8 8.5 8.5 0 017 4M20 4v5h-5M20 12a8 8 0 01-8 8 8.5 8.5 0 01-7-4M4 20v-5h5"
+                                  d="M4 12a8 8 0 018-8 8.5 8.5 0 017 4M20 4v5h-5M20 12a8 8 0 01-8 8 8.5 8.5 0 017-4M4 20v-5h5"
                                 />
                               </svg>
                             </TableIconButton>
@@ -2603,6 +2494,10 @@ export default function TransferListPage() {
                 ) ||
                 `Employee #${transfer.employee_id}`;
 
+              const employeeCode =
+                employee?.employee_code ||
+                "";
+
               const isActive =
                 transfer.is_active !==
                 false;
@@ -2613,7 +2508,12 @@ export default function TransferListPage() {
               const toDepartment =
                 transfer.to_department;
 
-              const location =
+              const currentLocation =
+                getCurrentEmployeeLocation(
+                  employee
+                );
+
+              const transferLocation =
                 getTransferLocation(
                   transfer
                 );
@@ -2630,10 +2530,8 @@ export default function TransferListPage() {
 
               return (
                 <div
-                  key={
-                    transfer.id
-                  }
-                  className="overflow-visible rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900"
+                  key={transfer.id}
+                  className="overflow-visible rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg dark:border-slate-700 dark:bg-slate-900"
                 >
                   <div className="h-0.5 bg-primary-600" />
 
@@ -2657,7 +2555,7 @@ export default function TransferListPage() {
                           </p>
 
                           <p className="truncate text-[10px] text-slate-400">
-                            {employee?.employee_code ||
+                            {employeeCode ||
                               `#${transfer.employee_id}`}
                           </p>
                         </div>
@@ -2695,10 +2593,13 @@ export default function TransferListPage() {
                               employeeName
                             }
                             employeeCode={
-                              employee?.employee_code
+                              employeeCode
                             }
-                            location={
-                              location
+                            currentLocation={
+                              currentLocation
+                            }
+                            transferLocation={
+                              transferLocation
                             }
                             transferReason={
                               transferReason
@@ -2708,7 +2609,7 @@ export default function TransferListPage() {
                             }
                             relievingDate={
                               transfer.relieving_date ||
-                                transfer.releiving_date
+                              transfer.releiving_date
                             }
                             joiningDate={
                               transfer.joining_date
@@ -2747,10 +2648,13 @@ export default function TransferListPage() {
                               employeeName
                             }
                             employeeCode={
-                              employee?.employee_code
+                              employeeCode
                             }
-                            location={
-                              location
+                            currentLocation={
+                              currentLocation
+                            }
+                            transferLocation={
+                              transferLocation
                             }
                             transferReason={
                               transferReason
@@ -2760,7 +2664,7 @@ export default function TransferListPage() {
                             }
                             relievingDate={
                               transfer.relieving_date ||
-                                transfer.releiving_date
+                              transfer.releiving_date
                             }
                             joiningDate={
                               transfer.joining_date
@@ -2782,6 +2686,44 @@ export default function TransferListPage() {
                           )}
                         />
                       </DepartmentHoverTrigger>
+                    </div>
+
+                    {/* CURRENT LOCATION */}
+
+                    <div className="mt-3">
+                      <p className="text-[10px] uppercase tracking-wide text-slate-400">
+                        Current Location
+                      </p>
+
+                      <p
+                        title={
+                          currentLocation
+                        }
+                        className="mt-0.5 truncate text-xs font-medium text-slate-600 dark:text-slate-300"
+                      >
+                        {
+                          currentLocation
+                        }
+                      </p>
+                    </div>
+
+                    {/* TRANSFER LOCATION */}
+
+                    <div className="mt-2">
+                      <p className="text-[10px] uppercase tracking-wide text-slate-400">
+                        Transfer Location
+                      </p>
+
+                      <p
+                        title={
+                          transferLocation
+                        }
+                        className="mt-0.5 truncate text-xs font-semibold text-sky-600 dark:text-sky-400"
+                      >
+                        {
+                          transferLocation
+                        }
+                      </p>
                     </div>
 
                     {/* APPLY DATE */}
@@ -2817,23 +2759,6 @@ export default function TransferListPage() {
                       {formatDate(
                         transfer.joining_date
                       )}
-                    </div>
-
-                    {/* LOCATION */}
-
-                    <div className="mt-2">
-                      <p className="text-[10px] uppercase tracking-wide text-slate-400">
-                        Location
-                      </p>
-
-                      <p
-                        title={
-                          location
-                        }
-                        className="mt-0.5 truncate text-xs font-medium text-slate-600 dark:text-slate-300"
-                      >
-                        {location}
-                      </p>
                     </div>
 
                     {/* REASON */}
@@ -2943,7 +2868,7 @@ export default function TransferListPage() {
                             <path
                               strokeLinecap="round"
                               strokeLinejoin="round"
-                              d="M4 12a8 8 0 018-8 8.5 8.5 0 017 4M20 4v5h-5M20 12a8 8 0 01-8 8 8.5 8.5 0 017-4M4 20v-5h5"
+                              d="M4 12a8 8 0 018-8 8.5 8.5 0 017 4M20 4v5h-5M20 12a8 8 0 01-8 8 8.5 8.5 0 01-7-4M4 20v-5h5"
                             />
                           </svg>
                         </TableIconButton>
@@ -2957,34 +2882,29 @@ export default function TransferListPage() {
         </div>
       )}
 
-      {/* =====================================================
+      {/* ===================================================
           PAGINATION
-      ===================================================== */}
+      =================================================== */}
 
       <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
         <span>
-          Page {page} of{" "}
-          {pageCount}
+          Page {page} of {pageCount}
         </span>
 
         <div className="flex gap-2">
           <button
             type="button"
-            disabled={
-              page <= 1
-            }
+            disabled={page <= 1}
             onClick={() =>
               setPage(
-                (
-                  current
-                ) =>
+                (current) =>
                   Math.max(
                     1,
                     current - 1
                   )
               )
             }
-            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium transition hover:bg-slate-50 disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700"
+            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800"
           >
             Previous
           </button>
@@ -2992,38 +2912,31 @@ export default function TransferListPage() {
           <button
             type="button"
             disabled={
-              page >=
-              pageCount
+              page >= pageCount
             }
             onClick={() =>
               setPage(
-                (
-                  current
-                ) =>
+                (current) =>
                   Math.min(
                     pageCount,
                     current + 1
                   )
               )
             }
-            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium transition hover:bg-slate-50 disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700"
+            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800"
           >
             Next
           </button>
         </div>
       </div>
 
-      {/* =====================================================
+      {/* ===================================================
           ADD / EDIT MODAL
-      ===================================================== */}
+      =================================================== */}
 
       <Modal
-        open={
-          modalOpen
-        }
-        onClose={
-          closeModal
-        }
+        open={modalOpen}
+        onClose={closeModal}
         title={
           editing
             ? "Edit Transfer"
@@ -3038,24 +2951,18 @@ export default function TransferListPage() {
           onSubmit={
             handleSubmit
           }
-          loading={
-            isSaving
-          }
+          loading={isSaving}
         />
       </Modal>
 
-      {/* =====================================================
+      {/* ===================================================
           DELETE CONFIRM
-      ===================================================== */}
+      =================================================== */}
 
       <ConfirmDialog
-        open={
-          !!deleteTarget
-        }
+        open={!!deleteTarget}
         onClose={() =>
-          setDeleteTarget(
-            null
-          )
+          setDeleteTarget(null)
         }
         onConfirm={
           confirmDelete
