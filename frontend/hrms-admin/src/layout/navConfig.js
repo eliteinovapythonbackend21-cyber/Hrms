@@ -129,7 +129,7 @@ export const navConfig = [
       { label: "Customers", path: "/crm/customers", icon: "crm" },
       { label: "Follow-ups", path: "/crm/follow-ups", icon: "crm" },
       { label: "Registertion", path: "/crm/meetings", icon: "crm" },
-      { label: "Quotations", path: "/crm/quotations", icon: "crm" },
+      { label: "Incentive", path: "/crm/quotations", icon: "crm" },
       { label: "Invoices", path: "/crm/invoices", icon: "crm" },
       { label: "Payments", path: "/crm/payments", icon: "crm" },
       { label: "Support Tickets", path: "/crm/support-tickets", icon: "crm" },

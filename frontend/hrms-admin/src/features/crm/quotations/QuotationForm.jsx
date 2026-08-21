@@ -72,15 +72,17 @@ export default function QuotationForm({
 
     {
       name: "quotation_number",
-      label: "Quotation Number",
+      label: "Incentive Number",
       type: "text",
+      placeholder: "Enter incentive number",
     },
 
     {
       name: "amount",
-      label: "Amount",
+      label: "Incentive Amount",
       type: "number",
       required: true,
+      placeholder: "Enter incentive amount",
     },
 
     {
@@ -124,31 +126,30 @@ export default function QuotationForm({
      SUBMIT
   ======================================================= */
 
-  const handleSubmit = async (
-    payload
-  ) => {
-    const normalizedPayload = {
-      ...payload,
+  const handleSubmit =
+    async (payload) => {
+      const normalizedPayload = {
+        ...payload,
 
-      customer_id:
-        normalizeCustomerId(
-          payload?.customer_id
-        ),
+        customer_id:
+          normalizeCustomerId(
+            payload?.customer_id
+          ),
 
-      amount:
-        normalizeAmount(
-          payload?.amount
-        ),
+        amount:
+          normalizeAmount(
+            payload?.amount
+          ),
 
-      status:
-        payload?.status ||
-        "Draft",
+        status:
+          payload?.status ||
+          "Draft",
+      };
+
+      await onSubmit(
+        normalizedPayload
+      );
     };
-
-    await onSubmit(
-      normalizedPayload
-    );
-  };
 
   return (
     <GenericForm

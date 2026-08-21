@@ -22,6 +22,46 @@ function normalizeCustomerId(value) {
 }
 
 /* =========================================================
+   DATE HELPER
+========================================================= */
+
+function normalizeDateForInput(value) {
+  if (!value) {
+    return "";
+  }
+
+  const stringValue = String(value).trim();
+
+  if (!stringValue) {
+    return "";
+  }
+
+  const isoMatch = stringValue.match(
+    /^(\d{4})-(\d{2})-(\d{2})/
+  );
+
+  if (isoMatch) {
+    return `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`;
+  }
+
+  const parsed = new Date(stringValue);
+
+  if (!Number.isNaN(parsed.getTime())) {
+    const year = parsed.getFullYear();
+    const month = String(
+      parsed.getMonth() + 1
+    ).padStart(2, "0");
+    const day = String(
+      parsed.getDate()
+    ).padStart(2, "0");
+
+    return `${year}-${month}-${day}`;
+  }
+
+  return "";
+}
+
+/* =========================================================
    FORM
 ========================================================= */
 
@@ -45,15 +85,17 @@ export default function MeetingForm({
 
     {
       name: "meeting_date",
-      label: "Meeting Date",
+      label: "Registration Date",
       type: "date",
       required: true,
     },
 
     {
       name: "notes",
-      label: "Notes",
+      label: "Registration Notes",
       type: "textarea",
+      placeholder:
+        "Enter registration notes...",
     },
   ];
 
@@ -67,12 +109,22 @@ export default function MeetingForm({
     initialData?.customer?.id ??
     "";
 
+  const registrationDate =
+    initialData?.meeting_date ??
+    initialData?.registration_date ??
+    "";
+
   const normalizedInitialData = {
     ...(initialData || {}),
 
     customer_id:
       normalizeCustomerId(
         customerId
+      ),
+
+    meeting_date:
+      normalizeDateForInput(
+        registrationDate
       ),
   };
 
@@ -89,6 +141,16 @@ export default function MeetingForm({
       customer_id:
         normalizeCustomerId(
           payload?.customer_id
+        ),
+
+      /*
+       * Backend continues using `meeting_date`.
+       * Only the UI terminology is changed to
+       * Registration Date.
+       */
+      meeting_date:
+        normalizeDateForInput(
+          payload?.meeting_date
         ),
     };
 

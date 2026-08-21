@@ -29,9 +29,7 @@ import { formatCurrency } from "@/utils/formatCurrency";
 ========================================================= */
 
 const PAGE_SIZE = 10;
-
 const CARD_PAGE_SIZE = 6;
-
 const CARD_HEIGHT = "h-[270px]";
 
 /* =========================================================
@@ -40,7 +38,7 @@ const CARD_HEIGHT = "h-[270px]";
 
 const EXPORT_COLUMNS = [
   {
-    header: "Quotation Number",
+    header: "Incentive Number",
     accessor: (r) =>
       r.quotation_number ||
       "-",
@@ -60,7 +58,7 @@ const EXPORT_COLUMNS = [
   },
 
   {
-    header: "Amount",
+    header: "Incentive Amount",
     accessor: (r) =>
       formatCurrency(
         r.amount
@@ -88,15 +86,15 @@ const EXPORT_COLUMNS = [
 ========================================================= */
 
 function getCustomerDisplayName(
-  quotation
+  incentive
 ) {
-  if (!quotation) {
+  if (!incentive) {
     return "";
   }
 
   const customer =
-    quotation.customer ||
-    quotation.customer_data;
+    incentive.customer ||
+    incentive.customer_data;
 
   if (customer) {
     return (
@@ -104,13 +102,13 @@ function getCustomerDisplayName(
       customer.name ||
       `Customer #${
         customer.id ||
-        quotation.customer_id
+        incentive.customer_id
       }`
     );
   }
 
   return `Customer #${
-    quotation.customer_id ??
+    incentive.customer_id ??
     "-"
   }`;
 }
@@ -154,21 +152,21 @@ function formatDateTime(value) {
 }
 
 /* =========================================================
-   QUOTATION STATUS
+   INCENTIVE STATUS
 ========================================================= */
 
-function getQuotationStatus(
-  quotation
+function getIncentiveStatus(
+  incentive
 ) {
   if (
-    quotation?.is_active ===
+    incentive?.is_active ===
     false
   ) {
     return "Inactive";
   }
 
   return (
-    quotation?.status ||
+    incentive?.status ||
     "Draft"
   );
 }
@@ -209,7 +207,7 @@ function getStatusBadgeClass(
    API HELPERS
 ========================================================= */
 
-async function updateQuotationRecord(
+async function updateIncentiveRecord(
   id,
   payload
 ) {
@@ -219,17 +217,21 @@ async function updateQuotationRecord(
     "function"
   ) {
     throw new Error(
-      "Quotation update API method is not configured."
+      "Incentive update API method is not configured."
     );
   }
 
+  /*
+   * Backend still uses the quotations
+   * endpoint and quotation model.
+   */
   return crmApi.quotations.update(
     id,
     payload
   );
 }
 
-async function deactivateQuotationRecord(
+async function deactivateIncentiveRecord(
   id
 ) {
   if (
@@ -238,7 +240,7 @@ async function deactivateQuotationRecord(
     "function"
   ) {
     throw new Error(
-      "Quotation deactivate API method is not configured."
+      "Incentive deactivate API method is not configured."
     );
   }
 
@@ -247,10 +249,10 @@ async function deactivateQuotationRecord(
   );
 }
 
-async function reactivateQuotationRecord(
+async function reactivateIncentiveRecord(
   id
 ) {
-  return updateQuotationRecord(
+  return updateIncentiveRecord(
     id,
     {
       is_active: true,
@@ -262,7 +264,7 @@ async function reactivateQuotationRecord(
    ICONS
 ========================================================= */
 
-const QuotationIcon = () => (
+const IncentiveIcon = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     className="h-3.5 w-3.5 shrink-0 text-slate-400"
@@ -345,7 +347,7 @@ const StatusIcon = () => (
   </svg>
 );
 
-const QuotationStatIcon = () => (
+const IncentiveStatIcon = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     className="h-5 w-5"
@@ -464,9 +466,7 @@ function StatCard({
     <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
       <div className="flex items-center gap-3">
         <div
-          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${
-            tones[tone]
-          }`}
+          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${tones[tone]}`}
         >
           {icon}
         </div>
@@ -504,7 +504,7 @@ function HoverDetailsTrigger({
   return (
     <div
       tabIndex={0}
-      className="group/quotation-details relative inline-flex max-w-full outline-none"
+      className="group/incentive-details relative inline-flex max-w-full outline-none"
     >
       <div className="max-w-full">
         {children}
@@ -521,12 +521,12 @@ function HoverDetailsTrigger({
           opacity-0
           transition-all
           duration-150
-          group-hover/quotation-details:pointer-events-auto
-          group-hover/quotation-details:visible
-          group-hover/quotation-details:opacity-100
-          group-focus/quotation-details:pointer-events-auto
-          group-focus/quotation-details:visible
-          group-focus/quotation-details:opacity-100
+          group-hover/incentive-details:pointer-events-auto
+          group-hover/incentive-details:visible
+          group-hover/incentive-details:opacity-100
+          group-focus/incentive-details:pointer-events-auto
+          group-focus/incentive-details:visible
+          group-focus/incentive-details:opacity-100
           ${alignClasses[align]}
         `}
       >
@@ -537,21 +537,21 @@ function HoverDetailsTrigger({
 }
 
 /* =========================================================
-   QUOTATION DETAILS CARD
+   INCENTIVE DETAILS CARD
 ========================================================= */
 
-function QuotationDetailsCard({
-  quotation,
+function IncentiveDetailsCard({
+  incentive,
 }) {
   const customer =
-    quotation?.customer ||
-    quotation?.customer_data;
+    incentive?.customer ||
+    incentive?.customer_data;
 
   const customerName =
     customer?.customer_name ||
     customer?.name ||
     `Customer #${
-      quotation?.customer_id ??
+      incentive?.customer_id ??
       "-"
     }`;
 
@@ -569,8 +569,8 @@ function QuotationDetailsCard({
     "-";
 
   const status =
-    getQuotationStatus(
-      quotation
+    getIncentiveStatus(
+      incentive
     );
 
   return (
@@ -578,13 +578,13 @@ function QuotationDetailsCard({
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-            Quotation Details
+            Incentive Details
           </p>
 
           <p className="mt-1 break-words text-sm font-semibold text-slate-800 dark:text-white">
-            {quotation?.quotation_number ||
-              `Quotation #${
-                quotation?.id ??
+            {incentive?.quotation_number ||
+              `Incentive #${
+                incentive?.id ??
                 "-"
               }`}
           </p>
@@ -619,7 +619,7 @@ function QuotationDetailsCard({
 
           <span className="text-right text-xs font-medium text-slate-700 dark:text-slate-200">
             #
-            {quotation?.customer_id ??
+            {incentive?.customer_id ??
               "—"}
           </span>
         </div>
@@ -646,12 +646,12 @@ function QuotationDetailsCard({
 
         <div className="grid grid-cols-[100px_minmax(0,1fr)] gap-3">
           <span className="text-xs text-slate-400">
-            Amount
+            Incentive Amount
           </span>
 
           <span className="text-right text-xs font-semibold text-slate-700 dark:text-slate-200">
             {formatCurrency(
-              quotation?.amount
+              incentive?.amount
             )}
           </span>
         </div>
@@ -662,7 +662,7 @@ function QuotationDetailsCard({
           </span>
 
           <span className="text-right text-xs font-medium text-slate-700 dark:text-slate-200">
-            {quotation?.status ||
+            {incentive?.status ||
               "Draft"}
           </span>
         </div>
@@ -672,12 +672,12 @@ function QuotationDetailsCard({
 
       <div>
         <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
-          Quotation Number
+          Incentive Number
         </p>
 
         <p className="break-words text-xs leading-5 text-slate-700 dark:text-slate-200">
-          {quotation?.quotation_number ||
-            "Auto generated"}
+          {incentive?.quotation_number ||
+            "Not specified"}
         </p>
       </div>
 
@@ -691,7 +691,7 @@ function QuotationDetailsCard({
 
           <p className="mt-0.5 text-[10px] font-medium text-slate-700 dark:text-slate-200">
             {formatDateTime(
-              quotation?.created_at
+              incentive?.created_at
             )}
           </p>
         </div>
@@ -703,7 +703,7 @@ function QuotationDetailsCard({
 
           <p className="mt-0.5 text-[10px] font-medium text-slate-700 dark:text-slate-200">
             {formatDateTime(
-              quotation?.updated_at
+              incentive?.updated_at
             )}
           </p>
         </div>
@@ -716,13 +716,13 @@ function QuotationDetailsCard({
 
         <span
           className={`text-[10px] font-semibold ${
-            quotation?.is_active !==
+            incentive?.is_active !==
             false
               ? "text-emerald-600 dark:text-emerald-400"
               : "text-red-600 dark:text-red-400"
           }`}
         >
-          {quotation?.is_active !==
+          {incentive?.is_active !==
           false
             ? "Yes"
             : "No"}
@@ -871,10 +871,10 @@ export default function QuotationListPage() {
       EXPORT_COLUMNS,
 
     filename:
-      "quotations",
+      "incentives",
 
     title:
-      "Quotations",
+      "Incentives",
   });
 
   /* =======================================================
@@ -937,9 +937,9 @@ export default function QuotationListPage() {
           .toLowerCase();
 
       return allQuotations.filter(
-        (quotation) => {
+        (incentive) => {
           const isActive =
-            quotation.is_active !==
+            incentive.is_active !==
             false;
 
           if (
@@ -961,7 +961,7 @@ export default function QuotationListPage() {
           if (
             customerFilter &&
             String(
-              quotation.customer_id
+              incentive.customer_id
             ) !==
               String(
                 customerFilter
@@ -972,7 +972,7 @@ export default function QuotationListPage() {
 
           if (
             statusFilter &&
-            quotation.status !==
+            incentive.status !==
               statusFilter
           ) {
             return false;
@@ -982,14 +982,14 @@ export default function QuotationListPage() {
             normalizedSearch
           ) {
             const haystack = [
-              quotation.id,
-              quotation.quotation_number,
-              quotation.customer_id,
+              incentive.id,
+              incentive.quotation_number,
+              incentive.customer_id,
               getCustomerDisplayName(
-                quotation
+                incentive
               ),
-              quotation.amount,
-              quotation.status,
+              incentive.amount,
+              incentive.status,
             ]
               .join(" ")
               .toLowerCase();
@@ -1103,13 +1103,13 @@ export default function QuotationListPage() {
         if (
           editingQuotation
         ) {
-          await updateQuotationRecord(
+          await updateIncentiveRecord(
             editingQuotation.id,
             normalizedPayload
           );
 
           showToast(
-            "Quotation updated",
+            "Incentive updated",
             "success"
           );
         } else {
@@ -1118,18 +1118,20 @@ export default function QuotationListPage() {
           );
 
           showToast(
-            "Quotation created",
+            "Incentive created",
             "success"
           );
         }
 
         setModalOpen(false);
-        setEditingQuotation(null);
+        setEditingQuotation(
+          null
+        );
 
         await refetch();
       } catch (error) {
         console.error(
-          "Quotation save failed:",
+          "Incentive save failed:",
           error
         );
 
@@ -1137,7 +1139,7 @@ export default function QuotationListPage() {
           error?.response
             ?.data?.message ||
             error?.message ||
-            "Failed to save quotation",
+            "Failed to save incentive",
           "error"
         );
       } finally {
@@ -1158,21 +1160,23 @@ export default function QuotationListPage() {
           deleteTarget.id
         );
 
-        await deactivateQuotationRecord(
+        await deactivateIncentiveRecord(
           deleteTarget.id
         );
 
         showToast(
-          "Quotation deactivated",
+          "Incentive deactivated",
           "success"
         );
 
-        setDeleteTarget(null);
+        setDeleteTarget(
+          null
+        );
 
         await refetch();
       } catch (error) {
         console.error(
-          "Quotation deactivation failed:",
+          "Incentive deactivation failed:",
           error
         );
 
@@ -1180,7 +1184,7 @@ export default function QuotationListPage() {
           error?.response
             ?.data?.message ||
             error?.message ||
-            "Failed to deactivate quotation",
+            "Failed to deactivate incentive",
           "error"
         );
       } finally {
@@ -1201,19 +1205,19 @@ export default function QuotationListPage() {
           quotation.id
         );
 
-        await reactivateQuotationRecord(
+        await reactivateIncentiveRecord(
           quotation.id
         );
 
         showToast(
-          "Quotation reactivated",
+          "Incentive reactivated",
           "success"
         );
 
         await refetch();
       } catch (error) {
         console.error(
-          "Quotation reactivation failed:",
+          "Incentive reactivation failed:",
           error
         );
 
@@ -1221,7 +1225,7 @@ export default function QuotationListPage() {
           error?.response
             ?.data?.message ||
             error?.message ||
-            "Failed to reactivate quotation",
+            "Failed to reactivate incentive",
           "error"
         );
       } finally {
@@ -1251,7 +1255,7 @@ export default function QuotationListPage() {
   if (isError) {
     return (
       <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-600 dark:border-red-900/40 dark:bg-red-950/20 dark:text-red-400">
-        Failed to load quotations.
+        Failed to load incentives.
       </div>
     );
   }
@@ -1267,11 +1271,11 @@ export default function QuotationListPage() {
       <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-            Quotations
+            Incentives
           </h1>
 
           <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
-            Customer quotation log
+            Customer incentive records
           </p>
         </div>
 
@@ -1299,7 +1303,7 @@ export default function QuotationListPage() {
               +
             </span>
 
-            Add Quotation
+            Add Incentive
           </Button>
         </div>
       </div>
@@ -1309,12 +1313,12 @@ export default function QuotationListPage() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           icon={
-            <QuotationStatIcon />
+            <IncentiveStatIcon />
           }
           value={
             allQuotations.length
           }
-          label="Total Quotations"
+          label="Total Incentives"
           tone="sky"
         />
 
@@ -1325,7 +1329,7 @@ export default function QuotationListPage() {
           value={
             sentQuotations.length
           }
-          label="Sent Quotations"
+          label="Sent Incentives"
           tone="amber"
         />
 
@@ -1336,7 +1340,7 @@ export default function QuotationListPage() {
           value={
             acceptedQuotations.length
           }
-          label="Accepted Quotations"
+          label="Accepted Incentives"
           tone="emerald"
         />
 
@@ -1347,7 +1351,7 @@ export default function QuotationListPage() {
           value={
             inactiveQuotations.length
           }
-          label="Inactive Quotations"
+          label="Inactive Incentives"
           tone="slate"
         />
       </div>
@@ -1389,7 +1393,7 @@ export default function QuotationListPage() {
 
                   setPage(1);
                 }}
-                placeholder="Search quotation or customer..."
+                placeholder="Search incentive or customer..."
                 className="h-10 w-full rounded-lg border border-slate-300 bg-white pl-9 pr-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
               />
             </div>
@@ -1425,9 +1429,7 @@ export default function QuotationListPage() {
                       customer.value
                     }
                   >
-                    {
-                      customer.label
-                    }
+                    {customer.label}
                   </option>
                 )
               )}
@@ -1451,7 +1453,7 @@ export default function QuotationListPage() {
               className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none sm:max-w-[180px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
             >
               <option value="">
-                All Quotation Statuses
+                All Incentive Statuses
               </option>
 
               <option value="Draft">
@@ -1568,17 +1570,17 @@ export default function QuotationListPage() {
 
       {isLoading ? (
         <div className="py-10 text-center text-sm text-slate-400">
-          Loading...
+          Loading incentives...
         </div>
       ) : paged.length ===
         0 ? (
         <div className="flex min-h-[200px] flex-col items-center justify-center rounded-xl border border-slate-200 bg-white px-6 py-10 text-center shadow-sm dark:border-slate-700 dark:bg-slate-900">
           <h3 className="text-sm font-semibold text-slate-800 dark:text-white">
-            No quotations found
+            No incentives found
           </h3>
 
           <p className="mt-1 max-w-sm text-xs text-slate-500 dark:text-slate-400">
-            No records match your current search or filters.
+            No incentive records match your current search or filters.
           </p>
         </div>
       ) : viewMode ===
@@ -1589,20 +1591,20 @@ export default function QuotationListPage() {
 
         <div className="grid grid-cols-1 items-start gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {paged.map(
-            (quotation) => {
+            (incentive) => {
               const isActive =
-                quotation.is_active !==
+                incentive.is_active !==
                 false;
 
               const status =
-                getQuotationStatus(
-                  quotation
+                getIncentiveStatus(
+                  incentive
                 );
 
               return (
                 <div
                   key={
-                    quotation.id
+                    incentive.id
                   }
                   className={`relative ${CARD_HEIGHT} min-w-0 overflow-visible rounded-2xl border bg-white shadow-sm transition-shadow hover:shadow-lg dark:bg-slate-900 ${
                     isActive
@@ -1622,23 +1624,23 @@ export default function QuotationListPage() {
                         <HoverDetailsTrigger
                           align="left"
                           panel={
-                            <QuotationDetailsCard
-                              quotation={
-                                quotation
+                            <IncentiveDetailsCard
+                              incentive={
+                                incentive
                               }
                             />
                           }
                         >
                           <p className="max-w-[220px] cursor-pointer truncate text-sm font-semibold text-slate-900 dark:text-white">
-                            {quotation.quotation_number ||
-                              `Quotation #${quotation.id}`}
+                            {incentive.quotation_number ||
+                              `Incentive #${incentive.id}`}
                           </p>
                         </HoverDetailsTrigger>
 
                         <p className="mt-0.5 text-[10px] text-slate-400">
                           Customer #
                           {
-                            quotation.customer_id
+                            incentive.customer_id
                           }
                         </p>
                       </div>
@@ -1660,18 +1662,18 @@ export default function QuotationListPage() {
 
                         <span className="truncate">
                           {getCustomerDisplayName(
-                            quotation
+                            incentive
                           )}
                         </span>
                       </div>
 
                       <div className="flex items-center gap-1.5">
-                        <QuotationIcon />
+                        <IncentiveIcon />
 
                         <span className="truncate">
-                          Quotation #
+                          Incentive #
                           {
-                            quotation.id
+                            incentive.id
                           }
                         </span>
                       </div>
@@ -1681,7 +1683,7 @@ export default function QuotationListPage() {
 
                         <span className="truncate font-semibold">
                           {formatCurrency(
-                            quotation.amount
+                            incentive.amount
                           )}
                         </span>
                       </div>
@@ -1692,7 +1694,7 @@ export default function QuotationListPage() {
                         <span className="truncate">
                           Status:{" "}
                           {
-                            quotation.status ||
+                            incentive.status ||
                             "Draft"
                           }
                         </span>
@@ -1705,7 +1707,7 @@ export default function QuotationListPage() {
                       type="button"
                       onClick={() =>
                         handleEdit(
-                          quotation
+                          incentive
                         )
                       }
                       className="bg-white text-xs font-semibold text-slate-600 hover:bg-slate-50 dark:bg-slate-900 dark:text-slate-300"
@@ -1718,11 +1720,11 @@ export default function QuotationListPage() {
                         type="button"
                         disabled={
                           mutatingQuotationId ===
-                          quotation.id
+                          incentive.id
                         }
                         onClick={() =>
                           setDeleteTarget(
-                            quotation
+                            incentive
                           )
                         }
                         className="bg-white text-xs font-semibold text-red-500 hover:bg-red-50 disabled:opacity-40 dark:bg-slate-900 dark:text-red-400"
@@ -1734,11 +1736,11 @@ export default function QuotationListPage() {
                         type="button"
                         disabled={
                           mutatingQuotationId ===
-                          quotation.id
+                          incentive.id
                         }
                         onClick={() =>
                           handleReactivate(
-                            quotation
+                            incentive
                           )
                         }
                         className="bg-white text-xs font-semibold text-emerald-600 hover:bg-emerald-50 disabled:opacity-40 dark:bg-slate-900 dark:text-emerald-400"
@@ -1751,7 +1753,7 @@ export default function QuotationListPage() {
                       type="button"
                       onClick={() =>
                         handleEdit(
-                          quotation
+                          incentive
                         )
                       }
                       className="bg-white text-xs font-semibold text-primary-600 hover:bg-primary-50 dark:bg-slate-900 dark:text-primary-400"
@@ -1774,7 +1776,7 @@ export default function QuotationListPage() {
             <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-400">
               <tr>
                 <th className="px-4 py-3 font-medium">
-                  Quotation #
+                  Incentive #
                 </th>
 
                 <th className="px-4 py-3 font-medium">
@@ -1782,7 +1784,7 @@ export default function QuotationListPage() {
                 </th>
 
                 <th className="px-4 py-3 font-medium">
-                  Amount
+                  Incentive Amount
                 </th>
 
                 <th className="px-4 py-3 font-medium">
@@ -1801,20 +1803,20 @@ export default function QuotationListPage() {
 
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {paged.map(
-                (quotation) => {
+                (incentive) => {
                   const isActive =
-                    quotation.is_active !==
+                    incentive.is_active !==
                     false;
 
                   const status =
-                    getQuotationStatus(
-                      quotation
+                    getIncentiveStatus(
+                      incentive
                     );
 
                   return (
                     <tr
                       key={
-                        quotation.id
+                        incentive.id
                       }
                       className="hover:bg-slate-50 dark:hover:bg-slate-800/40"
                     >
@@ -1822,23 +1824,23 @@ export default function QuotationListPage() {
                         <HoverDetailsTrigger
                           align="left"
                           panel={
-                            <QuotationDetailsCard
-                              quotation={
-                                quotation
+                            <IncentiveDetailsCard
+                              incentive={
+                                incentive
                               }
                             />
                           }
                         >
                           <span className="cursor-pointer font-medium text-slate-800 dark:text-slate-100">
-                            {quotation.quotation_number ||
-                              `Quotation #${quotation.id}`}
+                            {incentive.quotation_number ||
+                              `Incentive #${incentive.id}`}
                           </span>
                         </HoverDetailsTrigger>
 
                         <p className="mt-0.5 text-[10px] text-slate-400">
                           ID #
                           {
-                            quotation.id
+                            incentive.id
                           }
                         </p>
                       </td>
@@ -1846,21 +1848,21 @@ export default function QuotationListPage() {
                       <td className="px-4 py-3">
                         <span className="font-medium text-slate-700 dark:text-slate-200">
                           {getCustomerDisplayName(
-                            quotation
+                            incentive
                           )}
                         </span>
 
                         <p className="mt-0.5 text-[10px] text-slate-400">
                           Customer #
                           {
-                            quotation.customer_id
+                            incentive.customer_id
                           }
                         </p>
                       </td>
 
                       <td className="px-4 py-3 font-semibold text-slate-700 dark:text-slate-200">
                         {formatCurrency(
-                          quotation.amount
+                          incentive.amount
                         )}
                       </td>
 
@@ -1899,10 +1901,10 @@ export default function QuotationListPage() {
                       <td className="px-2 py-3">
                         <div className="flex items-center justify-end gap-0.5">
                           <IconButton
-                            title="Edit"
+                            title="Edit Incentive"
                             onClick={() =>
                               handleEdit(
-                                quotation
+                                incentive
                               )
                             }
                           >
@@ -1924,15 +1926,15 @@ export default function QuotationListPage() {
 
                           {isActive ? (
                             <IconButton
-                              title="Deactivate"
+                              title="Deactivate Incentive"
                               tone="red"
                               disabled={
                                 mutatingQuotationId ===
-                                quotation.id
+                                incentive.id
                               }
                               onClick={() =>
                                 setDeleteTarget(
-                                  quotation
+                                  incentive
                                 )
                               }
                             >
@@ -1953,15 +1955,15 @@ export default function QuotationListPage() {
                             </IconButton>
                           ) : (
                             <IconButton
-                              title="Reactivate"
+                              title="Reactivate Incentive"
                               tone="emerald"
                               disabled={
                                 mutatingQuotationId ===
-                                quotation.id
+                                incentive.id
                               }
                               onClick={() =>
                                 handleReactivate(
-                                  quotation
+                                  incentive
                                 )
                               }
                             >
@@ -2005,11 +2007,12 @@ export default function QuotationListPage() {
             type="button"
             disabled={page <= 1}
             onClick={() =>
-              setPage((current) =>
-                Math.max(
-                  1,
-                  current - 1
-                )
+              setPage(
+                (current) =>
+                  Math.max(
+                    1,
+                    current - 1
+                  )
               )
             }
             className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800"
@@ -2023,11 +2026,12 @@ export default function QuotationListPage() {
               page >= pageCount
             }
             onClick={() =>
-              setPage((current) =>
-                Math.min(
-                  pageCount,
-                  current + 1
-                )
+              setPage(
+                (current) =>
+                  Math.min(
+                    pageCount,
+                    current + 1
+                  )
               )
             }
             className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800"
@@ -2044,21 +2048,23 @@ export default function QuotationListPage() {
         onClose={closeModal}
         title={
           editingQuotation
-            ? "Edit Quotation"
-            : "Add Quotation"
+            ? "Edit Incentive"
+            : "Add Incentive"
         }
       >
         <QuotationForm
           key={
             editingQuotation?.id ??
-            "new-quotation"
+            "new-incentive"
           }
           formId="quotations-form"
           initialData={
             editingQuotation ||
             {}
           }
-          onSubmit={handleSubmit}
+          onSubmit={
+            handleSubmit
+          }
           loading={isSaving}
         />
       </Modal>
@@ -2066,17 +2072,19 @@ export default function QuotationListPage() {
       {/* DEACTIVATE */}
 
       <ConfirmDialog
-        open={!!deleteTarget}
+        open={
+          !!deleteTarget
+        }
         onClose={() =>
           setDeleteTarget(null)
         }
         onConfirm={
           confirmDeactivate
         }
-        title="Deactivate Quotation"
+        title="Deactivate Incentive"
         message={
           deleteTarget
-            ? `Are you sure you want to deactivate quotation #${
+            ? `Are you sure you want to deactivate incentive #${
                 deleteTarget.quotation_number ||
                 deleteTarget.id
               }?`

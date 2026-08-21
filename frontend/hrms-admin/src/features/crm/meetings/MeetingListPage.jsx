@@ -37,20 +37,25 @@ const EXPORT_COLUMNS = [
   },
   {
     header: "Customer",
-    accessor: (r) => getCustomerDisplayName(r),
+    accessor: (r) =>
+      getCustomerDisplayName(r),
   },
   {
-    header: "Meeting Date",
-    accessor: (r) => r.meeting_date,
+    header: "Registration Date",
+    accessor: (r) =>
+      r.meeting_date,
   },
   {
-    header: "Notes",
-    accessor: (r) => r.notes || "",
+    header: "Registration Notes",
+    accessor: (r) =>
+      r.notes || "",
   },
   {
     header: "Active",
     accessor: (r) =>
-      r.is_active !== false ? "Yes" : "No",
+      r.is_active !== false
+        ? "Yes"
+        : "No",
   },
 ];
 
@@ -58,27 +63,31 @@ const EXPORT_COLUMNS = [
    HELPERS
 ========================================================= */
 
-function getCustomerDisplayName(meeting) {
-  if (!meeting) {
+function getCustomerDisplayName(
+  registration
+) {
+  if (!registration) {
     return "";
   }
 
   const customer =
-    meeting.customer ||
-    meeting.customer_data;
+    registration.customer ||
+    registration.customer_data;
 
   if (customer) {
     return (
       customer.customer_name ||
       customer.name ||
       `Customer #${
-        customer.id || meeting.customer_id
+        customer.id ||
+        registration.customer_id
       }`
     );
   }
 
   return `Customer #${
-    meeting.customer_id ?? "-"
+    registration.customer_id ??
+    "-"
   }`;
 }
 
@@ -110,12 +119,19 @@ function formatDateTime(value) {
   return date.toLocaleString();
 }
 
-function getMeetingStatus(meeting) {
-  if (meeting?.is_active === false) {
+function getRegistrationStatus(
+  registration
+) {
+  if (
+    registration?.is_active ===
+    false
+  ) {
     return "Inactive";
   }
 
-  if (!meeting?.meeting_date) {
+  if (
+    !registration?.meeting_date
+  ) {
     return "Scheduled";
   }
 
@@ -123,25 +139,35 @@ function getMeetingStatus(meeting) {
 
   today.setHours(0, 0, 0, 0);
 
-  const meetingDate = new Date(
-    meeting.meeting_date
-  );
+  const registrationDate =
+    new Date(
+      registration.meeting_date
+    );
 
-  if (Number.isNaN(meetingDate.getTime())) {
+  if (
+    Number.isNaN(
+      registrationDate.getTime()
+    )
+  ) {
     return "Scheduled";
   }
 
-  meetingDate.setHours(0, 0, 0, 0);
+  registrationDate.setHours(
+    0,
+    0,
+    0,
+    0
+  );
 
   if (
-    meetingDate.getTime() <
+    registrationDate.getTime() <
     today.getTime()
   ) {
     return "Completed";
   }
 
   if (
-    meetingDate.getTime() ===
+    registrationDate.getTime() ===
     today.getTime()
   ) {
     return "Today";
@@ -175,13 +201,16 @@ function getStatusBadgeClass(status) {
    API HELPERS
 ========================================================= */
 
-async function updateMeetingRecord(id, payload) {
+async function updateRegistrationRecord(
+  id,
+  payload
+) {
   if (
     typeof crmApi?.meetings?.update !==
     "function"
   ) {
     throw new Error(
-      "Meeting update API method is not configured."
+      "Registration update API method is not configured."
     );
   }
 
@@ -191,23 +220,32 @@ async function updateMeetingRecord(id, payload) {
   );
 }
 
-async function deactivateMeetingRecord(id) {
+async function deactivateRegistrationRecord(
+  id
+) {
   if (
     typeof crmApi?.meetings?.deactivate !==
     "function"
   ) {
     throw new Error(
-      "Meeting deactivate API method is not configured."
+      "Registration deactivate API method is not configured."
     );
   }
 
-  return crmApi.meetings.deactivate(id);
+  return crmApi.meetings.deactivate(
+    id
+  );
 }
 
-async function reactivateMeetingRecord(id) {
-  return updateMeetingRecord(id, {
-    is_active: true,
-  });
+async function reactivateRegistrationRecord(
+  id
+) {
+  return updateRegistrationRecord(
+    id,
+    {
+      is_active: true,
+    }
+  );
 }
 
 /* =========================================================
@@ -441,7 +479,7 @@ function HoverDetailsTrigger({
   return (
     <div
       tabIndex={0}
-      className="group/meeting-details relative inline-flex max-w-full outline-none"
+      className="group/registration-details relative inline-flex max-w-full outline-none"
     >
       <div className="max-w-full">
         {children}
@@ -458,12 +496,12 @@ function HoverDetailsTrigger({
           opacity-0
           transition-all
           duration-150
-          group-hover/meeting-details:pointer-events-auto
-          group-hover/meeting-details:visible
-          group-hover/meeting-details:opacity-100
-          group-focus/meeting-details:pointer-events-auto
-          group-focus/meeting-details:visible
-          group-focus/meeting-details:opacity-100
+          group-hover/registration-details:pointer-events-auto
+          group-hover/registration-details:visible
+          group-hover/registration-details:opacity-100
+          group-focus/registration-details:pointer-events-auto
+          group-focus/registration-details:visible
+          group-focus/registration-details:opacity-100
           ${alignClasses[align]}
         `}
       >
@@ -474,21 +512,22 @@ function HoverDetailsTrigger({
 }
 
 /* =========================================================
-   MEETING DETAILS CARD
+   REGISTRATION DETAILS CARD
 ========================================================= */
 
-function MeetingDetailsCard({
-  meeting,
+function RegistrationDetailsCard({
+  registration,
 }) {
   const customer =
-    meeting?.customer ||
-    meeting?.customer_data;
+    registration?.customer ||
+    registration?.customer_data;
 
   const customerName =
     customer?.customer_name ||
     customer?.name ||
     `Customer #${
-      meeting?.customer_id ?? "-"
+      registration?.customer_id ??
+      "-"
     }`;
 
   const customerPhone =
@@ -497,26 +536,27 @@ function MeetingDetailsCard({
     "-";
 
   const customerEmail =
-    customer?.email ||
-    "-";
+    customer?.email || "-";
 
   const customerAddress =
-    customer?.address ||
-    "-";
+    customer?.address || "-";
 
   const status =
-    getMeetingStatus(meeting);
+    getRegistrationStatus(
+      registration
+    );
 
   return (
     <div className="w-[360px] max-w-[calc(100vw-32px)] rounded-xl border border-slate-200 border-t-2 border-t-primary-500 bg-white p-4 text-left shadow-xl dark:border-slate-700 dark:bg-slate-800">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-            Meeting Details
+            Registration Details
           </p>
 
           <p className="mt-1 break-words text-sm font-semibold text-slate-800 dark:text-white">
-            Meeting #{meeting?.id ?? "-"}
+            Registration #
+            {registration?.id ?? "-"}
           </p>
         </div>
 
@@ -548,7 +588,9 @@ function MeetingDetailsCard({
           </span>
 
           <span className="text-right text-xs font-medium text-slate-700 dark:text-slate-200">
-            #{meeting?.customer_id ?? "—"}
+            #
+            {registration?.customer_id ??
+              "—"}
           </span>
         </div>
 
@@ -574,12 +616,12 @@ function MeetingDetailsCard({
 
         <div className="grid grid-cols-[100px_minmax(0,1fr)] gap-3">
           <span className="text-xs text-slate-400">
-            Meeting Date
+            Registration Date
           </span>
 
           <span className="text-right text-xs font-medium text-slate-700 dark:text-slate-200">
             {formatDate(
-              meeting?.meeting_date
+              registration?.meeting_date
             )}
           </span>
         </div>
@@ -599,12 +641,12 @@ function MeetingDetailsCard({
 
       <div>
         <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
-          Notes
+          Registration Notes
         </p>
 
         <p className="break-words text-xs leading-5 text-slate-700 dark:text-slate-200">
-          {meeting?.notes ||
-            "No notes added."}
+          {registration?.notes ||
+            "No registration notes added."}
         </p>
       </div>
 
@@ -618,7 +660,7 @@ function MeetingDetailsCard({
 
           <p className="mt-0.5 text-[10px] font-medium text-slate-700 dark:text-slate-200">
             {formatDateTime(
-              meeting?.created_at
+              registration?.created_at
             )}
           </p>
         </div>
@@ -630,7 +672,7 @@ function MeetingDetailsCard({
 
           <p className="mt-0.5 text-[10px] font-medium text-slate-700 dark:text-slate-200">
             {formatDateTime(
-              meeting?.updated_at
+              registration?.updated_at
             )}
           </p>
         </div>
@@ -643,12 +685,14 @@ function MeetingDetailsCard({
 
         <span
           className={`text-[10px] font-semibold ${
-            meeting?.is_active !== false
+            registration?.is_active !==
+            false
               ? "text-emerald-600 dark:text-emerald-400"
               : "text-red-600 dark:text-red-400"
           }`}
         >
-          {meeting?.is_active !== false
+          {registration?.is_active !==
+          false
             ? "Yes"
             : "No"}
         </span>
@@ -701,7 +745,8 @@ const IconButton = ({
 ========================================================= */
 
 export default function MeetingListPage() {
-  const { showToast } = useToast();
+  const { showToast } =
+    useToast();
 
   const {
     data: allData,
@@ -789,9 +834,11 @@ export default function MeetingListPage() {
     exportColumns:
       EXPORT_COLUMNS,
 
-    filename: "meetings",
+    filename:
+      "registrations",
 
-    title: "Meetings",
+    title:
+      "Customer Registrations",
   });
 
   /* =======================================================
@@ -823,8 +870,9 @@ export default function MeetingListPage() {
       () =>
         allMeetings.filter(
           (item) =>
-            getMeetingStatus(item) ===
-            "Today"
+            getRegistrationStatus(
+              item
+            ) === "Today"
         ),
       [allMeetings]
     );
@@ -834,8 +882,9 @@ export default function MeetingListPage() {
       () =>
         allMeetings.filter(
           (item) =>
-            getMeetingStatus(item) ===
-            "Completed"
+            getRegistrationStatus(
+              item
+            ) === "Completed"
         ),
       [allMeetings]
     );
@@ -844,76 +893,81 @@ export default function MeetingListPage() {
      FILTERED DATA
   ======================================================= */
 
-  const filtered = useMemo(() => {
-    const normalizedSearch =
-      search.trim().toLowerCase();
+  const filtered =
+    useMemo(() => {
+      const normalizedSearch =
+        search.trim().toLowerCase();
 
-    return allMeetings.filter(
-      (meeting) => {
-        const isActive =
-          meeting.is_active !== false;
-
-        if (
-          activeFilter === "active" &&
-          !isActive
-        ) {
-          return false;
-        }
-
-        if (
-          activeFilter === "inactive" &&
-          isActive
-        ) {
-          return false;
-        }
-
-        if (
-          customerFilter &&
-          String(meeting.customer_id) !==
-            String(customerFilter)
-        ) {
-          return false;
-        }
-
-        if (
-          statusFilter &&
-          getMeetingStatus(meeting) !==
-            statusFilter
-        ) {
-          return false;
-        }
-
-        if (normalizedSearch) {
-          const haystack = [
-            meeting.customer_id,
-            getCustomerDisplayName(
-              meeting
-            ),
-            meeting.meeting_date,
-            meeting.notes,
-          ]
-            .join(" ")
-            .toLowerCase();
+      return allMeetings.filter(
+        (registration) => {
+          const isActive =
+            registration.is_active !==
+            false;
 
           if (
-            !haystack.includes(
-              normalizedSearch
-            )
+            activeFilter === "active" &&
+            !isActive
           ) {
             return false;
           }
-        }
 
-        return true;
-      }
-    );
-  }, [
-    allMeetings,
-    search,
-    customerFilter,
-    statusFilter,
-    activeFilter,
-  ]);
+          if (
+            activeFilter === "inactive" &&
+            isActive
+          ) {
+            return false;
+          }
+
+          if (
+            customerFilter &&
+            String(
+              registration.customer_id
+            ) !==
+              String(customerFilter)
+          ) {
+            return false;
+          }
+
+          if (
+            statusFilter &&
+            getRegistrationStatus(
+              registration
+            ) !== statusFilter
+          ) {
+            return false;
+          }
+
+          if (normalizedSearch) {
+            const haystack = [
+              registration.customer_id,
+              getCustomerDisplayName(
+                registration
+              ),
+              registration.meeting_date,
+              registration.notes,
+            ]
+              .join(" ")
+              .toLowerCase();
+
+            if (
+              !haystack.includes(
+                normalizedSearch
+              )
+            ) {
+              return false;
+            }
+          }
+
+          return true;
+        }
+      );
+    }, [
+      allMeetings,
+      search,
+      customerFilter,
+      statusFilter,
+      activeFilter,
+    ]);
 
   /* =======================================================
      PAGINATION
@@ -945,13 +999,19 @@ export default function MeetingListPage() {
     setModalOpen(true);
   };
 
-  const handleEdit = (meeting) => {
+  const handleEdit = (
+    registration
+  ) => {
     setEditingMeeting({
-      ...meeting,
+      ...registration,
 
       customer_id:
-        meeting.customer_id ??
-        meeting.customer?.id ??
+        registration.customer_id ??
+        registration.customer?.id ??
+        "",
+
+      meeting_date:
+        registration.meeting_date ??
         "",
     });
 
@@ -967,65 +1027,64 @@ export default function MeetingListPage() {
     setEditingMeeting(null);
   };
 
-  const handleSubmit = async (
-    payload
-  ) => {
-    try {
-      setSaving(true);
+  const handleSubmit =
+    async (payload) => {
+      try {
+        setSaving(true);
 
-      const normalizedPayload = {
-        ...payload,
+        const normalizedPayload = {
+          ...payload,
 
-        customer_id:
-          payload?.customer_id
-            ? Number(
-                payload.customer_id
-              )
-            : null,
-      };
+          customer_id:
+            payload?.customer_id
+              ? Number(
+                  payload.customer_id
+                )
+              : null,
+        };
 
-      if (editingMeeting) {
-        await updateMeetingRecord(
-          editingMeeting.id,
-          normalizedPayload
+        if (editingMeeting) {
+          await updateRegistrationRecord(
+            editingMeeting.id,
+            normalizedPayload
+          );
+
+          showToast(
+            "Registration updated",
+            "success"
+          );
+        } else {
+          await createMeeting.mutateAsync(
+            normalizedPayload
+          );
+
+          showToast(
+            "Registration created",
+            "success"
+          );
+        }
+
+        setModalOpen(false);
+        setEditingMeeting(null);
+
+        await refetch();
+      } catch (error) {
+        console.error(
+          "Registration save failed:",
+          error
         );
 
         showToast(
-          "Meeting updated",
-          "success"
+          error?.response?.data
+            ?.message ||
+            error?.message ||
+            "Failed to save registration",
+          "error"
         );
-      } else {
-        await createMeeting.mutateAsync(
-          normalizedPayload
-        );
-
-        showToast(
-          "Meeting created",
-          "success"
-        );
+      } finally {
+        setSaving(false);
       }
-
-      setModalOpen(false);
-      setEditingMeeting(null);
-
-      await refetch();
-    } catch (error) {
-      console.error(
-        "Meeting save failed:",
-        error
-      );
-
-      showToast(
-        error?.response?.data
-          ?.message ||
-          error?.message ||
-          "Failed to save meeting",
-        "error"
-      );
-    } finally {
-      setSaving(false);
-    }
-  };
+    };
 
   const confirmDeactivate =
     async () => {
@@ -1038,12 +1097,12 @@ export default function MeetingListPage() {
           deleteTarget.id
         );
 
-        await deactivateMeetingRecord(
+        await deactivateRegistrationRecord(
           deleteTarget.id
         );
 
         showToast(
-          "Meeting deactivated",
+          "Registration deactivated",
           "success"
         );
 
@@ -1052,7 +1111,7 @@ export default function MeetingListPage() {
         await refetch();
       } catch (error) {
         console.error(
-          "Meeting deactivation failed:",
+          "Registration deactivation failed:",
           error
         );
 
@@ -1060,38 +1119,40 @@ export default function MeetingListPage() {
           error?.response?.data
             ?.message ||
             error?.message ||
-            "Failed to deactivate meeting",
+            "Failed to deactivate registration",
           "error"
         );
       } finally {
-        setMutatingMeetingId(null);
+        setMutatingMeetingId(
+          null
+        );
       }
     };
 
   const handleReactivate =
-    async (meeting) => {
-      if (!meeting?.id) {
+    async (registration) => {
+      if (!registration?.id) {
         return;
       }
 
       try {
         setMutatingMeetingId(
-          meeting.id
+          registration.id
         );
 
-        await reactivateMeetingRecord(
-          meeting.id
+        await reactivateRegistrationRecord(
+          registration.id
         );
 
         showToast(
-          "Meeting reactivated",
+          "Registration reactivated",
           "success"
         );
 
         await refetch();
       } catch (error) {
         console.error(
-          "Meeting reactivation failed:",
+          "Registration reactivation failed:",
           error
         );
 
@@ -1099,11 +1160,13 @@ export default function MeetingListPage() {
           error?.response?.data
             ?.message ||
             error?.message ||
-            "Failed to reactivate meeting",
+            "Failed to reactivate registration",
           "error"
         );
       } finally {
-        setMutatingMeetingId(null);
+        setMutatingMeetingId(
+          null
+        );
       }
     };
 
@@ -1126,7 +1189,7 @@ export default function MeetingListPage() {
   if (isError) {
     return (
       <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-600 dark:border-red-900/40 dark:bg-red-950/20 dark:text-red-400">
-        Failed to load meetings.
+        Failed to load registrations.
       </div>
     );
   }
@@ -1142,11 +1205,11 @@ export default function MeetingListPage() {
       <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-            Registeration
+            Registration
           </h1>
 
           <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
-            Customer meeting log
+            Customer registration log
           </p>
         </div>
 
@@ -1154,7 +1217,9 @@ export default function MeetingListPage() {
           <TableToolbar
             onRefresh={refetch}
             refreshing={isFetching}
-            onExportExcel={exportExcel}
+            onExportExcel={
+              exportExcel
+            }
             onExportPDF={exportPDF}
             exporting={exporting}
           />
@@ -1168,7 +1233,7 @@ export default function MeetingListPage() {
               +
             </span>
 
-            Add Registeration
+            Add Registration
           </Button>
         </div>
       </div>
@@ -1178,29 +1243,37 @@ export default function MeetingListPage() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           icon={<MeetingStatIcon />}
-          value={allMeetings.length}
-          label="Total Meetings"
+          value={
+            allMeetings.length
+          }
+          label="Total Registrations"
           tone="sky"
         />
 
         <StatCard
           icon={<TodayStatIcon />}
-          value={todayMeetings.length}
-          label="Today's Meetings"
+          value={
+            todayMeetings.length
+          }
+          label="Today's Registrations"
           tone="amber"
         />
 
         <StatCard
           icon={<CompletedStatIcon />}
-          value={completedMeetings.length}
-          label="Completed Meetings"
+          value={
+            completedMeetings.length
+          }
+          label="Completed Registrations"
           tone="emerald"
         />
 
         <StatCard
           icon={<InactiveStatIcon />}
-          value={inactiveMeetings.length}
-          label="Inactive Meetings"
+          value={
+            inactiveMeetings.length
+          }
+          label="Inactive Registrations"
           tone="slate"
         />
       </div>
@@ -1240,7 +1313,7 @@ export default function MeetingListPage() {
 
                   setPage(1);
                 }}
-                placeholder="Search customer or notes..."
+                placeholder="Search customer or registration notes..."
                 className="h-10 w-full rounded-lg border border-slate-300 bg-white pl-9 pr-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
               />
             </div>
@@ -1248,7 +1321,9 @@ export default function MeetingListPage() {
             {/* CUSTOMER */}
 
             <select
-              value={customerFilter}
+              value={
+                customerFilter
+              }
               onChange={(event) => {
                 setCustomerFilter(
                   event.target.value
@@ -1265,8 +1340,12 @@ export default function MeetingListPage() {
               {customerOptions.map(
                 (customer) => (
                   <option
-                    key={customer.value}
-                    value={customer.value}
+                    key={
+                      customer.value
+                    }
+                    value={
+                      customer.value
+                    }
                   >
                     {customer.label}
                   </option>
@@ -1277,7 +1356,9 @@ export default function MeetingListPage() {
             {/* STATUS */}
 
             <select
-              value={statusFilter}
+              value={
+                statusFilter
+              }
               onChange={(event) => {
                 setStatusFilter(
                   event.target.value
@@ -1288,7 +1369,7 @@ export default function MeetingListPage() {
               className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none sm:max-w-[180px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
             >
               <option value="">
-                All Meeting Statuses
+                All Registration Statuses
               </option>
 
               <option value="Scheduled">
@@ -1311,7 +1392,9 @@ export default function MeetingListPage() {
                 "active") && (
               <button
                 type="button"
-                onClick={clearFilters}
+                onClick={
+                  clearFilters
+                }
                 className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-xs font-medium text-slate-600 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300"
               >
                 Clear Filters
@@ -1327,27 +1410,31 @@ export default function MeetingListPage() {
                 "active",
                 "inactive",
                 "all",
-              ].map((status) => (
-                <button
-                  key={status}
-                  type="button"
-                  onClick={() => {
-                    setActiveFilter(
+              ].map(
+                (status) => (
+                  <button
+                    key={
                       status
-                    );
+                    }
+                    type="button"
+                    onClick={() => {
+                      setActiveFilter(
+                        status
+                      );
 
-                    setPage(1);
-                  }}
-                  className={`rounded-md px-3 py-1.5 text-xs font-medium capitalize ${
-                    activeFilter ===
-                    status
-                      ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
-                      : "text-slate-500 dark:text-slate-400"
-                  }`}
-                >
-                  {status}
-                </button>
-              ))}
+                      setPage(1);
+                    }}
+                    className={`rounded-md px-3 py-1.5 text-xs font-medium capitalize ${
+                      activeFilter ===
+                      status
+                        ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
+                        : "text-slate-500 dark:text-slate-400"
+                    }`}
+                  >
+                    {status}
+                  </button>
+                )
+              )}
             </div>
 
             {/* VIEW SWITCH */}
@@ -1356,7 +1443,9 @@ export default function MeetingListPage() {
               <button
                 type="button"
                 onClick={() => {
-                  setViewMode("card");
+                  setViewMode(
+                    "card"
+                  );
                   setPage(1);
                 }}
                 className={`rounded-md px-3 py-1.5 text-xs font-medium ${
@@ -1371,7 +1460,9 @@ export default function MeetingListPage() {
               <button
                 type="button"
                 onClick={() => {
-                  setViewMode("table");
+                  setViewMode(
+                    "table"
+                  );
                   setPage(1);
                 }}
                 className={`rounded-md px-3 py-1.5 text-xs font-medium ${
@@ -1391,12 +1482,12 @@ export default function MeetingListPage() {
 
       {isLoading ? (
         <div className="py-10 text-center text-sm text-slate-400">
-          Loading...
+          Loading registrations...
         </div>
       ) : paged.length === 0 ? (
         <div className="flex min-h-[200px] flex-col items-center justify-center rounded-xl border border-slate-200 bg-white px-6 py-10 text-center shadow-sm dark:border-slate-700 dark:bg-slate-900">
           <h3 className="text-sm font-semibold text-slate-800 dark:text-white">
-            No meetings found
+            No registrations found
           </h3>
 
           <p className="mt-1 max-w-sm text-xs text-slate-500 dark:text-slate-400">
@@ -1409,152 +1500,169 @@ export default function MeetingListPage() {
         =================================================== */
 
         <div className="grid grid-cols-1 items-start gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {paged.map((meeting) => {
-            const isActive =
-              meeting.is_active !== false;
+          {paged.map(
+            (registration) => {
+              const isActive =
+                registration.is_active !==
+                false;
 
-            const status =
-              getMeetingStatus(meeting);
+              const status =
+                getRegistrationStatus(
+                  registration
+                );
 
-            return (
-              <div
-                key={meeting.id}
-                className={`relative ${CARD_HEIGHT} min-w-0 overflow-visible rounded-2xl border bg-white shadow-sm transition-shadow hover:shadow-lg dark:bg-slate-900 ${
-                  isActive
-                    ? "border-slate-200 dark:border-slate-700"
-                    : "border-red-100 dark:border-red-900/30"
-                }`}
-              >
+              return (
                 <div
-                  className={`h-full p-4 pb-12 ${
-                    !isActive
-                      ? "opacity-75"
-                      : ""
+                  key={
+                    registration.id
+                  }
+                  className={`relative ${CARD_HEIGHT} min-w-0 overflow-visible rounded-2xl border bg-white shadow-sm transition-shadow hover:shadow-lg dark:bg-slate-900 ${
+                    isActive
+                      ? "border-slate-200 dark:border-slate-700"
+                      : "border-red-100 dark:border-red-900/30"
                   }`}
                 >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <HoverDetailsTrigger
-                        align="left"
-                        panel={
-                          <MeetingDetailsCard
-                            meeting={meeting}
-                          />
-                        }
-                      >
-                        <p className="max-w-[220px] cursor-pointer truncate text-sm font-semibold text-slate-900 dark:text-white">
-                          {getCustomerDisplayName(
-                            meeting
-                          )}
+                  <div
+                    className={`h-full p-4 pb-12 ${
+                      !isActive
+                        ? "opacity-75"
+                        : ""
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <HoverDetailsTrigger
+                          align="left"
+                          panel={
+                            <RegistrationDetailsCard
+                              registration={
+                                registration
+                              }
+                            />
+                          }
+                        >
+                          <p className="max-w-[220px] cursor-pointer truncate text-sm font-semibold text-slate-900 dark:text-white">
+                            {getCustomerDisplayName(
+                              registration
+                            )}
+                          </p>
+                        </HoverDetailsTrigger>
+
+                        <p className="mt-0.5 text-[10px] text-slate-400">
+                          Registration #
+                          {
+                            registration.id
+                          }
                         </p>
-                      </HoverDetailsTrigger>
+                      </div>
 
-                      <p className="mt-0.5 text-[10px] text-slate-400">
-                        Meeting #{meeting.id}
-                      </p>
-                    </div>
-
-                    <Badge
-                      className={getStatusBadgeClass(
-                        status
-                      )}
-                    >
-                      {status}
-                    </Badge>
-                  </div>
-
-                  <div className="my-3 border-t border-slate-100 dark:border-slate-800" />
-
-                  <div className="space-y-2 text-xs text-slate-600 dark:text-slate-300">
-                    <div className="flex items-center gap-1.5">
-                      <CustomerIcon />
-
-                      <span className="truncate">
-                        Customer ID #
-                        {meeting.customer_id ??
-                          "-"}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-1.5">
-                      <CalendarIcon />
-
-                      <span className="truncate">
-                        {formatDate(
-                          meeting.meeting_date
+                      <Badge
+                        className={getStatusBadgeClass(
+                          status
                         )}
-                      </span>
+                      >
+                        {status}
+                      </Badge>
                     </div>
 
-                    <div className="flex items-start gap-1.5">
-                      <NoteIcon />
+                    <div className="my-3 border-t border-slate-100 dark:border-slate-800" />
 
-                      <span className="line-clamp-3">
-                        {meeting.notes ||
-                          "No notes added."}
-                      </span>
+                    <div className="space-y-2 text-xs text-slate-600 dark:text-slate-300">
+                      <div className="flex items-center gap-1.5">
+                        <CustomerIcon />
+
+                        <span className="truncate">
+                          Customer ID #
+                          {registration.customer_id ??
+                            "-"}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
+                        <CalendarIcon />
+
+                        <span className="truncate">
+                          Registration Date:{" "}
+                          {formatDate(
+                            registration.meeting_date
+                          )}
+                        </span>
+                      </div>
+
+                      <div className="flex items-start gap-1.5">
+                        <NoteIcon />
+
+                        <span className="line-clamp-3">
+                          {registration.notes ||
+                            "No registration notes added."}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="absolute inset-x-0 bottom-0 z-30 grid h-11 grid-cols-3 gap-px border-t border-slate-100 bg-slate-100 dark:border-slate-700 dark:bg-slate-800">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      handleEdit(meeting)
-                    }
-                    className="bg-white text-xs font-semibold text-slate-600 hover:bg-slate-50 dark:bg-slate-900 dark:text-slate-300"
-                  >
-                    Edit
-                  </button>
-
-                  {isActive ? (
+                  <div className="absolute inset-x-0 bottom-0 z-30 grid h-11 grid-cols-3 gap-px border-t border-slate-100 bg-slate-100 dark:border-slate-700 dark:bg-slate-800">
                     <button
                       type="button"
-                      disabled={
-                        mutatingMeetingId ===
-                        meeting.id
-                      }
                       onClick={() =>
-                        setDeleteTarget(
-                          meeting
+                        handleEdit(
+                          registration
                         )
                       }
-                      className="bg-white text-xs font-semibold text-red-500 hover:bg-red-50 disabled:opacity-40 dark:bg-slate-900 dark:text-red-400"
+                      className="bg-white text-xs font-semibold text-slate-600 hover:bg-slate-50 dark:bg-slate-900 dark:text-slate-300"
                     >
-                      Deactivate
+                      Edit
                     </button>
-                  ) : (
+
+                    {isActive ? (
+                      <button
+                        type="button"
+                        disabled={
+                          mutatingMeetingId ===
+                          registration.id
+                        }
+                        onClick={() =>
+                          setDeleteTarget(
+                            registration
+                          )
+                        }
+                        className="bg-white text-xs font-semibold text-red-500 hover:bg-red-50 disabled:opacity-40 dark:bg-slate-900 dark:text-red-400"
+                      >
+                        Deactivate
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled={
+                          mutatingMeetingId ===
+                          registration.id
+                        }
+                        onClick={() =>
+                          handleReactivate(
+                            registration
+                          )
+                        }
+                        className="bg-white text-xs font-semibold text-emerald-600 hover:bg-emerald-50 disabled:opacity-40 dark:bg-slate-900 dark:text-emerald-400"
+                      >
+                        Reactivate
+                      </button>
+                    )}
+
                     <button
                       type="button"
-                      disabled={
-                        mutatingMeetingId ===
-                        meeting.id
-                      }
                       onClick={() =>
-                        handleReactivate(
-                          meeting
+                        handleEdit(
+                          registration
                         )
                       }
-                      className="bg-white text-xs font-semibold text-emerald-600 hover:bg-emerald-50 disabled:opacity-40 dark:bg-slate-900 dark:text-emerald-400"
+                      className="bg-white text-xs font-semibold text-primary-600 hover:bg-primary-50 dark:bg-slate-900 dark:text-primary-400"
                     >
-                      Reactivate
+                      Details
                     </button>
-                  )}
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      handleEdit(meeting)
-                    }
-                    className="bg-white text-xs font-semibold text-primary-600 hover:bg-primary-50 dark:bg-slate-900 dark:text-primary-400"
-                  >
-                    Details
-                  </button>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            }
+          )}
         </div>
       ) : (
         /* ===================================================
@@ -1570,11 +1678,11 @@ export default function MeetingListPage() {
                 </th>
 
                 <th className="px-4 py-3 font-medium">
-                  Meeting Date
+                  Registration Date
                 </th>
 
                 <th className="px-4 py-3 font-medium">
-                  Notes
+                  Registration Notes
                 </th>
 
                 <th className="px-4 py-3 font-medium">
@@ -1592,175 +1700,187 @@ export default function MeetingListPage() {
             </thead>
 
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {paged.map((meeting) => {
-                const isActive =
-                  meeting.is_active !== false;
+              {paged.map(
+                (registration) => {
+                  const isActive =
+                    registration.is_active !==
+                    false;
 
-                const status =
-                  getMeetingStatus(meeting);
+                  const status =
+                    getRegistrationStatus(
+                      registration
+                    );
 
-                return (
-                  <tr
-                    key={meeting.id}
-                    className="hover:bg-slate-50 dark:hover:bg-slate-800/40"
-                  >
-                    <td className="px-4 py-3">
-                      <HoverDetailsTrigger
-                        align="left"
-                        panel={
-                          <MeetingDetailsCard
-                            meeting={meeting}
-                          />
-                        }
-                      >
-                        <span className="cursor-pointer font-medium text-slate-800 dark:text-slate-100">
-                          {getCustomerDisplayName(
-                            meeting
-                          )}
-                        </span>
-                      </HoverDetailsTrigger>
-
-                      <p className="mt-0.5 text-[10px] text-slate-400">
-                        Customer #
-                        {meeting.customer_id ??
-                          "-"}
-                      </p>
-                    </td>
-
-                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
-                      {formatDate(
-                        meeting.meeting_date
-                      )}
-                    </td>
-
-                    <td className="max-w-[300px] px-4 py-3 text-slate-600 dark:text-slate-300">
-                      <span className="line-clamp-2">
-                        {meeting.notes || "-"}
-                      </span>
-                    </td>
-
-                    <td className="px-4 py-3">
-                      <Badge
-                        className={getStatusBadgeClass(
-                          status
-                        )}
-                      >
-                        {status}
-                      </Badge>
-                    </td>
-
-                    <td className="px-4 py-3">
-                      <span
-                        className={`inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-[10px] font-medium ${
-                          isActive
-                            ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300"
-                            : "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300"
-                        }`}
-                      >
-                        <span
-                          className={`h-1.5 w-1.5 rounded-full ${
-                            isActive
-                              ? "bg-emerald-500"
-                              : "bg-red-500"
-                          }`}
-                        />
-
-                        {isActive
-                          ? "Active"
-                          : "Inactive"}
-                      </span>
-                    </td>
-
-                    <td className="px-2 py-3">
-                      <div className="flex items-center justify-end gap-0.5">
-                        <IconButton
-                          title="Edit"
-                          onClick={() =>
-                            handleEdit(
-                              meeting
-                            )
+                  return (
+                    <tr
+                      key={
+                        registration.id
+                      }
+                      className="hover:bg-slate-50 dark:hover:bg-slate-800/40"
+                    >
+                      <td className="px-4 py-3">
+                        <HoverDetailsTrigger
+                          align="left"
+                          panel={
+                            <RegistrationDetailsCard
+                              registration={
+                                registration
+                              }
+                            />
                           }
                         >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-4 w-4"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            strokeWidth={2}
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M16.862 4.487l1.687-1.688a2.121 2.121 0 013 3l-9.9 9.9-4.137 1.034 1.034-4.137 9.9-9.9z"
-                            />
-                          </svg>
-                        </IconButton>
+                          <span className="cursor-pointer font-medium text-slate-800 dark:text-slate-100">
+                            {getCustomerDisplayName(
+                              registration
+                            )}
+                          </span>
+                        </HoverDetailsTrigger>
 
-                        {isActive ? (
-                          <IconButton
-                            title="Deactivate"
-                            tone="red"
-                            disabled={
-                              mutatingMeetingId ===
-                              meeting.id
-                            }
-                            onClick={() =>
-                              setDeleteTarget(
-                                meeting
-                              )
-                            }
-                          >
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              className="h-4 w-4"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                              strokeWidth={2}
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M6 7h12M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m2 0v12a2 2 0 01-2 2H8a2 2 0 01-2-2V7h12z"
-                              />
-                            </svg>
-                          </IconButton>
-                        ) : (
-                          <IconButton
-                            title="Reactivate"
-                            tone="emerald"
-                            disabled={
-                              mutatingMeetingId ===
-                              meeting.id
-                            }
-                            onClick={() =>
-                              handleReactivate(
-                                meeting
-                              )
-                            }
-                          >
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              className="h-4 w-4"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                              strokeWidth={2}
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M4 12a8 8 0 018-8 8.5 8.5 0 017 4M20 4v5h-5M20 12a8 8 0 01-8 8 8.5 8.5 0 017-4M4 20v-5h5"
-                              />
-                            </svg>
-                          </IconButton>
+                        <p className="mt-0.5 text-[10px] text-slate-400">
+                          Customer #
+                          {
+                            registration.customer_id ??
+                            "-"
+                          }
+                        </p>
+                      </td>
+
+                      <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
+                        {formatDate(
+                          registration.meeting_date
                         )}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
+                      </td>
+
+                      <td className="max-w-[300px] px-4 py-3 text-slate-600 dark:text-slate-300">
+                        <span className="line-clamp-2">
+                          {registration.notes ||
+                            "-"}
+                        </span>
+                      </td>
+
+                      <td className="px-4 py-3">
+                        <Badge
+                          className={getStatusBadgeClass(
+                            status
+                          )}
+                        >
+                          {status}
+                        </Badge>
+                      </td>
+
+                      <td className="px-4 py-3">
+                        <span
+                          className={`inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-[10px] font-medium ${
+                            isActive
+                              ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300"
+                              : "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300"
+                          }`}
+                        >
+                          <span
+                            className={`h-1.5 w-1.5 rounded-full ${
+                              isActive
+                                ? "bg-emerald-500"
+                                : "bg-red-500"
+                            }`}
+                          />
+
+                          {isActive
+                            ? "Active"
+                            : "Inactive"}
+                        </span>
+                      </td>
+
+                      <td className="px-2 py-3">
+                        <div className="flex items-center justify-end gap-0.5">
+                          <IconButton
+                            title="Edit Registration"
+                            onClick={() =>
+                              handleEdit(
+                                registration
+                              )
+                            }
+                          >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-4 w-4"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                              strokeWidth={2}
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M16.862 4.487l1.687-1.688a2.121 2.121 0 013 3l-9.9 9.9-4.137 1.034 1.034-4.137 9.9-9.9z"
+                              />
+                            </svg>
+                          </IconButton>
+
+                          {isActive ? (
+                            <IconButton
+                              title="Deactivate Registration"
+                              tone="red"
+                              disabled={
+                                mutatingMeetingId ===
+                                registration.id
+                              }
+                              onClick={() =>
+                                setDeleteTarget(
+                                  registration
+                                )
+                              }
+                            >
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-4 w-4"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                strokeWidth={2}
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M6 7h12M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m2 0v12a2 2 0 01-2 2H8a2 2 0 01-2-2V7h12z"
+                                />
+                              </svg>
+                            </IconButton>
+                          ) : (
+                            <IconButton
+                              title="Reactivate Registration"
+                              tone="emerald"
+                              disabled={
+                                mutatingMeetingId ===
+                                registration.id
+                              }
+                              onClick={() =>
+                                handleReactivate(
+                                  registration
+                                )
+                              }
+                            >
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-4 w-4"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                strokeWidth={2}
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M4 12a8 8 0 018-8 8.5 8.5 0 017 4M20 4v5h-5M20 12a8 8 0 01-8 8 8.5 8.5 0 017-4M4 20v-5h5"
+                                />
+                              </svg>
+                            </IconButton>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                }
+              )}
             </tbody>
           </table>
         </div>
@@ -1770,7 +1890,8 @@ export default function MeetingListPage() {
 
       <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
         <span>
-          Page {page} of {pageCount}
+          Page {page} of{" "}
+          {pageCount}
         </span>
 
         <div className="flex gap-2">
@@ -1778,11 +1899,12 @@ export default function MeetingListPage() {
             type="button"
             disabled={page <= 1}
             onClick={() =>
-              setPage((current) =>
-                Math.max(
-                  1,
-                  current - 1
-                )
+              setPage(
+                (current) =>
+                  Math.max(
+                    1,
+                    current - 1
+                  )
               )
             }
             className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800"
@@ -1796,11 +1918,12 @@ export default function MeetingListPage() {
               page >= pageCount
             }
             onClick={() =>
-              setPage((current) =>
-                Math.min(
-                  pageCount,
-                  current + 1
-                )
+              setPage(
+                (current) =>
+                  Math.min(
+                    pageCount,
+                    current + 1
+                  )
               )
             }
             className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800"
@@ -1817,20 +1940,22 @@ export default function MeetingListPage() {
         onClose={closeModal}
         title={
           editingMeeting
-            ? "Edit Registeration"
-            : "Add Registeration"
+            ? "Edit Registration"
+            : "Add Registration"
         }
       >
         <MeetingForm
           key={
             editingMeeting?.id ??
-            "new-meeting"
+            "new-registration"
           }
           formId="meetings-form"
           initialData={
             editingMeeting || {}
           }
-          onSubmit={handleSubmit}
+          onSubmit={
+            handleSubmit
+          }
           loading={isSaving}
         />
       </Modal>
@@ -1845,10 +1970,10 @@ export default function MeetingListPage() {
         onConfirm={
           confirmDeactivate
         }
-        title="Deactivate Meeting"
+        title="Deactivate Registration"
         message={
           deleteTarget
-            ? `Are you sure you want to deactivate meeting #${deleteTarget.id}?`
+            ? `Are you sure you want to deactivate registration #${deleteTarget.id}?`
             : ""
         }
         confirmText="Deactivate"
