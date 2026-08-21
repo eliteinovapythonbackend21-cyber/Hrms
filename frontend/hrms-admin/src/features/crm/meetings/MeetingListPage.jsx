@@ -1142,7 +1142,7 @@ export default function MeetingListPage() {
       <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-            Meetings
+            Registeration
           </h1>
 
           <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
@@ -1168,7 +1168,7 @@ export default function MeetingListPage() {
               +
             </span>
 
-            Add Meeting
+            Add Registeration
           </Button>
         </div>
       </div>
@@ -1817,8 +1817,8 @@ export default function MeetingListPage() {
         onClose={closeModal}
         title={
           editingMeeting
-            ? "Edit Meeting"
-            : "Add Meeting"
+            ? "Edit Registeration"
+            : "Add Registeration"
         }
       >
         <MeetingForm
