@@ -73,24 +73,40 @@ export const navConfig = [
   //   icon: "attendance",
   //   roles: ["admin", ...EMPLOYEE_LIKE_ROLES],
   // },
-  {
-    label: "Leave Types",
-    path: "/leave-types",
-    icon: "leaveType",
-    roles: ["admin", ...EMPLOYEE_LIKE_ROLES],
-  },
+  // {
+  //   label: "Leave Types",
+  //   path: "/leave-types",
+  //   icon: "leaveType",
+  //   roles: ["admin", ...EMPLOYEE_LIKE_ROLES],
+  // },
   // {
   //   label: "Leaves",
   //   path: "/leaves",
   //   icon: "leaves",
   //   roles: ["admin", ...EMPLOYEE_LIKE_ROLES],
   // },
+
   {
     label: "Holidays",
     path: "/holidays",
     icon: "holiday",
     roles: ["admin", ...EMPLOYEE_LIKE_ROLES],
+    children: [
+      {
+        label: "Holidays",
+        path: "/holidays",
+        icon: "holiday",
+        roles: ["admin", ...EMPLOYEE_LIKE_ROLES],
+      },
+      {
+        label: "Leave Types", 
+        path: "/leave-types",
+        icon: "leaveType",
+        roles: ["admin", ...EMPLOYEE_LIKE_ROLES],
+      },
+    ],
   },
+
   {
     label: "Network Logs",
     path: "/network",
