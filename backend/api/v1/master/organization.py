@@ -8,8 +8,8 @@ from utils import register_crud_blueprint
 organization_bp = register_crud_blueprint(
     "organization_bp",
     Holiday,
-    create_fields=["name", "holiday_date", "is_active"],
-    search_fields=["name"],
+    create_fields=["name", "holiday_date", "holiday_type", "is_active"],
+    search_fields=["name", "holiday_type"],
     url_prefix_singular="holiday",
     editable=True,
     deletable=True,

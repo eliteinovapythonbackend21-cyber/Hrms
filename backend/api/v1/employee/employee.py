@@ -589,13 +589,16 @@ def get_employee_payslip(employee_id, token_response):
     if not (1 <= month <= 12):
         return jsonify({"message": "month must be between 1 and 12"}), 400
 
+    monthly_summary = Attendance.get_monthly_summary(employee.id, month, year) or {}
+
     basic_salary = float(employee.salary) if employee.salary is not None else 0.0
     allowance = float(employee.allowance) if employee.allowance is not None else 0.0
     gross_earnings = round(basic_salary + allowance, 2)
 
+    absent_deduction = monthly_summary.get("absent_deduction", 0.0)
     pf_deduction = round(basic_salary * PF_EMPLOYEE_RATE, 2)
     esi_deduction = round(gross_earnings * ESI_EMPLOYEE_RATE, 2) if gross_earnings <= ESI_WAGE_CEILING else 0.0
-    total_deductions = round(pf_deduction + esi_deduction, 2)
+    total_deductions = round(pf_deduction + esi_deduction + absent_deduction, 2)
     net_pay = round(gross_earnings - total_deductions, 2)
 
     data = {
@@ -622,6 +625,13 @@ def get_employee_payslip(employee_id, token_response):
             "account_number": employee.account_number,
         },
         "period": {"month": month, "year": year},
+        "attendance": {
+            "present_days": monthly_summary.get("present_days"),
+            "absent_days": monthly_summary.get("absent_days"),
+            "approved_leave_days": monthly_summary.get("approved_leave_days"),
+            "holiday_days": monthly_summary.get("holiday_days"),
+            "worked_hours": monthly_summary.get("worked_hours"),
+        },
         "earnings": {
             "basic_salary": basic_salary,
             "allowance": allowance,
@@ -630,6 +640,7 @@ def get_employee_payslip(employee_id, token_response):
         "deductions": {
             "pf": pf_deduction,
             "esi": esi_deduction,
+            "loss_of_pay": absent_deduction,
             "total_deductions": total_deductions,
         },
         "net_pay": net_pay,

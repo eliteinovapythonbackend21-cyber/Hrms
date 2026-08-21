@@ -84,6 +84,40 @@ def list_attendance(token_response):
     return jsonify({"message": "Attendance list fetched", "data": paginate_query(query, request.args), "token_response": token_response}), 200
 
 
+@attendance_bp.route("/monthly-summary", methods=["GET"])
+@jwt_required()
+@with_token
+def monthly_summary(token_response):
+    current_user = _get_current_user()
+
+    today = date.today()
+    month = request.args.get("month", type=int) or today.month
+    year = request.args.get("year", type=int) or today.year
+    if not (1 <= month <= 12):
+        return jsonify({"message": "month must be between 1 and 12"}), 400
+
+    employee_id = request.args.get("employee_id")
+
+    if employee_id:
+        employee, error_response = _fetch_employee(employee_id)
+        if error_response:
+            return error_response
+        authorized, _, error_response = _authorize_employee(employee)
+        if not authorized:
+            return error_response
+        data = [Attendance.get_monthly_summary(employee.id, month, year)]
+    else:
+        if not _is_admin(current_user) and current_user.role != "finance":
+            return jsonify({"message": "Admin or Finance privileges required"}), 403
+        data = Attendance.get_monthly_summary_list(month, year)
+
+    return jsonify({
+        "message": "Monthly attendance summary fetched",
+        "data": {"items": data, "month": month, "year": year},
+        "token_response": token_response,
+    }), 200
+
+
 @attendance_bp.route("/report", methods=["GET"])
 @jwt_required()
 @with_token

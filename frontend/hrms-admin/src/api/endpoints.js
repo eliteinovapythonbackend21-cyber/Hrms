@@ -65,6 +65,7 @@ export const API = {
   },
   ATTENDANCE: {
     LIST: "/attendance/",
+    MONTHLY_SUMMARY: "/attendance/monthly-summary",
     REPORT: "/attendance/report",
     SALARY_REPORT: "/attendance/salary-report",
   },

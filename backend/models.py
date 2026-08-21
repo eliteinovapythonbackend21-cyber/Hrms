@@ -315,10 +315,13 @@ class Holiday(TimestampMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     holiday_date = db.Column(db.Date, nullable=False)
+    holiday_type = db.Column(db.String(20), nullable=False, default="Office", server_default="Office")
     is_active = db.Column(db.Boolean, default=True)
 
     def to_dict(self):
-        return super().to_dict()
+        data = super().to_dict()
+        data["holiday_type"] = self.holiday_type or "Office"
+        return data
 
 
 class Company(TimestampMixin, db.Model):
@@ -643,6 +646,94 @@ class Attendance(TimestampMixin, db.Model):
         return cls._create_workbook("Attendance Report", headers, rows)
 
     @classmethod
+    def get_monthly_summary(cls, employee_id, month, year):
+        """Aggregates a single employee's attendance for one calendar month
+        into present/absent/leave/holiday counts and a salary calculation.
+        Holiday dates (Government or Office, active only) are excluded both
+        from the deductible-absent set and from the payable-days divisor —
+        the same treatment approved leave already gets."""
+        from calendar import monthrange
+
+        employee = Employee.query.get(employee_id)
+        if not employee:
+            return None
+
+        days_in_month = monthrange(year, month)[1]
+        from_date = date(year, month, 1)
+        to_date = date(year, month, days_in_month)
+
+        records = cls.query.filter(
+            cls.employee_id == employee_id,
+            cls.attendance_date.between(from_date, to_date),
+        ).all()
+
+        present_days = sum(1 for r in records if r.attendance_status == "Present")
+        marked_absent_dates = {r.attendance_date for r in records if r.attendance_status == "Absent"}
+
+        leave_query = Leave.query.filter(
+            Leave.employee_id == employee_id,
+            Leave.status == "Approved",
+            Leave.is_active == True,
+            Leave.from_date <= to_date,
+            Leave.to_date >= from_date,
+        )
+        approved_leave_dates = set()
+        for leave in leave_query.all():
+            day = max(from_date, leave.from_date)
+            end = min(to_date, leave.to_date)
+            while day <= end:
+                approved_leave_dates.add(day)
+                day += timedelta(days=1)
+
+        holiday_query = Holiday.query.filter(
+            Holiday.is_active == True,
+            Holiday.holiday_date.between(from_date, to_date),
+        )
+        holiday_dates = {h.holiday_date for h in holiday_query.all()}
+
+        deductible_absent_dates = marked_absent_dates - approved_leave_dates - holiday_dates
+        total_worked_hours = sum(r.working_hours or 0 for r in records)
+
+        salary_value = float(employee.salary or 0)
+        allowance_value = float(employee.allowance or 0)
+        payable_days = days_in_month - len(holiday_dates)
+        per_day_salary = (salary_value / payable_days) if payable_days else 0.0
+        absent_deduction = round(per_day_salary * len(deductible_absent_dates), 2)
+        gross_salary = round(salary_value + allowance_value, 2)
+        net_salary = round(gross_salary - absent_deduction, 2)
+
+        return {
+            "employee_id": employee.id,
+            "employee_code": employee.employee_code,
+            "employee_name": f"{employee.first_name or ''} {employee.last_name or ''}".strip(),
+            "month": month,
+            "year": year,
+            "days_in_month": days_in_month,
+            "holiday_days": len(holiday_dates),
+            "payable_days": payable_days,
+            "present_days": present_days,
+            "absent_days": len(deductible_absent_dates),
+            "approved_leave_days": len(approved_leave_dates),
+            "worked_hours": round(total_worked_hours, 2),
+            "salary": salary_value,
+            "allowance": allowance_value,
+            "gross_salary": gross_salary,
+            "per_day_salary": round(per_day_salary, 2),
+            "absent_deduction": absent_deduction,
+            "net_salary": net_salary,
+        }
+
+    @classmethod
+    def get_monthly_summary_list(cls, month, year, employee_id=None):
+        query = Employee.query
+        if employee_id is not None:
+            query = query.filter(Employee.id == employee_id)
+        return [
+            cls.get_monthly_summary(e.id, month, year)
+            for e in query.order_by(Employee.id).all()
+        ]
+
+    @classmethod
     def generate_salary_report(cls, from_date=None, to_date=None, employee_id=None):
         query = Employee.query
         if employee_id is not None:
@@ -662,8 +753,6 @@ class Attendance(TimestampMixin, db.Model):
             attendance_count = len(attendance_records)
             salary_value = float(employee.salary or 0)
 
-            # Approved leave dates in range — these are excluded from any
-            # absent-day salary deduction and are surfaced for management.
             leave_query = Leave.query.filter(
                 Leave.employee_id == employee.id,
                 Leave.status == "Approved",
@@ -685,8 +774,6 @@ class Attendance(TimestampMixin, db.Model):
                     approved_leave_dates.add(day)
                     day += timedelta(days=1)
 
-            # Absent days not covered by an approved leave are the only days
-            # that reduce salary; absences on approved-leave dates are not deducted.
             deductible_absent_dates = {
                 record.attendance_date
                 for record in attendance_records
@@ -1516,7 +1603,7 @@ class Resignation(TimestampMixin, db.Model):
     previous_company_id = db.Column(
         db.Integer,
         db.ForeignKey("companies.id"),
-        nullable=True,
+        nullable=   True,
     )
 
     previous_branch_id = db.Column(
