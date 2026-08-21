@@ -72,123 +72,86 @@ function getEmployee(payroll) {
 }
 
 /* =========================================================
-   DESIGNATION
-========================================================= */
-
-function getDesignation(payroll) {
-  const employee = getEmployee(payroll);
-
-  return (
-    payroll?.designation ||
-    payroll?.designation_details ||
-    employee?.designation ||
-    employee?.designation_details ||
-    employee?.designation_data ||
-    null
-  );
-}
-
-/* =========================================================
    DEPARTMENT
+   Actual structure:
+   Payroll -> Employee -> Department
 ========================================================= */
 
 function getDepartment(payroll) {
   const employee = getEmployee(payroll);
-  const designation = getDesignation(payroll);
 
   return (
-    payroll?.department ||
-    payroll?.department_details ||
-
     employee?.department ||
     employee?.department_details ||
-    employee?.department_data ||
-
-    designation?.department ||
-    designation?.department_details ||
-
-    null
-  );
-}
-
-/* =========================================================
-   BRANCH
-========================================================= */
-
-function getBranch(payroll) {
-  const employee = getEmployee(payroll);
-  const department = getDepartment(payroll);
-  const designation = getDesignation(payroll);
-
-  return (
-    payroll?.branch ||
-    payroll?.branch_details ||
-
-    employee?.branch ||
-    employee?.branch_details ||
-    employee?.branch_data ||
-
-    department?.branch ||
-    department?.branch_details ||
-
-    designation?.branch ||
-    designation?.branch_details ||
-
-    designation?.department?.branch ||
-    designation?.department?.branch_details ||
-
+    payroll?.department ||
+    payroll?.department_details ||
     null
   );
 }
 
 /* =========================================================
    COMPANY
+   Actual structure:
+   Payroll -> Employee -> Department -> Company
 ========================================================= */
 
 function getCompany(payroll) {
-  const employee = getEmployee(payroll);
   const department = getDepartment(payroll);
-  const branch = getBranch(payroll);
-  const designation = getDesignation(payroll);
 
   return (
-    payroll?.company ||
-    payroll?.company_details ||
-
-    employee?.company ||
-    employee?.company_details ||
-    employee?.company_data ||
-
     department?.company ||
     department?.company_details ||
-
-    branch?.company ||
-    branch?.company_details ||
-
-    designation?.company ||
-    designation?.company_details ||
-
-    designation?.department?.company ||
-    designation?.department?.company_details ||
-
-    designation?.branch?.company ||
-    designation?.branch?.company_details ||
-
+    payroll?.company ||
+    payroll?.company_details ||
     null
   );
 }
 
 /* =========================================================
-   EMPLOYEE DISPLAY
+   BRANCH
+   Actual structure:
+   Payroll -> Employee -> Department -> Branch
+========================================================= */
+
+function getBranch(payroll) {
+  const department = getDepartment(payroll);
+
+  return (
+    department?.branch ||
+    department?.branch_details ||
+    payroll?.branch ||
+    payroll?.branch_details ||
+    null
+  );
+}
+
+/* =========================================================
+   DESIGNATION
+   Actual structure:
+   Payroll -> Employee -> Designation
+========================================================= */
+
+function getDesignation(payroll) {
+  const employee = getEmployee(payroll);
+
+  return (
+    employee?.designation ||
+    employee?.designation_details ||
+    payroll?.designation ||
+    payroll?.designation_details ||
+    null
+  );
+}
+
+/* =========================================================
+   EMPLOYEE NAME
 ========================================================= */
 
 function getEmployeeName(payroll) {
   const employee = getEmployee(payroll);
 
   if (!employee) {
-    return `Employee #${
-      payroll?.employee_id ?? "-"
-    }`;
+    return `Employee #${payroll?.employee_id ?? "-"}`;
   }
 
   const fullName = [
@@ -204,13 +167,13 @@ function getEmployeeName(payroll) {
     employee.employee_name ||
     employee.name ||
     fullName ||
-    `Employee #${
-      employee.id ??
-      payroll?.employee_id ??
-      "-"
-    }`
+    `Employee #${employee.id ?? payroll?.employee_id ?? "-"}`
   );
 }
+
+/* =========================================================
+   EMPLOYEE CODE
+========================================================= */
 
 function getEmployeeCode(payroll) {
   const employee = getEmployee(payroll);
@@ -225,7 +188,7 @@ function getEmployeeCode(payroll) {
 }
 
 /* =========================================================
-   COMPANY DISPLAY
+   COMPANY
 ========================================================= */
 
 function getCompanyName(payroll) {
@@ -235,26 +198,24 @@ function getCompanyName(payroll) {
     company?.name ||
     company?.company_name ||
     company?.companyName ||
-    company?.title ||
-    payroll?.company_name ||
     "-"
   );
 }
 
 function getCompanyId(payroll) {
+  const department = getDepartment(payroll);
   const company = getCompany(payroll);
-  const employee = getEmployee(payroll);
 
   return (
     payroll?.company_id ??
     company?.id ??
-    employee?.company_id ??
+    department?.company_id ??
     null
   );
 }
 
 /* =========================================================
-   BRANCH DISPLAY
+   BRANCH
 ========================================================= */
 
 function getBranchName(payroll) {
@@ -264,26 +225,24 @@ function getBranchName(payroll) {
     branch?.name ||
     branch?.branch_name ||
     branch?.branchName ||
-    branch?.title ||
-    payroll?.branch_name ||
     "-"
   );
 }
 
 function getBranchId(payroll) {
+  const department = getDepartment(payroll);
   const branch = getBranch(payroll);
-  const employee = getEmployee(payroll);
 
   return (
     payroll?.branch_id ??
     branch?.id ??
-    employee?.branch_id ??
+    department?.branch_id ??
     null
   );
 }
 
 /* =========================================================
-   DEPARTMENT DISPLAY
+   DEPARTMENT
 ========================================================= */
 
 function getDepartmentName(payroll) {
@@ -293,8 +252,6 @@ function getDepartmentName(payroll) {
     department?.department_name ||
     department?.name ||
     department?.departmentName ||
-    department?.title ||
-    payroll?.department_name ||
     "-"
   );
 }
@@ -305,7 +262,6 @@ function getDepartmentCode(payroll) {
   return (
     department?.department_code ||
     department?.code ||
-    payroll?.department_code ||
     "-"
   );
 }
@@ -323,7 +279,7 @@ function getDepartmentId(payroll) {
 }
 
 /* =========================================================
-   DESIGNATION DISPLAY
+   DESIGNATION
 ========================================================= */
 
 function getDesignationName(payroll) {
@@ -333,8 +289,6 @@ function getDesignationName(payroll) {
     designation?.designation_name ||
     designation?.name ||
     designation?.designationName ||
-    designation?.title ||
-    payroll?.designation_name ||
     "-"
   );
 }
@@ -345,7 +299,6 @@ function getDesignationCode(payroll) {
   return (
     designation?.designation_code ||
     designation?.code ||
-    payroll?.designation_code ||
     "-"
   );
 }
@@ -369,13 +322,11 @@ function getDesignationId(payroll) {
 function normalizeAmount(value) {
   const number = Number(value);
 
-  return Number.isFinite(number)
-    ? number
-    : 0;
+  return Number.isFinite(number) ? number : 0;
 }
 
 /* =========================================================
-   PAYROLL STATUS
+   STATUS
 ========================================================= */
 
 function getPayrollStatus(payroll) {
@@ -425,7 +376,6 @@ function statusBadge(payroll) {
       <span
         className={`h-1.5 w-1.5 rounded-full ${dotClass}`}
       />
-
       {status}
     </Badge>
   );
@@ -442,9 +392,7 @@ function formatPayMonth(value) {
 
   const raw = String(value);
 
-  const match = raw.match(
-    /^(\d{4})-(\d{2})$/
-  );
+  const match = raw.match(/^(\d{4})-(\d{2})$/);
 
   if (!match) {
     return raw;
@@ -458,17 +406,14 @@ function formatPayMonth(value) {
     1
   );
 
-  return date.toLocaleString(
-    undefined,
-    {
-      month: "short",
-      year: "numeric",
-    }
-  );
+  return date.toLocaleString(undefined, {
+    month: "short",
+    year: "numeric",
+  });
 }
 
 /* =========================================================
-   HOVER
+   HOVER DETAILS
 ========================================================= */
 
 function HoverDetailsTrigger({
@@ -478,8 +423,7 @@ function HoverDetailsTrigger({
 }) {
   const alignClasses = {
     left: "left-0",
-    center:
-      "left-1/2 -translate-x-1/2",
+    center: "left-1/2 -translate-x-1/2",
     right: "right-0",
   };
 
@@ -519,50 +463,88 @@ function HoverDetailsTrigger({
 }
 
 /* =========================================================
+   DETAIL ROW
+========================================================= */
+
+function DetailRow({
+  label,
+  value,
+  valueClass = "text-slate-700 dark:text-slate-200",
+  mono = false,
+}) {
+  return (
+    <div className="grid grid-cols-[115px_minmax(0,1fr)] gap-3">
+      <span className="text-xs text-slate-400">
+        {label}
+      </span>
+
+      <span
+        className={`truncate text-right text-xs font-medium ${valueClass} ${
+          mono ? "font-mono text-[10px]" : ""
+        }`}
+      >
+        {value}
+      </span>
+    </div>
+  );
+}
+
+/* =========================================================
+   SALARY BOX
+========================================================= */
+
+function SalaryBox({
+  label,
+  value,
+  tone = "slate",
+}) {
+  const classes = {
+    slate:
+      "bg-slate-50 text-slate-700 dark:bg-slate-900 dark:text-slate-200",
+
+    red:
+      "bg-red-50/70 text-red-600 dark:bg-red-500/5 dark:text-red-300",
+
+    green:
+      "bg-emerald-50/70 text-emerald-600 dark:bg-emerald-500/5 dark:text-emerald-300",
+  };
+
+  return (
+    <div className={`rounded-lg p-2 ${classes[tone]}`}>
+      <p className="text-[9px] uppercase tracking-wide text-slate-400">
+        {label}
+      </p>
+
+      <p className="mt-1 text-xs font-semibold">
+        {formatCurrency(value)}
+      </p>
+    </div>
+  );
+}
+
+/* =========================================================
    DETAILS CARD
 ========================================================= */
 
-function PayrollDetailsCard({
-  payroll,
-}) {
-  const employeeName =
-    getEmployeeName(payroll);
+function PayrollDetailsCard({ payroll }) {
+  const companyName = getCompanyName(payroll);
+  const branchName = getBranchName(payroll);
+  const departmentName = getDepartmentName(payroll);
+  const departmentCode = getDepartmentCode(payroll);
+  const designationName = getDesignationName(payroll);
+  const designationCode = getDesignationCode(payroll);
 
-  const employeeCode =
-    getEmployeeCode(payroll);
+  const gross = normalizeAmount(
+    payroll?.gross_salary
+  );
 
-  const companyName =
-    getCompanyName(payroll);
+  const deductions = normalizeAmount(
+    payroll?.deductions
+  );
 
-  const branchName =
-    getBranchName(payroll);
-
-  const departmentName =
-    getDepartmentName(payroll);
-
-  const departmentCode =
-    getDepartmentCode(payroll);
-
-  const designationName =
-    getDesignationName(payroll);
-
-  const designationCode =
-    getDesignationCode(payroll);
-
-  const gross =
-    normalizeAmount(
-      payroll?.gross_salary
-    );
-
-  const deductions =
-    normalizeAmount(
-      payroll?.deductions
-    );
-
-  const net =
-    normalizeAmount(
-      payroll?.net_salary
-    );
+  const net = normalizeAmount(
+    payroll?.net_salary
+  );
 
   return (
     <div className="w-[430px] max-w-[calc(100vw-32px)] rounded-xl border border-slate-200 border-t-2 border-t-primary-500 bg-white p-4 text-left shadow-xl dark:border-slate-700 dark:bg-slate-800">
@@ -573,11 +555,11 @@ function PayrollDetailsCard({
           </p>
 
           <p className="mt-1 truncate text-sm font-semibold text-slate-800 dark:text-white">
-            {employeeName}
+            {getEmployeeName(payroll)}
           </p>
 
           <p className="text-[10px] text-slate-400">
-            {employeeCode}
+            {getEmployeeCode(payroll)}
           </p>
         </div>
 
@@ -681,60 +663,6 @@ function PayrollDetailsCard({
   );
 }
 
-function DetailRow({
-  label,
-  value,
-  mono = false,
-  valueClass = "text-slate-700 dark:text-slate-200",
-}) {
-  return (
-    <div className="grid grid-cols-[110px_minmax(0,1fr)] gap-3">
-      <span className="text-xs text-slate-400">
-        {label}
-      </span>
-
-      <span
-        className={`truncate text-right text-xs font-medium ${valueClass} ${
-          mono ? "font-mono text-[10px]" : ""
-        }`}
-      >
-        {value}
-      </span>
-    </div>
-  );
-}
-
-function SalaryBox({
-  label,
-  value,
-  tone = "slate",
-}) {
-  const classes = {
-    slate:
-      "bg-slate-50 text-slate-700 dark:bg-slate-900 dark:text-slate-200",
-
-    red:
-      "bg-red-50/70 text-red-600 dark:bg-red-500/5 dark:text-red-300",
-
-    green:
-      "bg-emerald-50/70 text-emerald-600 dark:bg-emerald-500/5 dark:text-emerald-300",
-  };
-
-  return (
-    <div
-      className={`rounded-lg p-2 ${classes[tone]}`}
-    >
-      <p className="text-[9px] uppercase tracking-wide text-slate-400">
-        {label}
-      </p>
-
-      <p className="mt-1 text-xs font-semibold">
-        {formatCurrency(value)}
-      </p>
-    </div>
-  );
-}
-
 /* =========================================================
    ICONS
 ========================================================= */
@@ -772,11 +700,7 @@ const MoneyIcon = () => (
     stroke="currentColor"
     strokeWidth={1.8}
   >
-    <circle
-      cx="12"
-      cy="12"
-      r="9"
-    />
+    <circle cx="12" cy="12" r="9" />
 
     <path
       strokeLinecap="round"
@@ -794,11 +718,7 @@ const PaidIcon = () => (
     stroke="currentColor"
     strokeWidth={1.8}
   >
-    <circle
-      cx="12"
-      cy="12"
-      r="9"
-    />
+    <circle cx="12" cy="12" r="9" />
 
     <path
       strokeLinecap="round"
@@ -817,11 +737,7 @@ const PendingIcon = () => (
     stroke="currentColor"
     strokeWidth={1.8}
   >
-    <circle
-      cx="12"
-      cy="12"
-      r="9"
-    />
+    <circle cx="12" cy="12" r="9" />
 
     <path
       strokeLinecap="round"
@@ -938,6 +854,77 @@ const EmployeeIcon = () => (
 );
 
 /* =========================================================
+   HIERARCHY ROW
+========================================================= */
+
+function HierarchyRow({
+  icon,
+  label,
+  value,
+  code,
+  tone = "slate",
+}) {
+  const iconClasses = {
+    primary:
+      "bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400",
+
+    slate:
+      "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400",
+
+    violet:
+      "bg-violet-50 text-violet-600 dark:bg-violet-500/10 dark:text-violet-400",
+  };
+
+  const valueClasses = {
+    primary:
+      "text-slate-700 dark:text-slate-200",
+
+    slate:
+      "text-slate-700 dark:text-slate-200",
+
+    violet:
+      "text-violet-600 dark:text-violet-400",
+  };
+
+  return (
+    <div className="flex items-center gap-2.5">
+      <div
+        className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${iconClasses[tone]}`}
+      >
+        {icon}
+      </div>
+
+      <div className="min-w-0 flex-1">
+        <p className="text-[9px] font-medium uppercase tracking-wide text-slate-400">
+          {label}
+        </p>
+
+        <div className="flex min-w-0 items-center gap-1.5">
+          <p
+            title={value}
+            className={`truncate text-[11px] font-semibold ${valueClasses[tone]}`}
+          >
+            {value}
+          </p>
+
+          {code && (
+            <span
+              className={`shrink-0 rounded px-1.5 py-0.5 font-mono text-[8px] ${
+                tone === "violet"
+                  ? "bg-violet-50 text-violet-600 dark:bg-violet-500/10 dark:text-violet-400"
+                  : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
+              }`}
+            >
+              {code}
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* =========================================================
    STAT CARD
 ========================================================= */
 
@@ -1023,7 +1010,7 @@ function IconButton({
 }
 
 /* =========================================================
-   PAGE
+   PAYROLL PAGE
 ========================================================= */
 
 export default function PayrollRecordListPage() {
@@ -1110,38 +1097,38 @@ export default function PayrollRecordListPage() {
       }
     );
 
-  const { data: departmentData } =
-    useQuery({
-      queryKey: [
-        "payroll-departments-filter",
-        branchFilterId,
-      ],
+  const {
+    data: departmentData,
+  } = useQuery({
+    queryKey: [
+      "payroll-departments-filter",
+      branchFilterId,
+    ],
 
-      queryFn: async () => {
-        const response =
-          await masterApi.listDepartments(
-            {
-              branch_id:
-                branchFilterId,
-              page: 1,
-              per_page: 100,
-              is_active: true,
-            }
-          );
-
-        return (
-          response?.data?.data ||
-          response?.data ||
-          {}
+    queryFn: async () => {
+      const response =
+        await masterApi.listDepartments(
+          {
+            branch_id:
+              branchFilterId,
+            page: 1,
+            per_page: 100,
+            is_active: true,
+          }
         );
-      },
 
-      enabled:
-        Boolean(branchFilterId),
-    });
+      return (
+        response?.data?.data ||
+        response?.data ||
+        {}
+      );
+    },
+
+    enabled: Boolean(branchFilterId),
+  });
 
   /* =======================================================
-     PAYROLL
+     PAYROLL DATA
   ======================================================= */
 
   const {
@@ -1158,7 +1145,8 @@ export default function PayrollRecordListPage() {
       search || undefined,
   });
 
-  const allPayroll = getItems(data);
+  const allPayroll =
+    getItems(data);
 
   const filterCompanies =
     getItems(companyData);
@@ -1195,7 +1183,6 @@ export default function PayrollRecordListPage() {
             {
               value:
                 designation.id,
-
               label:
                 designation.designation_name ||
                 designation.name ||
@@ -1207,8 +1194,12 @@ export default function PayrollRecordListPage() {
 
       return [...map.values()].sort(
         (a, b) =>
-          String(a.label).localeCompare(
-            String(b.label)
+          String(
+            a.label
+          ).localeCompare(
+            String(
+              b.label
+            )
           )
       );
     }, [allPayroll]);
@@ -1235,9 +1226,12 @@ export default function PayrollRecordListPage() {
           }
 
           map.set(
-            String(employeeId),
+            String(
+              employeeId
+            ),
             {
-              value: employeeId,
+              value:
+                employeeId,
               label:
                 getEmployeeName(
                   payroll
@@ -1249,8 +1243,12 @@ export default function PayrollRecordListPage() {
 
       return [...map.values()].sort(
         (a, b) =>
-          String(a.label).localeCompare(
-            String(b.label)
+          String(
+            a.label
+          ).localeCompare(
+            String(
+              b.label
+            )
           )
       );
     }, [allPayroll]);
@@ -1354,17 +1352,33 @@ export default function PayrollRecordListPage() {
             return false;
           }
 
-          if (normalizedSearch) {
+          if (
+            normalizedSearch
+          ) {
             const haystack = [
               payroll?.id,
               payroll?.employee_id,
-              getEmployeeName(payroll),
-              getEmployeeCode(payroll),
-              getCompanyName(payroll),
-              getBranchName(payroll),
-              getDepartmentName(payroll),
-              getDesignationName(payroll),
-              getDesignationCode(payroll),
+              getEmployeeName(
+                payroll
+              ),
+              getEmployeeCode(
+                payroll
+              ),
+              getCompanyName(
+                payroll
+              ),
+              getBranchName(
+                payroll
+              ),
+              getDepartmentName(
+                payroll
+              ),
+              getDesignationName(
+                payroll
+              ),
+              getDesignationCode(
+                payroll
+              ),
               payroll?.pay_month,
               payroll?.status,
             ]
@@ -1414,7 +1428,8 @@ export default function PayrollRecordListPage() {
 
   const pagedPayroll =
     filteredPayroll.slice(
-      (page - 1) * pageSize,
+      (page - 1) *
+        pageSize,
       page * pageSize
     );
 
@@ -1431,15 +1446,17 @@ export default function PayrollRecordListPage() {
   const paidPayroll =
     activePayroll.filter(
       (item) =>
-        getPayrollStatus(item) ===
-        "Paid"
+        getPayrollStatus(
+          item
+        ) === "Paid"
     );
 
   const pendingPayroll =
     activePayroll.filter(
       (item) =>
-        getPayrollStatus(item) !==
-        "Paid"
+        getPayrollStatus(
+          item
+        ) !== "Paid"
     );
 
   const totalGross =
@@ -1580,9 +1597,11 @@ export default function PayrollRecordListPage() {
 
     exportColumns,
 
-    filename: "payroll",
+    filename:
+      "payroll",
 
-    title: "Payroll Records",
+    title:
+      "Payroll Records",
   });
 
   /* =======================================================
@@ -1640,11 +1659,12 @@ export default function PayrollRecordListPage() {
       setEmployeeFilterId(
         event.target.value
       );
+
       setPage(1);
     };
 
   /* =======================================================
-     CRUD HANDLERS
+     CRUD
   ======================================================= */
 
   const handleAdd = () => {
@@ -1809,7 +1829,6 @@ export default function PayrollRecordListPage() {
         await updatePayroll.mutateAsync(
           {
             id: payroll.id,
-
             payload: {
               is_active: true,
             },
@@ -1874,7 +1893,7 @@ export default function PayrollRecordListPage() {
   }
 
   /* =======================================================
-     RETURN
+     RENDER
   ======================================================= */
 
   return (
@@ -1902,12 +1921,8 @@ export default function PayrollRecordListPage() {
           <TableToolbar
             onRefresh={refetch}
             refreshing={isFetching}
-            onExportExcel={
-              exportExcel
-            }
-            onExportPDF={
-              exportPDF
-            }
+            onExportExcel={exportExcel}
+            onExportPDF={exportPDF}
             exporting={exporting}
           />
 
@@ -1925,7 +1940,7 @@ export default function PayrollRecordListPage() {
         </div>
       </div>
 
-      {/* STATISTICS */}
+      {/* STAT CARDS */}
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
@@ -1971,7 +1986,7 @@ export default function PayrollRecordListPage() {
         />
       </div>
 
-      {/* FILTERS */}
+      {/* FILTER BAR */}
 
       <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-900">
         <div className="flex flex-col gap-3">
@@ -2336,9 +2351,7 @@ export default function PayrollRecordListPage() {
                 {pagedPayroll.map(
                   (payroll) => (
                     <tr
-                      key={
-                        payroll.id
-                      }
+                      key={payroll.id}
                       className="hover:bg-slate-50 dark:hover:bg-slate-800/40"
                     >
                       {/* EMPLOYEE */}
@@ -2590,16 +2603,6 @@ export default function PayrollRecordListPage() {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {pagedPayroll.map(
               (payroll) => {
-                const employeeName =
-                  getEmployeeName(
-                    payroll
-                  );
-
-                const employeeCode =
-                  getEmployeeCode(
-                    payroll
-                  );
-
                 const companyName =
                   getCompanyName(
                     payroll
@@ -2649,6 +2652,11 @@ export default function PayrollRecordListPage() {
                   payroll?.is_active !==
                   false;
 
+                const employeeName =
+                  getEmployeeName(
+                    payroll
+                  );
+
                 return (
                   <div
                     key={
@@ -2669,7 +2677,7 @@ export default function PayrollRecordListPage() {
                     />
 
                     <div className="p-4">
-                      {/* EMPLOYEE HEADER */}
+                      {/* EMPLOYEE */}
 
                       <div className="flex items-start justify-between gap-2.5">
                         <div className="flex min-w-0 items-center gap-2.5">
@@ -2693,28 +2701,19 @@ export default function PayrollRecordListPage() {
                           </HoverDetailsTrigger>
 
                           <div className="min-w-0">
-                            <h3
-                              title={
-                                employeeName
-                              }
-                              className="truncate text-sm font-semibold text-slate-900 dark:text-white"
-                            >
+                            <h3 className="truncate text-sm font-semibold text-slate-900 dark:text-white">
                               {
                                 employeeName
                               }
                             </h3>
 
-                            <div className="mt-0.5 flex items-center gap-1.5">
-                              <span className="text-[9px] font-medium uppercase tracking-wide text-slate-400">
-                                Employee
-                              </span>
-
-                              <span className="truncate font-mono text-[10px] font-medium text-slate-600 dark:text-slate-300">
-                                {
-                                  employeeCode
-                                }
-                              </span>
-                            </div>
+                            <p className="mt-0.5 truncate font-mono text-[10px] text-slate-500 dark:text-slate-400">
+                              {
+                                getEmployeeCode(
+                                  payroll
+                                )
+                              }
+                            </p>
                           </div>
                         </div>
 
@@ -2844,14 +2843,12 @@ export default function PayrollRecordListPage() {
                         </div>
 
                         <div className="mt-3 grid grid-cols-3 gap-2">
-                          <SalarySummary
+                          <SalaryBox
                             label="Gross"
-                            value={
-                              gross
-                            }
+                            value={gross}
                           />
 
-                          <SalarySummary
+                          <SalaryBox
                             label="Deductions"
                             value={
                               deductions
@@ -2859,11 +2856,9 @@ export default function PayrollRecordListPage() {
                             tone="red"
                           />
 
-                          <SalarySummary
+                          <SalaryBox
                             label="Net"
-                            value={
-                              net
-                            }
+                            value={net}
                             tone="green"
                           />
                         </div>
@@ -2975,11 +2970,10 @@ export default function PayrollRecordListPage() {
             </h3>
 
             <p className="mt-1 max-w-md text-xs text-slate-500 dark:text-slate-400">
-              No payroll records match
-              your current company,
-              branch, department,
-              designation, employee,
-              search, or status
+              No payroll records match your
+              current company, branch,
+              department, designation,
+              employee, search, or status
               filters.
             </p>
 
@@ -3077,7 +3071,7 @@ export default function PayrollRecordListPage() {
         />
       </Modal>
 
-      {/* CONFIRM DELETE */}
+      {/* DEACTIVATE */}
 
       <ConfirmDialog
         open={
@@ -3108,112 +3102,6 @@ export default function PayrollRecordListPage() {
           deactivatePayroll.isPending
         }
       />
-    </div>
-  );
-}
-
-/* =========================================================
-   HIERARCHY ROW
-========================================================= */
-
-function HierarchyRow({
-  icon,
-  label,
-  value,
-  code,
-  tone = "slate",
-}) {
-  const iconClasses = {
-    primary:
-      "bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400",
-
-    slate:
-      "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400",
-
-    violet:
-      "bg-violet-50 text-violet-600 dark:bg-violet-500/10 dark:text-violet-400",
-  };
-
-  const valueClasses = {
-    primary:
-      "text-slate-700 dark:text-slate-200",
-
-    slate:
-      "text-slate-700 dark:text-slate-200",
-
-    violet:
-      "text-violet-600 dark:text-violet-400",
-  };
-
-  return (
-    <div className="flex items-center gap-2.5">
-      <div
-        className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${iconClasses[tone]}`}
-      >
-        {icon}
-      </div>
-
-      <div className="min-w-0 flex-1">
-        <p className="text-[9px] font-medium uppercase tracking-wide text-slate-400">
-          {label}
-        </p>
-
-        <div className="flex min-w-0 items-center gap-1.5">
-          <p
-            title={value}
-            className={`truncate text-[11px] font-semibold ${valueClasses[tone]}`}
-          >
-            {value}
-          </p>
-
-          {code && (
-            <span
-              className={`shrink-0 rounded px-1.5 py-0.5 font-mono text-[8px] ${
-                tone === "violet"
-                  ? "bg-violet-50 text-violet-600 dark:bg-violet-500/10 dark:text-violet-400"
-                  : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
-              }`}
-            >
-              {code}
-            </span>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* =========================================================
-   SALARY SUMMARY
-========================================================= */
-
-function SalarySummary({
-  label,
-  value,
-  tone = "slate",
-}) {
-  const classes = {
-    slate:
-      "text-slate-700 dark:text-slate-200",
-
-    red:
-      "text-red-600 dark:text-red-400",
-
-    green:
-      "text-emerald-600 dark:text-emerald-400",
-  };
-
-  return (
-    <div>
-      <p className="text-[9px] font-medium uppercase tracking-wide text-slate-400">
-        {label}
-      </p>
-
-      <p
-        className={`mt-0.5 text-[11px] font-semibold ${classes[tone]}`}
-      >
-        {formatCurrency(value)}
-      </p>
     </div>
   );
 }
