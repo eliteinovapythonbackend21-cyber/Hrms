@@ -9,138 +9,165 @@ import LoadingSpinner from "@/components/feedback/LoadingSpinner";
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 import Avatar from "@/components/ui/Avatar";
+
 import {
   formatDate,
   formatDateTime,
 } from "@/utils/formatDate";
+
 import { formatCurrency } from "@/utils/formatCurrency";
+
 import TabbedDetailLayout from "@/components/TabbedDetailLayout";
 import EmployeeSubList from "@/components/EmployeeSubList";
+
 import { employeeLifecycleApi } from "@/api/employee.api";
 
 const SKY = {
   text: "text-sky-600 dark:text-sky-400",
+
   badge:
     "bg-sky-50 text-sky-700 dark:bg-sky-500/10 dark:text-sky-400",
+
   ring:
     "ring-sky-100 dark:ring-sky-500/20",
+
   bar: "bg-sky-500",
 };
 
 const Icon = ({
   children,
-}) => (
-  <svg
-    viewBox="0 0 20 20"
-    fill="none"
-    className="h-4 w-4 shrink-0 text-slate-400"
-  >
-    {children}
-  </svg>
-);
+}) => {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      fill="none"
+      className="h-4 w-4 shrink-0 text-slate-400"
+      aria-hidden="true"
+    >
+      {children}
+    </svg>
+  );
+};
 
-const PhoneIcon = () => (
-  <Icon>
-    <path
-      d="M4.5 3h2.4l1 3.6-1.7 1.3a9 9 0 0 0 4.4 4.4l1.3-1.7 3.6 1v2.4c0 .8-.7 1.4-1.5 1.3A13 13 0 0 1 3.2 4.5c-.1-.8.5-1.5 1.3-1.5Z"
-      stroke="currentColor"
-      strokeWidth="1.3"
-      strokeLinejoin="round"
-    />
-  </Icon>
-);
+const PhoneIcon = () => {
+  return (
+    <Icon>
+      <path
+        d="M4.5 3h2.4l1 3.6-1.7 1.3a9 9 0 0 0 4.4 4.4l1.3-1.7 3.6 1v2.4c0 .8-.7 1.4-1.5 1.3A13 13 0 0 1 3.2 4.5c-.1-.8.5-1.5 1.3-1.5Z"
+        stroke="currentColor"
+        strokeWidth="1.3"
+        strokeLinejoin="round"
+      />
+    </Icon>
+  );
+};
 
-const AlertIcon = () => (
-  <Icon>
-    <path
-      d="M10 3 2 17h16L10 3Z"
-      stroke="currentColor"
-      strokeWidth="1.3"
-      strokeLinejoin="round"
-    />
-    <path
-      d="M10 8v4M10 14.5v.01"
-      stroke="currentColor"
-      strokeWidth="1.3"
-      strokeLinecap="round"
-    />
-  </Icon>
-);
+const AlertIcon = () => {
+  return (
+    <Icon>
+      <path
+        d="M10 3 2 17h16L10 3Z"
+        stroke="currentColor"
+        strokeWidth="1.3"
+        strokeLinejoin="round"
+      />
 
-const MapPinIcon = () => (
-  <Icon>
-    <path
-      d="M10 18s6-5.2 6-9.6A6 6 0 0 0 4 8.4C4 12.8 10 18 10 18Z"
-      stroke="currentColor"
-      strokeWidth="1.3"
-      strokeLinejoin="round"
-    />
-    <circle
-      cx="10"
-      cy="8.4"
-      r="2"
-      stroke="currentColor"
-      strokeWidth="1.3"
-    />
-  </Icon>
-);
+      <path
+        d="M10 8v4M10 14.5v.01"
+        stroke="currentColor"
+        strokeWidth="1.3"
+        strokeLinecap="round"
+      />
+    </Icon>
+  );
+};
 
-const CalendarIcon = () => (
-  <Icon>
-    <rect
-      x="3"
-      y="4.5"
-      width="14"
-      height="12"
-      rx="1.5"
-      stroke="currentColor"
-      strokeWidth="1.3"
-    />
-    <path
-      d="M3 8h14M7 3v3M13 3v3"
-      stroke="currentColor"
-      strokeWidth="1.3"
-      strokeLinecap="round"
-    />
-  </Icon>
-);
+const MapPinIcon = () => {
+  return (
+    <Icon>
+      <path
+        d="M10 18s6-5.2 6-9.6A6 6 0 0 0 4 8.4C4 12.8 10 18 10 18Z"
+        stroke="currentColor"
+        strokeWidth="1.3"
+        strokeLinejoin="round"
+      />
 
-const UserIcon = () => (
-  <Icon>
-    <circle
-      cx="10"
-      cy="7"
-      r="3"
-      stroke="currentColor"
-      strokeWidth="1.3"
-    />
-    <path
-      d="M3.5 17c1-3.3 4-5 6.5-5s5.5 1.7 6.5 5"
-      stroke="currentColor"
-      strokeWidth="1.3"
-      strokeLinecap="round"
-    />
-  </Icon>
-);
+      <circle
+        cx="10"
+        cy="8.4"
+        r="2"
+        stroke="currentColor"
+        strokeWidth="1.3"
+      />
+    </Icon>
+  );
+};
 
-const CardIcon = () => (
-  <Icon>
-    <rect
-      x="2.5"
-      y="5"
-      width="15"
-      height="10"
-      rx="1.5"
-      stroke="currentColor"
-      strokeWidth="1.3"
-    />
-    <path
-      d="M2.5 8.5h15"
-      stroke="currentColor"
-      strokeWidth="1.3"
-    />
-  </Icon>
-);
+const CalendarIcon = () => {
+  return (
+    <Icon>
+      <rect
+        x="3"
+        y="4.5"
+        width="14"
+        height="12"
+        rx="1.5"
+        stroke="currentColor"
+        strokeWidth="1.3"
+      />
+
+      <path
+        d="M3 8h14M7 3v3M13 3v3"
+        stroke="currentColor"
+        strokeWidth="1.3"
+        strokeLinecap="round"
+      />
+    </Icon>
+  );
+};
+
+const UserIcon = () => {
+  return (
+    <Icon>
+      <circle
+        cx="10"
+        cy="7"
+        r="3"
+        stroke="currentColor"
+        strokeWidth="1.3"
+      />
+
+      <path
+        d="M3.5 17c1-3.3 4-5 6.5-5s5.5 1.7 6.5 5"
+        stroke="currentColor"
+        strokeWidth="1.3"
+        strokeLinecap="round"
+      />
+    </Icon>
+  );
+};
+
+const CardIcon = () => {
+  return (
+    <Icon>
+      <rect
+        x="2.5"
+        y="5"
+        width="15"
+        height="10"
+        rx="1.5"
+        stroke="currentColor"
+        strokeWidth="1.3"
+      />
+
+      <path
+        d="M2.5 8.5h15"
+        stroke="currentColor"
+        strokeWidth="1.3"
+      />
+    </Icon>
+  );
+};
 
 function Field({
   icon,
@@ -197,12 +224,9 @@ function HierarchyTrail({
   return (
     <div className="flex flex-wrap items-center gap-1.5">
       {steps.map(
-        (
-          step,
-          index
-        ) => (
+        (step, index) => (
           <div
-            key={index}
+            key={`${step}-${index}`}
             className="flex items-center gap-1.5"
           >
             <span
@@ -235,6 +259,12 @@ export default function EmployeeDetailPage() {
     searchParams,
   ] = useSearchParams();
 
+  /*
+   * ==========================================================
+   * VIEW CONTEXT
+   * ==========================================================
+   */
+
   const restricted =
     searchParams.get(
       "restricted"
@@ -246,28 +276,46 @@ export default function EmployeeDetailPage() {
     ) === "crm";
 
   /*
-   * IMPORTANT:
+   * CRM RESTRICTION
    *
-   * "restricted" hides Edit / Payslip for regular
-   * restricted views (e.g. read-only role access).
-   * CRM employees are also opened with
-   * restricted=1&from=crm so the Payslip action stays
-   * hidden for them, but CRM users still need a way to
-   * Edit the employee record - so Edit is shown whenever
-   * the view is NOT restricted at all, OR it came from
-   * the CRM module.
+   * Normal employee pages:
+   *   Edit    -> visible
+   *   Payslip -> visible
+   *
+   * Restricted pages:
+   *   Edit    -> hidden
+   *   Payslip -> hidden
+   *
+   * CRM employee page:
+   *   Edit    -> visible
+   *   Payslip -> hidden
+   *
+   * This keeps CRM behavior isolated.
    */
+
   const canEdit =
     !restricted || fromCrm;
 
   const canViewPayslip =
     !restricted;
 
+  /*
+   * ==========================================================
+   * EMPLOYEE QUERY
+   * ==========================================================
+   */
+
   const {
     data: employee,
     isLoading,
     isError,
   } = useEmployee(id);
+
+  /*
+   * ==========================================================
+   * LOADING
+   * ==========================================================
+   */
 
   if (isLoading) {
     return (
@@ -276,6 +324,12 @@ export default function EmployeeDetailPage() {
       </div>
     );
   }
+
+  /*
+   * ==========================================================
+   * ERROR
+   * ==========================================================
+   */
 
   if (
     isError ||
@@ -288,23 +342,40 @@ export default function EmployeeDetailPage() {
     );
   }
 
+  /*
+   * ==========================================================
+   * EMPLOYEE COUNTS
+   * ==========================================================
+   */
+
   const counts = [
     {
       label: "Attendance",
       value:
-        employee.attendance_count,
+        employee.attendance_count ??
+        0,
     },
+
     {
       label: "Leaves",
       value:
-        employee.leave_count,
+        employee.leave_count ??
+        0,
     },
+
     {
       label: "Network Logs",
       value:
-        employee.network_log_count,
+        employee.network_log_count ??
+        0,
     },
   ];
+
+  /*
+   * ==========================================================
+   * SALARY
+   * ==========================================================
+   */
 
   const salary =
     Number(employee.salary) ||
@@ -327,52 +398,107 @@ export default function EmployeeDetailPage() {
         )
       : 0;
 
-  const handleBack =
-    () => {
-      if (fromCrm) {
-        navigate(
-          "/crm/employees"
-        );
-        return;
-      }
+  /*
+   * ==========================================================
+   * BACK
+   * ==========================================================
+   */
 
+  const handleBack = () => {
+    if (fromCrm) {
       navigate(
-        restricted
-          ? "/employees"
-          : "/master/employees"
+        "/crm/employees"
       );
-    };
 
-  const handleEdit =
-    () => {
-      navigate(
-        `/employees/${id}/edit${
-          fromCrm
-            ? "?from=crm"
-            : ""
-        }`
-      );
-    };
+      return;
+    }
+
+    navigate(
+      restricted
+        ? "/employees"
+        : "/master/employees"
+    );
+  };
+
+  /*
+   * ==========================================================
+   * EDIT
+   * ==========================================================
+   */
+
+  const handleEdit = () => {
+    navigate(
+      `/employees/${id}/edit${
+        fromCrm
+          ? "?from=crm"
+          : ""
+      }`
+    );
+  };
+
+  /*
+   * ==========================================================
+   * ORGANIZATION
+   * ==========================================================
+   */
+
+  const companyName =
+    employee.department
+      ?.company?.name ||
+    employee.company?.name ||
+    null;
+
+  const branchName =
+    employee.department
+      ?.branch?.name ||
+    employee.branch?.name ||
+    null;
+
+  const departmentName =
+    employee.department
+      ?.department_name ||
+    null;
+
+  const designationName =
+    employee.designation
+      ?.designation_name ||
+    null;
+
+  /*
+   * ==========================================================
+   * RENDER
+   * ==========================================================
+   */
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
+      {/* HEADER */}
+
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-          Employee Details
-        </h1>
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+            Employee Details
+          </h1>
+
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            View employee personal, organization and employment information.
+          </p>
+        </div>
 
         <Button
           variant="secondary"
-          onClick={
-            handleBack
-          }
+          onClick={handleBack}
         >
           Back
         </Button>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        {/* LEFT COLUMN */}
+
         <div className="space-y-4 lg:sticky lg:top-6 lg:col-span-1 lg:h-fit">
+          {/* EMPLOYEE PROFILE */}
+
           <div className="rounded-xl border border-slate-200 bg-white p-6 text-center shadow-sm dark:border-slate-700 dark:bg-slate-900">
             <div
               className={`mx-auto w-fit rounded-full ring-4 ${SKY.ring}`}
@@ -387,18 +513,14 @@ export default function EmployeeDetailPage() {
             </div>
 
             <h2 className="mt-3 text-lg font-semibold text-slate-900 dark:text-white">
-              {
-                employee.first_name
-              }{" "}
-              {
-                employee.last_name
-              }
+              {employee.first_name || ""}
+              {" "}
+              {employee.last_name || ""}
             </h2>
 
             <p className="font-mono text-xs text-slate-400">
-              {
-                employee.employee_code
-              }
+              {employee.employee_code ||
+                "-"}
             </p>
 
             <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
@@ -414,17 +536,11 @@ export default function EmployeeDetailPage() {
                   : "Inactive"}
               </Badge>
 
-              {employee
-                .designation
-                ?.designation_name && (
+              {designationName && (
                 <span
                   className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${SKY.badge}`}
                 >
-                  {
-                    employee
-                      .designation
-                      .designation_name
-                  }
+                  {designationName}
                 </span>
               )}
             </div>
@@ -468,6 +584,8 @@ export default function EmployeeDetailPage() {
             )}
           </div>
 
+          {/* ORGANIZATION */}
+
           <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
             <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
               Organization
@@ -475,27 +593,21 @@ export default function EmployeeDetailPage() {
 
             <HierarchyTrail
               company={
-                employee
-                  .department
-                  ?.company?.name
+                companyName
               }
               branch={
-                employee
-                  .department
-                  ?.branch?.name
+                branchName
               }
               department={
-                employee
-                  .department
-                  ?.department_name
+                departmentName
               }
               designation={
-                employee
-                  .designation
-                  ?.designation_name
+                designationName
               }
             />
           </div>
+
+          {/* COUNTS */}
 
           <div className="grid grid-cols-3 gap-2">
             {counts.map(
@@ -525,7 +637,11 @@ export default function EmployeeDetailPage() {
           </div>
         </div>
 
+        {/* RIGHT COLUMN */}
+
         <div className="space-y-6 lg:col-span-2">
+          {/* PERSONAL */}
+
           <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900">
             <h3 className="mb-4 text-xs font-semibold uppercase tracking-wide text-slate-400">
               Personal
@@ -624,6 +740,8 @@ export default function EmployeeDetailPage() {
             </div>
           </div>
 
+          {/* EMPLOYMENT */}
+
           {!restricted && (
             <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900">
               <h3 className="mb-4 text-xs font-semibold uppercase tracking-wide text-slate-400">
@@ -648,7 +766,10 @@ export default function EmployeeDetailPage() {
                     <div
                       className={`h-full ${SKY.bar}`}
                       style={{
-                        width: `${salaryPct}%`,
+                        width: `${Math.min(
+                          salaryPct,
+                          100
+                        )}%`,
                       }}
                     />
                   </div>
@@ -728,6 +849,8 @@ export default function EmployeeDetailPage() {
             </div>
           )}
 
+          {/* LIFECYCLE */}
+
           {!restricted && (
             <TabbedDetailLayout
               tabs={[
@@ -747,28 +870,35 @@ export default function EmployeeDetailPage() {
                           label:
                             "Document Type",
                         },
+
                         {
                           key: "file_url",
-                          label:
-                            "File",
-                          render: (row) => (
-                            <a
-                              href={
-                                row.file_url
-                              }
-                              target="_blank"
-                              rel="noreferrer"
-                              className="text-primary-600 hover:underline"
-                            >
-                              View
-                            </a>
-                          ),
+                          label: "File",
+
+                          render: (
+                            row
+                          ) =>
+                            row.file_url ? (
+                              <a
+                                href={
+                                  row.file_url
+                                }
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-primary-600 hover:underline"
+                              >
+                                View
+                              </a>
+                            ) : (
+                              "-"
+                            ),
                         },
                       ]}
                       emptyText="No documents on file."
                     />
                   ),
                 },
+
                 {
                   key: "performance",
                   label: "Performance",
@@ -785,16 +915,21 @@ export default function EmployeeDetailPage() {
                           label:
                             "Review Period",
                         },
+
                         {
                           key: "rating",
                           label:
                             "Rating",
                         },
+
                         {
                           key: "remarks",
                           label:
                             "Remarks",
-                          render: (row) =>
+
+                          render: (
+                            row
+                          ) =>
                             row.remarks ||
                             "-",
                         },
@@ -803,6 +938,7 @@ export default function EmployeeDetailPage() {
                     />
                   ),
                 },
+
                 {
                   key: "training",
                   label: "Training",
@@ -819,19 +955,35 @@ export default function EmployeeDetailPage() {
                           label:
                             "Program",
                         },
+
                         {
                           key: "start_date",
                           label:
                             "Start Date",
+
+                          render: (
+                            row
+                          ) =>
+                            formatDate(
+                              row.start_date
+                            ),
                         },
+
                         {
                           key: "end_date",
                           label:
                             "End Date",
-                          render: (row) =>
-                            row.end_date ||
-                            "-",
+
+                          render: (
+                            row
+                          ) =>
+                            row.end_date
+                              ? formatDate(
+                                  row.end_date
+                                )
+                              : "-",
                         },
+
                         {
                           key: "status",
                           label:

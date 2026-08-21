@@ -39,11 +39,20 @@ export default function FinanceAttendanceMonthlyPage() {
     refetch: refetchMonthly,
   } = useMonthlyAttendance(month, year);
 
-  const items = monthlyData?.items || [];
+  /*
+   * ==========================================================
+   * MONTHLY DATA
+   * ==========================================================
+   */
+
+  const items = useMemo(
+    () => monthlyData?.items || [],
+    [monthlyData]
+  );
 
   /*
    * ==========================================================
-   * FILTER
+   * FILTERED DATA
    * ==========================================================
    */
 
@@ -143,7 +152,7 @@ export default function FinanceAttendanceMonthlyPage() {
 
   /*
    * ==========================================================
-   * ATTENDANCE %
+   * ATTENDANCE PERCENTAGE
    * ==========================================================
    */
 
@@ -190,23 +199,28 @@ export default function FinanceAttendanceMonthlyPage() {
 
     setMonth(nextMonth);
     setYear(nextYear);
+    setSearch("");
   };
 
   const handleMonthChange = (event) => {
     const value = event.target.value;
 
-    if (!value) return;
+    if (!value) {
+      return;
+    }
 
     const [selectedYear, selectedMonth] =
       value.split("-");
 
     setYear(Number(selectedYear));
     setMonth(Number(selectedMonth));
+    setSearch("");
   };
 
   const goToCurrentMonth = () => {
     setMonth(now.getMonth() + 1);
     setYear(now.getFullYear());
+    setSearch("");
   };
 
   /*
@@ -216,7 +230,9 @@ export default function FinanceAttendanceMonthlyPage() {
    */
 
   const downloadReport = () => {
-    if (!items.length) return;
+    if (!items.length) {
+      return;
+    }
 
     const headers = [
       "Employee",
@@ -275,10 +291,7 @@ export default function FinanceAttendanceMonthlyPage() {
       summary.netSalary.toFixed(2),
     ]);
 
-    const csv = [
-      headers,
-      ...rows,
-    ]
+    const csv = [headers, ...rows]
       .map((row) =>
         row
           .map((value) => {
@@ -322,7 +335,9 @@ export default function FinanceAttendanceMonthlyPage() {
    */
 
   const downloadPDF = () => {
-    if (!items.length) return;
+    if (!items.length) {
+      return;
+    }
 
     const doc = new jsPDF({
       orientation: "landscape",
@@ -573,8 +588,7 @@ export default function FinanceAttendanceMonthlyPage() {
           data.row.index ===
           tableRows.length - 1
         ) {
-          data.cell.styles.fontStyle =
-            "bold";
+          data.cell.styles.fontStyle = "bold";
         }
       },
     });
@@ -620,11 +634,15 @@ export default function FinanceAttendanceMonthlyPage() {
     );
   };
 
+  /*
+   * ==========================================================
+   * RENDER
+   * ==========================================================
+   */
+
   return (
     <div className="min-h-full space-y-6">
-      {/* =====================================================
-          HEADER
-      ====================================================== */}
+      {/* HEADER */}
 
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
         <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
@@ -643,8 +661,7 @@ export default function FinanceAttendanceMonthlyPage() {
             </div>
 
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              Attendance, leave and salary-impact
-              summary
+              Attendance, leave and salary-impact summary
             </p>
           </div>
 
@@ -699,9 +716,7 @@ export default function FinanceAttendanceMonthlyPage() {
         </div>
       </div>
 
-      {/* =====================================================
-          REPORT ACTIONS
-      ====================================================== */}
+      {/* REPORT ACTIONS */}
 
       <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -711,8 +726,8 @@ export default function FinanceAttendanceMonthlyPage() {
             </h2>
 
             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-              Download attendance and salary-impact
-              information for {selectedMonthLabel}.
+              Download attendance and salary-impact information for{" "}
+              {selectedMonthLabel}.
             </p>
           </div>
 
@@ -748,9 +763,7 @@ export default function FinanceAttendanceMonthlyPage() {
         </div>
       </div>
 
-      {/* =====================================================
-          PERIOD / ATTENDANCE
-      ====================================================== */}
+      {/* PERIOD / ATTENDANCE */}
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <InfoCard
@@ -794,9 +807,7 @@ export default function FinanceAttendanceMonthlyPage() {
         </div>
       </div>
 
-      {/* =====================================================
-          ATTENDANCE KPI
-      ====================================================== */}
+      {/* ATTENDANCE KPI */}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <SummaryCard
@@ -825,9 +836,7 @@ export default function FinanceAttendanceMonthlyPage() {
 
         <SummaryCard
           title="Worked Hours"
-          value={`${summary.workedHours.toFixed(
-            2
-          )}h`}
+          value={`${summary.workedHours.toFixed(2)}h`}
           description="Total worked hours"
         />
 
@@ -864,9 +873,7 @@ export default function FinanceAttendanceMonthlyPage() {
         />
       </div>
 
-      {/* =====================================================
-          TABLE
-      ====================================================== */}
+      {/* TABLE */}
 
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
         <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -876,8 +883,7 @@ export default function FinanceAttendanceMonthlyPage() {
             </h2>
 
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              Attendance, leave and salary deduction
-              details
+              Attendance, leave and salary deduction details
             </p>
           </div>
 
@@ -897,6 +903,7 @@ export default function FinanceAttendanceMonthlyPage() {
                 type="button"
                 onClick={() => setSearch("")}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                aria-label="Clear search"
               >
                 ×
               </button>
@@ -912,12 +919,6 @@ export default function FinanceAttendanceMonthlyPage() {
     </div>
   );
 }
-
-/*
- * ============================================================
- * INFO CARD
- * ============================================================
- */
 
 function InfoCard({
   title,
@@ -940,12 +941,6 @@ function InfoCard({
     </div>
   );
 }
-
-/*
- * ============================================================
- * SUMMARY CARD
- * ============================================================
- */
 
 function SummaryCard({
   title,
