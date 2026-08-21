@@ -943,8 +943,10 @@ class Payroll(TimestampMixin, db.Model):
         db.Boolean,
         default=True,
     )
-    
-    employee = db.relationship("Employee")
+
+    employee = db.relationship(
+        "Employee"
+    )
 
     def to_dict(self):
         data = super().to_dict()
@@ -953,23 +955,14 @@ class Payroll(TimestampMixin, db.Model):
 
         if not employee:
             data["employee"] = None
+
             data["company_id"] = None
             data["branch_id"] = None
             data["department_id"] = None
             data["designation_id"] = None
+
             return data
 
-        employee_data = _summary(
-            employee,
-            [
-                "id",
-                "employee_code",
-                "first_name",
-                "last_name",
-            ],
-        )
-
-        # Employee relationships
         department = getattr(
             employee,
             "department",
@@ -982,21 +975,38 @@ class Payroll(TimestampMixin, db.Model):
             None,
         )
 
-        branch = getattr(
-            employee,
-            "branch",
-            None,
+        company = (
+            getattr(
+                department,
+                "company",
+                None,
+            )
+            if department
+            else None
         )
 
-        company = getattr(
-            employee,
-            "company",
-            None,
+        branch = (
+            getattr(
+                department,
+                "branch",
+                None,
+            )
+            if department
+            else None
         )
 
-        # Department
+        employee_data = _summary(
+            employee,
+            [
+                "id",
+                "employee_code",
+                "first_name",
+                "last_name",
+            ],
+        )
+
         if department:
-            employee_data["department"] = _summary(
+            department_data = _summary(
                 department,
                 [
                     "id",
@@ -1005,7 +1015,35 @@ class Payroll(TimestampMixin, db.Model):
                 ],
             )
 
-        # Designation
+            if company:
+                department_data["company"] = _summary(
+                    company,
+                    [
+                        "id",
+                        "name",
+                        "company_name",
+                    ],
+                )
+            else:
+                department_data["company"] = None
+
+            if branch:
+                department_data["branch"] = _summary(
+                    branch,
+                    [
+                        "id",
+                        "name",
+                        "branch_name",
+                    ],
+                )
+            else:
+                department_data["branch"] = None
+
+            employee_data["department"] = department_data
+
+        else:
+            employee_data["department"] = None
+
         if designation:
             employee_data["designation"] = _summary(
                 designation,
@@ -1015,51 +1053,35 @@ class Payroll(TimestampMixin, db.Model):
                     "designation_code",
                 ],
             )
-
-        # Branch
-        if branch:
-            employee_data["branch"] = _summary(
-                branch,
-                [
-                    "id",
-                    "name",
-                    "branch_name",
-                ],
-            )
-
-        if company:
-            employee_data["company"] = _summary(
-                company,
-                [
-                    "id",
-                    "name",
-                    "company_name",
-                ],
-            )
+        else:
+            employee_data["designation"] = None
 
         data["employee"] = employee_data
-        data["department_id"] = getattr(
-            employee,
-            "department_id",
-            None,
+
+        # =====================================================
+        # HIERARCHY IDS
+        # These are response fields only.
+        # No migration required.
+        # =====================================================
+
+        data["department_id"] = (
+            employee.department_id
         )
 
-        data["designation_id"] = getattr(
-            employee,
-            "designation_id",
-            None,
+        data["designation_id"] = (
+            employee.designation_id
         )
 
-        data["branch_id"] = getattr(
-            employee,
-            "branch_id",
-            None,
+        data["branch_id"] = (
+            branch.id
+            if branch
+            else None
         )
 
-        data["company_id"] = getattr(
-            employee,
-            "company_id",
-            None,
+        data["company_id"] = (
+            company.id
+            if company
+            else None
         )
 
         return data
