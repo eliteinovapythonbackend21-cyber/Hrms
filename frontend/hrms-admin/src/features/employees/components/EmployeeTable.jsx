@@ -4,10 +4,9 @@ import { Link } from "react-router-dom";
 import DataTable from "@/components/table/DataTable";
 import Badge from "@/components/ui/Badge";
 import Modal from "@/components/ui/Modal";
-
 import { formatCurrency } from "@/utils/formatCurrency";
 
-// Attendance / Leave quick-view popup
+// Attendance / Leave quick-view popups
 import { useAttendance } from "@/features/attendance/useAttendance";
 import AttendanceTable from "@/features/attendance/components/AttendanceTable";
 
@@ -39,7 +38,6 @@ const EyeIcon = () => (
       strokeWidth="1.3"
       strokeLinejoin="round"
     />
-
     <circle
       cx="10"
       cy="10"
@@ -59,7 +57,6 @@ const AttendanceIcon = () => (
       stroke="currentColor"
       strokeWidth="1.3"
     />
-
     <path
       d="M10 7v3.5l2.3 1.3"
       stroke="currentColor"
@@ -67,7 +64,6 @@ const AttendanceIcon = () => (
       strokeLinecap="round"
       strokeLinejoin="round"
     />
-
     <path
       d="M7 2h6"
       stroke="currentColor"
@@ -88,14 +84,12 @@ const LeaveIcon = () => (
       stroke="currentColor"
       strokeWidth="1.3"
     />
-
     <path
       d="M3 8h14M7 3v3M13 3v3"
       stroke="currentColor"
       strokeWidth="1.3"
       strokeLinecap="round"
     />
-
     <path
       d="M7.5 12.5l2 2 3-3.5"
       stroke="currentColor"
@@ -146,6 +140,93 @@ function IconAction({
 }
 
 /* =========================================================
+   NAVIGATION HELPERS
+========================================================= */
+
+/*
+ * Determines where the EmployeeTable is currently being
+ * rendered from.
+ *
+ * /master/employees -> master
+ * /crm/employees    -> crm
+ * /employees        -> normal
+ */
+function getEmployeeSource() {
+  const pathname = window.location.pathname;
+
+  if (
+    pathname.startsWith(
+      "/master/employees"
+    )
+  ) {
+    return "master";
+  }
+
+  if (
+    pathname.startsWith(
+      "/crm/employees"
+    )
+  ) {
+    return "crm";
+  }
+
+  return "employees";
+}
+
+/*
+ * Salary URL.
+ *
+ * We deliberately preserve the source with a query parameter
+ * because the Salary page is a separate route:
+ *
+ * /employees/:id/salary
+ *
+ * The Salary page reads ?from=master / ?from=crm.
+ */
+function getSalaryPath(employeeId) {
+  const source =
+    getEmployeeSource();
+
+  if (source === "master") {
+    return `/employees/${employeeId}/salary?from=master`;
+  }
+
+  if (source === "crm") {
+    return `/employees/${employeeId}/salary?from=crm`;
+  }
+
+  return `/employees/${employeeId}/salary`;
+}
+
+/*
+ * Payslip follows the same navigation pattern as Salary.
+ */
+function getPayslipPath(employeeId) {
+  const source =
+    getEmployeeSource();
+
+  if (source === "master") {
+    return `/employees/${employeeId}/payslip?from=master`;
+  }
+
+  if (source === "crm") {
+    return `/employees/${employeeId}/payslip?from=crm`;
+  }
+
+  return `/employees/${employeeId}/payslip`;
+}
+
+/* =========================================================
+   EMPLOYEE NAME
+========================================================= */
+
+function getEmployeeName(employee) {
+  return `${employee?.first_name || ""} ${
+    employee?.last_name || ""
+  }`.trim();
+}
+
+/* =========================================================
    EMPLOYEE TABLE
 ========================================================= */
 
@@ -157,6 +238,12 @@ export default function EmployeeTable({
   onSort,
   restricted = false,
 }) {
+  /*
+   * {
+   *   type: "attendance" | "leave",
+   *   employee
+   * }
+   */
   const [
     modalState,
     setModalState,
@@ -169,9 +256,14 @@ export default function EmployeeTable({
   const leaveModalOpen =
     modalState?.type === "leave";
 
+  /* =======================================================
+     ATTENDANCE
+  ======================================================= */
+
   const {
     data: attendanceData,
-    isLoading: attendanceLoading,
+    isLoading:
+      attendanceLoading,
   } = useAttendance(
     {
       employee_id:
@@ -182,6 +274,10 @@ export default function EmployeeTable({
         attendanceModalOpen,
     }
   );
+
+  /* =======================================================
+     LEAVES
+  ======================================================= */
 
   const {
     data: leaveData,
@@ -205,26 +301,28 @@ export default function EmployeeTable({
           modalState?.employee?.id
     );
 
-  const closeModal = () =>
+  const closeModal = () => {
     setModalState(null);
-
-  const employeeName = (
-    employee
-  ) =>
-    `${employee?.first_name || ""} ${
-      employee?.last_name || ""
-    }`.trim();
+  };
 
   /* =======================================================
      COLUMNS
   ======================================================= */
 
   const columns = [
+    /* -------------------------------------------------------
+       CODE
+    ------------------------------------------------------- */
+
     {
       key: "employee_code",
       label: "Code",
       sortable: true,
     },
+
+    /* -------------------------------------------------------
+       NAME
+    ------------------------------------------------------- */
 
     {
       key: "first_name",
@@ -233,37 +331,42 @@ export default function EmployeeTable({
 
       render: (employee) => (
         <span className="text-sm">
-          {employeeName(employee)}
+          {getEmployeeName(
+            employee
+          )}
         </span>
       ),
     },
 
-    /* =====================================================
+    /* -------------------------------------------------------
        COMPANY / BRANCH
-    ===================================================== */
+    ------------------------------------------------------- */
 
     {
       key: "company_branch",
-      label: "Company / Branch",
+      label:
+        "Company / Branch",
 
       render: (employee) => (
         <div className="min-w-0 text-xs leading-tight">
           <p className="truncate font-medium text-slate-700 dark:text-slate-200">
             {employee.department
-              ?.company?.name || "-"}
+              ?.company?.name ||
+              "-"}
           </p>
 
           <p className="truncate text-slate-400">
             {employee.department
-              ?.branch?.name || "-"}
+              ?.branch?.name ||
+              "-"}
           </p>
         </div>
       ),
     },
 
-    /* =====================================================
+    /* -------------------------------------------------------
        DEPARTMENT / DESIGNATION
-    ===================================================== */
+    ------------------------------------------------------- */
 
     {
       key: "department_designation",
@@ -274,21 +377,23 @@ export default function EmployeeTable({
         <div className="min-w-0 text-xs leading-tight">
           <p className="truncate font-medium text-slate-700 dark:text-slate-200">
             {employee.department
-              ?.department_name || "-"}
+              ?.department_name ||
+              "-"}
           </p>
 
           <p className="truncate text-slate-400">
             {employee.designation
-              ?.designation_name || "-"}
+              ?.designation_name ||
+              "-"}
           </p>
         </div>
       ),
     },
 
-    /* =====================================================
+    /* -------------------------------------------------------
        SALARY
-       Hidden only in restricted Employee page
-    ===================================================== */
+       Hidden on restricted Employees page.
+    ------------------------------------------------------- */
 
     ...(!restricted
       ? [
@@ -308,9 +413,9 @@ export default function EmployeeTable({
         ]
       : []),
 
-    /* =====================================================
+    /* -------------------------------------------------------
        STATUS
-    ===================================================== */
+    ------------------------------------------------------- */
 
     {
       key: "is_active",
@@ -332,10 +437,10 @@ export default function EmployeeTable({
       ),
     },
 
-    /* =====================================================
+    /* -------------------------------------------------------
        ATTENDANCE / LEAVES
-       Restricted view only
-    ===================================================== */
+       Restricted view only.
+    ------------------------------------------------------- */
 
     ...(restricted
       ? [
@@ -365,7 +470,9 @@ export default function EmployeeTable({
 
             render: (employee) => (
               <IconAction
-                icon={<LeaveIcon />}
+                icon={
+                  <LeaveIcon />
+                }
                 label="View leaves"
                 onClick={() =>
                   setModalState({
@@ -379,9 +486,9 @@ export default function EmployeeTable({
         ]
       : []),
 
-    /* =====================================================
+    /* -------------------------------------------------------
        ACTIONS
-    ===================================================== */
+    ------------------------------------------------------- */
 
     {
       key: "actions",
@@ -389,9 +496,9 @@ export default function EmployeeTable({
 
       render: (employee) => (
         <div className="flex items-center gap-2 whitespace-nowrap">
-          {/* -----------------------------------------------
+          {/* =================================================
              VIEW
-          ------------------------------------------------ */}
+          ================================================= */}
 
           {restricted ? (
             <IconAction
@@ -408,51 +515,26 @@ export default function EmployeeTable({
             </Link>
           )}
 
-          {/* -----------------------------------------------
+          {/* =================================================
              SALARY + PAYSLIP
-             Hidden from restricted Employees page
-          ------------------------------------------------ */}
+             Hidden on restricted Employee page.
+          ================================================= */}
 
           {!restricted && (
             <>
-              {/* =================================================
-                 NORMAL EMPLOYEE PAGE
-                 /employees
-                 → /employees/:id/salary
-
-                 ADMIN MASTER EMPLOYEE PAGE
-                 /master/employees
-                 → /employees/:id/salary?from=master
-              ================================================= */}
-
               <Link
-                to={`/employees/${
+                to={getSalaryPath(
                   employee.id
-                }/salary${
-                  window.location.pathname.startsWith(
-                    "/master/employees"
-                  )
-                    ? "?from=master"
-                    : ""
-                }`}
+                )}
                 className="text-xs text-primary-600 hover:underline"
               >
                 Salary
               </Link>
 
-              {/* =================================================
-                 PAYSLIP
-                 Keep existing behavior.
-              ================================================= */}
-
               <Link
-                to={`/employees/${employee.id}/payslip${
-                  window.location.pathname.startsWith(
-                    "/master/employees"
-                  )
-                    ? "?from=master"
-                    : ""
-                }`}
+                to={getPayslipPath(
+                  employee.id
+                )}
                 className="text-xs text-primary-600 hover:underline"
               >
                 Payslip
@@ -476,7 +558,7 @@ export default function EmployeeTable({
       />
 
       {/* =====================================================
-          ATTENDANCE POPUP
+          ATTENDANCE / LEAVES POPUPS
       ===================================================== */}
 
       {restricted && (
@@ -486,7 +568,7 @@ export default function EmployeeTable({
               attendanceModalOpen
             }
             onClose={closeModal}
-            title={`Attendance — ${employeeName(
+            title={`Attendance — ${getEmployeeName(
               modalState?.employee
             )}`}
             size="xl"
@@ -505,23 +587,17 @@ export default function EmployeeTable({
             />
           </Modal>
 
-          {/* =================================================
-              LEAVE POPUP
-          ================================================= */}
-
           <Modal
             open={leaveModalOpen}
             onClose={closeModal}
-            title={`Leaves — ${employeeName(
+            title={`Leaves — ${getEmployeeName(
               modalState?.employee
             )}`}
             size="xl"
           >
             <LeaveTable
               data={employeeLeaves}
-              loading={
-                leaveLoading
-              }
+              loading={leaveLoading}
               isAdmin={false}
               sortBy={undefined}
               sortDir={undefined}
