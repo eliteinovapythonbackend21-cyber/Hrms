@@ -953,15 +953,20 @@ class Payroll(TimestampMixin, db.Model):
 
         employee = self.employee
 
-        if not employee:
+        if employee is None:
             data["employee"] = None
-
-            data["company_id"] = None
-            data["branch_id"] = None
             data["department_id"] = None
             data["designation_id"] = None
-
+            data["branch_id"] = None
+            data["company_id"] = None
             return data
+
+        employee_data = {
+            "id": employee.id,
+            "employee_code": employee.employee_code,
+            "first_name": employee.first_name,
+            "last_name": employee.last_name,
+        }
 
         department = getattr(
             employee,
@@ -969,100 +974,71 @@ class Payroll(TimestampMixin, db.Model):
             None,
         )
 
+        if department is not None:
+            department_data = {
+                "id": department.id,
+                "department_name": department.department_name,
+                "department_code": department.department_code,
+            }
+
+            company = getattr(
+                department,
+                "company",
+                None,
+            )
+
+            if company is not None:
+                department_data["company"] = {
+                    "id": company.id,
+                    "name": getattr(
+                        company,
+                        "name",
+                        None,
+                    ),
+                }
+            else:
+                department_data["company"] = None
+
+            branch = getattr(
+                department,
+                "branch",
+                None,
+            )
+
+            if branch is not None:
+                department_data["branch"] = {
+                    "id": branch.id,
+                    "name": getattr(
+                        branch,
+                        "name",
+                        None,
+                    ),
+                }
+            else:
+                department_data["branch"] = None
+
+            employee_data["department"] = (
+                department_data
+            )
+        else:
+            employee_data["department"] = None
+
         designation = getattr(
             employee,
             "designation",
             None,
         )
 
-        company = (
-            getattr(
-                department,
-                "company",
-                None,
-            )
-            if department
-            else None
-        )
-
-        branch = (
-            getattr(
-                department,
-                "branch",
-                None,
-            )
-            if department
-            else None
-        )
-
-        employee_data = _summary(
-            employee,
-            [
-                "id",
-                "employee_code",
-                "first_name",
-                "last_name",
-            ],
-        )
-
-        if department:
-            department_data = _summary(
-                department,
-                [
-                    "id",
-                    "department_name",
-                    "department_code",
-                ],
-            )
-
-            if company:
-                department_data["company"] = _summary(
-                    company,
-                    [
-                        "id",
-                        "name",
-                        "company_name",
-                    ],
-                )
-            else:
-                department_data["company"] = None
-
-            if branch:
-                department_data["branch"] = _summary(
-                    branch,
-                    [
-                        "id",
-                        "name",
-                        "branch_name",
-                    ],
-                )
-            else:
-                department_data["branch"] = None
-
-            employee_data["department"] = department_data
-
-        else:
-            employee_data["department"] = None
-
-        if designation:
-            employee_data["designation"] = _summary(
-                designation,
-                [
-                    "id",
-                    "designation_name",
-                    "designation_code",
-                ],
-            )
+        if designation is not None:
+            employee_data["designation"] = {
+                "id": designation.id,
+                "designation_name": designation.designation_name,
+                "designation_code": designation.designation_code,
+            }
         else:
             employee_data["designation"] = None
 
         data["employee"] = employee_data
-
-        # =====================================================
-        # HIERARCHY IDS
-        # These are response fields only.
-        # No migration required.
-        # =====================================================
 
         data["department_id"] = (
             employee.department_id
@@ -1072,17 +1048,33 @@ class Payroll(TimestampMixin, db.Model):
             employee.designation_id
         )
 
-        data["branch_id"] = (
-            branch.id
-            if branch
-            else None
-        )
+        if department is not None:
+            branch = getattr(
+                department,
+                "branch",
+                None,
+            )
 
-        data["company_id"] = (
-            company.id
-            if company
-            else None
-        )
+            company = getattr(
+                department,
+                "company",
+                None,
+            )
+
+            data["branch_id"] = (
+                branch.id
+                if branch is not None
+                else None
+            )
+
+            data["company_id"] = (
+                company.id
+                if company is not None
+                else None
+            )
+        else:
+            data["branch_id"] = None
+            data["company_id"] = None
 
         return data
 
