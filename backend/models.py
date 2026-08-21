@@ -959,112 +959,6 @@ class Payroll(TimestampMixin, db.Model):
             data["designation_id"] = None
             return data
 
-        employee_department = getattr(
-            employee,
-            "department",
-            None,
-        )
-
-        employee_branch = getattr(
-            employee,
-            "branch",
-            None,
-        )
-
-        employee_company = getattr(
-            employee,
-            "company",
-            None,
-        )
-
-        employee_designation = getattr(
-            employee,
-            "designation",
-            None,
-        )
-
-    
-        department = (
-            employee_department
-            or getattr(
-                employee,
-                "department_details",
-                None,
-            )
-        )
-
-
-        designation = (
-            employee_designation
-            or getattr(
-                employee,
-                "designation_details",
-                None,
-            )
-        )
-
-        branch = (
-            employee_branch
-            or getattr(
-                employee,
-                "branch_details",
-                None,
-            )
-        )
-
-        if not branch and department:
-            branch = getattr(
-                department,
-                "branch",
-                None,
-            )
-
-        if not branch and department:
-            branch = getattr(
-                department,
-                "branch_details",
-                None,
-            )
-
-
-        company = (
-            employee_company
-            or getattr(
-                employee,
-                "company_details",
-                None,
-            )
-        )
-
-        if not company and department:
-            company = getattr(
-                department,
-                "company",
-                None,
-            )
-
-        if not company and department:
-            company = getattr(
-                department,
-                "company_details",
-                None,
-            )
-
-        if not company and branch:
-            company = getattr(
-                branch,
-                "company",
-                None,
-            )
-
-        if not company and branch:
-            company = getattr(
-                branch,
-                "company_details",
-                None,
-            )
-
-
         employee_data = _summary(
             employee,
             [
@@ -1075,6 +969,32 @@ class Payroll(TimestampMixin, db.Model):
             ],
         )
 
+        # Employee relationships
+        department = getattr(
+            employee,
+            "department",
+            None,
+        )
+
+        designation = getattr(
+            employee,
+            "designation",
+            None,
+        )
+
+        branch = getattr(
+            employee,
+            "branch",
+            None,
+        )
+
+        company = getattr(
+            employee,
+            "company",
+            None,
+        )
+
+        # Department
         if department:
             employee_data["department"] = _summary(
                 department,
@@ -1085,6 +1005,7 @@ class Payroll(TimestampMixin, db.Model):
                 ],
             )
 
+        # Designation
         if designation:
             employee_data["designation"] = _summary(
                 designation,
@@ -1095,7 +1016,7 @@ class Payroll(TimestampMixin, db.Model):
                 ],
             )
 
-
+        # Branch
         if branch:
             employee_data["branch"] = _summary(
                 branch,
@@ -1117,56 +1038,28 @@ class Payroll(TimestampMixin, db.Model):
             )
 
         data["employee"] = employee_data
-        data["department_id"] = (
-            getattr(
-                employee,
-                "department_id",
-                None,
-            )
-            or getattr(
-                department,
-                "id",
-                None,
-            )
+        data["department_id"] = getattr(
+            employee,
+            "department_id",
+            None,
         )
 
-        data["designation_id"] = (
-            getattr(
-                employee,
-                "designation_id",
-                None,
-            )
-            or getattr(
-                designation,
-                "id",
-                None,
-            )
+        data["designation_id"] = getattr(
+            employee,
+            "designation_id",
+            None,
         )
 
-        data["branch_id"] = (
-            getattr(
-                employee,
-                "branch_id",
-                None,
-            )
-            or getattr(
-                branch,
-                "id",
-                None,
-            )
+        data["branch_id"] = getattr(
+            employee,
+            "branch_id",
+            None,
         )
 
-        data["company_id"] = (
-            getattr(
-                employee,
-                "company_id",
-                None,
-            )
-            or getattr(
-                company,
-                "id",
-                None,
-            )
+        data["company_id"] = getattr(
+            employee,
+            "company_id",
+            None,
         )
 
         return data
