@@ -1,30 +1,67 @@
 import axiosClient from "./axiosClient";
+
 import { API } from "./endpoints";
 
 export const attendanceApi = {
-  // Get attendance records
+  /*
+   * ==========================================================
+   * GET ATTENDANCE RECORDS
+   * ==========================================================
+   */
+
   list: (params) =>
-    axiosClient.get(API.ATTENDANCE.LIST, {
-      params,
-    }),
+    axiosClient.get(
+      API.ATTENDANCE.LIST,
+      {
+        params,
+      }
+    ),
 
-  // Get monthly attendance and salary summary
+  /*
+   * ==========================================================
+   * MONTHLY ATTENDANCE SUMMARY
+   * ==========================================================
+   */
+
   monthlySummary: (params) =>
-    axiosClient.get(API.ATTENDANCE.MONTHLY_SUMMARY, {
-      params,
-    }),
+    axiosClient.get(
+      API.ATTENDANCE.MONTHLY_SUMMARY,
+      {
+        params,
+      }
+    ),
 
-  // Download attendance report
+  /*
+   * ==========================================================
+   * ATTENDANCE REPORT
+   * ==========================================================
+   */
+
   report: (params) =>
-    axiosClient.get(API.ATTENDANCE.REPORT, {
-      params,
-      responseType: "blob",
-    }),
+    axiosClient.get(
+      API.ATTENDANCE.REPORT,
+      {
+        params,
+        responseType: "blob",
+      }
+    ),
 
-  // Download salary report
+  /*
+   * ==========================================================
+   * EXISTING SALARY REPORT
+   * ==========================================================
+   *
+   * Used temporarily by the Monthly Payslip Report UI.
+   *
+   * ==========================================================
+   */
+
   salaryReport: (params) =>
-    axiosClient.get(API.ATTENDANCE.SALARY_REPORT, {
-      params,
-      responseType: "blob",
-    }),
+    axiosClient.get(
+      API.ATTENDANCE.SALARY_REPORT,
+      {
+        params,
+        responseType: "blob",
+      }
+    ),
 };
