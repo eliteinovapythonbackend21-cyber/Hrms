@@ -59,7 +59,14 @@ function getItems(data) {
 }
 
 /* =========================================================
-   EMPLOYEE
+   ACTUAL API HIERARCHY
+
+   Payroll
+      -> Employee
+         -> Department
+            -> Company
+            -> Branch
+         -> Designation
 ========================================================= */
 
 function getEmployee(payroll) {
@@ -70,12 +77,6 @@ function getEmployee(payroll) {
     null
   );
 }
-
-/* =========================================================
-   DEPARTMENT
-   Actual structure:
-   Payroll -> Employee -> Department
-========================================================= */
 
 function getDepartment(payroll) {
   const employee = getEmployee(payroll);
@@ -89,12 +90,6 @@ function getDepartment(payroll) {
   );
 }
 
-/* =========================================================
-   COMPANY
-   Actual structure:
-   Payroll -> Employee -> Department -> Company
-========================================================= */
-
 function getCompany(payroll) {
   const department = getDepartment(payroll);
 
@@ -107,12 +102,6 @@ function getCompany(payroll) {
   );
 }
 
-/* =========================================================
-   BRANCH
-   Actual structure:
-   Payroll -> Employee -> Department -> Branch
-========================================================= */
-
 function getBranch(payroll) {
   const department = getDepartment(payroll);
 
@@ -124,12 +113,6 @@ function getBranch(payroll) {
     null
   );
 }
-
-/* =========================================================
-   DESIGNATION
-   Actual structure:
-   Payroll -> Employee -> Designation
-========================================================= */
 
 function getDesignation(payroll) {
   const employee = getEmployee(payroll);
@@ -144,7 +127,7 @@ function getDesignation(payroll) {
 }
 
 /* =========================================================
-   EMPLOYEE NAME
+   EMPLOYEE
 ========================================================= */
 
 function getEmployeeName(payroll) {
@@ -170,10 +153,6 @@ function getEmployeeName(payroll) {
     `Employee #${employee.id ?? payroll?.employee_id ?? "-"}`
   );
 }
-
-/* =========================================================
-   EMPLOYEE CODE
-========================================================= */
 
 function getEmployeeCode(payroll) {
   const employee = getEmployee(payroll);
@@ -316,18 +295,13 @@ function getDesignationId(payroll) {
 }
 
 /* =========================================================
-   AMOUNT
+   PAYROLL HELPERS
 ========================================================= */
 
 function normalizeAmount(value) {
   const number = Number(value);
-
   return Number.isFinite(number) ? number : 0;
 }
-
-/* =========================================================
-   STATUS
-========================================================= */
 
 function getPayrollStatus(payroll) {
   if (payroll?.is_active === false) {
@@ -376,14 +350,11 @@ function statusBadge(payroll) {
       <span
         className={`h-1.5 w-1.5 rounded-full ${dotClass}`}
       />
+
       {status}
     </Badge>
   );
 }
-
-/* =========================================================
-   PAY MONTH
-========================================================= */
 
 function formatPayMonth(value) {
   if (!value) {
@@ -391,7 +362,6 @@ function formatPayMonth(value) {
   }
 
   const raw = String(value);
-
   const match = raw.match(/^(\d{4})-(\d{2})$/);
 
   if (!match) {
@@ -413,7 +383,187 @@ function formatPayMonth(value) {
 }
 
 /* =========================================================
+   ICONS
+========================================================= */
+
+const PayrollIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className="h-5 w-5"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    strokeWidth={1.8}
+  >
+    <rect
+      x="5"
+      y="4"
+      width="14"
+      height="16"
+      rx="1.5"
+    />
+    <path
+      strokeLinecap="round"
+      d="M8 8h8M8 12h8M8 16h5"
+    />
+  </svg>
+);
+
+const MoneyIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className="h-5 w-5"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    strokeWidth={1.8}
+  >
+    <circle cx="12" cy="12" r="9" />
+    <path
+      strokeLinecap="round"
+      d="M12 7v10M15 9c-.5-1.5-1.5-2-3-2-1.7 0-3 .8-3 2s1.2 1.8 3 2.2 3 .9 3 2.3-1.3 2.3-3 2.3c-1.5 0-2.6-.5-3.2-1.5"
+    />
+  </svg>
+);
+
+const PaidIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className="h-5 w-5"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    strokeWidth={1.8}
+  >
+    <circle cx="12" cy="12" r="9" />
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="m8 12 2.5 2.5L16 9"
+    />
+  </svg>
+);
+
+const PendingIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className="h-5 w-5"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    strokeWidth={1.8}
+  >
+    <circle cx="12" cy="12" r="9" />
+    <path
+      strokeLinecap="round"
+      d="M12 7v5l3 2"
+    />
+  </svg>
+);
+
+const CompanyIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className="h-3.5 w-3.5"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    strokeWidth={1.8}
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M3 21h18M5 21V5a2 2 0 012-2h10a2 2 0 012 2v16M9 7h2M9 11h2M15 7h2M15 11h2"
+    />
+  </svg>
+);
+
+const BranchIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className="h-3.5 w-3.5"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    strokeWidth={1.8}
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M4 21h16M6 21V5a2 2 0 012-2h8a2 2 0 012 2v16"
+    />
+    <path
+      strokeLinecap="round"
+      d="M9 7h1M9 11h1M14 7h1M14 11h1"
+    />
+  </svg>
+);
+
+const DepartmentIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className="h-3.5 w-3.5"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    strokeWidth={1.8}
+  >
+    <path
+      strokeLinecap="round"
+      d="M4 6h16M4 12h16M4 18h16"
+    />
+  </svg>
+);
+
+const DesignationIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className="h-3.5 w-3.5"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    strokeWidth={1.8}
+  >
+    <rect
+      x="4"
+      y="4"
+      width="16"
+      height="16"
+      rx="2"
+    />
+    <path
+      strokeLinecap="round"
+      d="M8 9h8M8 12h8M8 15h5"
+    />
+  </svg>
+);
+
+const EmployeeIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className="h-3.5 w-3.5"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    strokeWidth={1.8}
+  >
+    <circle cx="9" cy="7" r="4" />
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M2 21v-2a4 4 0 014-4h6a4 4 0 014 4v2"
+    />
+    <path
+      strokeLinecap="round"
+      d="M16 11a4 4 0 100-8M19 21v-2a4 4 0 00-3-3.87"
+    />
+  </svg>
+);
+
+/* =========================================================
    HOVER DETAILS
+   IMPORTANT:
+   Do NOT use overflow-hidden on the parent card.
 ========================================================= */
 
 function HoverDetailsTrigger({
@@ -432,7 +582,7 @@ function HoverDetailsTrigger({
       tabIndex={0}
       className="group/payroll-details relative inline-flex max-w-full outline-none"
     >
-      <div className="max-w-full">
+      <div className="relative z-10 max-w-full">
         {children}
       </div>
 
@@ -442,17 +592,25 @@ function HoverDetailsTrigger({
           invisible
           absolute
           top-full
-          z-[100]
+          z-[9999]
           mt-2
+          translate-y-1
           opacity-0
+
           transition-all
           duration-150
+          ease-out
+
           group-hover/payroll-details:pointer-events-auto
           group-hover/payroll-details:visible
+          group-hover/payroll-details:translate-y-0
           group-hover/payroll-details:opacity-100
+
           group-focus/payroll-details:pointer-events-auto
           group-focus/payroll-details:visible
+          group-focus/payroll-details:translate-y-0
           group-focus/payroll-details:opacity-100
+
           ${alignClasses[align]}
         `}
       >
@@ -463,7 +621,7 @@ function HoverDetailsTrigger({
 }
 
 /* =========================================================
-   DETAIL ROW
+   DETAILS CARD
 ========================================================= */
 
 function DetailRow({
@@ -489,10 +647,6 @@ function DetailRow({
   );
 }
 
-/* =========================================================
-   SALARY BOX
-========================================================= */
-
 function SalaryBox({
   label,
   value,
@@ -510,7 +664,9 @@ function SalaryBox({
   };
 
   return (
-    <div className={`rounded-lg p-2 ${classes[tone]}`}>
+    <div
+      className={`rounded-lg p-2 ${classes[tone]}`}
+    >
       <p className="text-[9px] uppercase tracking-wide text-slate-400">
         {label}
       </p>
@@ -522,18 +678,7 @@ function SalaryBox({
   );
 }
 
-/* =========================================================
-   DETAILS CARD
-========================================================= */
-
 function PayrollDetailsCard({ payroll }) {
-  const companyName = getCompanyName(payroll);
-  const branchName = getBranchName(payroll);
-  const departmentName = getDepartmentName(payroll);
-  const departmentCode = getDepartmentCode(payroll);
-  const designationName = getDesignationName(payroll);
-  const designationCode = getDesignationCode(payroll);
-
   const gross = normalizeAmount(
     payroll?.gross_salary
   );
@@ -546,8 +691,14 @@ function PayrollDetailsCard({ payroll }) {
     payroll?.net_salary
   );
 
+  const departmentCode =
+    getDepartmentCode(payroll);
+
+  const designationCode =
+    getDesignationCode(payroll);
+
   return (
-    <div className="w-[430px] max-w-[calc(100vw-32px)] rounded-xl border border-slate-200 border-t-2 border-t-primary-500 bg-white p-4 text-left shadow-xl dark:border-slate-700 dark:bg-slate-800">
+    <div className="relative z-[9999] w-[430px] max-w-[calc(100vw-32px)] rounded-xl border border-slate-200 border-t-2 border-t-primary-500 bg-white p-4 text-left shadow-2xl dark:border-slate-700 dark:bg-slate-800">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
@@ -571,17 +722,17 @@ function PayrollDetailsCard({ payroll }) {
       <div className="space-y-2.5">
         <DetailRow
           label="Company"
-          value={companyName}
+          value={getCompanyName(payroll)}
         />
 
         <DetailRow
           label="Branch"
-          value={branchName}
+          value={getBranchName(payroll)}
         />
 
         <DetailRow
           label="Department"
-          value={departmentName}
+          value={getDepartmentName(payroll)}
         />
 
         {departmentCode !== "-" && (
@@ -594,7 +745,7 @@ function PayrollDetailsCard({ payroll }) {
 
         <DetailRow
           label="Designation"
-          value={designationName}
+          value={getDesignationName(payroll)}
           valueClass="text-violet-600 dark:text-violet-400"
         />
 
@@ -662,196 +813,6 @@ function PayrollDetailsCard({ payroll }) {
     </div>
   );
 }
-
-/* =========================================================
-   ICONS
-========================================================= */
-
-const PayrollIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    className="h-5 w-5"
-    fill="none"
-    viewBox="0 0 24 24"
-    stroke="currentColor"
-    strokeWidth={1.8}
-  >
-    <rect
-      x="5"
-      y="4"
-      width="14"
-      height="16"
-      rx="1.5"
-    />
-
-    <path
-      strokeLinecap="round"
-      d="M8 8h8M8 12h8M8 16h5"
-    />
-  </svg>
-);
-
-const MoneyIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    className="h-5 w-5"
-    fill="none"
-    viewBox="0 0 24 24"
-    stroke="currentColor"
-    strokeWidth={1.8}
-  >
-    <circle cx="12" cy="12" r="9" />
-
-    <path
-      strokeLinecap="round"
-      d="M12 7v10M15 9c-.5-1.5-1.5-2-3-2-1.7 0-3 .8-3 2s1.2 1.8 3 2.2 3 .9 3 2.3-1.3 2.3-3 2.3c-1.5 0-2.6-.5-3.2-1.5"
-    />
-  </svg>
-);
-
-const PaidIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    className="h-5 w-5"
-    fill="none"
-    viewBox="0 0 24 24"
-    stroke="currentColor"
-    strokeWidth={1.8}
-  >
-    <circle cx="12" cy="12" r="9" />
-
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      d="m8 12 2.5 2.5L16 9"
-    />
-  </svg>
-);
-
-const PendingIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    className="h-5 w-5"
-    fill="none"
-    viewBox="0 0 24 24"
-    stroke="currentColor"
-    strokeWidth={1.8}
-  >
-    <circle cx="12" cy="12" r="9" />
-
-    <path
-      strokeLinecap="round"
-      d="M12 7v5l3 2"
-    />
-  </svg>
-);
-
-const CompanyIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    className="h-3.5 w-3.5"
-    fill="none"
-    viewBox="0 0 24 24"
-    stroke="currentColor"
-    strokeWidth={1.8}
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      d="M3 21h18M5 21V5a2 2 0 012-2h10a2 2 0 012 2v16M9 7h2M9 11h2M15 7h2M15 11h2"
-    />
-  </svg>
-);
-
-const BranchIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    className="h-3.5 w-3.5"
-    fill="none"
-    viewBox="0 0 24 24"
-    stroke="currentColor"
-    strokeWidth={1.8}
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      d="M4 21h16M6 21V5a2 2 0 012-2h8a2 2 0 012 2v16"
-    />
-
-    <path
-      strokeLinecap="round"
-      d="M9 7h1M9 11h1M14 7h1M14 11h1"
-    />
-  </svg>
-);
-
-const DepartmentIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    className="h-3.5 w-3.5"
-    fill="none"
-    viewBox="0 0 24 24"
-    stroke="currentColor"
-    strokeWidth={1.8}
-  >
-    <path
-      strokeLinecap="round"
-      d="M4 6h16M4 12h16M4 18h16"
-    />
-  </svg>
-);
-
-const DesignationIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    className="h-3.5 w-3.5"
-    fill="none"
-    viewBox="0 0 24 24"
-    stroke="currentColor"
-    strokeWidth={1.8}
-  >
-    <rect
-      x="4"
-      y="4"
-      width="16"
-      height="16"
-      rx="2"
-    />
-
-    <path
-      strokeLinecap="round"
-      d="M8 9h8M8 12h8M8 15h5"
-    />
-  </svg>
-);
-
-const EmployeeIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    className="h-3.5 w-3.5"
-    fill="none"
-    viewBox="0 0 24 24"
-    stroke="currentColor"
-    strokeWidth={1.8}
-  >
-    <circle
-      cx="9"
-      cy="7"
-      r="4"
-    />
-
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      d="M2 21v-2a4 4 0 014-4h6a4 4 0 014 4v2"
-    />
-
-    <path
-      strokeLinecap="round"
-      d="M16 11a4 4 0 100-8M19 21v-2a4 4 0 00-3-3.87"
-    />
-  </svg>
-);
 
 /* =========================================================
    HIERARCHY ROW
@@ -1010,15 +971,11 @@ function IconButton({
 }
 
 /* =========================================================
-   PAYROLL PAGE
+   PAGE
 ========================================================= */
 
 export default function PayrollRecordListPage() {
   const { showToast } = useToast();
-
-  /* =======================================================
-     FILTER STATE
-  ======================================================= */
 
   const [
     companyFilterId,
@@ -1058,10 +1015,6 @@ export default function PayrollRecordListPage() {
 
   const [page, setPage] =
     useState(1);
-
-  /* =======================================================
-     MODAL STATE
-  ======================================================= */
 
   const [modalOpen, setModalOpen] =
     useState(false);
@@ -1124,7 +1077,8 @@ export default function PayrollRecordListPage() {
       );
     },
 
-    enabled: Boolean(branchFilterId),
+    enabled:
+      Boolean(branchFilterId),
   });
 
   /* =======================================================
@@ -1183,6 +1137,7 @@ export default function PayrollRecordListPage() {
             {
               value:
                 designation.id,
+
               label:
                 designation.designation_name ||
                 designation.name ||
@@ -1232,6 +1187,7 @@ export default function PayrollRecordListPage() {
             {
               value:
                 employeeId,
+
               label:
                 getEmployeeName(
                   payroll
@@ -1434,13 +1390,14 @@ export default function PayrollRecordListPage() {
     );
 
   /* =======================================================
-     STATISTICS
+     STATS
   ======================================================= */
 
   const activePayroll =
     allPayroll.filter(
       (item) =>
-        item?.is_active !== false
+        item?.is_active !==
+        false
     );
 
   const paidPayroll =
@@ -1496,90 +1453,98 @@ export default function PayrollRecordListPage() {
      EXPORT
   ======================================================= */
 
-  const exportColumns = useMemo(
-    () => [
-      {
-        header: "Employee ID",
-        accessor: (r) =>
-          r?.employee_id || "-",
-      },
+  const exportColumns =
+    useMemo(
+      () => [
+        {
+          header: "Employee ID",
+          accessor: (r) =>
+            r?.employee_id || "-",
+        },
 
-      {
-        header: "Employee",
-        accessor: (r) =>
-          getEmployeeName(r),
-      },
+        {
+          header: "Employee",
+          accessor: (r) =>
+            getEmployeeName(r),
+        },
 
-      {
-        header: "Company",
-        accessor: (r) =>
-          getCompanyName(r),
-      },
+        {
+          header: "Company",
+          accessor: (r) =>
+            getCompanyName(r),
+        },
 
-      {
-        header: "Branch",
-        accessor: (r) =>
-          getBranchName(r),
-      },
+        {
+          header: "Branch",
+          accessor: (r) =>
+            getBranchName(r),
+        },
 
-      {
-        header: "Department",
-        accessor: (r) =>
-          getDepartmentName(r),
-      },
+        {
+          header: "Department",
+          accessor: (r) =>
+            getDepartmentName(
+              r
+            ),
+        },
 
-      {
-        header: "Designation",
-        accessor: (r) =>
-          getDesignationName(r),
-      },
+        {
+          header: "Designation",
+          accessor: (r) =>
+            getDesignationName(
+              r
+            ),
+        },
 
-      {
-        header: "Pay Month",
-        accessor: (r) =>
-          r?.pay_month || "-",
-      },
+        {
+          header: "Pay Month",
+          accessor: (r) =>
+            r?.pay_month || "-",
+        },
 
-      {
-        header: "Gross Salary",
-        accessor: (r) =>
-          formatCurrency(
-            r?.gross_salary
-          ),
-      },
+        {
+          header: "Gross Salary",
+          accessor: (r) =>
+            formatCurrency(
+              r?.gross_salary
+            ),
+        },
 
-      {
-        header: "Deductions",
-        accessor: (r) =>
-          formatCurrency(
-            r?.deductions
-          ),
-      },
+        {
+          header: "Deductions",
+          accessor: (r) =>
+            formatCurrency(
+              r?.deductions
+            ),
+        },
 
-      {
-        header: "Net Salary",
-        accessor: (r) =>
-          formatCurrency(
-            r?.net_salary
-          ),
-      },
+        {
+          header: "Net Salary",
+          accessor: (r) =>
+            formatCurrency(
+              r?.net_salary
+            ),
+        },
 
-      {
-        header: "Status",
-        accessor: (r) =>
-          getPayrollStatus(r),
-      },
+        {
+          header: "Status",
+          accessor: (r) =>
+            getPayrollStatus(
+              r
+            ),
+        },
 
-      {
-        header: "Active",
-        accessor: (r) =>
-          r?.is_active !== false
-            ? "Yes"
-            : "No",
-      },
-    ],
-    []
-  );
+        {
+          header: "Active",
+          accessor: (r) =>
+            r?.is_active !==
+            false
+              ? "Yes"
+              : "No",
+        },
+      ],
+      []
+    );
 
   const {
     exporting,
@@ -1596,12 +1561,8 @@ export default function PayrollRecordListPage() {
     },
 
     exportColumns,
-
-    filename:
-      "payroll",
-
-    title:
-      "Payroll Records",
+    filename: "payroll",
+    title: "Payroll Records",
   });
 
   /* =======================================================
@@ -1663,6 +1624,17 @@ export default function PayrollRecordListPage() {
       setPage(1);
     };
 
+  const clearFilters = () => {
+    setSearch("");
+    setCompanyFilterId("");
+    setBranchFilterId("");
+    setDepartmentFilterId("");
+    setDesignationFilterId("");
+    setEmployeeFilterId("");
+    setStatusFilter("active");
+    setPage(1);
+  };
+
   /* =======================================================
      CRUD
   ======================================================= */
@@ -1709,7 +1681,8 @@ export default function PayrollRecordListPage() {
           gross_salary:
             payload?.gross_salary !==
               "" &&
-            payload?.gross_salary != null
+            payload?.gross_salary !=
+              null
               ? Number(
                   payload.gross_salary
                 )
@@ -1718,7 +1691,8 @@ export default function PayrollRecordListPage() {
           deductions:
             payload?.deductions !==
               "" &&
-            payload?.deductions != null
+            payload?.deductions !=
+              null
               ? Number(
                   payload.deductions
                 )
@@ -1727,7 +1701,8 @@ export default function PayrollRecordListPage() {
           net_salary:
             payload?.net_salary !==
               "" &&
-            payload?.net_salary != null
+            payload?.net_salary !=
+              null
               ? Number(
                   payload.net_salary
                 )
@@ -1857,17 +1832,6 @@ export default function PayrollRecordListPage() {
       }
     };
 
-  const clearFilters = () => {
-    setSearch("");
-    setCompanyFilterId("");
-    setBranchFilterId("");
-    setDepartmentFilterId("");
-    setDesignationFilterId("");
-    setEmployeeFilterId("");
-    setStatusFilter("active");
-    setPage(1);
-  };
-
   /* =======================================================
      ERROR
   ======================================================= */
@@ -1893,7 +1857,7 @@ export default function PayrollRecordListPage() {
   }
 
   /* =======================================================
-     RENDER
+     RETURN
   ======================================================= */
 
   return (
@@ -1921,8 +1885,12 @@ export default function PayrollRecordListPage() {
           <TableToolbar
             onRefresh={refetch}
             refreshing={isFetching}
-            onExportExcel={exportExcel}
-            onExportPDF={exportPDF}
+            onExportExcel={
+              exportExcel
+            }
+            onExportPDF={
+              exportPDF
+            }
             exporting={exporting}
           />
 
@@ -1944,7 +1912,9 @@ export default function PayrollRecordListPage() {
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
-          icon={<PayrollIcon />}
+          icon={
+            <PayrollIcon />
+          }
           value={
             allPayroll.length
           }
@@ -1954,7 +1924,9 @@ export default function PayrollRecordListPage() {
         />
 
         <StatCard
-          icon={<PaidIcon />}
+          icon={
+            <PaidIcon />
+          }
           value={
             paidPayroll.length
           }
@@ -1964,7 +1936,9 @@ export default function PayrollRecordListPage() {
         />
 
         <StatCard
-          icon={<PendingIcon />}
+          icon={
+            <PendingIcon />
+          }
           value={
             pendingPayroll.length
           }
@@ -1974,7 +1948,9 @@ export default function PayrollRecordListPage() {
         />
 
         <StatCard
-          icon={<MoneyIcon />}
+          icon={
+            <MoneyIcon />
+          }
           value={formatCurrency(
             totalNet
           )}
@@ -2014,13 +1990,16 @@ export default function PayrollRecordListPage() {
               <input
                 type="text"
                 value={search}
-                onChange={(event) => {
+                onChange={(
+                  event
+                ) => {
                   setSearch(
-                    event.target.value
+                    event.target
+                      .value
                   );
                   setPage(1);
                 }}
-                placeholder="Search employee, company, branch, designation..."
+                placeholder="Search employee, company, branch..."
                 className="h-10 w-full rounded-lg border border-slate-300 bg-white pl-9 pr-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
               />
             </div>
@@ -2028,7 +2007,9 @@ export default function PayrollRecordListPage() {
             {/* COMPANY */}
 
             <select
-              value={companyFilterId}
+              value={
+                companyFilterId
+              }
               onChange={
                 handleCompanyFilterChange
               }
@@ -2041,8 +2022,12 @@ export default function PayrollRecordListPage() {
               {filterCompanies.map(
                 (company) => (
                   <option
-                    key={company.id}
-                    value={company.id}
+                    key={
+                      company.id
+                    }
+                    value={
+                      company.id
+                    }
                   >
                     {company.name ||
                       company.company_name}
@@ -2054,11 +2039,15 @@ export default function PayrollRecordListPage() {
             {/* BRANCH */}
 
             <select
-              value={branchFilterId}
+              value={
+                branchFilterId
+              }
               onChange={
                 handleBranchFilterChange
               }
-              disabled={!companyFilterId}
+              disabled={
+                !companyFilterId
+              }
               className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
             >
               <option value="">
@@ -2070,8 +2059,12 @@ export default function PayrollRecordListPage() {
               {filterBranches.map(
                 (branch) => (
                   <option
-                    key={branch.id}
-                    value={branch.id}
+                    key={
+                      branch.id
+                    }
+                    value={
+                      branch.id
+                    }
                   >
                     {branch.name ||
                       branch.branch_name}
@@ -2089,7 +2082,9 @@ export default function PayrollRecordListPage() {
               onChange={
                 handleDepartmentFilterChange
               }
-              disabled={!branchFilterId}
+              disabled={
+                !branchFilterId
+              }
               className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
             >
               <option value="">
@@ -2101,8 +2096,12 @@ export default function PayrollRecordListPage() {
               {filterDepartments.map(
                 (department) => (
                   <option
-                    key={department.id}
-                    value={department.id}
+                    key={
+                      department.id
+                    }
+                    value={
+                      department.id
+                    }
                   >
                     {
                       department.department_name
@@ -2170,7 +2169,9 @@ export default function PayrollRecordListPage() {
                       employee.value
                     }
                   >
-                    {employee.label}
+                    {
+                      employee.label
+                    }
                   </option>
                 )
               )}
@@ -2229,7 +2230,9 @@ export default function PayrollRecordListPage() {
                 ].map(
                   (status) => (
                     <button
-                      key={status}
+                      key={
+                        status
+                      }
                       type="button"
                       onClick={() => {
                         setStatusFilter(
@@ -2291,305 +2294,312 @@ export default function PayrollRecordListPage() {
       )}
 
       {/* ===================================================
-          TABLE VIEW
+          TABLE
+          IMPORTANT:
+          overflow-x-auto is INNER so hover popup is not clipped.
       =================================================== */}
 
       {!isLoading &&
         viewMode === "table" &&
         pagedPayroll.length > 0 && (
-          <div className="w-full min-w-0 overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
-            <table className="w-full min-w-[1300px] text-left text-sm">
-              <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-400">
-                <tr>
-                  <th className="px-4 py-3 font-medium">
-                    Employee
-                  </th>
+          <div className="w-full min-w-0 overflow-visible rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+            <div className="w-full overflow-x-auto">
+              <table className="w-full min-w-[1450px] text-left text-sm">
+                <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-400">
+                  <tr>
+                    <th className="px-4 py-3 font-medium">
+                      Employee
+                    </th>
 
-                  <th className="px-4 py-3 font-medium">
-                    Company
-                  </th>
+                    <th className="px-4 py-3 font-medium">
+                      Company
+                    </th>
 
-                  <th className="px-4 py-3 font-medium">
-                    Branch
-                  </th>
+                    <th className="px-4 py-3 font-medium">
+                      Branch
+                    </th>
 
-                  <th className="px-4 py-3 font-medium">
-                    Department
-                  </th>
+                    <th className="px-4 py-3 font-medium">
+                      Department
+                    </th>
 
-                  <th className="px-4 py-3 font-medium">
-                    Designation
-                  </th>
+                    <th className="px-4 py-3 font-medium">
+                      Designation
+                    </th>
 
-                  <th className="px-4 py-3 font-medium">
-                    Pay Month
-                  </th>
+                    <th className="px-4 py-3 font-medium">
+                      Pay Month
+                    </th>
 
-                  <th className="px-4 py-3 font-medium">
-                    Gross
-                  </th>
+                    <th className="px-4 py-3 font-medium">
+                      Gross
+                    </th>
 
-                  <th className="px-4 py-3 font-medium">
-                    Deductions
-                  </th>
+                    <th className="px-4 py-3 font-medium">
+                      Deductions
+                    </th>
 
-                  <th className="px-4 py-3 font-medium">
-                    Net
-                  </th>
+                    <th className="px-4 py-3 font-medium">
+                      Net
+                    </th>
 
-                  <th className="px-4 py-3 font-medium">
-                    Status
-                  </th>
+                    <th className="px-4 py-3 font-medium">
+                      Status
+                    </th>
 
-                  <th className="px-4 py-3 text-right font-medium">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
+                    <th className="px-4 py-3 text-right font-medium">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
 
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {pagedPayroll.map(
-                  (payroll) => (
-                    <tr
-                      key={payroll.id}
-                      className="hover:bg-slate-50 dark:hover:bg-slate-800/40"
-                    >
-                      {/* EMPLOYEE */}
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                  {pagedPayroll.map(
+                    (payroll) => (
+                      <tr
+                        key={
+                          payroll.id
+                        }
+                        className="relative hover:bg-slate-50 dark:hover:bg-slate-800/40"
+                      >
+                        {/* EMPLOYEE */}
 
-                      <td className="px-4 py-3">
-                        <HoverDetailsTrigger
-                          panel={
-                            <PayrollDetailsCard
-                              payroll={
-                                payroll
-                              }
-                            />
-                          }
-                        >
-                          <div className="flex cursor-pointer items-center gap-2.5">
-                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-sm font-bold text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
-                              {getEmployeeName(
-                                payroll
-                              )
-                                .charAt(
-                                  0
-                                )
-                                .toUpperCase() ||
-                                "E"}
-                            </div>
-
-                            <div className="min-w-0">
-                              <p className="truncate text-sm font-medium text-slate-800 dark:text-slate-100">
-                                {getEmployeeName(
+                        <td className="relative px-4 py-3">
+                          <HoverDetailsTrigger
+                            align="left"
+                            panel={
+                              <PayrollDetailsCard
+                                payroll={
                                   payroll
-                                )}
-                              </p>
-
-                              <p className="font-mono text-[10px] text-slate-400">
-                                {getEmployeeCode(
-                                  payroll
-                                )}
-                              </p>
-                            </div>
-                          </div>
-                        </HoverDetailsTrigger>
-                      </td>
-
-                      {/* COMPANY */}
-
-                      <td className="px-4 py-3">
-                        <p className="max-w-[180px] truncate text-sm font-semibold text-slate-700 dark:text-slate-200">
-                          {getCompanyName(
-                            payroll
-                          )}
-                        </p>
-                      </td>
-
-                      {/* BRANCH */}
-
-                      <td className="px-4 py-3">
-                        <p className="max-w-[180px] truncate text-sm text-slate-600 dark:text-slate-300">
-                          {getBranchName(
-                            payroll
-                          )}
-                        </p>
-                      </td>
-
-                      {/* DEPARTMENT */}
-
-                      <td className="px-4 py-3">
-                        <p className="max-w-[180px] truncate text-sm text-slate-600 dark:text-slate-300">
-                          {getDepartmentName(
-                            payroll
-                          )}
-                        </p>
-
-                        {getDepartmentCode(
-                          payroll
-                        ) !== "-" && (
-                          <p className="font-mono text-[9px] text-slate-400">
-                            {getDepartmentCode(
-                              payroll
-                            )}
-                          </p>
-                        )}
-                      </td>
-
-                      {/* DESIGNATION */}
-
-                      <td className="px-4 py-3">
-                        <p className="max-w-[200px] truncate text-sm font-semibold text-violet-600 dark:text-violet-400">
-                          {getDesignationName(
-                            payroll
-                          )}
-                        </p>
-
-                        {getDesignationCode(
-                          payroll
-                        ) !== "-" && (
-                          <p className="font-mono text-[9px] text-violet-400 dark:text-violet-500">
-                            {getDesignationCode(
-                              payroll
-                            )}
-                          </p>
-                        )}
-                      </td>
-
-                      {/* PAY MONTH */}
-
-                      <td className="px-4 py-3">
-                        <span className="rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-200">
-                          {formatPayMonth(
-                            payroll?.pay_month
-                          )}
-                        </span>
-                      </td>
-
-                      {/* GROSS */}
-
-                      <td className="px-4 py-3 text-sm font-semibold text-slate-700 dark:text-slate-200">
-                        {formatCurrency(
-                          payroll?.gross_salary
-                        )}
-                      </td>
-
-                      {/* DEDUCTIONS */}
-
-                      <td className="px-4 py-3 text-sm font-medium text-red-600 dark:text-red-400">
-                        {formatCurrency(
-                          payroll?.deductions
-                        )}
-                      </td>
-
-                      {/* NET */}
-
-                      <td className="px-4 py-3 text-sm font-bold text-emerald-600 dark:text-emerald-400">
-                        {formatCurrency(
-                          payroll?.net_salary
-                        )}
-                      </td>
-
-                      {/* STATUS */}
-
-                      <td className="px-4 py-3">
-                        {statusBadge(
-                          payroll
-                        )}
-                      </td>
-
-                      {/* ACTIONS */}
-
-                      <td className="px-2 py-3">
-                        <div className="flex items-center justify-end gap-0.5">
-                          <IconButton
-                            title="Edit"
-                            onClick={() =>
-                              handleEdit(
-                                payroll
-                              )
+                                }
+                              />
                             }
                           >
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              className="h-4 w-4"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                              strokeWidth={2}
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M16.862 4.487l1.687-1.688a2.121 2.121 0 013 3l-9.9 9.9-4.137 1.034 1.034-4.137 9.9-9.9z"
-                              />
-                            </svg>
-                          </IconButton>
+                            <div className="flex cursor-pointer items-center gap-2.5">
+                              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-sm font-bold text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
+                                {getEmployeeName(
+                                  payroll
+                                )
+                                  .charAt(
+                                    0
+                                  )
+                                  .toUpperCase() ||
+                                  "E"}
+                              </div>
 
-                          {payroll?.is_active !==
-                          false ? (
-                            <IconButton
-                              title="Deactivate"
-                              tone="red"
-                              disabled={
-                                deactivatePayroll.isPending
-                              }
-                              onClick={() =>
-                                handleDelete(
-                                  payroll
-                                )
-                              }
-                            >
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                className="h-4 w-4"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                                strokeWidth={2}
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  d="M6 7h12M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m2 0v12a2 2 0 01-2 2H8a2 2 0 01-2-2V7h12z"
-                                />
-                              </svg>
-                            </IconButton>
-                          ) : (
-                            <IconButton
-                              title="Reactivate"
-                              tone="emerald"
-                              disabled={
-                                updatePayroll.isPending
-                              }
-                              onClick={() =>
-                                handleReactivate(
-                                  payroll
-                                )
-                              }
-                            >
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                className="h-4 w-4"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                                strokeWidth={2}
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  d="M4 12a8 8 0 018-8 8.5 8.5 0 017 4M20 4v5h-5M20 12a8 8 0 01-8 8 8.5 8.5 0 017-4M4 20v-5h5"
-                                />
-                              </svg>
-                            </IconButton>
+                              <div className="min-w-0">
+                                <p className="truncate text-sm font-medium text-slate-800 dark:text-slate-100">
+                                  {getEmployeeName(
+                                    payroll
+                                  )}
+                                </p>
+
+                                <p className="font-mono text-[10px] text-slate-400">
+                                  {getEmployeeCode(
+                                    payroll
+                                  )}
+                                </p>
+                              </div>
+                            </div>
+                          </HoverDetailsTrigger>
+                        </td>
+
+                        {/* COMPANY */}
+
+                        <td className="px-4 py-3">
+                          <p className="max-w-[180px] truncate text-sm font-semibold text-slate-700 dark:text-slate-200">
+                            {getCompanyName(
+                              payroll
+                            )}
+                          </p>
+                        </td>
+
+                        {/* BRANCH */}
+
+                        <td className="px-4 py-3">
+                          <p className="max-w-[180px] truncate text-sm text-slate-600 dark:text-slate-300">
+                            {getBranchName(
+                              payroll
+                            )}
+                          </p>
+                        </td>
+
+                        {/* DEPARTMENT */}
+
+                        <td className="px-4 py-3">
+                          <p className="max-w-[180px] truncate text-sm text-slate-600 dark:text-slate-300">
+                            {getDepartmentName(
+                              payroll
+                            )}
+                          </p>
+
+                          {getDepartmentCode(
+                            payroll
+                          ) !== "-" && (
+                            <p className="font-mono text-[9px] text-slate-400">
+                              {getDepartmentCode(
+                                payroll
+                              )}
+                            </p>
                           )}
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                )}
-              </tbody>
-            </table>
+                        </td>
+
+                        {/* DESIGNATION */}
+
+                        <td className="px-4 py-3">
+                          <p className="max-w-[200px] truncate text-sm font-semibold text-violet-600 dark:text-violet-400">
+                            {getDesignationName(
+                              payroll
+                            )}
+                          </p>
+
+                          {getDesignationCode(
+                            payroll
+                          ) !== "-" && (
+                            <p className="font-mono text-[9px] text-violet-400 dark:text-violet-500">
+                              {getDesignationCode(
+                                payroll
+                              )}
+                            </p>
+                          )}
+                        </td>
+
+                        {/* PAY MONTH */}
+
+                        <td className="px-4 py-3">
+                          <span className="rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                            {formatPayMonth(
+                              payroll?.pay_month
+                            )}
+                          </span>
+                        </td>
+
+                        {/* GROSS */}
+
+                        <td className="px-4 py-3 text-sm font-semibold text-slate-700 dark:text-slate-200">
+                          {formatCurrency(
+                            payroll?.gross_salary
+                          )}
+                        </td>
+
+                        {/* DEDUCTIONS */}
+
+                        <td className="px-4 py-3 text-sm font-medium text-red-600 dark:text-red-400">
+                          {formatCurrency(
+                            payroll?.deductions
+                          )}
+                        </td>
+
+                        {/* NET */}
+
+                        <td className="px-4 py-3 text-sm font-bold text-emerald-600 dark:text-emerald-400">
+                          {formatCurrency(
+                            payroll?.net_salary
+                          )}
+                        </td>
+
+                        {/* STATUS */}
+
+                        <td className="px-4 py-3">
+                          {statusBadge(
+                            payroll
+                          )}
+                        </td>
+
+                        {/* ACTIONS */}
+
+                        <td className="px-2 py-3">
+                          <div className="flex items-center justify-end gap-0.5">
+                            <IconButton
+                              title="Edit"
+                              onClick={() =>
+                                handleEdit(
+                                  payroll
+                                )
+                              }
+                            >
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-4 w-4"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                strokeWidth={2}
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M16.862 4.487l1.687-1.688a2.121 2.121 0 013 3l-9.9 9.9-4.137 1.034 1.034-4.137 9.9-9.9z"
+                                />
+                              </svg>
+                            </IconButton>
+
+                            {payroll?.is_active !==
+                            false ? (
+                              <IconButton
+                                title="Deactivate"
+                                tone="red"
+                                disabled={
+                                  deactivatePayroll.isPending
+                                }
+                                onClick={() =>
+                                  handleDelete(
+                                    payroll
+                                  )
+                                }
+                              >
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  className="h-4 w-4"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                  strokeWidth={2}
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M6 7h12M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m2 0v12a2 2 0 01-2 2H8a2 2 0 01-2-2V7h12z"
+                                  />
+                                </svg>
+                              </IconButton>
+                            ) : (
+                              <IconButton
+                                title="Reactivate"
+                                tone="emerald"
+                                disabled={
+                                  updatePayroll.isPending
+                                }
+                                onClick={() =>
+                                  handleReactivate(
+                                    payroll
+                                  )
+                                }
+                              >
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  className="h-4 w-4"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                  strokeWidth={2}
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M4 12a8 8 0 018-8 8.5 8.5 0 017 4M20 4v5h-5M20 12a8 8 0 01-8 8 8.5 8.5 0 017-4M4 20v-5h5"
+                                  />
+                                </svg>
+                              </IconButton>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 
@@ -2662,26 +2672,29 @@ export default function PayrollRecordListPage() {
                     key={
                       payroll.id
                     }
-                    className={`group relative overflow-hidden rounded-2xl border bg-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg dark:bg-slate-900 ${
+                    className={`group relative overflow-visible rounded-2xl border bg-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl dark:bg-slate-900 ${
                       isActive
                         ? "border-slate-200 hover:border-primary-200 dark:border-slate-700 dark:hover:border-primary-500/40"
                         : "border-red-100 bg-red-50/20 dark:border-red-900/30 dark:bg-red-950/10"
                     }`}
                   >
+                    {/* TOP BORDER */}
+
                     <div
-                      className={`absolute inset-x-0 top-0 h-0.5 ${
+                      className={`pointer-events-none absolute inset-x-0 top-0 h-0.5 ${
                         isActive
                           ? "bg-primary-600"
                           : "bg-red-500"
                       }`}
                     />
 
-                    <div className="p-4">
-                      {/* EMPLOYEE */}
+                    <div className="relative z-10 p-4">
+                      {/* EMPLOYEE HEADER */}
 
                       <div className="flex items-start justify-between gap-2.5">
                         <div className="flex min-w-0 items-center gap-2.5">
                           <HoverDetailsTrigger
+                            align="left"
                             panel={
                               <PayrollDetailsCard
                                 payroll={
@@ -2701,7 +2714,12 @@ export default function PayrollRecordListPage() {
                           </HoverDetailsTrigger>
 
                           <div className="min-w-0">
-                            <h3 className="truncate text-sm font-semibold text-slate-900 dark:text-white">
+                            <h3
+                              title={
+                                employeeName
+                              }
+                              className="truncate text-sm font-semibold text-slate-900 dark:text-white"
+                            >
                               {
                                 employeeName
                               }
@@ -2845,7 +2863,9 @@ export default function PayrollRecordListPage() {
                         <div className="mt-3 grid grid-cols-3 gap-2">
                           <SalaryBox
                             label="Gross"
-                            value={gross}
+                            value={
+                              gross
+                            }
                           />
 
                           <SalaryBox
@@ -2916,7 +2936,7 @@ export default function PayrollRecordListPage() {
                     {/* FOOTER */}
 
                     <div
-                      className={`border-t px-4 py-2 ${
+                      className={`relative z-10 border-t px-4 py-2 ${
                         isActive
                           ? "border-slate-100 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-800/30"
                           : "border-red-100 bg-red-50/50 dark:border-red-900/20 dark:bg-red-950/20"
@@ -2970,11 +2990,8 @@ export default function PayrollRecordListPage() {
             </h3>
 
             <p className="mt-1 max-w-md text-xs text-slate-500 dark:text-slate-400">
-              No payroll records match your
-              current company, branch,
-              department, designation,
-              employee, search, or status
-              filters.
+              No payroll records match
+              your current filters.
             </p>
 
             <Button
@@ -2996,7 +3013,9 @@ export default function PayrollRecordListPage() {
         <div className="flex gap-2">
           <button
             type="button"
-            disabled={page <= 1}
+            disabled={
+              page <= 1
+            }
             onClick={() =>
               setPage(
                 (current) =>
