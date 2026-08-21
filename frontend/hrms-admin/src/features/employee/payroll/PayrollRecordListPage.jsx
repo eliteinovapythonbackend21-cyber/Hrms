@@ -59,14 +59,7 @@ function getItems(data) {
 }
 
 /* =========================================================
-   ACTUAL API HIERARCHY
-
-   Payroll
-      -> Employee
-         -> Department
-            -> Company
-            -> Branch
-         -> Designation
+   API HIERARCHY
 ========================================================= */
 
 function getEmployee(payroll) {
@@ -150,7 +143,11 @@ function getEmployeeName(payroll) {
     employee.employee_name ||
     employee.name ||
     fullName ||
-    `Employee #${employee.id ?? payroll?.employee_id ?? "-"}`
+    `Employee #${
+      employee.id ??
+      payroll?.employee_id ??
+      "-"
+    }`
   );
 }
 
@@ -300,7 +297,10 @@ function getDesignationId(payroll) {
 
 function normalizeAmount(value) {
   const number = Number(value);
-  return Number.isFinite(number) ? number : 0;
+
+  return Number.isFinite(number)
+    ? number
+    : 0;
 }
 
 function getPayrollStatus(payroll) {
@@ -326,11 +326,15 @@ function getStatusClass(status) {
       "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300",
   };
 
-  return classes[status] || classes.Draft;
+  return (
+    classes[status] ||
+    classes.Draft
+  );
 }
 
 function statusBadge(payroll) {
-  const status = getPayrollStatus(payroll);
+  const status =
+    getPayrollStatus(payroll);
 
   const dotClass =
     status === "Paid"
@@ -362,13 +366,18 @@ function formatPayMonth(value) {
   }
 
   const raw = String(value);
-  const match = raw.match(/^(\d{4})-(\d{2})$/);
+
+  const match =
+    raw.match(
+      /^(\d{4})-(\d{2})$/
+    );
 
   if (!match) {
     return raw;
   }
 
-  const [, year, month] = match;
+  const [, year, month] =
+    match;
 
   const date = new Date(
     Number(year),
@@ -376,10 +385,13 @@ function formatPayMonth(value) {
     1
   );
 
-  return date.toLocaleString(undefined, {
-    month: "short",
-    year: "numeric",
-  });
+  return date.toLocaleString(
+    undefined,
+    {
+      month: "short",
+      year: "numeric",
+    }
+  );
 }
 
 /* =========================================================
@@ -402,6 +414,7 @@ const PayrollIcon = () => (
       height="16"
       rx="1.5"
     />
+
     <path
       strokeLinecap="round"
       d="M8 8h8M8 12h8M8 16h5"
@@ -418,10 +431,15 @@ const MoneyIcon = () => (
     stroke="currentColor"
     strokeWidth={1.8}
   >
-    <circle cx="12" cy="12" r="9" />
+    <circle
+      cx="12"
+      cy="12"
+      r="9"
+    />
+
     <path
       strokeLinecap="round"
-      d="M12 7v10M15 9c-.5-1.5-1.5-2-3-2-1.7 0-3 .8-3 2s1.2 1.8 3 2.2 3 .9 3 2.3-1.3 2.3-3 2.3c-1.5 0-2.6-.5-3.2-1.5"
+      d="M12 7v10M15 9c-.5-1.5-1.5-2-3-2-1.7 0-3 .8-3 2s1.2 1.8 3 2.2 3 0.8 3 2.3-1.3 2.3-3 2.3c-1.5 0-2.6-.5-3.2-1.5"
     />
   </svg>
 );
@@ -435,7 +453,12 @@ const PaidIcon = () => (
     stroke="currentColor"
     strokeWidth={1.8}
   >
-    <circle cx="12" cy="12" r="9" />
+    <circle
+      cx="12"
+      cy="12"
+      r="9"
+    />
+
     <path
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -453,7 +476,12 @@ const PendingIcon = () => (
     stroke="currentColor"
     strokeWidth={1.8}
   >
-    <circle cx="12" cy="12" r="9" />
+    <circle
+      cx="12"
+      cy="12"
+      r="9"
+    />
+
     <path
       strokeLinecap="round"
       d="M12 7v5l3 2"
@@ -492,6 +520,7 @@ const BranchIcon = () => (
       strokeLinejoin="round"
       d="M4 21h16M6 21V5a2 2 0 012-2h8a2 2 0 012 2v16"
     />
+
     <path
       strokeLinecap="round"
       d="M9 7h1M9 11h1M14 7h1M14 11h1"
@@ -531,6 +560,7 @@ const DesignationIcon = () => (
       height="16"
       rx="2"
     />
+
     <path
       strokeLinecap="round"
       d="M8 9h8M8 12h8M8 15h5"
@@ -547,12 +577,18 @@ const EmployeeIcon = () => (
     stroke="currentColor"
     strokeWidth={1.8}
   >
-    <circle cx="9" cy="7" r="4" />
+    <circle
+      cx="9"
+      cy="7"
+      r="4"
+    />
+
     <path
       strokeLinecap="round"
       strokeLinejoin="round"
       d="M2 21v-2a4 4 0 014-4h6a4 4 0 014 4v2"
     />
+
     <path
       strokeLinecap="round"
       d="M16 11a4 4 0 100-8M19 21v-2a4 4 0 00-3-3.87"
@@ -561,9 +597,12 @@ const EmployeeIcon = () => (
 );
 
 /* =========================================================
-   HOVER DETAILS
-   IMPORTANT:
-   Do NOT use overflow-hidden on the parent card.
+   HOVER DETAILS TRIGGER
+   FIX:
+   - High z-index
+   - Visible outside card
+   - Proper transition
+   - w-max
 ========================================================= */
 
 function HoverDetailsTrigger({
@@ -573,7 +612,8 @@ function HoverDetailsTrigger({
 }) {
   const alignClasses = {
     left: "left-0",
-    center: "left-1/2 -translate-x-1/2",
+    center:
+      "left-1/2 -translate-x-1/2",
     right: "right-0",
   };
 
@@ -582,7 +622,7 @@ function HoverDetailsTrigger({
       tabIndex={0}
       className="group/payroll-details relative inline-flex max-w-full outline-none"
     >
-      <div className="relative z-10 max-w-full">
+      <div className="relative z-[1] max-w-full">
         {children}
       </div>
 
@@ -592,8 +632,10 @@ function HoverDetailsTrigger({
           invisible
           absolute
           top-full
-          z-[9999]
+          z-[99999]
           mt-2
+          w-max
+          max-w-[calc(100vw-24px)]
           translate-y-1
           opacity-0
 
@@ -621,13 +663,14 @@ function HoverDetailsTrigger({
 }
 
 /* =========================================================
-   DETAILS CARD
+   DETAIL ROW
 ========================================================= */
 
 function DetailRow({
   label,
   value,
-  valueClass = "text-slate-700 dark:text-slate-200",
+  valueClass =
+    "text-slate-700 dark:text-slate-200",
   mono = false,
 }) {
   return (
@@ -637,15 +680,27 @@ function DetailRow({
       </span>
 
       <span
+        title={
+          value !== null &&
+          value !== undefined
+            ? String(value)
+            : "-"
+        }
         className={`truncate text-right text-xs font-medium ${valueClass} ${
-          mono ? "font-mono text-[10px]" : ""
+          mono
+            ? "font-mono text-[10px]"
+            : ""
         }`}
       >
-        {value}
+        {value ?? "-"}
       </span>
     </div>
   );
 }
+
+/* =========================================================
+   SALARY BOX
+========================================================= */
 
 function SalaryBox({
   label,
@@ -678,27 +733,42 @@ function SalaryBox({
   );
 }
 
-function PayrollDetailsCard({ payroll }) {
-  const gross = normalizeAmount(
-    payroll?.gross_salary
-  );
+/* =========================================================
+   PAYROLL DETAILS CARD
+========================================================= */
 
-  const deductions = normalizeAmount(
-    payroll?.deductions
-  );
+function PayrollDetailsCard({
+  payroll,
+}) {
+  const gross =
+    normalizeAmount(
+      payroll?.gross_salary
+    );
 
-  const net = normalizeAmount(
-    payroll?.net_salary
-  );
+  const deductions =
+    normalizeAmount(
+      payroll?.deductions
+    );
+
+  const net =
+    normalizeAmount(
+      payroll?.net_salary
+    );
 
   const departmentCode =
-    getDepartmentCode(payroll);
+    getDepartmentCode(
+      payroll
+    );
 
   const designationCode =
-    getDesignationCode(payroll);
+    getDesignationCode(
+      payroll
+    );
 
   return (
-    <div className="relative z-[9999] w-[430px] max-w-[calc(100vw-32px)] rounded-xl border border-slate-200 border-t-2 border-t-primary-500 bg-white p-4 text-left shadow-2xl dark:border-slate-700 dark:bg-slate-800">
+    <div className="relative z-[999999] w-[430px] max-w-[calc(100vw-24px)] rounded-xl border border-slate-200 border-t-2 border-t-primary-500 bg-white p-4 text-left shadow-2xl dark:border-slate-700 dark:bg-slate-800">
+      {/* HEADER */}
+
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
@@ -706,11 +776,15 @@ function PayrollDetailsCard({ payroll }) {
           </p>
 
           <p className="mt-1 truncate text-sm font-semibold text-slate-800 dark:text-white">
-            {getEmployeeName(payroll)}
+            {getEmployeeName(
+              payroll
+            )}
           </p>
 
           <p className="text-[10px] text-slate-400">
-            {getEmployeeCode(payroll)}
+            {getEmployeeCode(
+              payroll
+            )}
           </p>
         </div>
 
@@ -719,23 +793,32 @@ function PayrollDetailsCard({ payroll }) {
 
       <div className="my-3 border-t border-slate-100 dark:border-slate-700" />
 
+      {/* ORGANIZATION */}
+
       <div className="space-y-2.5">
         <DetailRow
           label="Company"
-          value={getCompanyName(payroll)}
+          value={getCompanyName(
+            payroll
+          )}
         />
 
         <DetailRow
           label="Branch"
-          value={getBranchName(payroll)}
+          value={getBranchName(
+            payroll
+          )}
         />
 
         <DetailRow
           label="Department"
-          value={getDepartmentName(payroll)}
+          value={getDepartmentName(
+            payroll
+          )}
         />
 
-        {departmentCode !== "-" && (
+        {departmentCode !==
+          "-" && (
           <DetailRow
             label="Dept. Code"
             value={departmentCode}
@@ -745,14 +828,19 @@ function PayrollDetailsCard({ payroll }) {
 
         <DetailRow
           label="Designation"
-          value={getDesignationName(payroll)}
+          value={getDesignationName(
+            payroll
+          )}
           valueClass="text-violet-600 dark:text-violet-400"
         />
 
-        {designationCode !== "-" && (
+        {designationCode !==
+          "-" && (
           <DetailRow
             label="Designation Code"
-            value={designationCode}
+            value={
+              designationCode
+            }
             mono
             valueClass="text-violet-600 dark:text-violet-400"
           />
@@ -767,6 +855,8 @@ function PayrollDetailsCard({ payroll }) {
       </div>
 
       <div className="my-3 border-t border-slate-100 dark:border-slate-700" />
+
+      {/* SALARY */}
 
       <div className="grid grid-cols-3 gap-2">
         <SalaryBox
@@ -796,7 +886,9 @@ function PayrollDetailsCard({ payroll }) {
           </p>
 
           <p className="mt-0.5 text-[10px] font-semibold text-slate-700 dark:text-slate-200">
-            #{payroll?.employee_id ?? "-"}
+            #
+            {payroll?.employee_id ??
+              "-"}
           </p>
         </div>
 
@@ -975,7 +1067,8 @@ function IconButton({
 ========================================================= */
 
 export default function PayrollRecordListPage() {
-  const { showToast } = useToast();
+  const { showToast } =
+    useToast();
 
   const [
     companyFilterId,
@@ -1007,17 +1100,25 @@ export default function PayrollRecordListPage() {
     setStatusFilter,
   ] = useState("active");
 
-  const [search, setSearch] =
-    useState("");
+  const [
+    search,
+    setSearch,
+  ] = useState("");
 
-  const [viewMode, setViewMode] =
-    useState("card");
+  const [
+    viewMode,
+    setViewMode,
+  ] = useState("card");
 
-  const [page, setPage] =
-    useState(1);
+  const [
+    page,
+    setPage,
+  ] = useState(1);
 
-  const [modalOpen, setModalOpen] =
-    useState(false);
+  const [
+    modalOpen,
+    setModalOpen,
+  ] = useState(false);
 
   const [
     selectedPayroll,
@@ -1033,22 +1134,24 @@ export default function PayrollRecordListPage() {
      MASTER DATA
   ======================================================= */
 
-  const { data: companyData } =
-    useCompanies({
+  const {
+    data: companyData,
+  } = useCompanies({
+    page: 1,
+    per_page: 100,
+    is_active: true,
+  });
+
+  const {
+    data: branchData,
+  } = useCompanyBranches(
+    companyFilterId,
+    {
       page: 1,
       per_page: 100,
       is_active: true,
-    });
-
-  const { data: branchData } =
-    useCompanyBranches(
-      companyFilterId,
-      {
-        page: 1,
-        per_page: 100,
-        is_active: true,
-      }
-    );
+    }
+  );
 
   const {
     data: departmentData,
@@ -1078,7 +1181,9 @@ export default function PayrollRecordListPage() {
     },
 
     enabled:
-      Boolean(branchFilterId),
+      Boolean(
+        branchFilterId
+      ),
   });
 
   /* =======================================================
@@ -1112,12 +1217,13 @@ export default function PayrollRecordListPage() {
     getItems(departmentData);
 
   /* =======================================================
-     DESIGNATION OPTIONS
+     DESIGNATIONS
   ======================================================= */
 
   const designationOptions =
     useMemo(() => {
-      const map = new Map();
+      const map =
+        new Map();
 
       allPayroll.forEach(
         (payroll) => {
@@ -1147,30 +1253,34 @@ export default function PayrollRecordListPage() {
         }
       );
 
-      return [...map.values()].sort(
-        (a, b) =>
+      return [
+        ...map.values(),
+      ].sort((a, b) =>
+        String(
+          a.label
+        ).localeCompare(
           String(
-            a.label
-          ).localeCompare(
-            String(
-              b.label
-            )
+            b.label
           )
+        )
       );
     }, [allPayroll]);
 
   /* =======================================================
-     EMPLOYEE OPTIONS
+     EMPLOYEES
   ======================================================= */
 
   const employeeOptions =
     useMemo(() => {
-      const map = new Map();
+      const map =
+        new Map();
 
       allPayroll.forEach(
         (payroll) => {
           const employee =
-            getEmployee(payroll);
+            getEmployee(
+              payroll
+            );
 
           const employeeId =
             payroll?.employee_id ??
@@ -1197,26 +1307,29 @@ export default function PayrollRecordListPage() {
         }
       );
 
-      return [...map.values()].sort(
-        (a, b) =>
+      return [
+        ...map.values(),
+      ].sort((a, b) =>
+        String(
+          a.label
+        ).localeCompare(
           String(
-            a.label
-          ).localeCompare(
-            String(
-              b.label
-            )
+            b.label
           )
+        )
       );
     }, [allPayroll]);
 
   /* =======================================================
-     FILTERED PAYROLL
+     FILTERED
   ======================================================= */
 
   const filteredPayroll =
     useMemo(() => {
       const normalizedSearch =
-        search.trim().toLowerCase();
+        search
+          .trim()
+          .toLowerCase();
 
       return allPayroll.filter(
         (payroll) => {
@@ -1457,13 +1570,16 @@ export default function PayrollRecordListPage() {
     useMemo(
       () => [
         {
-          header: "Employee ID",
+          header:
+            "Employee ID",
           accessor: (r) =>
-            r?.employee_id || "-",
+            r?.employee_id ||
+            "-",
         },
 
         {
-          header: "Employee",
+          header:
+            "Employee",
           accessor: (r) =>
             getEmployeeName(r),
         },
@@ -1481,7 +1597,8 @@ export default function PayrollRecordListPage() {
         },
 
         {
-          header: "Department",
+          header:
+            "Department",
           accessor: (r) =>
             getDepartmentName(
               r
@@ -1489,7 +1606,8 @@ export default function PayrollRecordListPage() {
         },
 
         {
-          header: "Designation",
+          header:
+            "Designation",
           accessor: (r) =>
             getDesignationName(
               r
@@ -1497,13 +1615,16 @@ export default function PayrollRecordListPage() {
         },
 
         {
-          header: "Pay Month",
+          header:
+            "Pay Month",
           accessor: (r) =>
-            r?.pay_month || "-",
+            r?.pay_month ||
+            "-",
         },
 
         {
-          header: "Gross Salary",
+          header:
+            "Gross Salary",
           accessor: (r) =>
             formatCurrency(
               r?.gross_salary
@@ -1511,7 +1632,8 @@ export default function PayrollRecordListPage() {
         },
 
         {
-          header: "Deductions",
+          header:
+            "Deductions",
           accessor: (r) =>
             formatCurrency(
               r?.deductions
@@ -1519,7 +1641,8 @@ export default function PayrollRecordListPage() {
         },
 
         {
-          header: "Net Salary",
+          header:
+            "Net Salary",
           accessor: (r) =>
             formatCurrency(
               r?.net_salary
@@ -1550,20 +1673,23 @@ export default function PayrollRecordListPage() {
     exporting,
     exportExcel,
     exportPDF,
-  } = useTableExport({
-    fetchAll:
-      employeeLifecycleApi.payroll
-        .list,
+  } =
+    useTableExport({
+      fetchAll:
+        employeeLifecycleApi
+          .payroll.list,
 
-    queryParams: {
-      search:
-        search || undefined,
-    },
+      queryParams: {
+        search:
+          search || undefined,
+      },
 
-    exportColumns,
-    filename: "payroll",
-    title: "Payroll Records",
-  });
+      exportColumns,
+      filename:
+        "payroll",
+      title:
+        "Payroll Records",
+    });
 
   /* =======================================================
      FILTER HANDLERS
@@ -1576,8 +1702,12 @@ export default function PayrollRecordListPage() {
       );
 
       setBranchFilterId("");
-      setDepartmentFilterId("");
-      setDesignationFilterId("");
+      setDepartmentFilterId(
+        ""
+      );
+      setDesignationFilterId(
+        ""
+      );
       setEmployeeFilterId("");
       setPage(1);
     };
@@ -1588,8 +1718,12 @@ export default function PayrollRecordListPage() {
         event.target.value
       );
 
-      setDepartmentFilterId("");
-      setDesignationFilterId("");
+      setDepartmentFilterId(
+        ""
+      );
+      setDesignationFilterId(
+        ""
+      );
       setEmployeeFilterId("");
       setPage(1);
     };
@@ -1600,7 +1734,9 @@ export default function PayrollRecordListPage() {
         event.target.value
       );
 
-      setDesignationFilterId("");
+      setDesignationFilterId(
+        ""
+      );
       setEmployeeFilterId("");
       setPage(1);
     };
@@ -1624,16 +1760,21 @@ export default function PayrollRecordListPage() {
       setPage(1);
     };
 
-  const clearFilters = () => {
-    setSearch("");
-    setCompanyFilterId("");
-    setBranchFilterId("");
-    setDepartmentFilterId("");
-    setDesignationFilterId("");
-    setEmployeeFilterId("");
-    setStatusFilter("active");
-    setPage(1);
-  };
+  const clearFilters =
+    () => {
+      setSearch("");
+      setCompanyFilterId("");
+      setBranchFilterId("");
+      setDepartmentFilterId(
+        ""
+      );
+      setDesignationFilterId(
+        ""
+      );
+      setEmployeeFilterId("");
+      setStatusFilter("active");
+      setPage(1);
+    };
 
   /* =======================================================
      CRUD
@@ -1668,52 +1809,55 @@ export default function PayrollRecordListPage() {
   const handleSubmit =
     async (payload) => {
       try {
-        const normalizedPayload = {
-          ...payload,
+        const normalizedPayload =
+          {
+            ...payload,
 
-          employee_id:
-            payload?.employee_id
-              ? Number(
-                  payload.employee_id
-                )
-              : null,
+            employee_id:
+              payload?.employee_id
+                ? Number(
+                    payload.employee_id
+                  )
+                : null,
 
-          gross_salary:
-            payload?.gross_salary !==
-              "" &&
-            payload?.gross_salary !=
-              null
-              ? Number(
-                  payload.gross_salary
-                )
-              : 0,
+            gross_salary:
+              payload?.gross_salary !==
+                "" &&
+              payload?.gross_salary !=
+                null
+                ? Number(
+                    payload.gross_salary
+                  )
+                : 0,
 
-          deductions:
-            payload?.deductions !==
-              "" &&
-            payload?.deductions !=
-              null
-              ? Number(
-                  payload.deductions
-                )
-              : 0,
+            deductions:
+              payload?.deductions !==
+                "" &&
+              payload?.deductions !=
+                null
+                ? Number(
+                    payload.deductions
+                  )
+                : 0,
 
-          net_salary:
-            payload?.net_salary !==
-              "" &&
-            payload?.net_salary !=
-              null
-              ? Number(
-                  payload.net_salary
-                )
-              : 0,
+            net_salary:
+              payload?.net_salary !==
+                "" &&
+              payload?.net_salary !=
+                null
+                ? Number(
+                    payload.net_salary
+                  )
+                : 0,
 
-          status:
-            payload?.status ||
-            "Draft",
-        };
+            status:
+              payload?.status ||
+              "Draft",
+          };
 
-        if (selectedPayroll) {
+        if (
+          selectedPayroll
+        ) {
           await updatePayroll.mutateAsync(
             {
               id:
@@ -1739,6 +1883,7 @@ export default function PayrollRecordListPage() {
         }
 
         handleCloseModal();
+
         await refetch();
       } catch (err) {
         console.error(
@@ -1766,7 +1911,9 @@ export default function PayrollRecordListPage() {
 
   const confirmDelete =
     async () => {
-      if (!payrollToDelete) {
+      if (
+        !payrollToDelete
+      ) {
         return;
       }
 
@@ -1780,7 +1927,10 @@ export default function PayrollRecordListPage() {
           "success"
         );
 
-        setPayrollToDelete(null);
+        setPayrollToDelete(
+          null
+        );
+
         await refetch();
       } catch (err) {
         console.error(
@@ -1846,8 +1996,8 @@ export default function PayrollRecordListPage() {
           </h2>
 
           <p className="mt-1 text-sm">
-            {error?.response?.data
-              ?.message ||
+            {error?.response
+              ?.data?.message ||
               error?.message ||
               "Unable to load payroll records."}
           </p>
@@ -1891,12 +2041,16 @@ export default function PayrollRecordListPage() {
             onExportPDF={
               exportPDF
             }
-            exporting={exporting}
+            exporting={
+              exporting
+            }
           />
 
           <Button
             type="button"
-            onClick={handleAdd}
+            onClick={
+              handleAdd
+            }
             className="h-10 w-full px-4 sm:w-auto"
           >
             <span className="mr-1.5 text-lg">
@@ -1966,7 +2120,9 @@ export default function PayrollRecordListPage() {
 
       <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-900">
         <div className="flex flex-col gap-3">
+
           <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2 xl:grid-cols-6">
+
             {/* SEARCH */}
 
             <div className="relative md:col-span-2 xl:col-span-2">
@@ -1989,7 +2145,9 @@ export default function PayrollRecordListPage() {
 
               <input
                 type="text"
-                value={search}
+                value={
+                  search
+                }
                 onChange={(
                   event
                 ) => {
@@ -1997,6 +2155,7 @@ export default function PayrollRecordListPage() {
                     event.target
                       .value
                   );
+
                   setPage(1);
                 }}
                 placeholder="Search employee, company, branch..."
@@ -2180,6 +2339,7 @@ export default function PayrollRecordListPage() {
 
           <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3 dark:border-slate-800">
             <div className="flex flex-wrap items-center gap-2">
+
               {/* VIEW */}
 
               <div className="flex items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
@@ -2189,6 +2349,7 @@ export default function PayrollRecordListPage() {
                     setViewMode(
                       "table"
                     );
+
                     setPage(1);
                   }}
                   className={`rounded-md px-3 py-1.5 text-xs font-medium ${
@@ -2207,6 +2368,7 @@ export default function PayrollRecordListPage() {
                     setViewMode(
                       "card"
                     );
+
                     setPage(1);
                   }}
                   className={`rounded-md px-3 py-1.5 text-xs font-medium ${
@@ -2238,6 +2400,7 @@ export default function PayrollRecordListPage() {
                         setStatusFilter(
                           status
                         );
+
                         setPage(1);
                       }}
                       className={`rounded-md px-3 py-1.5 text-xs font-medium capitalize ${
@@ -2247,7 +2410,9 @@ export default function PayrollRecordListPage() {
                           : "text-slate-500 dark:text-slate-400"
                       }`}
                     >
-                      {status}
+                      {
+                        status
+                      }
                     </button>
                   )
                 )}
@@ -2285,7 +2450,9 @@ export default function PayrollRecordListPage() {
           }).map(
             (_, index) => (
               <div
-                key={index}
+                key={
+                  index
+                }
                 className="h-[390px] animate-pulse rounded-2xl border border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-800"
               />
             )
@@ -2295,13 +2462,13 @@ export default function PayrollRecordListPage() {
 
       {/* ===================================================
           TABLE
-          IMPORTANT:
-          overflow-x-auto is INNER so hover popup is not clipped.
       =================================================== */}
 
       {!isLoading &&
-        viewMode === "table" &&
-        pagedPayroll.length > 0 && (
+        viewMode ===
+          "table" &&
+        pagedPayroll.length >
+          0 && (
           <div className="w-full min-w-0 overflow-visible rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
             <div className="w-full overflow-x-auto">
               <table className="w-full min-w-[1450px] text-left text-sm">
@@ -2362,8 +2529,6 @@ export default function PayrollRecordListPage() {
                         }
                         className="relative hover:bg-slate-50 dark:hover:bg-slate-800/40"
                       >
-                        {/* EMPLOYEE */}
-
                         <td className="relative px-4 py-3">
                           <HoverDetailsTrigger
                             align="left"
@@ -2404,8 +2569,6 @@ export default function PayrollRecordListPage() {
                           </HoverDetailsTrigger>
                         </td>
 
-                        {/* COMPANY */}
-
                         <td className="px-4 py-3">
                           <p className="max-w-[180px] truncate text-sm font-semibold text-slate-700 dark:text-slate-200">
                             {getCompanyName(
@@ -2414,8 +2577,6 @@ export default function PayrollRecordListPage() {
                           </p>
                         </td>
 
-                        {/* BRANCH */}
-
                         <td className="px-4 py-3">
                           <p className="max-w-[180px] truncate text-sm text-slate-600 dark:text-slate-300">
                             {getBranchName(
@@ -2423,8 +2584,6 @@ export default function PayrollRecordListPage() {
                             )}
                           </p>
                         </td>
-
-                        {/* DEPARTMENT */}
 
                         <td className="px-4 py-3">
                           <p className="max-w-[180px] truncate text-sm text-slate-600 dark:text-slate-300">
@@ -2435,7 +2594,8 @@ export default function PayrollRecordListPage() {
 
                           {getDepartmentCode(
                             payroll
-                          ) !== "-" && (
+                          ) !==
+                            "-" && (
                             <p className="font-mono text-[9px] text-slate-400">
                               {getDepartmentCode(
                                 payroll
@@ -2443,8 +2603,6 @@ export default function PayrollRecordListPage() {
                             </p>
                           )}
                         </td>
-
-                        {/* DESIGNATION */}
 
                         <td className="px-4 py-3">
                           <p className="max-w-[200px] truncate text-sm font-semibold text-violet-600 dark:text-violet-400">
@@ -2455,7 +2613,8 @@ export default function PayrollRecordListPage() {
 
                           {getDesignationCode(
                             payroll
-                          ) !== "-" && (
+                          ) !==
+                            "-" && (
                             <p className="font-mono text-[9px] text-violet-400 dark:text-violet-500">
                               {getDesignationCode(
                                 payroll
@@ -2463,8 +2622,6 @@ export default function PayrollRecordListPage() {
                             </p>
                           )}
                         </td>
-
-                        {/* PAY MONTH */}
 
                         <td className="px-4 py-3">
                           <span className="rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-200">
@@ -2474,15 +2631,11 @@ export default function PayrollRecordListPage() {
                           </span>
                         </td>
 
-                        {/* GROSS */}
-
                         <td className="px-4 py-3 text-sm font-semibold text-slate-700 dark:text-slate-200">
                           {formatCurrency(
                             payroll?.gross_salary
                           )}
                         </td>
-
-                        {/* DEDUCTIONS */}
 
                         <td className="px-4 py-3 text-sm font-medium text-red-600 dark:text-red-400">
                           {formatCurrency(
@@ -2490,23 +2643,17 @@ export default function PayrollRecordListPage() {
                           )}
                         </td>
 
-                        {/* NET */}
-
                         <td className="px-4 py-3 text-sm font-bold text-emerald-600 dark:text-emerald-400">
                           {formatCurrency(
                             payroll?.net_salary
                           )}
                         </td>
 
-                        {/* STATUS */}
-
                         <td className="px-4 py-3">
                           {statusBadge(
                             payroll
                           )}
                         </td>
-
-                        {/* ACTIONS */}
 
                         <td className="px-2 py-3">
                           <div className="flex items-center justify-end gap-0.5">
@@ -2605,12 +2752,15 @@ export default function PayrollRecordListPage() {
 
       {/* ===================================================
           CARD VIEW
+          FIXED HOVER STACKING
       =================================================== */}
 
       {!isLoading &&
-        viewMode === "card" &&
-        pagedPayroll.length > 0 && (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        viewMode ===
+          "card" &&
+        pagedPayroll.length >
+          0 && (
+          <div className="relative z-0 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {pagedPayroll.map(
               (payroll) => {
                 const companyName =
@@ -2672,23 +2822,32 @@ export default function PayrollRecordListPage() {
                     key={
                       payroll.id
                     }
-                    className={`group relative overflow-visible rounded-2xl border bg-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl dark:bg-slate-900 ${
-                      isActive
-                        ? "border-slate-200 hover:border-primary-200 dark:border-slate-700 dark:hover:border-primary-500/40"
-                        : "border-red-100 bg-red-50/20 dark:border-red-900/30 dark:bg-red-950/10"
-                    }`}
+                    className={`group relative overflow-visible rounded-2xl border bg-white shadow-sm transition-all duration-300
+                      hover:z-50
+                      focus-within:z-50
+                      hover:-translate-y-0.5
+                      hover:shadow-xl
+                      dark:bg-slate-900
+                      ${
+                        isActive
+                          ? "border-slate-200 hover:border-primary-200 dark:border-slate-700 dark:hover:border-primary-500/40"
+                          : "border-red-100 bg-red-50/20 dark:border-red-900/30 dark:bg-red-950/10"
+                      }`}
                   >
                     {/* TOP BORDER */}
 
                     <div
-                      className={`pointer-events-none absolute inset-x-0 top-0 h-0.5 ${
+                      className={`pointer-events-none absolute inset-x-0 top-0 z-10 h-0.5 ${
                         isActive
                           ? "bg-primary-600"
                           : "bg-red-500"
                       }`}
                     />
 
-                    <div className="relative z-10 p-4">
+                    {/* CARD CONTENT */}
+
+                    <div className="relative z-20 p-4">
+
                       {/* EMPLOYEE HEADER */}
 
                       <div className="flex items-start justify-between gap-2.5">
@@ -2726,11 +2885,9 @@ export default function PayrollRecordListPage() {
                             </h3>
 
                             <p className="mt-0.5 truncate font-mono text-[10px] text-slate-500 dark:text-slate-400">
-                              {
-                                getEmployeeCode(
-                                  payroll
-                                )
-                              }
+                              {getEmployeeCode(
+                                payroll
+                              )}
                             </p>
                           </div>
                         </div>
@@ -2747,7 +2904,6 @@ export default function PayrollRecordListPage() {
                       {/* HIERARCHY */}
 
                       <div className="space-y-2.5">
-                        {/* COMPANY */}
 
                         <HierarchyRow
                           icon={
@@ -2760,9 +2916,8 @@ export default function PayrollRecordListPage() {
                           tone="primary"
                         />
 
-                        {/* BRANCH */}
-
                         <div className="ml-3.5 border-l border-dashed border-slate-200 pl-4 dark:border-slate-700">
+
                           <HierarchyRow
                             icon={
                               <BranchIcon />
@@ -2774,9 +2929,8 @@ export default function PayrollRecordListPage() {
                             tone="slate"
                           />
 
-                          {/* DEPARTMENT */}
-
                           <div className="mt-2 ml-3.5 border-l border-dashed border-slate-200 pl-4 dark:border-slate-700">
+
                             <HierarchyRow
                               icon={
                                 <DepartmentIcon />
@@ -2794,9 +2948,8 @@ export default function PayrollRecordListPage() {
                               tone="slate"
                             />
 
-                            {/* DESIGNATION */}
-
                             <div className="mt-2 ml-3.5 border-l border-dashed border-violet-200 pl-4 dark:border-violet-500/20">
+
                               <HierarchyRow
                                 icon={
                                   <DesignationIcon />
@@ -2814,9 +2967,8 @@ export default function PayrollRecordListPage() {
                                 tone="violet"
                               />
 
-                              {/* EMPLOYEE */}
-
                               <div className="mt-2 ml-3.5 border-l border-dashed border-primary-200 pl-4 dark:border-primary-500/20">
+
                                 <HierarchyRow
                                   icon={
                                     <EmployeeIcon />
@@ -2827,6 +2979,7 @@ export default function PayrollRecordListPage() {
                                   }
                                   tone="primary"
                                 />
+
                               </div>
                             </div>
                           </div>
@@ -2855,7 +3008,10 @@ export default function PayrollRecordListPage() {
                             </p>
 
                             <p className="text-right text-[10px] font-bold text-primary-600 dark:text-primary-400">
-                              #{payroll?.id}
+                              #
+                              {
+                                payroll?.id
+                              }
                             </p>
                           </div>
                         </div>
@@ -2878,7 +3034,9 @@ export default function PayrollRecordListPage() {
 
                           <SalaryBox
                             label="Net"
-                            value={net}
+                            value={
+                              net
+                            }
                             tone="green"
                           />
                         </div>
@@ -2936,7 +3094,7 @@ export default function PayrollRecordListPage() {
                     {/* FOOTER */}
 
                     <div
-                      className={`relative z-10 border-t px-4 py-2 ${
+                      className={`relative z-20 border-t px-4 py-2 ${
                         isActive
                           ? "border-slate-100 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-800/30"
                           : "border-red-100 bg-red-50/50 dark:border-red-900/20 dark:bg-red-950/20"
@@ -2995,7 +3153,9 @@ export default function PayrollRecordListPage() {
             </p>
 
             <Button
-              onClick={handleAdd}
+              onClick={
+                handleAdd
+              }
               className="mt-4 h-9 px-4 text-sm"
             >
               + Add Payroll
@@ -3007,7 +3167,8 @@ export default function PayrollRecordListPage() {
 
       <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
         <span>
-          Page {page} of {pageCount}
+          Page {page} of{" "}
+          {pageCount}
         </span>
 
         <div className="flex gap-2">
@@ -3033,7 +3194,8 @@ export default function PayrollRecordListPage() {
           <button
             type="button"
             disabled={
-              page >= pageCount
+              page >=
+              pageCount
             }
             onClick={() =>
               setPage(
@@ -3070,7 +3232,8 @@ export default function PayrollRecordListPage() {
             "new-payroll"
           }
           initialData={
-            selectedPayroll || {}
+            selectedPayroll ||
+            {}
           }
           isEdit={
             Boolean(
