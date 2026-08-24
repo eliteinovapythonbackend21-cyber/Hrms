@@ -1,11 +1,3 @@
-"""
-Calculated per-employee incentive payouts. list/get/update (status
-transitions e.g. Approved -> Invoiced -> Paid) via the standard
-factory; the actual calculation is a POST action, not a create -
-create_fields is intentionally empty since rows are only produced by
-EmployeeIncentive.calculate_for_period.
-"""
-
 from flask import jsonify, request
 from flask_jwt_extended import jwt_required
 
@@ -17,17 +9,17 @@ from utils import fetch_or_404, get_current_user, is_admin, register_crud_bluepr
 employee_incentives_bp = register_crud_blueprint(
     "employee_incentives_bp",
     EmployeeIncentive,
-    create_fields=[],  # rows only ever created via /calculate
+    create_fields=[],
     update_fields=["status", "is_active"],
     search_fields=[],
-    url_prefix_singular="employee-incentives",
+    url_prefix_singular="",          # CHANGED from "employee-incentives"
     editable=True,
     deletable=False,
     admin_only=True,
 )
 
 
-@employee_incentives_bp.route("/employee-incentives/calculate", methods=["POST"])
+@employee_incentives_bp.route("/calculate", methods=["POST"])  # CHANGED: relative
 @jwt_required()
 @with_token
 def calculate_employee_incentives(token_response):
@@ -60,7 +52,7 @@ def calculate_employee_incentives(token_response):
     ), 200
 
 
-@employee_incentives_bp.route("/employee-incentives/<int:incentive_id>/deactivate", methods=["DELETE"])
+@employee_incentives_bp.route("/<int:incentive_id>/deactivate", methods=["DELETE"])  # CHANGED: relative
 @jwt_required()
 @with_token
 def deactivate_employee_incentive(incentive_id, token_response):

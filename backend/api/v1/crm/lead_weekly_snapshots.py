@@ -1,7 +1,6 @@
 """
 Weekly lead snapshots. List/get via the standard factory (add-only -
-rows are only produced by the /generate action, matching the pattern
-used for EmployeeIncentive.calculate_for_period).
+rows are only produced by the /generate action).
 """
 
 from flask import Blueprint, jsonify, request
@@ -22,7 +21,7 @@ from utils import (
 lead_weekly_snapshots_bp = Blueprint("lead_weekly_snapshots_bp", __name__)
 
 
-@lead_weekly_snapshots_bp.route("/lead-weekly-snapshots/", methods=["GET"])
+@lead_weekly_snapshots_bp.route("/", methods=["GET"])  # CHANGED: relative
 @jwt_required()
 @with_token
 def list_lead_weekly_snapshots(token_response):
@@ -49,7 +48,7 @@ def list_lead_weekly_snapshots(token_response):
     ), 200
 
 
-@lead_weekly_snapshots_bp.route("/lead-weekly-snapshots/<int:snapshot_id>", methods=["GET"])
+@lead_weekly_snapshots_bp.route("/<int:snapshot_id>", methods=["GET"])  # CHANGED: relative
 @jwt_required()
 @with_token
 def get_lead_weekly_snapshot(snapshot_id, token_response):
@@ -65,7 +64,7 @@ def get_lead_weekly_snapshot(snapshot_id, token_response):
     ), 200
 
 
-@lead_weekly_snapshots_bp.route("/lead-weekly-snapshots/generate", methods=["POST"])
+@lead_weekly_snapshots_bp.route("/generate", methods=["POST"])  # CHANGED: relative
 @jwt_required()
 @with_token
 def generate_lead_weekly_snapshots(token_response):

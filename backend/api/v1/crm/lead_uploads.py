@@ -2,9 +2,7 @@
 Excel lead upload. POST /lead-uploads/ accepts a single .xlsx file
 (multipart/form-data, field name "file"), creates a LeadUploadBatch
 row, parses each data row into a Lead, and reports per-row success/
-failure. Follows the same admin-gated / soft-deactivate conventions
-as the rest of the CRM module, but only needs list + upload — no
-edit/delete on a batch once processed.
+failure.
 """
 
 from flask import Blueprint, jsonify, request
@@ -25,8 +23,6 @@ from utils import (
 lead_uploads_bp = Blueprint("lead_uploads_bp", __name__)
 
 ALLOWED_EXTENSIONS = {"xlsx"}
-
-# Column order expected in the uploaded sheet, header row required.
 EXPECTED_COLUMNS = ["lead_name", "contact_number", "email", "source", "status"]
 
 
@@ -34,7 +30,7 @@ def _allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
-@lead_uploads_bp.route("/lead-uploads/", methods=["GET"])
+@lead_uploads_bp.route("/", methods=["GET"])  # CHANGED: relative
 @jwt_required()
 @with_token
 def list_lead_uploads(token_response):
@@ -54,7 +50,7 @@ def list_lead_uploads(token_response):
     ), 200
 
 
-@lead_uploads_bp.route("/lead-uploads/<int:batch_id>", methods=["GET"])
+@lead_uploads_bp.route("/<int:batch_id>", methods=["GET"])  # CHANGED: relative
 @jwt_required()
 @with_token
 def get_lead_upload(batch_id, token_response):
@@ -70,7 +66,7 @@ def get_lead_upload(batch_id, token_response):
     ), 200
 
 
-@lead_uploads_bp.route("/lead-uploads/", methods=["POST"])
+@lead_uploads_bp.route("/", methods=["POST"])  # CHANGED: relative
 @jwt_required()
 @with_token
 def upload_leads(token_response):
@@ -95,7 +91,7 @@ def upload_leads(token_response):
         return jsonify({"message": "Could not read the uploaded file"}), 400
 
     sheet = workbook.active
-    rows = list(sheet.iter_rows(min_row=2, values_only=True))  # skip header row
+    rows = list(sheet.iter_rows(min_row=2, values_only=True))
 
     batch = LeadUploadBatch(
         uploaded_by=current_user.id,
@@ -104,7 +100,7 @@ def upload_leads(token_response):
         status="Processing",
     )
     db.session.add(batch)
-    db.session.flush()  # get batch.id before creating leads
+    db.session.flush()
 
     success_count = 0
     errors = []
@@ -145,7 +141,7 @@ def upload_leads(token_response):
     ), 201
 
 
-@lead_uploads_bp.route("/lead-uploads/<int:batch_id>/deactivate", methods=["DELETE"])
+@lead_uploads_bp.route("/<int:batch_id>/deactivate", methods=["DELETE"])  # CHANGED: relative
 @jwt_required()
 @with_token
 def deactivate_lead_upload(batch_id, token_response):

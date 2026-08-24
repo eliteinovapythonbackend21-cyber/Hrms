@@ -1,8 +1,3 @@
-"""
-Configurable incentive tiers (min/max customer count -> flat amount).
-Admin-managed master data, full CRUD.
-"""
-
 from flask import jsonify
 from flask_jwt_extended import jwt_required
 
@@ -16,14 +11,14 @@ incentive_slabs_bp = register_crud_blueprint(
     IncentiveSlab,
     create_fields=["min_customers", "max_customers", "incentive_amount", "is_active"],
     search_fields=[],
-    url_prefix_singular="incentive-slabs",
+    url_prefix_singular="",          # CHANGED from "incentive-slabs"
     editable=True,
     deletable=False,
     admin_only=True,
 )
 
 
-@incentive_slabs_bp.route("/incentive-slabs/<int:slab_id>/deactivate", methods=["DELETE"])
+@incentive_slabs_bp.route("/<int:slab_id>/deactivate", methods=["DELETE"])  # CHANGED: relative
 @jwt_required()
 @with_token
 def deactivate_incentive_slab(slab_id, token_response):

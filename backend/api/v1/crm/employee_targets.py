@@ -1,15 +1,9 @@
-"""
-Monthly registered-customer target/limit per CRM employee. Admin-
-managed; drives which registrations count as "additional" for
-incentive calculation (see EmployeeIncentive.calculate_for_period).
-"""
-
 from flask import jsonify
 from flask_jwt_extended import jwt_required
 
 from extensions import db
 from models import EmployeeTarget
-from utils import fetch_or_404, get_current_user, is_admin, register_crud_blueprint, with_token , ensure_crm_employee
+from utils import fetch_or_404, get_current_user, is_admin, register_crud_blueprint, with_token, ensure_crm_employee
 
 
 def _validate_crm_target(item, data):
@@ -19,12 +13,13 @@ def _validate_crm_target(item, data):
         return error_response
     return None
 
+
 employee_targets_bp = register_crud_blueprint(
     "employee_targets_bp",
     EmployeeTarget,
     create_fields=["employee_id", "month", "year", "target_customer_count", "is_active"],
     search_fields=[],
-    url_prefix_singular="employee-targets",
+    url_prefix_singular="",          # CHANGED from "employee-targets"
     editable=True,
     deletable=False,
     admin_only=True,
@@ -32,7 +27,7 @@ employee_targets_bp = register_crud_blueprint(
 )
 
 
-@employee_targets_bp.route("/employee-targets/<int:target_id>/deactivate", methods=["DELETE"])
+@employee_targets_bp.route("/<int:target_id>/deactivate", methods=["DELETE"])  # CHANGED: relative
 @jwt_required()
 @with_token
 def deactivate_employee_target(target_id, token_response):

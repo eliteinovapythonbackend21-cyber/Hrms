@@ -1,10 +1,3 @@
-"""
-Weekly department headcount snapshots, entered by the CRM Department
-Lead. One row per (department_id, week_start_date) - enforced by a
-unique constraint, surfaced to the caller as a 409 via
-handle_integrity_error rather than a raw 500.
-"""
-
 from flask import jsonify
 from flask_jwt_extended import jwt_required
 from sqlalchemy.exc import IntegrityError
@@ -18,7 +11,7 @@ from utils import (
     is_admin,
     register_crud_blueprint,
     with_token,
-    ensure_crm_department
+    ensure_crm_department,
 )
 
 
@@ -28,6 +21,7 @@ def _validate_crm_department(item, data):
     if error_response:
         return error_response
     return None
+
 
 department_headcounts_bp = register_crud_blueprint(
     "department_headcounts_bp",
@@ -41,7 +35,7 @@ department_headcounts_bp = register_crud_blueprint(
         "is_active",
     ],
     search_fields=["notes"],
-    url_prefix_singular="department-headcounts",
+    url_prefix_singular="",          # CHANGED from "department-headcounts"
     editable=True,
     deletable=False,
     admin_only=False,
@@ -49,10 +43,7 @@ department_headcounts_bp = register_crud_blueprint(
 )
 
 
-@department_headcounts_bp.route(
-    "/department-headcounts/<int:headcount_id>/deactivate",
-    methods=["DELETE"],
-)
+@department_headcounts_bp.route("/<int:headcount_id>/deactivate", methods=["DELETE"])  # CHANGED: relative
 @jwt_required()
 @with_token
 def deactivate_department_headcount(headcount_id, token_response):
