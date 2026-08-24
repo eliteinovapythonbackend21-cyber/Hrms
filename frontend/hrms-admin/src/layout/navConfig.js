@@ -126,7 +126,7 @@ export const navConfig = [
       { label: "Customers", path: "/crm/customers", icon: "crm" },
       { label: "Registertion", path: "/crm/meetings", icon: "crm" },
       { label: "Targets", path: "/crm/leads/employees/targets", icon: "employees" },
-      { label: "Headcount", path: "/crm/leads/employees/headcount", icon: "employees" },
+      // { label: "Headcount", path: "/crm/leads/employees/headcount", icon: "employees" },
       { label: "Incentive", path: "/crm/quotations", icon: "crm" },
       { label: "Incentive Slabs", path: "/crm/leads/incentive-slabs", icon: "crm" },
       { label: "Incentive Payouts", path: "/crm/leads/payouts", icon: "crm" },
