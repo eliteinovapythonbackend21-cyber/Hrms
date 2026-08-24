@@ -66,7 +66,7 @@ def get_lead_upload(batch_id, token_response):
     ), 200
 
 
-@lead_uploads_bp.route("/", methods=["POST"])  # CHANGED: relative
+@lead_uploads_bp.route("/", methods=["POST"])
 @jwt_required()
 @with_token
 def upload_leads(token_response):
@@ -82,16 +82,31 @@ def upload_leads(token_response):
     if not _allowed_file(file.filename):
         return jsonify({"message": "Only .xlsx files are supported"}), 400
 
-    assigned_to = request.form.get("assigned_to")
-    assigned_to = int(assigned_to) if assigned_to else None
+    assigned_to_raw = request.form.get("assigned_to")
+    assigned_to = None
+    if assigned_to_raw:
+        try:
+            assigned_to = int(assigned_to_raw)
+        except (TypeError, ValueError):
+            return jsonify({"message": "Invalid assigned_to value"}), 400
 
     try:
         workbook = load_workbook(file, data_only=True)
-    except Exception:
-        return jsonify({"message": "Could not read the uploaded file"}), 400
+    except Exception as exc:
+        return jsonify({"message": f"Could not read the uploaded file: {exc}"}), 400
 
     sheet = workbook.active
     rows = list(sheet.iter_rows(min_row=2, values_only=True))
+
+    if not rows:
+        return jsonify({"message": "The uploaded file has no data rows (only a header, or is empty)"}), 400
+
+    creator_employee_id = None
+    try:
+        employee = getattr(current_user, "employee", None)
+        creator_employee_id = employee.id if employee else None
+    except Exception:
+        creator_employee_id = None
 
     batch = LeadUploadBatch(
         uploaded_by=current_user.id,
@@ -106,31 +121,39 @@ def upload_leads(token_response):
     errors = []
 
     for index, row in enumerate(rows, start=2):
-        lead_name = row[0] if len(row) > 0 else None
-        if not lead_name or not str(lead_name).strip():
-            errors.append(f"Row {index}: lead_name is required")
-            continue
+        try:
+            lead_name = row[0] if len(row) > 0 else None
+            if not lead_name or not str(lead_name).strip():
+                errors.append(f"Row {index}: lead_name is required")
+                continue
 
-        lead = Lead(
-            lead_name=str(lead_name).strip(),
-            contact_number=str(row[1]).strip() if len(row) > 1 and row[1] else None,
-            email=str(row[2]).strip() if len(row) > 2 and row[2] else None,
-            source=str(row[3]).strip() if len(row) > 3 and row[3] else "Excel Upload",
-            status=str(row[4]).strip() if len(row) > 4 and row[4] else "New",
-            assigned_to=assigned_to,
-            created_by=getattr(current_user.employee, "id", None) if hasattr(current_user, "employee") else None,
-            upload_batch_id=batch.id,
-            is_active=True,
-        )
-        db.session.add(lead)
-        success_count += 1
+            lead = Lead(
+                lead_name=str(lead_name).strip()[:150],
+                contact_number=(str(row[1]).strip()[:15] if len(row) > 1 and row[1] else None),
+                email=(str(row[2]).strip()[:150] if len(row) > 2 and row[2] else None),
+                source=(str(row[3]).strip()[:50] if len(row) > 3 and row[3] else "Excel Upload"),
+                status=(str(row[4]).strip()[:20] if len(row) > 4 and row[4] else "New"),
+                assigned_to=assigned_to,
+                created_by=creator_employee_id,
+                upload_batch_id=batch.id,
+                is_active=True,
+            )
+            db.session.add(lead)
+            success_count += 1
+        except Exception as exc:
+            errors.append(f"Row {index}: {exc}")
+            continue
 
     batch.success_count = success_count
     batch.failed_count = len(rows) - success_count
     batch.status = "Completed" if batch.failed_count == 0 else "Completed with errors"
     batch.error_summary = "; ".join(errors[:50]) if errors else None
 
-    db.session.commit()
+    try:
+        db.session.commit()
+    except Exception as exc:
+        db.session.rollback()
+        return jsonify({"message": f"Failed to save uploaded leads: {exc}"}), 500
 
     return jsonify(
         {
