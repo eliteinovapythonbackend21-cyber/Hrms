@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useMemo, useState } from "react";
 
 import { useAttendance } from "./useAttendance";
 import AttendanceTable from "./components/AttendanceTable";
@@ -75,6 +76,18 @@ const EXPORT_COLUMNS = [
 
 /*
  * ============================================================
+ * PERIOD TYPES
+ * ============================================================
+ */
+
+const PERIOD_TYPES = {
+  DAILY: "daily",
+  MONTHLY: "monthly",
+  QUARTERLY: "quarterly",
+};
+
+/*
+ * ============================================================
  * STATUS HELPERS
  * ============================================================
  */
@@ -121,11 +134,133 @@ const isLate = (row) => {
 
 /*
  * ============================================================
+ * DATE HELPERS
+ * ============================================================
+ */
+
+const padNumber = (value) =>
+  String(value).padStart(2, "0");
+
+const formatISODate = (
+  year,
+  month,
+  day
+) => {
+  return `${year}-${padNumber(
+    month
+  )}-${padNumber(day)}`;
+};
+
+const getToday = () => {
+  const today = new Date();
+
+  return {
+    year: today.getFullYear(),
+    month: today.getMonth() + 1,
+    day: today.getDate(),
+  };
+};
+
+const getMonthRange = (
+  year,
+  month
+) => {
+  const firstDay = new Date(
+    year,
+    month - 1,
+    1
+  );
+
+  const lastDay = new Date(
+    year,
+    month,
+    0
+  );
+
+  return {
+    from_date: formatISODate(
+      year,
+      month,
+      1
+    ),
+
+    to_date: formatISODate(
+      year,
+      month,
+      lastDay.getDate()
+    ),
+  };
+};
+
+const getQuarterRange = (
+  year,
+  quarter
+) => {
+  const startMonth =
+    (quarter - 1) * 3 + 1;
+
+  const endMonth =
+    startMonth + 2;
+
+  const lastDay = new Date(
+    year,
+    endMonth,
+    0
+  );
+
+  return {
+    from_date: formatISODate(
+      year,
+      startMonth,
+      1
+    ),
+
+    to_date: formatISODate(
+      year,
+      endMonth,
+      lastDay.getDate()
+    ),
+  };
+};
+
+/*
+ * ============================================================
  * MAIN PAGE
  * ============================================================
  */
 
 export default function AttendanceListPage() {
+  /*
+   * ----------------------------------------------------------
+   * PERIOD STATE
+   * ----------------------------------------------------------
+   */
+
+  const today = getToday();
+
+  const [periodType, setPeriodType] =
+    useState(PERIOD_TYPES.DAILY);
+
+  const [selectedDate, setSelectedDate] =
+    useState(
+      formatISODate(
+        today.year,
+        today.month,
+        today.day
+      )
+    );
+
+  const [selectedMonth, setSelectedMonth] =
+    useState(today.month);
+
+  const [selectedYear, setSelectedYear] =
+    useState(today.year);
+
+  const [selectedQuarter, setSelectedQuarter] =
+    useState(
+      Math.ceil(today.month / 3)
+    );
+
   /*
    * ----------------------------------------------------------
    * PAGINATION
@@ -156,6 +291,45 @@ export default function AttendanceListPage() {
 
   /*
    * ----------------------------------------------------------
+   * PERIOD DATE RANGE
+   * ----------------------------------------------------------
+   */
+
+  const periodRange = useMemo(() => {
+    if (
+      periodType ===
+      PERIOD_TYPES.DAILY
+    ) {
+      return {
+        from_date: selectedDate,
+        to_date: selectedDate,
+      };
+    }
+
+    if (
+      periodType ===
+      PERIOD_TYPES.MONTHLY
+    ) {
+      return getMonthRange(
+        selectedYear,
+        selectedMonth
+      );
+    }
+
+    return getQuarterRange(
+      selectedYear,
+      selectedQuarter
+    );
+  }, [
+    periodType,
+    selectedDate,
+    selectedMonth,
+    selectedQuarter,
+    selectedYear,
+  ]);
+
+  /*
+   * ----------------------------------------------------------
    * QUERY PARAMS
    * ----------------------------------------------------------
    *
@@ -168,6 +342,12 @@ export default function AttendanceListPage() {
 
   const queryParams = {
     ...params,
+
+    from_date:
+      periodRange.from_date,
+
+    to_date:
+      periodRange.to_date,
 
     employee_id:
       !isAdmin &&
@@ -204,8 +384,14 @@ export default function AttendanceListPage() {
     fetchAll: attendanceApi.list,
     queryParams,
     exportColumns: EXPORT_COLUMNS,
-    filename: "attendance",
-    title: "Attendance",
+    filename: `attendance-${periodType}`,
+    title: `Attendance - ${getPeriodTitle(
+      periodType,
+      selectedDate,
+      selectedMonth,
+      selectedQuarter,
+      selectedYear
+    )}`,
   });
 
   /*
@@ -221,9 +407,6 @@ export default function AttendanceListPage() {
    * ----------------------------------------------------------
    * ATTENDANCE SUMMARY
    * ----------------------------------------------------------
-   *
-   * These cards are specifically for HR daily attendance.
-   * They do not contain Finance salary information.
    */
 
   const totalRecords =
@@ -252,7 +435,21 @@ export default function AttendanceListPage() {
 
   /*
    * ----------------------------------------------------------
-   * PRESENT PERCENTAGE
+   * TOTAL WORKING HOURS
+   * ----------------------------------------------------------
+   */
+
+  const totalWorkingHours =
+    attendanceItems.reduce(
+      (total, row) =>
+        total +
+        Number(row?.working_hours || 0),
+      0
+    );
+
+  /*
+   * ----------------------------------------------------------
+   * ATTENDANCE RATE
    * ----------------------------------------------------------
    */
 
@@ -266,12 +463,24 @@ export default function AttendanceListPage() {
       : 0;
 
   /*
+   * ----------------------------------------------------------
+   * PERIOD TITLE
+   * ----------------------------------------------------------
+   */
+
+  const periodTitle =
+    getPeriodTitle(
+      periodType,
+      selectedDate,
+      selectedMonth,
+      selectedQuarter,
+      selectedYear
+    );
+
+  /*
    * ==========================================================
    * EMPLOYEE VIEW
    * ==========================================================
-   *
-   * Normal employees should not see the HR attendance
-   * management table.
    */
 
   if (!isAdmin) {
@@ -329,18 +538,83 @@ export default function AttendanceListPage() {
         <CheckInOutWidget />
 
         {/* ----------------------------------------------------
-            EMPLOYEE RECENT ATTENDANCE
+            EMPLOYEE PERIOD FILTER
+        ----------------------------------------------------- */}
+
+        <AttendancePeriodSelector
+          periodType={periodType}
+          setPeriodType={setPeriodType}
+          selectedDate={selectedDate}
+          setSelectedDate={setSelectedDate}
+          selectedMonth={selectedMonth}
+          setSelectedMonth={setSelectedMonth}
+          selectedQuarter={selectedQuarter}
+          setSelectedQuarter={setSelectedQuarter}
+          selectedYear={selectedYear}
+          setSelectedYear={setSelectedYear}
+        />
+
+        {/* ----------------------------------------------------
+            EMPLOYEE SUMMARY
+        ----------------------------------------------------- */}
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <AttendanceMetric
+            label="Present"
+            value={presentCount}
+            description={periodTitle}
+            icon="present"
+          />
+
+          <AttendanceMetric
+            label="Absent"
+            value={absentCount}
+            description={periodTitle}
+            icon="absent"
+          />
+
+          <AttendanceMetric
+            label="Leave"
+            value={leaveCount}
+            description={periodTitle}
+            icon="leave"
+          />
+
+          <AttendanceMetric
+            label="Working Hours"
+            value={`${totalWorkingHours.toFixed(
+              2
+            )}h`}
+            description={periodTitle}
+            icon="hours"
+          />
+        </div>
+
+        {/* ----------------------------------------------------
+            EMPLOYEE ATTENDANCE
         ----------------------------------------------------- */}
 
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-          <div className="mb-5">
-            <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
-              Recent Attendance
-            </h2>
+          <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
+                {periodType ===
+                PERIOD_TYPES.DAILY
+                  ? "Today's Attendance"
+                  : periodType ===
+                    PERIOD_TYPES.MONTHLY
+                  ? "Monthly Attendance"
+                  : "Quarterly Attendance"}
+              </h2>
 
-            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              Your latest attendance records
-            </p>
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                {periodTitle}
+              </p>
+            </div>
+
+            <span className="w-fit rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+              {totalRecords} Records
+            </span>
           </div>
 
           {isError ? (
@@ -363,7 +637,7 @@ export default function AttendanceListPage() {
 
   /*
    * ==========================================================
-   * HR / ADMIN VIEW
+   * ADMIN / HR VIEW
    * ==========================================================
    */
 
@@ -417,8 +691,8 @@ export default function AttendanceListPage() {
                 </div>
 
                 <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                  Monitor today's employee attendance
-                  and work status
+                  Monitor employee attendance day-to-day,
+                  monthly and quarterly
                 </p>
               </div>
             </div>
@@ -453,44 +727,94 @@ export default function AttendanceListPage() {
       </div>
 
       {/* ======================================================
-          ATTENDANCE SNAPSHOT
+          PERIOD SELECTOR
       ======================================================= */}
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
-        <AttendanceMetric
-          label="Total Records"
-          value={totalRecords}
-          description="Attendance records"
-          icon="users"
-        />
+      <AttendancePeriodSelector
+        periodType={periodType}
+        setPeriodType={setPeriodType}
+        selectedDate={selectedDate}
+        setSelectedDate={setSelectedDate}
+        selectedMonth={selectedMonth}
+        setSelectedMonth={setSelectedMonth}
+        selectedQuarter={selectedQuarter}
+        setSelectedQuarter={setSelectedQuarter}
+        selectedYear={selectedYear}
+        setSelectedYear={setSelectedYear}
+      />
 
-        <AttendanceMetric
-          label="Present"
-          value={presentCount}
-          description="Employees present"
-          icon="present"
-        />
+      {/* ======================================================
+          PERIOD SUMMARY
+      ======================================================= */}
 
-        <AttendanceMetric
-          label="Absent"
-          value={absentCount}
-          description="Employees absent"
-          icon="absent"
-        />
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+              Attendance Overview
+            </p>
 
-        <AttendanceMetric
-          label="On Leave"
-          value={leaveCount}
-          description="Approved leave"
-          icon="leave"
-        />
+            <h2 className="mt-1 text-xl font-bold text-slate-900 dark:text-white">
+              {periodTitle}
+            </h2>
+          </div>
 
-        <AttendanceMetric
-          label="Late"
-          value={lateCount}
-          description="Late arrivals"
-          icon="late"
-        />
+          <span className="w-fit rounded-full bg-primary-50 px-3 py-1 text-xs font-semibold text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
+            {periodType ===
+              PERIOD_TYPES.DAILY
+              ? "Daily"
+              : periodType ===
+                PERIOD_TYPES.MONTHLY
+              ? "Monthly"
+              : "Quarterly"}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-6">
+          <AttendanceMetric
+            label="Total Records"
+            value={totalRecords}
+            description="Attendance records"
+            icon="users"
+          />
+
+          <AttendanceMetric
+            label="Present"
+            value={presentCount}
+            description="Employees present"
+            icon="present"
+          />
+
+          <AttendanceMetric
+            label="Absent"
+            value={absentCount}
+            description="Employees absent"
+            icon="absent"
+          />
+
+          <AttendanceMetric
+            label="On Leave"
+            value={leaveCount}
+            description="Leave records"
+            icon="leave"
+          />
+
+          <AttendanceMetric
+            label="Late"
+            value={lateCount}
+            description="Late arrivals"
+            icon="late"
+          />
+
+          <AttendanceMetric
+            label="Working Hours"
+            value={`${totalWorkingHours.toFixed(
+              2
+            )}h`}
+            description="Total hours"
+            icon="hours"
+          />
+        </div>
       </div>
 
       {/* ======================================================
@@ -511,6 +835,10 @@ export default function AttendanceListPage() {
 
               <p className="mt-2 text-3xl font-bold text-slate-900 dark:text-white">
                 {attendanceRate}%
+              </p>
+
+              <p className="mt-1 text-xs text-slate-400">
+                {periodTitle}
               </p>
             </div>
 
@@ -543,12 +871,12 @@ export default function AttendanceListPage() {
         </div>
 
         {/* ----------------------------------------------------
-            DAILY STATUS
+            STATUS BREAKDOWN
         ----------------------------------------------------- */}
 
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
           <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-            Today's Status
+            Status Breakdown
           </p>
 
           <div className="mt-4 space-y-3">
@@ -595,6 +923,21 @@ export default function AttendanceListPage() {
                   : 0
               }
               type="leave"
+            />
+
+            <StatusRow
+              label="Late"
+              value={lateCount}
+              percentage={
+                totalRecords
+                  ? Math.round(
+                      (lateCount /
+                        totalRecords) *
+                        100
+                    )
+                  : 0
+              }
+              type="late"
             />
           </div>
         </div>
@@ -660,7 +1003,13 @@ export default function AttendanceListPage() {
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
-                  Attendance Records
+                  {periodType ===
+                  PERIOD_TYPES.DAILY
+                    ? "Daily Attendance Records"
+                    : periodType ===
+                      PERIOD_TYPES.MONTHLY
+                    ? "Monthly Attendance Records"
+                    : "Quarterly Attendance Records"}
                 </h2>
 
                 <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-500 dark:bg-slate-800 dark:text-slate-400">
@@ -669,8 +1018,8 @@ export default function AttendanceListPage() {
               </div>
 
               <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                Employee check-in, check-out and daily
-                attendance status
+                {periodTitle} · Employee check-in,
+                check-out and attendance status
               </p>
             </div>
           </div>
@@ -733,6 +1082,400 @@ export default function AttendanceListPage() {
 
 /*
  * ============================================================
+ * PERIOD SELECTOR
+ * ============================================================
+ */
+
+function AttendancePeriodSelector({
+  periodType,
+  setPeriodType,
+  selectedDate,
+  setSelectedDate,
+  selectedMonth,
+  setSelectedMonth,
+  selectedQuarter,
+  setSelectedQuarter,
+  selectedYear,
+  setSelectedYear,
+}) {
+  const currentYear =
+    new Date().getFullYear();
+
+  const years = Array.from(
+    { length: 6 },
+    (_, index) =>
+      currentYear - index
+  );
+
+  const months = [
+    {
+      value: 1,
+      label: "January",
+    },
+    {
+      value: 2,
+      label: "February",
+    },
+    {
+      value: 3,
+      label: "March",
+    },
+    {
+      value: 4,
+      label: "April",
+    },
+    {
+      value: 5,
+      label: "May",
+    },
+    {
+      value: 6,
+      label: "June",
+    },
+    {
+      value: 7,
+      label: "July",
+    },
+    {
+      value: 8,
+      label: "August",
+    },
+    {
+      value: 9,
+      label: "September",
+    },
+    {
+      value: 10,
+      label: "October",
+    },
+    {
+      value: 11,
+      label: "November",
+    },
+    {
+      value: 12,
+      label: "December",
+    },
+  ];
+
+  const quarters = [
+    {
+      value: 1,
+      label: "Q1",
+      description: "Jan - Mar",
+    },
+    {
+      value: 2,
+      label: "Q2",
+      description: "Apr - Jun",
+    },
+    {
+      value: 3,
+      label: "Q3",
+      description: "Jul - Sep",
+    },
+    {
+      value: 4,
+      label: "Q4",
+      description: "Oct - Dec",
+    },
+  ];
+
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+      {/* ------------------------------------------------------
+          PERIOD TABS
+      ------------------------------------------------------- */}
+
+      <div className="flex flex-wrap gap-2">
+        <PeriodTab
+          active={
+            periodType ===
+            PERIOD_TYPES.DAILY
+          }
+          onClick={() =>
+            setPeriodType(
+              PERIOD_TYPES.DAILY
+            )
+          }
+        >
+          Day-to-Day
+        </PeriodTab>
+
+        <PeriodTab
+          active={
+            periodType ===
+            PERIOD_TYPES.MONTHLY
+          }
+          onClick={() =>
+            setPeriodType(
+              PERIOD_TYPES.MONTHLY
+            )
+          }
+        >
+          Monthly
+        </PeriodTab>
+
+        <PeriodTab
+          active={
+            periodType ===
+            PERIOD_TYPES.QUARTERLY
+          }
+          onClick={() =>
+            setPeriodType(
+              PERIOD_TYPES.QUARTERLY
+            )
+          }
+        >
+          Quarterly
+        </PeriodTab>
+      </div>
+
+      {/* ------------------------------------------------------
+          DAILY FILTER
+      ------------------------------------------------------- */}
+
+      {periodType ===
+        PERIOD_TYPES.DAILY && (
+        <div className="mt-5">
+          <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-slate-400">
+            Attendance Date
+          </label>
+
+          <input
+            type="date"
+            value={selectedDate}
+            onChange={(event) =>
+              setSelectedDate(
+                event.target.value
+              )
+            }
+            className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 sm:w-64"
+          />
+        </div>
+      )}
+
+      {/* ------------------------------------------------------
+          MONTHLY FILTER
+      ------------------------------------------------------- */}
+
+      {periodType ===
+        PERIOD_TYPES.MONTHLY && (
+        <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div>
+            <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-slate-400">
+              Month
+            </label>
+
+            <select
+              value={selectedMonth}
+              onChange={(event) =>
+                setSelectedMonth(
+                  Number(
+                    event.target.value
+                  )
+                )
+              }
+              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+            >
+              {months.map((month) => (
+                <option
+                  key={month.value}
+                  value={month.value}
+                >
+                  {month.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-slate-400">
+              Year
+            </label>
+
+            <select
+              value={selectedYear}
+              onChange={(event) =>
+                setSelectedYear(
+                  Number(
+                    event.target.value
+                  )
+                )
+              }
+              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+            >
+              {years.map((year) => (
+                <option
+                  key={year}
+                  value={year}
+                >
+                  {year}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      )}
+
+      {/* ------------------------------------------------------
+          QUARTERLY FILTER
+      ------------------------------------------------------- */}
+
+      {periodType ===
+        PERIOD_TYPES.QUARTERLY && (
+        <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div>
+            <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-slate-400">
+              Quarter
+            </label>
+
+            <select
+              value={selectedQuarter}
+              onChange={(event) =>
+                setSelectedQuarter(
+                  Number(
+                    event.target.value
+                  )
+                )
+              }
+              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+            >
+              {quarters.map(
+                (quarter) => (
+                  <option
+                    key={quarter.value}
+                    value={quarter.value}
+                  >
+                    {quarter.label} (
+                    {
+                      quarter.description
+                    }
+                    )
+                  </option>
+                )
+              )}
+            </select>
+          </div>
+
+          <div>
+            <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-slate-400">
+              Year
+            </label>
+
+            <select
+              value={selectedYear}
+              onChange={(event) =>
+                setSelectedYear(
+                  Number(
+                    event.target.value
+                  )
+                )
+              }
+              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+            >
+              {years.map((year) => (
+                <option
+                  key={year}
+                  value={year}
+                >
+                  {year}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/*
+ * ============================================================
+ * PERIOD TAB
+ * ============================================================
+ */
+
+function PeriodTab({
+  active,
+  onClick,
+  children,
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-xl px-4 py-2.5 text-sm font-semibold transition ${
+        active
+          ? "bg-primary-600 text-white shadow-sm"
+          : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+/*
+ * ============================================================
+ * PERIOD TITLE
+ * ============================================================
+ */
+
+function getPeriodTitle(
+  periodType,
+  selectedDate,
+  selectedMonth,
+  selectedQuarter,
+  selectedYear
+) {
+  if (
+    periodType ===
+    PERIOD_TYPES.DAILY
+  ) {
+    return selectedDate
+      ? formatDate(selectedDate)
+      : "Selected Date";
+  }
+
+  if (
+    periodType ===
+    PERIOD_TYPES.MONTHLY
+  ) {
+    const monthNames = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ];
+
+    return `${
+      monthNames[selectedMonth - 1]
+    } ${selectedYear}`;
+  }
+
+  const quarterMonths = {
+    1: "January - March",
+    2: "April - June",
+    3: "July - September",
+    4: "October - December",
+  };
+
+  return `Q${selectedQuarter} ${selectedYear} · ${
+    quarterMonths[selectedQuarter]
+  }`;
+}
+
+/*
+ * ============================================================
  * ATTENDANCE METRIC
  * ============================================================
  */
@@ -758,39 +1501,39 @@ function AttendanceMetric({
 
     late:
       "bg-orange-50 text-orange-600 dark:bg-orange-500/10 dark:text-orange-400",
+
+    hours:
+      "bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400",
   };
 
   const icons = {
     users: "●",
-
     present: "✓",
-
     absent: "×",
-
     leave: "◐",
-
     late: "◷",
+    hours: "◴",
   };
 
   return (
     <div className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md dark:border-slate-700 dark:bg-slate-900">
       <div className="flex items-start justify-between">
-        <div>
+        <div className="min-w-0">
           <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
             {label}
           </p>
 
-          <p className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">
+          <p className="mt-2 truncate text-2xl font-bold text-slate-900 dark:text-white">
             {value}
           </p>
 
-          <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
+          <p className="mt-1 truncate text-xs text-slate-400 dark:text-slate-500">
             {description}
           </p>
         </div>
 
         <div
-          className={`flex h-10 w-10 items-center justify-center rounded-xl text-sm font-bold ${iconStyles[icon]}`}
+          className={`ml-3 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-bold ${iconStyles[icon]}`}
         >
           {icons[icon]}
         </div>
@@ -815,6 +1558,7 @@ function StatusRow({
     present: "bg-emerald-500",
     absent: "bg-red-500",
     leave: "bg-amber-500",
+    late: "bg-orange-500",
   };
 
   return (
@@ -826,6 +1570,7 @@ function StatusRow({
 
         <span className="text-xs font-semibold text-slate-800 dark:text-white">
           {value}
+
           <span className="ml-1 font-normal text-slate-400">
             ({percentage}%)
           </span>

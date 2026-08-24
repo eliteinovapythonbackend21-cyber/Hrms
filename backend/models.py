@@ -734,83 +734,326 @@ class Attendance(TimestampMixin, db.Model):
         ]
 
     @classmethod
-    def generate_salary_report(cls, from_date=None, to_date=None, employee_id=None):
+    def generate_salary_report(
+        cls,
+        from_date=None,
+        to_date=None,
+        employee_id=None
+    ):
+
         query = Employee.query
+
         if employee_id is not None:
-            query = query.filter(Employee.id == employee_id)
+
+            query = query.filter(
+                Employee.id == employee_id
+            )
 
         rows = []
-        for employee in query.order_by(Employee.id).all():
-            attendance_query = cls.query.filter(cls.employee_id == employee.id)
+
+        for employee in query.order_by(
+            Employee.id
+        ).all():
+
+
+            attendance_query = cls.query.filter(
+                cls.employee_id == employee.id
+            )
+
             if from_date and to_date:
-                attendance_query = attendance_query.filter(cls.attendance_date.between(from_date, to_date))
+
+                attendance_query = attendance_query.filter(
+                    cls.attendance_date.between(
+                        from_date,
+                        to_date
+                    )
+                )
+
             elif from_date:
-                attendance_query = attendance_query.filter(cls.attendance_date >= from_date)
+
+                attendance_query = attendance_query.filter(
+                    cls.attendance_date >= from_date
+                )
+
             elif to_date:
-                attendance_query = attendance_query.filter(cls.attendance_date <= to_date)
+
+                attendance_query = attendance_query.filter(
+                    cls.attendance_date <= to_date
+                )
 
             attendance_records = attendance_query.all()
-            attendance_count = len(attendance_records)
-            salary_value = float(employee.salary or 0)
+
+            attendance_count = len(
+                attendance_records
+            )
+
+            salary_value = float(
+                employee.salary or 0
+            )
+
+            allowance_value = float(
+                employee.allowance or 0
+            )
+
+
+            if from_date and to_date:
+
+                period_start = from_date
+                period_end = to_date
+
+                days_in_period = (
+                    to_date - from_date
+                ).days + 1
+
+            elif from_date:
+
+                period_start = from_date
+                period_end = date.today()
+
+                days_in_period = (
+                    period_end - period_start
+                ).days + 1
+
+            elif to_date:
+
+                period_end = to_date
+                period_start = to_date.replace(
+                    day=1
+                )
+
+                days_in_period = (
+                    period_end - period_start
+                ).days + 1
+
+            else:
+
+                period_start = None
+                period_end = None
+                days_in_period = 30
+
+        
 
             leave_query = Leave.query.filter(
                 Leave.employee_id == employee.id,
                 Leave.status == "Approved",
                 Leave.is_active == True,
             )
-            if from_date and to_date:
-                leave_query = leave_query.filter(Leave.from_date <= to_date, Leave.to_date >= from_date)
-            elif from_date:
-                leave_query = leave_query.filter(Leave.to_date >= from_date)
-            elif to_date:
-                leave_query = leave_query.filter(Leave.from_date <= to_date)
+
+            if period_start and period_end:
+
+                leave_query = leave_query.filter(
+                    Leave.from_date <= period_end,
+                    Leave.to_date >= period_start
+                )
+
+            elif period_start:
+
+                leave_query = leave_query.filter(
+                    Leave.to_date >= period_start
+                )
+
+            elif period_end:
+
+                leave_query = leave_query.filter(
+                    Leave.from_date <= period_end
+                )
 
             approved_leave_dates = set()
+
             for leave in leave_query.all():
-                leave_start = max(from_date, leave.from_date) if from_date else leave.from_date
-                leave_end = min(to_date, leave.to_date) if to_date else leave.to_date
+
+                leave_start = (
+                    max(
+                        period_start,
+                        leave.from_date
+                    )
+                    if period_start
+                    else leave.from_date
+                )
+
+                leave_end = (
+                    min(
+                        period_end,
+                        leave.to_date
+                    )
+                    if period_end
+                    else leave.to_date
+                )
+
                 day = leave_start
+
                 while day <= leave_end:
+
                     approved_leave_dates.add(day)
+
                     day += timedelta(days=1)
 
-            deductible_absent_dates = {
+
+            holiday_dates = set()
+
+            holiday_query = Holiday.query.filter(
+                Holiday.is_active == True
+            )
+
+            if period_start and period_end:
+
+                holiday_query = holiday_query.filter(
+                    Holiday.holiday_date.between(
+                        period_start,
+                        period_end
+                    )
+                )
+
+            elif period_start:
+
+                holiday_query = holiday_query.filter(
+                    Holiday.holiday_date >= period_start
+                )
+
+            elif period_end:
+
+                holiday_query = holiday_query.filter(
+                    Holiday.holiday_date <= period_end
+                )
+
+            for holiday in holiday_query.all():
+
+                holiday_dates.add(
+                    holiday.holiday_date
+                )
+
+            marked_absent_dates = {
                 record.attendance_date
                 for record in attendance_records
-                if record.attendance_status == "Absent" and record.attendance_date not in approved_leave_dates
+                if record.attendance_status == "Absent"
             }
 
-            if from_date and to_date:
-                days_in_period = (to_date - from_date).days + 1
-            else:
-                days_in_period = 30
-            per_day_salary = (salary_value / days_in_period) if days_in_period else 0.0
-            absent_deduction = round(per_day_salary * len(deductible_absent_dates), 2)
-            net_salary = round(salary_value - absent_deduction, 2)
 
-            approved_leave_dates_label = ", ".join(d.isoformat() for d in sorted(approved_leave_dates))
+            deductible_absent_dates = (
+                marked_absent_dates
+                - approved_leave_dates
+                - holiday_dates
+            )
+
+
+            payable_days = (
+                days_in_period
+                - len(holiday_dates)
+            )
+
+            if payable_days < 0:
+                payable_days = 0
+
+
+            per_day_salary = (
+                salary_value / payable_days
+                if payable_days
+                else 0.0
+            )
+
+
+            absent_deduction = round(
+                per_day_salary
+                * len(deductible_absent_dates),
+                2
+            )
+
+
+            gross_salary = round(
+                salary_value + allowance_value,
+                2
+            )
+
+
+            net_salary = round(
+                gross_salary - absent_deduction,
+                2
+            )
+
+
+            approved_leave_dates_label = ", ".join(
+                day.isoformat()
+                for day in sorted(
+                    approved_leave_dates
+                )
+            )
+
+
+            holiday_dates_label = ", ".join(
+                day.isoformat()
+                for day in sorted(
+                    holiday_dates
+                )
+            )
+
 
             rows.append([
+
                 employee.id,
+
                 employee.employee_code,
-                f"{employee.first_name or ''} {employee.last_name or ''}".strip(),
+
+                (
+                    f"{employee.first_name or ''} "
+                    f"{employee.last_name or ''}"
+                ).strip(),
+
                 salary_value,
+
                 attendance_count,
+
                 len(deductible_absent_dates),
+
                 len(approved_leave_dates),
+
                 approved_leave_dates_label,
+
                 absent_deduction,
+
                 net_salary,
-                from_date.isoformat() if from_date else "",
-                to_date.isoformat() if to_date else "",
+
+                from_date.isoformat()
+                if from_date
+                else "",
+
+                to_date.isoformat()
+                if to_date
+                else "",
             ])
 
+
         headers = [
-            "Employee ID", "Employee Code", "Employee Name", "Salary", "Attendance Count",
-            "Absent Days (Deducted)", "Approved Leave Days", "Approved Leave Dates",
-            "Absent Deduction", "Net Salary", "From Date", "To Date",
+
+            "Employee ID",
+
+            "Employee Code",
+
+            "Employee Name",
+
+            "Salary",
+
+            "Attendance Count",
+
+            "Absent Days (Deducted)",
+
+            "Approved Leave Days",
+
+            "Approved Leave Dates",
+
+            "Absent Deduction",
+
+            "Net Salary",
+
+            "From Date",
+
+            "To Date",
         ]
-        return cls._create_workbook("Salary Report", headers, rows)
+
+        return cls._create_workbook(
+            "Salary Report",
+            headers,
+            rows
+        )
 
 
 class ManualAttendance(TimestampMixin, db.Model):
