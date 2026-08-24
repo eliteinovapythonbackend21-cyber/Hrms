@@ -119,20 +119,21 @@ export const navConfig = [
     icon: "crm",
     roles: ["admin"],
     children: [
-      // Dedicated CRM-only employees route (was "/master/employees"):
-      // renders EmployeeListPage with hideSalary + hideActions so this
-      // section only ever shows org info + status, no compensation or
-      // row-level actions. Admin's and Finance's "Employees" children
-      // below are untouched and still point at "/master/employees".
       { label: "Employees", path: "/crm/employees", icon: "employees" },
+      { label: "Lead Upload", path: "/crm/leads/upload", icon: "crm" },
       { label: "Leads", path: "/crm/leads", icon: "crm" },
+      { label: "Weekly Lead Report", path: "/crm/leads/weekly", icon: "crm" },
       { label: "Customers", path: "/crm/customers", icon: "crm" },
-      { label: "Follow-ups", path: "/crm/follow-ups", icon: "crm" },
       { label: "Registertion", path: "/crm/meetings", icon: "crm" },
+      { label: "Targets", path: "/crm/leads/employees/targets", icon: "employees" },
+      { label: "Headcount", path: "/crm/leads/employees/headcount", icon: "employees" },
       { label: "Incentive", path: "/crm/quotations", icon: "crm" },
+      { label: "Incentive Slabs", path: "/crm/leads/incentive-slabs", icon: "crm" },
+      { label: "Incentive Payouts", path: "/crm/leads/payouts", icon: "crm" },
       { label: "Invoices", path: "/crm/invoices", icon: "crm" },
       { label: "Payments", path: "/crm/payments", icon: "crm" },
       { label: "Support Tickets", path: "/crm/support-tickets", icon: "crm" },
+      
     ],
   },
   {

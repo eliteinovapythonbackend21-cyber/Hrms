@@ -123,3 +123,22 @@ export function useReactivateSupportTicket() {
     },
   });
 }
+
+
+export function useSupportTicketHistory(id) {
+  return useQuery({
+    queryKey: ["support-tickets", id, "history"],
+    queryFn: () => api.getHistory(id).then((res) => res.data.data),
+    enabled: !!id,
+  });
+}
+
+export function useAddSupportTicketHistory() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, payload }) => api.addHistory(id, payload),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["support-tickets", variables.id, "history"] });
+    },
+  });
+}

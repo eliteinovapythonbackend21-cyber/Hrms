@@ -1,321 +1,122 @@
 import axiosClient from "./axiosClient";
-
 import { API } from "./endpoints";
-
 import { createCrudApi } from "@/utils/crudFactory";
 
 const C = API.CRM;
 
 export const crmApi = {
-  /* =========================================================
-     LEADS
-  ========================================================= */
-
   leads: {
-    ...createCrudApi({
-      listUrl: C.LEADS,
-      itemUrl: C.LEADS_ITEM,
-    }),
-
-    update: (id, payload) =>
-      axiosClient.put(
-        C.LEADS_ITEM(id),
-        payload
-      ),
-
-    deactivate: (id) =>
-      axiosClient.put(
-        C.LEADS_ITEM(id),
-        {
-          is_active: false,
-        }
-      ),
-
-    reactivate: (id) =>
-      axiosClient.put(
-        C.LEADS_ITEM(id),
-        {
-          is_active: true,
-        }
-      ),
-
-    convert: (
-      id,
-      payload
-    ) =>
-      axiosClient.post(
-        C.LEAD_CONVERT(id),
-        payload || {}
-      ),
+    ...createCrudApi({ listUrl: C.LEADS, itemUrl: C.LEADS_ITEM }),
+    update: (id, payload) => axiosClient.put(C.LEADS_ITEM(id), payload),
+    deactivate: (id) => axiosClient.put(C.LEADS_ITEM(id), { is_active: false }),
+    reactivate: (id) => axiosClient.put(C.LEADS_ITEM(id), { is_active: true }),
+    convert: (id, payload) => axiosClient.post(C.LEAD_CONVERT(id), payload || {}),
+    assign: (id, assignedTo) => axiosClient.post(C.LEAD_ASSIGN(id), { assigned_to: assignedTo }),
+    changeStatus: (id, status) => axiosClient.post(C.LEAD_STATUS_CHANGE(id), { status }),
+    getAssignmentHistory: (id) => axiosClient.get(C.LEAD_ASSIGNMENT_HISTORY(id)),
+    getStatusHistory: (id) => axiosClient.get(C.LEAD_STATUS_HISTORY(id)),
   },
 
-  /* =========================================================
-     CUSTOMERS
-  ========================================================= */
+  leadUploads: {
+    ...createCrudApi({ listUrl: C.LEAD_UPLOADS, itemUrl: C.LEAD_UPLOADS_ITEM }),
+    deactivate: (id) => axiosClient.delete(`${C.LEAD_UPLOADS_ITEM(id)}/deactivate`),
+    upload: (file, assignedTo) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      if (assignedTo) formData.append("assigned_to", assignedTo);
+      return axiosClient.post(C.LEAD_UPLOADS, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+    },
+  },
+
+  leadWeeklySnapshots: {
+    ...createCrudApi({ listUrl: C.LEAD_WEEKLY_SNAPSHOTS, itemUrl: C.LEAD_WEEKLY_SNAPSHOTS_ITEM }),
+    generate: (weekStartDate) =>
+      axiosClient.post(C.LEAD_WEEKLY_SNAPSHOTS_GENERATE, { week_start_date: weekStartDate }),
+  },
+
+  departmentHeadcounts: {
+    ...createCrudApi({ listUrl: C.DEPARTMENT_HEADCOUNTS, itemUrl: C.DEPARTMENT_HEADCOUNTS_ITEM }),
+    update: (id, payload) => axiosClient.put(C.DEPARTMENT_HEADCOUNTS_ITEM(id), payload),
+    deactivate: (id) => axiosClient.put(C.DEPARTMENT_HEADCOUNTS_ITEM(id), { is_active: false }),
+    reactivate: (id) => axiosClient.put(C.DEPARTMENT_HEADCOUNTS_ITEM(id), { is_active: true }),
+  },
+
+  employeeTargets: {
+    ...createCrudApi({ listUrl: C.EMPLOYEE_TARGETS, itemUrl: C.EMPLOYEE_TARGETS_ITEM }),
+    update: (id, payload) => axiosClient.put(C.EMPLOYEE_TARGETS_ITEM(id), payload),
+    deactivate: (id) => axiosClient.put(C.EMPLOYEE_TARGETS_ITEM(id), { is_active: false }),
+    reactivate: (id) => axiosClient.put(C.EMPLOYEE_TARGETS_ITEM(id), { is_active: true }),
+  },
+
+  incentiveSlabs: {
+    ...createCrudApi({ listUrl: C.INCENTIVE_SLABS, itemUrl: C.INCENTIVE_SLABS_ITEM }),
+    update: (id, payload) => axiosClient.put(C.INCENTIVE_SLABS_ITEM(id), payload),
+    deactivate: (id) => axiosClient.put(C.INCENTIVE_SLABS_ITEM(id), { is_active: false }),
+    reactivate: (id) => axiosClient.put(C.INCENTIVE_SLABS_ITEM(id), { is_active: true }),
+  },
+
+  employeeIncentives: {
+    ...createCrudApi({ listUrl: C.EMPLOYEE_INCENTIVES, itemUrl: C.EMPLOYEE_INCENTIVES_ITEM }),
+    update: (id, payload) => axiosClient.put(C.EMPLOYEE_INCENTIVES_ITEM(id), payload),
+    deactivate: (id) => axiosClient.put(C.EMPLOYEE_INCENTIVES_ITEM(id), { is_active: false }),
+    reactivate: (id) => axiosClient.put(C.EMPLOYEE_INCENTIVES_ITEM(id), { is_active: true }),
+    calculate: (month, year) => axiosClient.post(C.EMPLOYEE_INCENTIVES_CALCULATE, { month, year }),
+  },
 
   customers: {
-    ...createCrudApi({
-      listUrl: C.CUSTOMERS,
-      itemUrl: C.CUSTOMERS_ITEM,
-    }),
-
-    update: (id, payload) =>
-      axiosClient.put(
-        C.CUSTOMERS_ITEM(id),
-        payload
-      ),
-
-    deactivate: (id) =>
-      axiosClient.put(
-        C.CUSTOMERS_ITEM(id),
-        {
-          is_active: false,
-        }
-      ),
-
-    reactivate: (id) =>
-      axiosClient.put(
-        C.CUSTOMERS_ITEM(id),
-        {
-          is_active: true,
-        }
-      ),
+    ...createCrudApi({ listUrl: C.CUSTOMERS, itemUrl: C.CUSTOMERS_ITEM }),
+    update: (id, payload) => axiosClient.put(C.CUSTOMERS_ITEM(id), payload),
+    deactivate: (id) => axiosClient.put(C.CUSTOMERS_ITEM(id), { is_active: false }),
+    reactivate: (id) => axiosClient.put(C.CUSTOMERS_ITEM(id), { is_active: true }),
   },
-
-  /* =========================================================
-     FOLLOW UPS
-  ========================================================= */
 
   followUps: {
-    ...createCrudApi({
-      listUrl: C.FOLLOW_UPS,
-      itemUrl: C.FOLLOW_UPS_ITEM,
-    }),
-
-    update: (id, payload) =>
-      axiosClient.put(
-        C.FOLLOW_UPS_ITEM(id),
-        payload
-      ),
-
-    deactivate: (id) =>
-      axiosClient.put(
-        C.FOLLOW_UPS_ITEM(id),
-        {
-          is_active: false,
-        }
-      ),
-
-    reactivate: (id) =>
-      axiosClient.put(
-        C.FOLLOW_UPS_ITEM(id),
-        {
-          is_active: true,
-        }
-      ),
+    ...createCrudApi({ listUrl: C.FOLLOW_UPS, itemUrl: C.FOLLOW_UPS_ITEM }),
+    update: (id, payload) => axiosClient.put(C.FOLLOW_UPS_ITEM(id), payload),
+    deactivate: (id) => axiosClient.put(C.FOLLOW_UPS_ITEM(id), { is_active: false }),
+    reactivate: (id) => axiosClient.put(C.FOLLOW_UPS_ITEM(id), { is_active: true }),
   },
-
-  /* =========================================================
-     MEETINGS
-  ========================================================= */
 
   meetings: {
-    ...createCrudApi({
-      listUrl: C.MEETINGS,
-      itemUrl: C.MEETINGS_ITEM,
-    }),
-
-    update: (id, payload) =>
-      axiosClient.put(
-        C.MEETINGS_ITEM(id),
-        payload
-      ),
-
-    deactivate: (id) =>
-      axiosClient.put(
-        C.MEETINGS_ITEM(id),
-        {
-          is_active: false,
-        }
-      ),
-
-    reactivate: (id) =>
-      axiosClient.put(
-        C.MEETINGS_ITEM(id),
-        {
-          is_active: true,
-        }
-      ),
+    ...createCrudApi({ listUrl: C.MEETINGS, itemUrl: C.MEETINGS_ITEM }),
+    update: (id, payload) => axiosClient.put(C.MEETINGS_ITEM(id), payload),
+    deactivate: (id) => axiosClient.put(C.MEETINGS_ITEM(id), { is_active: false }),
+    reactivate: (id) => axiosClient.put(C.MEETINGS_ITEM(id), { is_active: true }),
   },
-
-  /* =========================================================
-     QUOTATIONS
-  ========================================================= */
 
   quotations: {
-    ...createCrudApi({
-      listUrl: C.QUOTATIONS,
-      itemUrl: C.QUOTATIONS_ITEM,
-    }),
-
-    update: (id, payload) =>
-      axiosClient.put(
-        C.QUOTATIONS_ITEM(id),
-        payload
-      ),
-
-    deactivate: (id) =>
-      axiosClient.put(
-        C.QUOTATIONS_ITEM(id),
-        {
-          is_active: false,
-        }
-      ),
-
-    reactivate: (id) =>
-      axiosClient.put(
-        C.QUOTATIONS_ITEM(id),
-        {
-          is_active: true,
-        }
-      ),
+    ...createCrudApi({ listUrl: C.QUOTATIONS, itemUrl: C.QUOTATIONS_ITEM }),
+    update: (id, payload) => axiosClient.put(C.QUOTATIONS_ITEM(id), payload),
+    deactivate: (id) => axiosClient.put(C.QUOTATIONS_ITEM(id), { is_active: false }),
+    reactivate: (id) => axiosClient.put(C.QUOTATIONS_ITEM(id), { is_active: true }),
   },
-
-  /* =========================================================
-     INVOICES
-  ========================================================= */
 
   invoices: {
-    ...createCrudApi({
-      listUrl: C.INVOICES,
-      itemUrl: C.INVOICES_ITEM,
-    }),
-
-    update: (id, payload) =>
-      axiosClient.put(
-        C.INVOICES_ITEM(id),
-        payload
-      ),
-
-    deactivate: (id) =>
-      axiosClient.put(
-        C.INVOICES_ITEM(id),
-        {
-          is_active: false,
-        }
-      ),
-
-    reactivate: (id) =>
-      axiosClient.put(
-        C.INVOICES_ITEM(id),
-        {
-          is_active: true,
-        }
-      ),
-
-    /*
-     * Aggregate multi-invoice CRM report (date-range).
-     */
-    report: (
-      params
-    ) =>
-      axiosClient.get(
-        C.INVOICES_REPORT,
-        {
-          params,
-          responseType: "blob",
-        }
-      ),
-
-    /*
-     * NEW: per-invoice single-record download.
-     *
-     * GET /invoices/:id/download
-     *
-     * Distinct from `report` above - this downloads one invoice's
-     * details as a file, used by the Download action on
-     * InvoiceListPage.jsx (card, table, and details hover panel).
-     */
-    download: (id) =>
-      axiosClient.get(
-        C.INVOICES_DOWNLOAD(id),
-        {
-          responseType: "blob",
-        }
-      ),
+    ...createCrudApi({ listUrl: C.INVOICES, itemUrl: C.INVOICES_ITEM }),
+    update: (id, payload) => axiosClient.put(C.INVOICES_ITEM(id), payload),
+    deactivate: (id) => axiosClient.put(C.INVOICES_ITEM(id), { is_active: false }),
+    reactivate: (id) => axiosClient.put(C.INVOICES_ITEM(id), { is_active: true }),
+    report: (params) => axiosClient.get(C.INVOICES_REPORT, { params, responseType: "blob" }),
+    download: (id) => axiosClient.get(C.INVOICES_DOWNLOAD(id), { responseType: "blob" }),
+    generateIncentiveInvoice: (incentiveId) =>
+      axiosClient.post(C.INVOICES_GENERATE_INCENTIVE, { incentive_id: incentiveId }),
   },
-
-  /* =========================================================
-     PAYMENTS
-  ========================================================= */
 
   payments: {
-    ...createCrudApi({
-      listUrl: C.PAYMENTS,
-      itemUrl: C.PAYMENTS_ITEM,
-    }),
-
-    update: (id, payload) =>
-      axiosClient.put(
-        C.PAYMENTS_ITEM(id),
-        payload
-      ),
-
-    deactivate: (id) =>
-      axiosClient.put(
-        C.PAYMENTS_ITEM(id),
-        {
-          is_active: false,
-        }
-      ),
-
-    reactivate: (id) =>
-      axiosClient.put(
-        C.PAYMENTS_ITEM(id),
-        {
-          is_active: true,
-        }
-      ),
+    ...createCrudApi({ listUrl: C.PAYMENTS, itemUrl: C.PAYMENTS_ITEM }),
+    update: (id, payload) => axiosClient.put(C.PAYMENTS_ITEM(id), payload),
+    deactivate: (id) => axiosClient.put(C.PAYMENTS_ITEM(id), { is_active: false }),
+    reactivate: (id) => axiosClient.put(C.PAYMENTS_ITEM(id), { is_active: true }),
   },
 
-  /* =========================================================
-     SUPPORT TICKETS
-  ========================================================= */
-
   supportTickets: {
-    ...createCrudApi({
-      listUrl:
-        C.SUPPORT_TICKETS,
-      itemUrl:
-        C.SUPPORT_TICKETS_ITEM,
-    }),
-
-    update: (id, payload) =>
-      axiosClient.put(
-        C.SUPPORT_TICKETS_ITEM(
-          id
-        ),
-        payload
-      ),
-
-    deactivate: (id) =>
-      axiosClient.put(
-        C.SUPPORT_TICKETS_ITEM(
-          id
-        ),
-        {
-          is_active: false,
-        }
-      ),
-
-    reactivate: (id) =>
-      axiosClient.put(
-        C.SUPPORT_TICKETS_ITEM(
-          id
-        ),
-        {
-          is_active: true,
-        }
-      ),
+    ...createCrudApi({ listUrl: C.SUPPORT_TICKETS, itemUrl: C.SUPPORT_TICKETS_ITEM }),
+    update: (id, payload) => axiosClient.put(C.SUPPORT_TICKETS_ITEM(id), payload),
+    deactivate: (id) => axiosClient.put(C.SUPPORT_TICKETS_ITEM(id), { is_active: false }),
+    reactivate: (id) => axiosClient.put(C.SUPPORT_TICKETS_ITEM(id), { is_active: true }),
+    getHistory: (id) => axiosClient.get(C.SUPPORT_TICKETS_HISTORY(id)),
+    addHistory: (id, payload) => axiosClient.post(C.SUPPORT_TICKETS_HISTORY(id), payload),
   },
 };

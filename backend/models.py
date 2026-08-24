@@ -205,6 +205,32 @@ class Department(TimestampMixin, db.Model):
         return data
 
 
+class DepartmentHeadcount(TimestampMixin, db.Model):
+    __tablename__ = "department_headcounts"
+
+    id = db.Column(db.Integer, primary_key=True)
+    department_id = db.Column(db.Integer, db.ForeignKey("departments.id"), nullable=False)
+    week_start_date = db.Column(db.Date, nullable=False)
+    employee_count = db.Column(db.Integer, nullable=False, default=0)
+    updated_by = db.Column(db.Integer, db.ForeignKey("employees.id"), nullable=True)
+    notes = db.Column(db.Text, nullable=True)
+    is_active = db.Column(db.Boolean, default=True)
+
+    department = db.relationship("Department")
+    updated_by_employee = db.relationship("Employee", foreign_keys=[updated_by])
+
+    __table_args__ = (
+        db.UniqueConstraint("department_id", "week_start_date", name="uq_dept_headcount_week"),
+    )
+
+    def to_dict(self):
+        data = super().to_dict()
+        data["department"] = _summary(self.department, ["id", "department_name", "department_code"])
+        data["updated_by_employee"] = _summary(
+            self.updated_by_employee, ["id", "employee_code", "first_name", "last_name"]
+        )
+        return data
+
 
 class Designation(TimestampMixin, db.Model):
 
@@ -1983,21 +2009,15 @@ class Lead(TimestampMixin, db.Model):
     status = db.Column(db.String(20), default="New")
     assigned_to = db.Column(db.Integer, db.ForeignKey("employees.id"))
     created_by = db.Column(db.Integer, db.ForeignKey("employees.id"))
+    upload_batch_id = db.Column(db.Integer, db.ForeignKey("lead_upload_batches.id"), nullable=True)
     is_active = db.Column(db.Boolean, default=True)
     assignee = db.relationship("Employee", foreign_keys=[assigned_to])
     creator = db.relationship("Employee", foreign_keys=[created_by])
+    upload_batch = db.relationship("LeadUploadBatch", back_populates="leads")
     customers = db.relationship("Customer", back_populates="lead")
 
     @staticmethod
     def _derive_team_type(department_name):
-        """Classify a department as Voice / Non-Voice so a lead can be
-        traced back to which CRM sub-team it came from.
-
-        Matches on the department name text (e.g. "CRM - Voice",
-        "CRM Non-Voice") rather than a dedicated column, since the
-        Department model doesn't currently carry a separate team-type
-        field. If/when one is added, swap this for a direct field read.
-        """
         if not department_name:
             return None
         normalized = department_name.strip().lower()
@@ -2009,10 +2029,6 @@ class Lead(TimestampMixin, db.Model):
 
     @classmethod
     def _employee_hierarchy(cls, employee):
-        """Build a company / branch / department / designation summary
-        (plus a derived Voice / Non-Voice team_type) for a given
-        Employee. Used for both the creator and the assignee so either
-        can be traced through the CRM org structure."""
         if not employee:
             return None
 
@@ -2036,8 +2052,138 @@ class Lead(TimestampMixin, db.Model):
         data["creator"] = _summary(self.creator, ["id", "employee_code", "first_name", "last_name"])
         data["assignee_hierarchy"] = self._employee_hierarchy(self.assignee)
         data["creator_hierarchy"] = self._employee_hierarchy(self.creator)
+        data["upload_batch"] = _summary(self.upload_batch, ["id", "file_name", "status"])
 
         return data
+
+class LeadUploadBatch(TimestampMixin, db.Model):
+    __tablename__ = "lead_upload_batches"
+
+    id = db.Column(db.Integer, primary_key=True)
+    uploaded_by = db.Column(db.Integer, db.ForeignKey("base_users.id"), nullable=False)
+    file_name = db.Column(db.String(255), nullable=False)
+    total_rows = db.Column(db.Integer, default=0)
+    success_count = db.Column(db.Integer, default=0)
+    failed_count = db.Column(db.Integer, default=0)
+    status = db.Column(db.String(20), default="Processing")  # Processing / Completed / Failed
+    error_summary = db.Column(db.Text, nullable=True)
+    is_active = db.Column(db.Boolean, default=True)
+    uploader = db.relationship("BaseUser", foreign_keys=[uploaded_by])
+    leads = db.relationship("Lead", back_populates="upload_batch")
+
+    def to_dict(self):
+        data = super().to_dict()
+        data["uploader"] = _summary(self.uploader, ["id", "username", "email"])
+        return data
+
+
+class LeadAssignmentHistory(TimestampMixin, db.Model):
+    __tablename__ = "lead_assignment_history"
+
+    id = db.Column(db.Integer, primary_key=True)
+    lead_id = db.Column(db.Integer, db.ForeignKey("leads.id"), nullable=False)
+    assigned_to = db.Column(db.Integer, db.ForeignKey("employees.id"), nullable=False)
+    assigned_by = db.Column(db.Integer, db.ForeignKey("employees.id"), nullable=True)
+    previous_assignee_id = db.Column(db.Integer, db.ForeignKey("employees.id"), nullable=True)
+    is_active = db.Column(db.Boolean, default=True)
+
+    lead = db.relationship("Lead")
+    assignee = db.relationship("Employee", foreign_keys=[assigned_to])
+    assigner = db.relationship("Employee", foreign_keys=[assigned_by])
+    previous_assignee = db.relationship("Employee", foreign_keys=[previous_assignee_id])
+
+    def to_dict(self):
+        data = super().to_dict()
+        data["assignee"] = _summary(self.assignee, ["id", "employee_code", "first_name", "last_name"])
+        data["assigner"] = _summary(self.assigner, ["id", "employee_code", "first_name", "last_name"])
+        data["previous_assignee"] = _summary(
+            self.previous_assignee, ["id", "employee_code", "first_name", "last_name"]
+        )
+        return data
+
+
+class LeadStatusHistory(TimestampMixin, db.Model):
+    __tablename__ = "lead_status_history"
+
+    id = db.Column(db.Integer, primary_key=True)
+    lead_id = db.Column(db.Integer, db.ForeignKey("leads.id"), nullable=False)
+    old_status = db.Column(db.String(30), nullable=True)
+    new_status = db.Column(db.String(30), nullable=False)
+    changed_by = db.Column(db.Integer, db.ForeignKey("employees.id"), nullable=True)
+    is_active = db.Column(db.Boolean, default=True)
+
+    lead = db.relationship("Lead")
+    changer = db.relationship("Employee", foreign_keys=[changed_by])
+
+    def to_dict(self):
+        data = super().to_dict()
+        data["changer"] = _summary(self.changer, ["id", "employee_code", "first_name", "last_name"])
+        return data
+
+class LeadWeeklySnapshot(TimestampMixin, db.Model):
+    """One row per (lead, week_start_date) - captures a lead's
+    status/assignment/follow-up state as of that week, so lead
+    progress can be reported on a weekly cadence the same way
+    DepartmentHeadcount reports employee counts weekly."""
+
+    __tablename__ = "lead_weekly_snapshots"
+
+    id = db.Column(db.Integer, primary_key=True)
+    lead_id = db.Column(db.Integer, db.ForeignKey("leads.id"), nullable=False)
+    week_start_date = db.Column(db.Date, nullable=False)
+    status = db.Column(db.String(30), nullable=False)
+    assigned_to = db.Column(db.Integer, db.ForeignKey("employees.id"), nullable=True)
+    follow_up_count = db.Column(db.Integer, default=0)
+    notes = db.Column(db.Text, nullable=True)
+    recorded_by = db.Column(db.Integer, db.ForeignKey("employees.id"), nullable=True)
+    is_active = db.Column(db.Boolean, default=True)
+
+    lead = db.relationship("Lead")
+    assignee = db.relationship("Employee", foreign_keys=[assigned_to])
+    recorder = db.relationship("Employee", foreign_keys=[recorded_by])
+
+    __table_args__ = (
+        db.UniqueConstraint("lead_id", "week_start_date", name="uq_lead_weekly_snapshot"),
+    )
+
+    def to_dict(self):
+        data = super().to_dict()
+        data["lead"] = _summary(self.lead, ["id", "lead_name", "status"])
+        data["assignee"] = _summary(self.assignee, ["id", "employee_code", "first_name", "last_name"])
+        data["recorder"] = _summary(self.recorder, ["id", "employee_code", "first_name", "last_name"])
+        return data
+
+    @classmethod
+    def generate_for_week(cls, week_start_date):
+        """Snapshots every active lead's current state for the given
+        week. Upserts - safe to re-run for the same week to refresh
+        counts (e.g. follow_up_count) without duplicating rows."""
+        from models import FollowUp, Lead
+
+        leads = Lead.query.filter(Lead.is_active == True).all()
+        results = []
+
+        for lead in leads:
+            follow_up_count = FollowUp.query.join(
+                __import__("models").Customer,
+                FollowUp.customer_id == __import__("models").Customer.id,
+            ).filter(
+                __import__("models").Customer.lead_id == lead.id,
+                FollowUp.is_active == True,
+            ).count()
+
+            snapshot = cls.query.filter_by(lead_id=lead.id, week_start_date=week_start_date).first()
+            if not snapshot:
+                snapshot = cls(lead_id=lead.id, week_start_date=week_start_date)
+                db.session.add(snapshot)
+
+            snapshot.status = lead.status
+            snapshot.assigned_to = lead.assigned_to
+            snapshot.follow_up_count = follow_up_count
+            results.append(snapshot)
+
+        db.session.commit()
+        return results
 
 
 class Customer(TimestampMixin, db.Model):
@@ -2049,12 +2195,17 @@ class Customer(TimestampMixin, db.Model):
     contact_number = db.Column(db.String(15))
     email = db.Column(db.String(150))
     address = db.Column(db.Text)
+    registered_by = db.Column(db.Integer, db.ForeignKey("employees.id"), nullable=True)  # NEW
     is_active = db.Column(db.Boolean, default=True)
     lead = db.relationship("Lead", back_populates="customers")
+    registered_by_employee = db.relationship("Employee", foreign_keys=[registered_by])  # NEW
 
     def to_dict(self):
         data = super().to_dict()
         data["lead"] = _summary(self.lead, ["id", "lead_name", "status"])
+        data["registered_by_employee"] = _summary(  # NEW
+            self.registered_by_employee, ["id", "employee_code", "first_name", "last_name"]
+        )
         return data
 
 
@@ -2065,6 +2216,9 @@ class FollowUp(TimestampMixin, db.Model):
     customer_id = db.Column(db.Integer, db.ForeignKey("customers.id"), nullable=False)
     follow_up_date = db.Column(db.DateTime, nullable=False)
     notes = db.Column(db.Text)
+    stage = db.Column(db.String(20), default="Monthly")  # Monthly / 3-Month / 6-Month
+    is_completed = db.Column(db.Boolean, default=False)
+    next_due_date = db.Column(db.DateTime, nullable=True)
     is_active = db.Column(db.Boolean, default=True)
     customer = db.relationship("Customer")
 
@@ -2090,6 +2244,158 @@ class Meeting(TimestampMixin, db.Model):
         return data
 
 
+class IncentiveSlab(TimestampMixin, db.Model):
+    __tablename__ = "incentive_slabs"
+
+    id = db.Column(db.Integer, primary_key=True)
+    min_customers = db.Column(db.Integer, nullable=False)
+    max_customers = db.Column(db.Integer, nullable=True)  # NULL = no upper bound
+    incentive_amount = db.Column(db.Numeric(12, 2), nullable=False)
+    is_active = db.Column(db.Boolean, default=True)
+
+    def to_dict(self):
+        return super().to_dict()
+
+
+class EmployeeTarget(TimestampMixin, db.Model):
+    """The monthly registered-customer quota for a CRM employee. Only
+    customers registered above this limit count as 'additional' and
+    become incentive-eligible. If no target row exists for an
+    employee/month, the calculation falls back to DEFAULT_TARGET."""
+
+    __tablename__ = "employee_targets"
+
+    DEFAULT_TARGET = 0  # fallback quota when no explicit target is set
+
+    id = db.Column(db.Integer, primary_key=True)
+    employee_id = db.Column(db.Integer, db.ForeignKey("employees.id"), nullable=False)
+    month = db.Column(db.Integer, nullable=False)
+    year = db.Column(db.Integer, nullable=False)
+    target_customer_count = db.Column(db.Integer, nullable=False, default=0)
+    is_active = db.Column(db.Boolean, default=True)
+
+    employee = db.relationship("Employee")
+
+    __table_args__ = (
+        db.UniqueConstraint("employee_id", "month", "year", name="uq_employee_target_period"),
+    )
+
+    def to_dict(self):
+        data = super().to_dict()
+        data["employee"] = _summary(self.employee, ["id", "employee_code", "first_name", "last_name"])
+        return data
+
+class EmployeeIncentive(TimestampMixin, db.Model):
+    __tablename__ = "employee_incentives"
+
+    id = db.Column(db.Integer, primary_key=True)
+    employee_id = db.Column(db.Integer, db.ForeignKey("employees.id"), nullable=False)
+    month = db.Column(db.Integer, nullable=False)
+    year = db.Column(db.Integer, nullable=False)
+    target_customer_count = db.Column(db.Integer, default=0)   # NEW - snapshot of the limit used
+    actual_customer_count = db.Column(db.Integer, default=0)   # NEW - total registered that month
+    eligible_customer_count = db.Column(db.Integer, default=0)  # extra beyond target (unchanged name)
+    calculated_amount = db.Column(db.Numeric(12, 2), default=0)
+    calculation_date = db.Column(db.Date, nullable=True)
+    status = db.Column(db.String(20), default="Pending")
+    is_active = db.Column(db.Boolean, default=True)
+
+    employee = db.relationship("Employee")
+
+    __table_args__ = (
+        db.UniqueConstraint("employee_id", "month", "year", name="uq_employee_incentive_period"),
+    )
+
+    def to_dict(self):
+        data = super().to_dict()
+        data["employee"] = _summary(self.employee, ["id", "employee_code", "first_name", "last_name"])
+        return data
+
+    @classmethod
+    def calculate_for_period(cls, month, year):
+        """Only considers employees in the CRM department. For each,
+        counts customers they registered that month, subtracts their
+        target (max limit) to get the extra count, and looks up the
+        incentive amount from IncentiveSlab based on that extra count
+        (not the raw total). Employees with no extras beyond target
+        get no EmployeeIncentive row."""
+        from calendar import monthrange
+        from models import Customer, Department, Employee
+
+        days_in_month = monthrange(year, month)[1]
+        period_start = date(year, month, 1)
+        period_end = date(year, month, days_in_month)
+
+        slabs = IncentiveSlab.query.filter(IncentiveSlab.is_active == True).order_by(
+            IncentiveSlab.min_customers
+        ).all()
+
+        # Scope to CRM department employees only — same "CRM" department
+        # name match used on the frontend (CrmEmployeeView).
+        crm_employee_ids = {
+            row.id
+            for row in Employee.query.join(Department).filter(
+                db.func.lower(db.func.trim(Department.department_name)) == "crm",
+                Employee.is_active == True,
+            ).all()
+        }
+
+        counts = (
+            db.session.query(Customer.registered_by, db.func.count(Customer.id))
+            .filter(
+                Customer.registered_by.in_(crm_employee_ids) if crm_employee_ids else False,
+                Customer.created_at >= period_start,
+                Customer.created_at < period_end + timedelta(days=1),
+                Customer.is_active == True,
+            )
+            .group_by(Customer.registered_by)
+            .all()
+        )
+
+        results = []
+        for employee_id, actual_count in counts:
+            target_row = EmployeeTarget.query.filter_by(
+                employee_id=employee_id, month=month, year=year, is_active=True
+            ).first()
+            target = target_row.target_customer_count if target_row else EmployeeTarget.DEFAULT_TARGET
+
+            extra_count = max(0, actual_count - target)
+
+            if extra_count <= 0:
+                continue  # no extras beyond limit — not incentive-eligible
+
+            amount = 0
+            for slab in slabs:
+                if extra_count >= slab.min_customers and (
+                    slab.max_customers is None or extra_count <= slab.max_customers
+                ):
+                    amount = float(slab.incentive_amount)
+                    break
+
+            if amount <= 0:
+                continue  # extras exist but don't reach the lowest slab
+
+            record = EmployeeIncentive.query.filter_by(
+                employee_id=employee_id, month=month, year=year
+            ).first()
+
+            if not record:
+                record = EmployeeIncentive(employee_id=employee_id, month=month, year=year)
+                db.session.add(record)
+
+            record.target_customer_count = target
+            record.actual_customer_count = actual_count
+            record.eligible_customer_count = extra_count
+            record.calculated_amount = amount
+            record.calculation_date = date.today()
+            if record.status == "Pending":
+                record.status = "Approved"
+
+            results.append(record)
+
+        db.session.commit()
+        return results
+
 class Quotation(TimestampMixin, db.Model):
     __tablename__ = "quotations"
 
@@ -2112,18 +2418,33 @@ class Invoice(TimestampMixin, db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     quotation_id = db.Column(db.Integer, db.ForeignKey("quotations.id"), nullable=True)
-    customer_id = db.Column(db.Integer, db.ForeignKey("customers.id"), nullable=False)
+    customer_id = db.Column(db.Integer, db.ForeignKey("customers.id"), nullable=True)
+    invoice_type = db.Column(db.String(20), default="Customer")
+    employee_id = db.Column(db.Integer, db.ForeignKey("employees.id"), nullable=True)
+    incentive_id = db.Column(db.Integer, db.ForeignKey("employee_incentives.id"), nullable=True)
     invoice_number = db.Column(db.String(30), unique=True)
     amount = db.Column(db.Numeric(12, 2), nullable=False)
     due_date = db.Column(db.Date)
     status = db.Column(db.String(20), default="Unpaid")
     is_active = db.Column(db.Boolean, default=True)
     customer = db.relationship("Customer")
+    employee = db.relationship("Employee")
+    incentive = db.relationship("EmployeeIncentive")
     payments = db.relationship("Payment", back_populates="invoice", cascade="all, delete-orphan")
 
     def to_dict(self):
         data = super().to_dict()
-        data["customer"] = _summary(self.customer, ["id", "customer_name"])
+        data["customer"] = _summary(self.customer, ["id", "customer_name"]) if self.customer else None
+        data["employee"] = (
+            _summary(self.employee, ["id", "employee_code", "first_name", "last_name"])
+            if self.employee
+            else None
+        )
+        data["incentive"] = (
+            _summary(self.incentive, ["id", "month", "year", "eligible_customer_count", "calculated_amount"])
+            if self.incentive
+            else None
+        )
         data["paid_amount"] = float(sum((p.amount or 0) for p in self.payments))
         return data
 
@@ -2141,7 +2462,9 @@ class Invoice(TimestampMixin, db.Model):
             paid = sum((p.amount or 0) for p in invoice.payments)
             rows.append([
                 invoice.id,
-                invoice.customer.customer_name if invoice.customer else "",
+                invoice.customer.customer_name if invoice.customer else (
+                    f"Employee #{invoice.employee_id}" if invoice.employee_id else ""
+                ),
                 invoice.status,
                 "",
                 "Invoice",
@@ -2173,16 +2496,46 @@ class SupportTicket(TimestampMixin, db.Model):
     __tablename__ = "support_tickets"
 
     id = db.Column(db.Integer, primary_key=True)
-    customer_id = db.Column(db.Integer, db.ForeignKey("customers.id"), nullable=False)
+    customer_id = db.Column(db.Integer, db.ForeignKey("customers.id"), nullable=True)  # CHANGED: was nullable=False
+    lead_id = db.Column(db.Integer, db.ForeignKey("leads.id"), nullable=True)  # NEW
+    raised_by = db.Column(db.Integer, db.ForeignKey("base_users.id"), nullable=True)  # NEW
+    assigned_to = db.Column(db.Integer, db.ForeignKey("employees.id"), nullable=True)  # NEW
     subject = db.Column(db.String(150), nullable=False)
     description = db.Column(db.Text)
     status = db.Column(db.String(20), default="Open")
     is_active = db.Column(db.Boolean, default=True)
     customer = db.relationship("Customer")
+    lead = db.relationship("Lead")  # NEW
+    raised_by_user = db.relationship("BaseUser", foreign_keys=[raised_by])  # NEW
+    assignee = db.relationship("Employee", foreign_keys=[assigned_to])  # NEW
 
     def to_dict(self):
         data = super().to_dict()
-        data["customer"] = _summary(self.customer, ["id", "customer_name"])
+        data["customer"] = _summary(self.customer, ["id", "customer_name"]) if self.customer else None
+        data["lead"] = _summary(self.lead, ["id", "lead_name", "status"]) if self.lead else None  # NEW
+        data["raised_by_user"] = _summary(self.raised_by_user, ["id", "username", "email"])  # NEW
+        data["assignee"] = _summary(  # NEW
+            self.assignee, ["id", "employee_code", "first_name", "last_name"]
+        ) if self.assignee else None
+        return data
+
+
+class SupportTicketHistory(TimestampMixin, db.Model):
+    __tablename__ = "support_ticket_history"
+
+    id = db.Column(db.Integer, primary_key=True)
+    ticket_id = db.Column(db.Integer, db.ForeignKey("support_tickets.id"), nullable=False)
+    action = db.Column(db.String(50), nullable=False)
+    performed_by = db.Column(db.Integer, db.ForeignKey("base_users.id"), nullable=True)
+    notes = db.Column(db.Text, nullable=True)
+    is_active = db.Column(db.Boolean, default=True)
+
+    ticket = db.relationship("SupportTicket")
+    performer = db.relationship("BaseUser", foreign_keys=[performed_by])
+
+    def to_dict(self):
+        data = super().to_dict()
+        data["performer"] = _summary(self.performer, ["id", "username", "email"])
         return data
 
 

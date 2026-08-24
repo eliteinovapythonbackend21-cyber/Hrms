@@ -26,6 +26,9 @@ follow_ups_bp = register_crud_blueprint(
         "customer_id",
         "follow_up_date",
         "notes",
+        "stage",
+        "is_completed",
+        "next_due_date"
         "is_active",
     ],
     search_fields=[

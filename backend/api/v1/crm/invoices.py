@@ -13,7 +13,7 @@ from openpyxl import Workbook
 from openpyxl.utils import get_column_letter
 
 from extensions import db
-from models import Invoice
+from models import Invoice, EmployeeIncentive
 from utils import (
     fetch_or_404,
     is_admin,
@@ -37,6 +37,9 @@ invoices_bp = register_crud_blueprint(
     create_fields=[
         "quotation_id",
         "customer_id",
+        "invoice_type",
+        "employee_id",
+        "incentive_id",
         "invoice_number",
         "amount",
         "due_date",

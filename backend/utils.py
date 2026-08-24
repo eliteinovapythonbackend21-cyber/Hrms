@@ -9,6 +9,8 @@ from sqlalchemy.exc import IntegrityError
 from werkzeug.security import check_password_hash, generate_password_hash
 
 
+CRM_DEPARTMENT_NAME = "CRM"
+
 def serialize_model(item):
     if hasattr(item, "to_dict"):
         return item.to_dict()
@@ -246,6 +248,52 @@ def fetch_or_404(model, item_id, id_name="id"):
         return None, (jsonify({"message": f"{model.__name__} not found for the provided id"}), 404)
     return item, None
 
+
+def is_crm_department(department):
+    if not department:
+        return False
+    return (department.department_name or "").strip().lower() == CRM_DEPARTMENT_NAME.lower()
+
+
+def is_crm_employee(employee):
+    if not employee:
+        return False
+    return is_crm_department(getattr(employee, "department", None))
+
+
+def ensure_crm_employee(employee_id):
+    """Returns (employee, error_response). error_response is a
+    (jsonify, status) tuple if employee_id doesn't resolve to an
+    active CRM-department employee."""
+    from models import Employee
+
+    if not employee_id:
+        return None, (jsonify({"message": "employee_id is required"}), 400)
+
+    employee = Employee.query.get(int(employee_id))
+    if not employee:
+        return None, (jsonify({"message": "Employee not found"}), 404)
+
+    if not is_crm_employee(employee):
+        return None, (jsonify({"message": "Employee must belong to the CRM department"}), 400)
+
+    return employee, None
+
+
+def ensure_crm_department(department_id):
+    from models import Department
+
+    if not department_id:
+        return None, (jsonify({"message": "department_id is required"}), 400)
+
+    department = Department.query.get(int(department_id))
+    if not department:
+        return None, (jsonify({"message": "Department not found"}), 404)
+
+    if not is_crm_department(department):
+        return None, (jsonify({"message": "department_id must refer to the CRM department"}), 400)
+
+    return department, None
 
 def register_crud_blueprint(
     name,

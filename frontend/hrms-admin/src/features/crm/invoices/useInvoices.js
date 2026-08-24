@@ -195,3 +195,15 @@ export function useDownloadInvoice() {
     },
   });
 }
+
+
+export function useGenerateIncentiveInvoice() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (incentiveId) => api.generateIncentiveInvoice(incentiveId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["invoices"] });
+      queryClient.invalidateQueries({ queryKey: ["employee-incentives"] });
+    },
+  });
+}

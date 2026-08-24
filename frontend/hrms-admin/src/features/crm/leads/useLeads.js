@@ -41,3 +41,40 @@ export function useConvertLead() {
     },
   });
 }
+
+
+export function useAssignLead() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, assignedTo }) => api.assign(id, assignedTo),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["leads"] });
+    },
+  });
+}
+
+export function useChangeLeadStatus() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, status }) => api.changeStatus(id, status),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["leads"] });
+    },
+  });
+}
+
+export function useLeadAssignmentHistory(id) {
+  return useQuery({
+    queryKey: ["leads", id, "assignment-history"],
+    queryFn: () => api.getAssignmentHistory(id).then((res) => res.data.data),
+    enabled: !!id,
+  });
+}
+
+export function useLeadStatusHistory(id) {
+  return useQuery({
+    queryKey: ["leads", id, "status-history"],
+    queryFn: () => api.getStatusHistory(id).then((res) => res.data.data),
+    enabled: !!id,
+  });
+}
