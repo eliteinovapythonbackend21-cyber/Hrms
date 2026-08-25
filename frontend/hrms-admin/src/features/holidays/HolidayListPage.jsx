@@ -32,964 +32,2626 @@ import { useModulePermissions } from "@/hooks/useModulePermissions";
 
 
 const EXPORT_COLUMNS = [
-  { header: "Name", accessor: (r) => r.name },
-  { header: "Date", accessor: (r) => formatDate(r.holiday_date) },
-  { header: "Type", accessor: (r) => r.holiday_type || "Office" },
-  { header: "Status", accessor: (r) => (r.is_active ? "Active" : "Inactive") },
+  {
+    header: "Name",
+    accessor: (row) =>
+      row.name,
+  },
+  {
+    header: "Date",
+    accessor: (row) =>
+      formatDate(
+        row.holiday_date
+      ),
+  },
+  {
+    header: "Type",
+    accessor: (row) =>
+      row.holiday_type ||
+      "Office",
+  },
+  {
+    header: "Status",
+    accessor: (row) =>
+      row.is_active
+        ? "Active"
+        : "Inactive",
+  },
 ];
+
 
 const MONTH_NAMES = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
 ];
 
-const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+const WEEKDAY_LABELS = [
+  "Sun",
+  "Mon",
+  "Tue",
+  "Wed",
+  "Thu",
+  "Fri",
+  "Sat",
+];
+
 
 const COUNTRY_OPTIONS = [
-  { code: "IN", label: "India" },
-  { code: "US", label: "United States" },
-  { code: "GB", label: "United Kingdom" },
-  { code: "AE", label: "UAE" },
-  { code: "AU", label: "Australia" },
-  { code: "CA", label: "Canada" },
+  {
+    code: "IN",
+    label: "India",
+  },
+  {
+    code: "US",
+    label: "United States",
+  },
+  {
+    code: "GB",
+    label: "United Kingdom",
+  },
+  {
+    code: "AE",
+    label: "UAE",
+  },
+  {
+    code: "AU",
+    label: "Australia",
+  },
+  {
+    code: "CA",
+    label: "Canada",
+  },
 ];
 
-function toISODate(year, month, day) {
-  const mm = String(month + 1).padStart(2, "0");
-  const dd = String(day).padStart(2, "0");
-  return `${year}-${mm}-${dd}`;
+
+// ============================================================
+// DATE HELPERS
+// ============================================================
+
+function parseHolidayDate(
+  value
+) {
+  if (!value) {
+    return null;
+  }
+
+  const raw =
+    String(value).slice(
+      0,
+      10
+    );
+
+  const match =
+    raw.match(
+      /^(\d{4})-(\d{2})-(\d{2})$/
+    );
+
+  if (!match) {
+    return null;
+  }
+
+  return {
+    year:
+      Number(match[1]),
+
+    month:
+      Number(match[2]) - 1,
+
+    day:
+      Number(match[3]),
+  };
 }
 
-function isSameDate(dateStr, year, month, day) {
-  if (!dateStr) return false;
-  const d = new Date(dateStr);
-  return d.getFullYear() === year && d.getMonth() === month && d.getDate() === day;
+
+function holidayDateKey(
+  value
+) {
+  const parsed =
+    parseHolidayDate(value);
+
+  if (!parsed) {
+    return null;
+  }
+
+  return (
+    `${parsed.year}-` +
+    `${String(
+      parsed.month + 1
+    ).padStart(2, "0")}-` +
+    `${String(
+      parsed.day
+    ).padStart(2, "0")}`
+  );
+}
+
+
+function toISODate(
+  year,
+  month,
+  day
+) {
+  return (
+    `${year}-` +
+    `${String(
+      month + 1
+    ).padStart(2, "0")}-` +
+    `${String(day).padStart(
+      2,
+      "0"
+    )}`
+  );
+}
+
+
+function isSameHolidayDate(
+  value,
+  year,
+  month,
+  day
+) {
+  const parsed =
+    parseHolidayDate(value);
+
+  if (!parsed) {
+    return false;
+  }
+
+  return (
+    parsed.year === year &&
+    parsed.month === month &&
+    parsed.day === day
+  );
+}
+
+
+function getHolidayType(
+  holiday
+) {
+  return (
+    holiday?.holiday_type ||
+    "Office"
+  );
 }
 
 
 export default function HolidayListPage() {
-  const { showToast } = useToast();
-  const queryClient = useQueryClient();
 
-  const { params, page, perPage, setPage, setPerPage } = usePagination();
-  const { value, setValue, debouncedValue } = useDebouncedSearch();
+  const { showToast } =
+    useToast();
+
+  const queryClient =
+    useQueryClient();
+
+
+  // ==========================================================
+  // PAGINATION
+  // ==========================================================
+
+  const {
+    params,
+    page,
+    perPage,
+    setPage,
+    setPerPage,
+  } = usePagination();
+
+
+  const {
+    value,
+    setValue,
+    debouncedValue,
+  } = useDebouncedSearch();
+
+
+  // ==========================================================
+  // PAGINATED DATA
+  // ==========================================================
 
   const queryParams = {
     ...params,
-    search: debouncedValue || undefined,
+    search:
+      debouncedValue ||
+      undefined,
   };
 
-  const { data, isLoading, isError, isFetching, refetch } = useHolidays(queryParams);
 
-  const { canAdd, canEdit, canDelete } = useModulePermissions("Holidays");
-
-  const { exporting, exportExcel, exportPDF } = useTableExport({
-    fetchAll: holidayApi.listHolidays,
-    queryParams,
-    exportColumns: EXPORT_COLUMNS,
-    filename: "holidays",
-    title: "Holidays",
-  });
-
-  const createHoliday = useCreateHoliday();
-  const updateHoliday = useUpdateHoliday();
-  const deactivateHoliday = useDeactivateHoliday();
-  const syncGovernmentHolidays = useSyncGovernmentHolidays();
-
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editing, setEditing] = useState(null);
-  const [confirmRow, setConfirmRow] = useState(null);
-  const [prefillDate, setPrefillDate] = useState(null);
-
-  const [statusFilter, setStatusFilter] = useState("active");
-  const [typeFilter, setTypeFilter] = useState("all");
-
-  const [syncYear, setSyncYear] = useState(new Date().getFullYear());
-  const [syncCountry, setSyncCountry] = useState("IN");
-
-  const [listMode, setListMode] = useState("calendar"); // "calendar" | "grouped"
-
-  // IMPORTANT: this page reads holidays with a plain per_page from
-  // usePagination() above, which may only fetch a small page of rows.
-  // The calendar and grouped views below need the FULL active holiday
-  // set (all months/years) to render correctly - not just one page.
-  // We fetch that separately here, uncapped, the same way the CRM
-  // pages do it (per_page: 1000), so the calendar isn't silently
-  // missing records outside whatever page/perPage the table happens
-  // to be on.
-  const { data: allHolidaysData } = useHolidays({ page: 1, per_page: 1000 });
-  const allHolidaysForCalendar = allHolidaysData?.items || [];
-
-  const holidays = data?.items || [];
-
-  const activeHolidays = holidays.filter((h) => h.is_active);
-  const inactiveHolidays = holidays.filter((h) => !h.is_active);
-
-  const governmentHolidays = activeHolidays.filter(
-    (h) => (h.holiday_type || "Office") === "Government"
-  );
-  const officeHolidays = activeHolidays.filter(
-    (h) => (h.holiday_type || "Office") === "Office"
-  );
-
-  // Full, uncapped set of ACTIVE holidays used by calendar/grouped views.
-  const allActiveHolidays = useMemo(
-    () => allHolidaysForCalendar.filter((h) => h.is_active),
-    [allHolidaysForCalendar]
-  );
-
-  /* -------------------------------------------------------
-     YEAR / MONTH GROUPED VIEW
-  ------------------------------------------------------- */
-
-  const availableYears = useMemo(() => {
-    const years = new Set(
-      allActiveHolidays
-        .map((h) => (h.holiday_date ? new Date(h.holiday_date).getFullYear() : null))
-        .filter(Boolean)
+  const {
+    data,
+    isLoading,
+    isError,
+    isFetching,
+    refetch,
+  } =
+    useHolidays(
+      queryParams
     );
-    years.add(new Date().getFullYear());
-    return Array.from(years).sort((a, b) => b - a);
-  }, [allActiveHolidays]);
 
-  const [listYear, setListYear] = useState(new Date().getFullYear());
 
-  const groupedByMonth = useMemo(() => {
-    const buckets = Array.from({ length: 12 }, () => ({ government: [], office: [] }));
+  // ==========================================================
+  // PERMISSIONS
+  // ==========================================================
 
-    allActiveHolidays.forEach((holiday) => {
-      if (!holiday.holiday_date) return;
-      const date = new Date(holiday.holiday_date);
-      if (date.getFullYear() !== Number(listYear)) return;
-
-      const monthIndex = date.getMonth();
-      const type = (holiday.holiday_type || "Office") === "Government" ? "government" : "office";
-      buckets[monthIndex][type].push(holiday);
-    });
-
-    buckets.forEach((bucket) => {
-      bucket.government.sort((a, b) => new Date(a.holiday_date) - new Date(b.holiday_date));
-      bucket.office.sort((a, b) => new Date(a.holiday_date) - new Date(b.holiday_date));
-    });
-
-    return buckets;
-  }, [allActiveHolidays, listYear]);
-
-  const yearTotals = useMemo(() => {
-    return groupedByMonth.reduce(
-      (totals, bucket) => ({
-        government: totals.government + bucket.government.length,
-        office: totals.office + bucket.office.length,
-      }),
-      { government: 0, office: 0 }
+  const {
+    canAdd,
+    canEdit,
+    canDelete,
+  } =
+    useModulePermissions(
+      "Holidays"
     );
-  }, [groupedByMonth]);
 
-  /* -------------------------------------------------------
-     CALENDAR VIEW — shows SAVED holidays only (your DB records)
-  ------------------------------------------------------- */
 
-  const today = new Date();
-  const [calendarYear, setCalendarYear] = useState(today.getFullYear());
-  const [calendarMonth, setCalendarMonth] = useState(today.getMonth()); // 0-indexed
+  // ==========================================================
+  // EXPORT
+  // ==========================================================
 
-  const calendarHolidaysThisMonth = useMemo(() => {
-    return allActiveHolidays.filter((h) => {
-      if (!h.holiday_date) return false;
-      const d = new Date(h.holiday_date);
-      return d.getFullYear() === calendarYear && d.getMonth() === calendarMonth;
+  const {
+    exporting,
+    exportExcel,
+    exportPDF,
+  } =
+    useTableExport({
+      fetchAll:
+        holidayApi.list,
+      queryParams,
+      exportColumns:
+        EXPORT_COLUMNS,
+      filename:
+        "holidays",
+      title:
+        "Holidays",
     });
-  }, [allActiveHolidays, calendarYear, calendarMonth]);
 
-  const calendarCells = useMemo(() => {
-    const firstOfMonth = new Date(calendarYear, calendarMonth, 1);
-    const startWeekday = firstOfMonth.getDay();
-    const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
 
-    const cells = [];
-    for (let i = 0; i < startWeekday; i++) {
-      cells.push(null);
-    }
-    for (let day = 1; day <= daysInMonth; day++) {
-      const savedForDay = calendarHolidaysThisMonth
-        .filter((h) => isSameDate(h.holiday_date, calendarYear, calendarMonth, day))
-        .sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+  // ==========================================================
+  // MUTATIONS
+  // ==========================================================
 
-      cells.push({ day, saved: savedForDay });
-    }
-    return cells;
-  }, [calendarYear, calendarMonth, calendarHolidaysThisMonth]);
+  const createHoliday =
+    useCreateHoliday();
 
-  const goToPrevMonth = () => {
-    if (calendarMonth === 0) {
-      setCalendarMonth(11);
-      setCalendarYear((y) => y - 1);
-    } else {
-      setCalendarMonth((m) => m - 1);
-    }
-  };
+  const updateHoliday =
+    useUpdateHoliday();
 
-  const goToNextMonth = () => {
-    if (calendarMonth === 11) {
-      setCalendarMonth(0);
-      setCalendarYear((y) => y + 1);
-    } else {
-      setCalendarMonth((m) => m + 1);
-    }
-  };
+  const deactivateHoliday =
+    useDeactivateHoliday();
 
-  const goToToday = () => {
-    setCalendarYear(today.getFullYear());
-    setCalendarMonth(today.getMonth());
-  };
+  const syncGovernmentHolidays =
+    useSyncGovernmentHolidays();
 
-  const handleCellClick = (cell) => {
-    if (!cell) return;
-    if (!canAdd) return;
-    setPrefillDate(toISODate(calendarYear, calendarMonth, cell.day));
-    setEditing(null);
-    setModalOpen(true);
-  };
 
-  const isToday = (day) =>
-    day === today.getDate() &&
-    calendarMonth === today.getMonth() &&
-    calendarYear === today.getFullYear();
+  // ==========================================================
+  // MODAL STATE
+  // ==========================================================
 
-  /* -------------------------------------------------------
-     TABLE FILTERS
-  ------------------------------------------------------- */
+  const [
+    modalOpen,
+    setModalOpen,
+  ] = useState(false);
 
-  const filteredHolidays = holidays.filter((holiday) => {
-    if (statusFilter === "active" && !holiday.is_active) return false;
-    if (statusFilter === "inactive" && holiday.is_active) return false;
-    if (typeFilter !== "all" && (holiday.holiday_type || "Office") !== typeFilter) return false;
-    return true;
-  });
+  const [
+    editing,
+    setEditing,
+  ] = useState(null);
 
-  const openAdd = () => {
-    setEditing(null);
-    setPrefillDate(null);
-    setModalOpen(true);
-  };
+  const [
+    confirmRow,
+    setConfirmRow,
+  ] = useState(null);
 
-  const openEdit = (row) => {
-    setEditing(row);
-    setPrefillDate(null);
-    setModalOpen(true);
-  };
+  const [
+    prefillDate,
+    setPrefillDate,
+  ] = useState(null);
 
-  const handleSubmit = async (payload) => {
-    try {
-      if (editing) {
-        await updateHoliday.mutateAsync({ id: editing.id, payload });
-        showToast("Holiday updated successfully", "success");
-      } else {
-        await createHoliday.mutateAsync(payload);
-        showToast("Holiday created successfully", "success");
+
+  // ==========================================================
+  // FILTERS
+  // ==========================================================
+
+  const [
+    statusFilter,
+    setStatusFilter,
+  ] = useState("active");
+
+  const [
+    typeFilter,
+    setTypeFilter,
+  ] = useState("all");
+
+
+  // ==========================================================
+  // GOVERNMENT SYNC STATE
+  // ==========================================================
+
+  const [
+    syncYear,
+    setSyncYear,
+  ] = useState(
+    new Date().getFullYear()
+  );
+
+  const [
+    syncCountry,
+    setSyncCountry,
+  ] = useState("IN");
+
+
+  // ==========================================================
+  // VIEW MODE
+  // ==========================================================
+
+  const [
+    listMode,
+    setListMode,
+  ] = useState(
+    "calendar"
+  );
+
+
+  // ==========================================================
+  // FULL HOLIDAY LIST
+  // ==========================================================
+
+  const {
+    data: allHolidaysData,
+  } =
+    useHolidays({
+      page: 1,
+      per_page: 1000,
+    });
+
+
+  const holidays =
+    data?.items || [];
+
+  const allHolidays =
+    allHolidaysData?.items ||
+    [];
+
+
+  // ==========================================================
+  // ACTIVE HOLIDAYS
+  // ==========================================================
+
+  const allActiveHolidays =
+    useMemo(
+      () =>
+        allHolidays.filter(
+          (holiday) =>
+            holiday.is_active
+        ),
+      [allHolidays]
+    );
+
+
+  // ==========================================================
+  // INACTIVE HOLIDAYS
+  // ==========================================================
+
+  const allInactiveHolidays =
+    useMemo(
+      () =>
+        allHolidays.filter(
+          (holiday) =>
+            !holiday.is_active
+        ),
+      [allHolidays]
+    );
+
+
+  // ==========================================================
+  // GOVERNMENT HOLIDAYS
+  // ==========================================================
+
+  const governmentHolidays =
+    useMemo(
+      () =>
+        allActiveHolidays.filter(
+          (holiday) =>
+            getHolidayType(
+              holiday
+            ) ===
+            "Government"
+        ),
+      [allActiveHolidays]
+    );
+
+
+  // ==========================================================
+  // OFFICE HOLIDAYS
+  // ==========================================================
+
+  const officeHolidays =
+    useMemo(
+      () =>
+        allActiveHolidays.filter(
+          (holiday) =>
+            getHolidayType(
+              holiday
+            ) ===
+            "Office"
+        ),
+      [allActiveHolidays]
+    );
+
+
+  // ==========================================================
+  // AVAILABLE YEARS
+  // ==========================================================
+
+  const currentYear =
+    new Date().getFullYear();
+
+
+  const availableYears =
+    useMemo(() => {
+
+      const years =
+        new Set();
+
+
+      allHolidays.forEach(
+        (holiday) => {
+
+          const parsed =
+            parseHolidayDate(
+              holiday.holiday_date
+            );
+
+          if (parsed) {
+            years.add(
+              parsed.year
+            );
+          }
+
+        }
+      );
+
+
+      years.add(
+        currentYear
+      );
+
+
+      return Array.from(
+        years
+      ).sort(
+        (a, b) => b - a
+      );
+
+    }, [
+      allHolidays,
+      currentYear,
+    ]);
+
+
+  // ==========================================================
+  // GROUPED YEAR
+  // ==========================================================
+
+  const [
+    listYear,
+    setListYear,
+  ] = useState(
+    currentYear
+  );
+
+
+  const groupedByMonth =
+    useMemo(() => {
+
+      const buckets =
+        Array.from(
+          {
+            length: 12,
+          },
+          () => ({
+            government: [],
+            office: [],
+          })
+        );
+
+
+      allActiveHolidays.forEach(
+        (holiday) => {
+
+          const parsed =
+            parseHolidayDate(
+              holiday.holiday_date
+            );
+
+          if (!parsed) {
+            return;
+          }
+
+          if (
+            parsed.year !==
+            Number(listYear)
+          ) {
+            return;
+          }
+
+          if (
+            getHolidayType(
+              holiday
+            ) ===
+            "Government"
+          ) {
+
+            buckets[
+              parsed.month
+            ].government.push(
+              holiday
+            );
+
+          } else {
+
+            buckets[
+              parsed.month
+            ].office.push(
+              holiday
+            );
+
+          }
+
+        }
+      );
+
+
+      buckets.forEach(
+        (bucket) => {
+
+          bucket.government.sort(
+            (a, b) =>
+              holidayDateKey(
+                a.holiday_date
+              ).localeCompare(
+                holidayDateKey(
+                  b.holiday_date
+                )
+              )
+          );
+
+
+          bucket.office.sort(
+            (a, b) =>
+              holidayDateKey(
+                a.holiday_date
+              ).localeCompare(
+                holidayDateKey(
+                  b.holiday_date
+                )
+              )
+          );
+
+        }
+      );
+
+
+      return buckets;
+
+    }, [
+      allActiveHolidays,
+      listYear,
+    ]);
+
+
+  // ==========================================================
+  // YEAR TOTALS
+  // ==========================================================
+
+  const yearTotals =
+    useMemo(
+      () =>
+        groupedByMonth.reduce(
+          (totals, bucket) => ({
+            government:
+              totals.government +
+              bucket.government.length,
+
+            office:
+              totals.office +
+              bucket.office.length,
+          }),
+          {
+            government: 0,
+            office: 0,
+          }
+        ),
+      [groupedByMonth]
+    );
+
+
+  // ==========================================================
+  // CALENDAR STATE
+  // ==========================================================
+
+  const today =
+    new Date();
+
+
+  const [
+    calendarYear,
+    setCalendarYear,
+  ] = useState(
+    today.getFullYear()
+  );
+
+
+  const [
+    calendarMonth,
+    setCalendarMonth,
+  ] = useState(
+    today.getMonth()
+  );
+
+
+  // ==========================================================
+  // MONTH HOLIDAYS
+  // ==========================================================
+
+  const calendarHolidaysThisMonth =
+    useMemo(
+      () =>
+        allActiveHolidays
+          .filter(
+            (holiday) => {
+
+              const parsed =
+                parseHolidayDate(
+                  holiday.holiday_date
+                );
+
+              if (!parsed) {
+                return false;
+              }
+
+              return (
+                parsed.year ===
+                  calendarYear &&
+                parsed.month ===
+                  calendarMonth
+              );
+
+            }
+          )
+          .sort(
+            (a, b) =>
+              holidayDateKey(
+                a.holiday_date
+              ).localeCompare(
+                holidayDateKey(
+                  b.holiday_date
+                )
+              )
+          ),
+      [
+        allActiveHolidays,
+        calendarYear,
+        calendarMonth,
+      ]
+    );
+
+
+  // ==========================================================
+  // CALENDAR CELLS
+  // ==========================================================
+
+  const calendarCells =
+    useMemo(() => {
+
+      const firstOfMonth =
+        new Date(
+          calendarYear,
+          calendarMonth,
+          1
+        );
+
+
+      const startWeekday =
+        firstOfMonth.getDay();
+
+
+      const daysInMonth =
+        new Date(
+          calendarYear,
+          calendarMonth + 1,
+          0
+        ).getDate();
+
+
+      const cells = [];
+
+
+      for (
+        let i = 0;
+        i < startWeekday;
+        i++
+      ) {
+        cells.push(null);
       }
 
-      setModalOpen(false);
+
+      for (
+        let day = 1;
+        day <= daysInMonth;
+        day++
+      ) {
+
+        const savedForDay =
+          calendarHolidaysThisMonth.filter(
+            (holiday) =>
+              isSameHolidayDate(
+                holiday.holiday_date,
+                calendarYear,
+                calendarMonth,
+                day
+              )
+          );
+
+
+        cells.push({
+          day,
+          saved:
+            savedForDay,
+        });
+
+      }
+
+
+      return cells;
+
+    }, [
+      calendarYear,
+      calendarMonth,
+      calendarHolidaysThisMonth,
+    ]);
+
+
+  // ==========================================================
+  // PREVIOUS MONTH
+  // ==========================================================
+
+  const goToPrevMonth =
+    () => {
+
+      if (
+        calendarMonth ===
+        0
+      ) {
+
+        setCalendarMonth(
+          11
+        );
+
+        setCalendarYear(
+          (year) =>
+            year - 1
+        );
+
+      } else {
+
+        setCalendarMonth(
+          (month) =>
+            month - 1
+        );
+
+      }
+
+    };
+
+
+  // ==========================================================
+  // NEXT MONTH
+  // ==========================================================
+
+  const goToNextMonth =
+    () => {
+
+      if (
+        calendarMonth ===
+        11
+      ) {
+
+        setCalendarMonth(
+          0
+        );
+
+        setCalendarYear(
+          (year) =>
+            year + 1
+        );
+
+      } else {
+
+        setCalendarMonth(
+          (month) =>
+            month + 1
+        );
+
+      }
+
+    };
+
+
+  // ==========================================================
+  // TODAY
+  // ==========================================================
+
+  const goToToday =
+    () => {
+
+      const now =
+        new Date();
+
+      setCalendarYear(
+        now.getFullYear()
+      );
+
+      setCalendarMonth(
+        now.getMonth()
+      );
+
+    };
+
+
+  // ==========================================================
+  // TODAY CHECK
+  // ==========================================================
+
+  const isToday =
+    (day) =>
+      day ===
+        today.getDate() &&
+      calendarMonth ===
+        today.getMonth() &&
+      calendarYear ===
+        today.getFullYear();
+
+
+  // ==========================================================
+  // DATE CLICK
+  // ==========================================================
+
+  const handleCellClick =
+    (cell) => {
+
+      if (
+        !cell ||
+        !canAdd
+      ) {
+        return;
+      }
+
+
+      // Do not create duplicates
+      if (
+        cell.saved.length >
+        0
+      ) {
+        return;
+      }
+
+
+      setPrefillDate(
+        toISODate(
+          calendarYear,
+          calendarMonth,
+          cell.day
+        )
+      );
+
+      setEditing(null);
+      setModalOpen(true);
+
+    };
+
+
+  // ==========================================================
+  // TABLE FILTER
+  // ==========================================================
+
+  const filteredHolidays =
+    holidays.filter(
+      (holiday) => {
+
+        if (
+          statusFilter ===
+            "active" &&
+          !holiday.is_active
+        ) {
+          return false;
+        }
+
+        if (
+          statusFilter ===
+            "inactive" &&
+          holiday.is_active
+        ) {
+          return false;
+        }
+
+        if (
+          typeFilter !==
+            "all" &&
+          getHolidayType(
+            holiday
+          ) !== typeFilter
+        ) {
+          return false;
+        }
+
+        return true;
+      }
+    );
+
+
+  // ==========================================================
+  // ADD HOLIDAY
+  // ==========================================================
+
+  const openAdd =
+    () => {
+
       setEditing(null);
       setPrefillDate(null);
+      setModalOpen(true);
 
-      queryClient.invalidateQueries({ queryKey: ["holidays"] });
-      refetch();
-    } catch (err) {
-      showToast(err.response?.data?.message || "Operation failed", "error");
-    }
-  };
+    };
 
-  const handleDeactivate = async () => {
-    try {
-      await deactivateHoliday.mutateAsync(confirmRow.id);
-      showToast("Holiday deactivated successfully", "success");
-      setConfirmRow(null);
 
-      queryClient.invalidateQueries({ queryKey: ["holidays"] });
-      refetch();
-    } catch (err) {
-      showToast(err.response?.data?.message || "Operation failed", "error");
-    }
-  };
+  // ==========================================================
+  // EDIT HOLIDAY
+  // ==========================================================
 
-  const handleSyncGovernmentHolidays = async () => {
-    try {
-      const result = await syncGovernmentHolidays.mutateAsync({
-        year: syncYear,
-        countryCode: syncCountry,
-      });
-      showToast(result?.data?.message || "Government holidays synced", "success");
-      setListYear(syncYear);
-      setCalendarYear(syncYear);
-      queryClient.invalidateQueries({ queryKey: ["holidays"] });
-      refetch();
-    } catch (err) {
-      showToast(
-        err?.response?.data?.message || "Failed to sync government holidays",
-        "error"
+  const openEdit =
+    (holiday) => {
+
+      setEditing(
+        holiday
       );
-    }
-  };
+
+      setPrefillDate(null);
+      setModalOpen(true);
+
+    };
+
+
+  // ==========================================================
+  // SUBMIT
+  // ==========================================================
+
+  const handleSubmit =
+    async (
+      payload
+    ) => {
+
+      try {
+
+        if (editing) {
+
+          await updateHoliday.mutateAsync(
+            {
+              id:
+                editing.id,
+              payload,
+            }
+          );
+
+          showToast(
+            "Holiday updated successfully",
+            "success"
+          );
+
+        } else {
+
+          await createHoliday.mutateAsync(
+            payload
+          );
+
+          showToast(
+            "Holiday created successfully",
+            "success"
+          );
+
+        }
+
+
+        setModalOpen(false);
+        setEditing(null);
+        setPrefillDate(null);
+
+
+        await queryClient.invalidateQueries(
+          {
+            queryKey:
+              ["holidays"],
+          }
+        );
+
+
+      } catch (error) {
+
+        showToast(
+          error?.response?.data
+            ?.message ||
+            "Operation failed",
+          "error"
+        );
+
+      }
+
+    };
+
+
+  // ==========================================================
+  // DEACTIVATE
+  // ==========================================================
+
+  const handleDeactivate =
+    async () => {
+
+      if (!confirmRow) {
+        return;
+      }
+
+
+      try {
+
+        await deactivateHoliday.mutateAsync(
+          confirmRow.id
+        );
+
+
+        showToast(
+          "Holiday deactivated successfully",
+          "success"
+        );
+
+
+        setConfirmRow(
+          null
+        );
+
+
+        await queryClient.invalidateQueries(
+          {
+            queryKey:
+              ["holidays"],
+          }
+        );
+
+
+      } catch (error) {
+
+        showToast(
+          error?.response?.data
+            ?.message ||
+            "Operation failed",
+          "error"
+        );
+
+      }
+
+    };
+
+
+  // ==========================================================
+  // GOVERNMENT SYNC
+  // ==========================================================
+
+  const handleSyncGovernmentHolidays =
+    async () => {
+
+      try {
+
+        const result =
+          await syncGovernmentHolidays.mutateAsync(
+            {
+              year:
+                syncYear,
+
+              countryCode:
+                syncCountry,
+            }
+          );
+
+
+        showToast(
+          result?.message ||
+            "Government holidays synchronized",
+          "success"
+        );
+
+
+        setListYear(
+          syncYear
+        );
+
+        setCalendarYear(
+          syncYear
+        );
+
+        setCalendarMonth(
+          0
+        );
+
+
+        await queryClient.invalidateQueries(
+          {
+            queryKey:
+              ["holidays"],
+          }
+        );
+
+
+        await refetch();
+
+
+      } catch (error) {
+
+        showToast(
+          error?.response?.data
+            ?.message ||
+            "Failed to sync government holidays",
+          "error"
+        );
+
+      }
+
+    };
+
+
+  // ==========================================================
+  // TABLE COLUMNS
+  // ==========================================================
 
   const columns = [
     {
       key: "name",
       label: "Holiday",
-      render: (r) => {
-        const firstLetter = r.name?.charAt(0)?.toUpperCase() || "H";
+
+      render: (row) => {
+
+        const firstLetter =
+          row.name
+            ?.charAt(0)
+            ?.toUpperCase() ||
+          "H";
+
+
         return (
           <div className="flex min-w-0 items-center gap-2">
+
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
-              <span className="text-sm font-bold">{firstLetter}</span>
+              <span className="text-sm font-bold">
+                {firstLetter}
+              </span>
             </div>
+
             <div className="min-w-0">
+
               <p className="truncate font-semibold text-slate-800 dark:text-white">
-                {r.name || "-"}
+                {row.name ||
+                  "-"}
               </p>
+
             </div>
+
           </div>
         );
       },
     },
+
+
     {
-      key: "holiday_date",
-      label: "Date",
-      render: (r) => (
-        <span className="block truncate text-sm font-medium text-slate-600 dark:text-slate-300">
-          {formatDate(r.holiday_date)}
-        </span>
-      ),
+      key:
+        "holiday_date",
+
+      label:
+        "Date",
+
+      render:
+        (row) => (
+          <span className="block truncate text-sm font-medium text-slate-600 dark:text-slate-300">
+            {formatDate(
+              row.holiday_date
+            )}
+          </span>
+        ),
     },
+
+
     {
-      key: "holiday_type",
-      label: "Type",
-      render: (r) => {
-        const type = r.holiday_type || "Office";
-        const isGovernment = type === "Government";
-        return (
+      key:
+        "holiday_type",
+
+      label:
+        "Type",
+
+      render:
+        (row) => {
+
+          const type =
+            getHolidayType(
+              row
+            );
+
+          const isGovernment =
+            type ===
+            "Government";
+
+
+          return (
+            <Badge
+              className={
+                isGovernment
+                  ? "inline-flex items-center gap-1.5 rounded-full bg-violet-50 px-2.5 py-1 text-xs text-violet-700 dark:bg-violet-500/10 dark:text-violet-300"
+                  : "inline-flex items-center gap-1.5 rounded-full bg-sky-50 px-2.5 py-1 text-xs text-sky-700 dark:bg-sky-500/10 dark:text-sky-300"
+              }
+            >
+              {type}
+            </Badge>
+          );
+
+        },
+    },
+
+
+    {
+      key:
+        "status",
+
+      label:
+        "Status",
+
+      render:
+        (row) => (
           <Badge
             className={
-              isGovernment
-                ? "inline-flex items-center gap-1.5 rounded-full bg-violet-50 px-2.5 py-1 text-xs text-violet-700 dark:bg-violet-500/10 dark:text-violet-300"
-                : "inline-flex items-center gap-1.5 rounded-full bg-sky-50 px-2.5 py-1 text-xs text-sky-700 dark:bg-sky-500/10 dark:text-sky-300"
+              row.is_active
+                ? "inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300"
+                : "inline-flex items-center gap-1.5 rounded-full bg-red-50 px-2.5 py-1 text-xs text-red-700 dark:bg-red-500/10 dark:text-red-300"
             }
           >
-            {type}
-          </Badge>
-        );
-      },
-    },
-    {
-      key: "status",
-      label: "Status",
-      render: (r) => (
-        <Badge
-          className={
-            r.is_active
-              ? "inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300"
-              : "inline-flex items-center gap-1.5 rounded-full bg-red-50 px-2.5 py-1 text-xs text-red-700 dark:bg-red-500/10 dark:text-red-300"
-          }
-        >
-          <span
-            className={
-              r.is_active
-                ? "h-1.5 w-1.5 rounded-full bg-emerald-500"
-                : "h-1.5 w-1.5 rounded-full bg-red-500"
+
+            <span
+              className={
+                row.is_active
+                  ? "h-1.5 w-1.5 rounded-full bg-emerald-500"
+                  : "h-1.5 w-1.5 rounded-full bg-red-500"
+              }
+            />
+
+            {
+              row.is_active
+                ? "Active"
+                : "Inactive"
             }
-          />
-          {r.is_active ? "Active" : "Inactive"}
-        </Badge>
-      ),
+
+          </Badge>
+        ),
     },
+
+
     {
-      key: "actions",
-      label: "Actions",
-      render: (r) => (
-        <div className="flex items-center gap-1.5 whitespace-nowrap">
-          {canEdit && (
-            <button
-              type="button"
-              onClick={() => openEdit(r)}
-              className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-primary-600 transition hover:bg-primary-50 dark:border-slate-700 dark:bg-slate-800 dark:text-primary-400 dark:hover:bg-primary-500/10"
-            >
-              Edit
-            </button>
-          )}
-          {r.is_active && canDelete && (
-            <button
-              type="button"
-              onClick={() => setConfirmRow(r)}
-              className="rounded-lg border border-red-200 bg-white px-2.5 py-1.5 text-xs font-medium text-red-600 transition hover:bg-red-50 dark:border-red-900/50 dark:bg-slate-800 dark:text-red-400 dark:hover:bg-red-500/10"
-            >
-              Deactivate
-            </button>
-          )}
-        </div>
-      ),
+      key:
+        "actions",
+
+      label:
+        "Actions",
+
+      render:
+        (row) => (
+          <div className="flex items-center gap-1.5 whitespace-nowrap">
+
+            {canEdit && (
+              <button
+                type="button"
+                onClick={() =>
+                  openEdit(
+                    row
+                  )
+                }
+                className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-primary-600 transition hover:bg-primary-50 dark:border-slate-700 dark:bg-slate-800 dark:text-primary-400 dark:hover:bg-primary-500/10"
+              >
+                Edit
+              </button>
+            )}
+
+
+            {row.is_active &&
+              canDelete && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setConfirmRow(
+                      row
+                    )
+                  }
+                  className="rounded-lg border border-red-200 bg-white px-2.5 py-1.5 text-xs font-medium text-red-600 transition hover:bg-red-50 dark:border-red-900/50 dark:bg-slate-800 dark:text-red-400 dark:hover:bg-red-500/10"
+                >
+                  Deactivate
+                </button>
+              )}
+
+          </div>
+        ),
     },
   ];
 
+
+  // ==========================================================
+  // RETURN
+  // ==========================================================
+
   return (
     <div className="space-y-5">
+
+      {/* ======================================================
+          HEADER
+      ====================================================== */}
+
       <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+
         <div>
+
           <div className="flex items-center gap-3">
+
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-600 text-white shadow-sm">
-              <span className="font-bold">H</span>
+              <span className="font-bold">
+                H
+              </span>
             </div>
+
             <div>
+
               <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
                 Holidays
               </h1>
+
               <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
                 Manage government and office holidays
               </p>
+
             </div>
+
           </div>
+
         </div>
 
+
         <div className="flex flex-wrap items-center gap-2">
+
           <TableToolbar
-            onRefresh={refetch}
-            refreshing={isFetching}
-            onExportExcel={exportExcel}
-            onExportPDF={exportPDF}
-            exporting={exporting}
+            onRefresh={
+              refetch
+            }
+            refreshing={
+              isFetching
+            }
+            onExportExcel={
+              exportExcel
+            }
+            onExportPDF={
+              exportPDF
+            }
+            exporting={
+              exporting
+            }
           />
+
+
           {canAdd && (
-            <Button onClick={openAdd} className="h-10 w-full px-4 sm:w-auto">
-              <span className="mr-1.5 text-lg">+</span>
+            <Button
+              onClick={
+                openAdd
+              }
+              className="h-10 w-full px-4 sm:w-auto"
+            >
+              <span className="mr-1.5 text-lg">
+                +
+              </span>
+
               Add Holiday
             </Button>
           )}
+
         </div>
+
       </div>
 
-      {/* SYNC GOVERNMENT HOLIDAYS */}
+
+      {/* ======================================================
+          GOVERNMENT SYNC
+      ====================================================== */}
+
       <div className="rounded-xl border border-violet-100 bg-white p-4 shadow-sm dark:border-violet-900/30 dark:bg-slate-900">
+
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+
           <div>
+
             <h3 className="text-sm font-semibold text-slate-800 dark:text-white">
-              Sync Government Holidays
+              Government Holiday Synchronization
             </h3>
+
             <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-              Pulls the public holiday list for the selected year/country when available and
-              saves them here. Not all future years are published yet by the provider.
+              Sync government holidays for the selected year and country.
             </p>
+
           </div>
 
+
           <div className="flex flex-wrap items-center gap-2">
+
             <input
               type="number"
-              value={syncYear}
-              onChange={(e) => setSyncYear(Number(e.target.value))}
-              className="h-10 w-24 rounded-lg border border-slate-300 bg-white px-2 text-sm outline-none dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+              min="1900"
+              max="2100"
+              value={
+                syncYear
+              }
+              onChange={(event) =>
+                setSyncYear(
+                  Number(
+                    event.target.value
+                  )
+                )
+              }
+              className="h-10 w-28 rounded-lg border border-slate-300 bg-white px-2 text-sm outline-none dark:border-slate-600 dark:bg-slate-800 dark:text-white"
             />
+
+
             <select
-              value={syncCountry}
-              onChange={(e) => setSyncCountry(e.target.value)}
-              className="h-10 rounded-lg border border-slate-300 bg-white px-2 text-sm outline-none dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+              value={
+                syncCountry
+              }
+              onChange={(event) =>
+                setSyncCountry(
+                  event.target.value
+                )
+              }
+              className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none dark:border-slate-600 dark:bg-slate-800 dark:text-white"
             >
-              {COUNTRY_OPTIONS.map((c) => (
-                <option key={c.code} value={c.code}>
-                  {c.label}
-                </option>
-              ))}
+
+              {COUNTRY_OPTIONS.map(
+                (country) => (
+                  <option
+                    key={
+                      country.code
+                    }
+                    value={
+                      country.code
+                    }
+                  >
+                    {
+                      country.label
+                    }
+                  </option>
+                )
+              )}
+
             </select>
+
+
             <Button
               type="button"
               variant="secondary"
-              onClick={handleSyncGovernmentHolidays}
-              disabled={syncGovernmentHolidays.isPending}
+              onClick={
+                handleSyncGovernmentHolidays
+              }
+              disabled={
+                syncGovernmentHolidays.isPending
+              }
               className="h-10 px-4"
             >
-              {syncGovernmentHolidays.isPending ? "Syncing..." : "Sync Government Holidays"}
+              {
+                syncGovernmentHolidays.isPending
+                  ? "Synchronizing..."
+                  : "Sync Government Holidays"
+              }
             </Button>
+
           </div>
+
         </div>
+
       </div>
+
+
+      {/* ======================================================
+          SUMMARY
+      ====================================================== */}
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <div className="h-[110px] rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition hover:shadow-md dark:border-slate-700 dark:bg-slate-900">
+
+        <div className="h-[110px] rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+
           <div className="flex h-full items-center justify-between">
-            <div className="min-w-0">
-              <p className="truncate text-xs font-medium text-slate-500 dark:text-slate-400">
+
+            <div>
+
+              <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
                 Total Holidays
               </p>
-              <p className="mt-1 text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-                {holidays.length}
+
+              <p className="mt-1 text-2xl font-bold text-slate-900 dark:text-white">
+                {
+                  allHolidays.length
+                }
               </p>
-              <p className="mt-0.5 truncate text-[11px] text-slate-400">Current page</p>
+
+              <p className="text-[11px] text-slate-400">
+                All saved records
+              </p>
+
             </div>
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
-              <span className="text-sm font-bold">H</span>
+
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
+              H
             </div>
+
           </div>
+
         </div>
 
-        <div className="h-[110px] rounded-xl border border-violet-100 bg-white px-4 py-3 shadow-sm transition hover:shadow-md dark:border-violet-900/30 dark:bg-slate-900">
+
+        <div className="h-[110px] rounded-xl border border-violet-100 bg-white px-4 py-3 shadow-sm dark:border-violet-900/30 dark:bg-slate-900">
+
           <div className="flex h-full items-center justify-between">
-            <div className="min-w-0">
-              <p className="truncate text-xs font-medium text-slate-500 dark:text-slate-400">
+
+            <div>
+
+              <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
                 Government Holidays
               </p>
-              <p className="mt-1 text-2xl font-bold tracking-tight text-violet-600 dark:text-violet-400">
-                {governmentHolidays.length}
+
+              <p className="mt-1 text-2xl font-bold text-violet-600 dark:text-violet-400">
+                {
+                  governmentHolidays.length
+                }
               </p>
-              <p className="mt-0.5 truncate text-[11px] text-slate-400">Active, national/state</p>
+
+              <p className="text-[11px] text-slate-400">
+                Active
+              </p>
+
             </div>
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-violet-50 dark:bg-violet-500/10">
-              <span className="h-2.5 w-2.5 rounded-full bg-violet-500" />
-            </div>
+
+            <span className="h-2.5 w-2.5 rounded-full bg-violet-500" />
+
           </div>
+
         </div>
 
-        <div className="h-[110px] rounded-xl border border-sky-100 bg-white px-4 py-3 shadow-sm transition hover:shadow-md dark:border-sky-900/30 dark:bg-slate-900">
+
+        <div className="h-[110px] rounded-xl border border-sky-100 bg-white px-4 py-3 shadow-sm dark:border-sky-900/30 dark:bg-slate-900">
+
           <div className="flex h-full items-center justify-between">
-            <div className="min-w-0">
-              <p className="truncate text-xs font-medium text-slate-500 dark:text-slate-400">
+
+            <div>
+
+              <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
                 Office Holidays
               </p>
-              <p className="mt-1 text-2xl font-bold tracking-tight text-sky-600 dark:text-sky-400">
-                {officeHolidays.length}
+
+              <p className="mt-1 text-2xl font-bold text-sky-600 dark:text-sky-400">
+                {
+                  officeHolidays.length
+                }
               </p>
-              <p className="mt-0.5 truncate text-[11px] text-slate-400">Active, company-declared</p>
+
+              <p className="text-[11px] text-slate-400">
+                Active
+              </p>
+
             </div>
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-sky-50 dark:bg-sky-500/10">
-              <span className="h-2.5 w-2.5 rounded-full bg-sky-500" />
-            </div>
+
+            <span className="h-2.5 w-2.5 rounded-full bg-sky-500" />
+
           </div>
+
         </div>
 
-        <div className="h-[110px] rounded-xl border border-red-100 bg-white px-4 py-3 shadow-sm transition hover:shadow-md dark:border-red-900/30 dark:bg-slate-900">
+
+        <div className="h-[110px] rounded-xl border border-red-100 bg-white px-4 py-3 shadow-sm dark:border-red-900/30 dark:bg-slate-900">
+
           <div className="flex h-full items-center justify-between">
-            <div className="min-w-0">
-              <p className="truncate text-xs font-medium text-slate-500 dark:text-slate-400">
+
+            <div>
+
+              <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
                 Inactive Holidays
               </p>
-              <p className="mt-1 text-2xl font-bold tracking-tight text-red-600 dark:text-red-400">
-                {inactiveHolidays.length}
+
+              <p className="mt-1 text-2xl font-bold text-red-600 dark:text-red-400">
+                {
+                  allInactiveHolidays.length
+                }
               </p>
-              <p className="mt-0.5 truncate text-[11px] text-slate-400">Deactivated holidays</p>
+
+              <p className="text-[11px] text-slate-400">
+                Deactivated
+              </p>
+
             </div>
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-50 dark:bg-red-500/10">
-              <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
-            </div>
+
+            <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
+
           </div>
+
         </div>
+
       </div>
 
-      {/* VIEW SWITCH: Calendar / Grouped List */}
-      <div className="flex items-center justify-end">
+
+      {/* ======================================================
+          VIEW SWITCH
+      ====================================================== */}
+
+      <div className="flex justify-end">
+
         <div className="flex items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
+
           <button
             type="button"
-            onClick={() => setListMode("calendar")}
+            onClick={() =>
+              setListMode(
+                "calendar"
+              )
+            }
             className={`rounded-md px-3 py-1.5 text-xs font-medium ${
-              listMode === "calendar"
+              listMode ===
+              "calendar"
                 ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
                 : "text-slate-500 dark:text-slate-400"
             }`}
           >
             Calendar
           </button>
+
+
           <button
             type="button"
-            onClick={() => setListMode("grouped")}
+            onClick={() =>
+              setListMode(
+                "grouped"
+              )
+            }
             className={`rounded-md px-3 py-1.5 text-xs font-medium ${
-              listMode === "grouped"
+              listMode ===
+              "grouped"
                 ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
                 : "text-slate-500 dark:text-slate-400"
             }`}
           >
             Year / Month List
           </button>
+
         </div>
+
       </div>
 
-      {/* CALENDAR VIEW */}
-      {listMode === "calendar" && (
+
+      {/* ======================================================
+          CALENDAR
+      ====================================================== */}
+
+      {listMode ===
+        "calendar" && (
+
         <div className="rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+
           <div className="flex flex-col gap-3 border-b border-slate-200 px-4 py-3 dark:border-slate-700 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-2">
+
+            <div className="flex flex-wrap items-center gap-2">
+
               <button
                 type="button"
-                onClick={goToPrevMonth}
+                onClick={
+                  goToPrevMonth
+                }
                 className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800"
               >
                 ‹
               </button>
-              <h2 className="min-w-[160px] text-center text-sm font-semibold text-slate-800 dark:text-white">
-                {MONTH_NAMES[calendarMonth]} {calendarYear}
+
+
+              <h2 className="min-w-[180px] text-center text-sm font-semibold text-slate-800 dark:text-white">
+                {
+                  MONTH_NAMES[
+                    calendarMonth
+                  ]
+                }{" "}
+                {
+                  calendarYear
+                }
               </h2>
+
+
               <button
                 type="button"
-                onClick={goToNextMonth}
+                onClick={
+                  goToNextMonth
+                }
                 className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800"
               >
                 ›
               </button>
+
+
               <button
                 type="button"
-                onClick={goToToday}
-                className="ml-2 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+                onClick={
+                  goToToday
+                }
+                className="ml-1 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
               >
                 Today
               </button>
+
             </div>
 
-            <div className="flex items-center gap-3 text-[11px] text-slate-500 dark:text-slate-400">
+
+            <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-500 dark:text-slate-400">
+
               <span className="flex items-center gap-1">
-                <span className="h-2 w-2 rounded-full bg-violet-500" /> Government
+                <span className="h-2 w-2 rounded-full bg-violet-500" />
+                Government
               </span>
+
+
               <span className="flex items-center gap-1">
-                <span className="h-2 w-2 rounded-full bg-sky-500" /> Office
+                <span className="h-2 w-2 rounded-full bg-sky-500" />
+                Office
               </span>
-              <span className="ml-1">
-                {calendarHolidaysThisMonth.length} holiday
-                {calendarHolidaysThisMonth.length === 1 ? "" : "s"} this month
+
+
+              <span>
+                {
+                  calendarHolidaysThisMonth.length
+                }{" "}
+                holiday
+                {
+                  calendarHolidaysThisMonth.length ===
+                  1
+                    ? ""
+                    : "s"
+                }{" "}
+                this month
               </span>
+
             </div>
+
           </div>
 
-          <div className="p-4">
-            <div className="grid grid-cols-7 gap-1.5">
-              {WEEKDAY_LABELS.map((label) => (
-                <div
-                  key={label}
-                  className="py-1 text-center text-[10px] font-semibold uppercase tracking-wide text-slate-400"
-                >
-                  {label}
-                </div>
-              ))}
 
-              {calendarCells.map((cell, index) => {
-                if (!cell) {
-                  return <div key={`empty-${index}`} className="min-h-[92px] sm:min-h-[104px]" />;
+          <div className="p-4">
+
+            <div className="grid grid-cols-7 gap-1.5">
+
+              {WEEKDAY_LABELS.map(
+                (label) => (
+                  <div
+                    key={label}
+                    className="py-1 text-center text-[10px] font-semibold uppercase tracking-wide text-slate-400"
+                  >
+                    {label}
+                  </div>
+                )
+              )}
+
+
+              {calendarCells.map(
+                (
+                  cell,
+                  index
+                ) => {
+
+                  if (!cell) {
+
+                    return (
+                      <div
+                        key={`empty-${index}`}
+                        className="min-h-[100px]"
+                      />
+                    );
+
+                  }
+
+
+                  const hasAny =
+                    cell.saved
+                      .length >
+                    0;
+
+
+                  const cellDate =
+                    toISODate(
+                      calendarYear,
+                      calendarMonth,
+                      cell.day
+                    );
+
+
+                  return (
+                    <div
+                      key={`${calendarYear}-${calendarMonth}-${cell.day}`}
+                      onClick={() =>
+                        handleCellClick(
+                          cell
+                        )
+                      }
+                      className={`group/day relative flex min-h-[100px] flex-col gap-1 rounded-lg border p-1.5 transition ${
+                        isToday(
+                          cell.day
+                        )
+                          ? "border-primary-400 bg-primary-50 dark:border-primary-500 dark:bg-primary-500/10"
+                          : hasAny
+                          ? "border-slate-200 bg-white hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800/60"
+                          : "border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/40"
+                      } ${
+                        canAdd &&
+                        !hasAny
+                          ? "cursor-pointer"
+                          : ""
+                      }`}
+                    >
+
+                      {/* ==================================================
+                          HOLIDAY HOVER
+                      ================================================== */}
+
+                      <div className="pointer-events-none absolute left-1/2 top-1 z-50 hidden w-[260px] -translate-x-1/2 -translate-y-full rounded-xl border border-slate-700 bg-slate-900 p-3 text-left shadow-xl group-hover/day:block">
+
+                        <div className="mb-2 text-[11px] font-semibold text-white">
+                          {
+                            formatDate(
+                              cellDate
+                            )
+                          }
+                        </div>
+
+
+                        {cell.saved.length ===
+                        0 ? (
+
+                          <div className="text-[10px] text-slate-400">
+                            No holiday
+                          </div>
+
+                        ) : (
+
+                          <div className="space-y-2">
+
+                            {cell.saved.map(
+                              (
+                                holiday
+                              ) => (
+
+                                <div
+                                  key={
+                                    holiday.id
+                                  }
+                                  className="rounded-lg bg-white/5 p-2"
+                                >
+
+                                  <div className="flex items-start gap-2">
+
+                                    <span
+                                      className={`mt-1 h-2 w-2 shrink-0 rounded-full ${
+                                        getHolidayType(
+                                          holiday
+                                        ) ===
+                                        "Government"
+                                          ? "bg-violet-400"
+                                          : "bg-sky-400"
+                                      }`}
+                                    />
+
+                                    <div className="min-w-0">
+
+                                      <p className="text-[11px] font-semibold text-white">
+                                        {
+                                          holiday.name
+                                        }
+                                      </p>
+
+                                      <p className="mt-0.5 text-[9px] text-slate-400">
+                                        {
+                                          getHolidayType(
+                                            holiday
+                                          )
+                                        }{" "}
+                                        Holiday
+                                      </p>
+
+                                    </div>
+
+                                  </div>
+
+                                </div>
+
+                              )
+                            )}
+
+                          </div>
+
+                        )}
+
+                      </div>
+
+
+                      {/* DATE */}
+
+                      <span
+                        className={`text-xs font-semibold ${
+                          isToday(
+                            cell.day
+                          )
+                            ? "text-primary-700 dark:text-primary-400"
+                            : "text-slate-500 dark:text-slate-400"
+                        }`}
+                      >
+                        {
+                          cell.day
+                        }
+                      </span>
+
+
+                      {/* HOLIDAY */}
+
+                      {hasAny && (
+
+                        <div className="flex flex-1 flex-col gap-1 overflow-hidden">
+
+                          {cell.saved.map(
+                            (
+                              holiday
+                            ) => {
+
+                              const isGovernment =
+                                getHolidayType(
+                                  holiday
+                                ) ===
+                                "Government";
+
+
+                              return (
+                                <button
+                                  key={
+                                    holiday.id
+                                  }
+                                  type="button"
+                                  onClick={(
+                                    event
+                                  ) => {
+
+                                    event.stopPropagation();
+
+                                    if (
+                                      canEdit
+                                    ) {
+                                      openEdit(
+                                        holiday
+                                      );
+                                    }
+
+                                  }}
+                                  className={`w-full truncate rounded px-1.5 py-1 text-left text-[10px] font-medium leading-tight ${
+                                    isGovernment
+                                      ? "bg-violet-50 text-violet-700 hover:bg-violet-100 dark:bg-violet-500/15 dark:text-violet-300 dark:hover:bg-violet-500/25"
+                                      : "bg-sky-50 text-sky-700 hover:bg-sky-100 dark:bg-sky-500/15 dark:text-sky-300 dark:hover:bg-sky-500/25"
+                                  }`}
+                                >
+                                  {
+                                    holiday.name
+                                  }
+                                </button>
+                              );
+
+                            }
+                          )}
+
+                        </div>
+                      )}
+
+                    </div>
+                  );
+                }
+              )}
+
+            </div>
+
+
+            {calendarHolidaysThisMonth.length ===
+              0 && (
+
+              <p className="mt-3 text-center text-xs text-slate-400">
+                No holidays recorded for{" "}
+                {
+                  MONTH_NAMES[
+                    calendarMonth
+                  ]
+                }{" "}
+                {
+                  calendarYear
+                }.
+                {canAdd &&
+                  " Click an empty date to add a holiday."}
+              </p>
+
+            )}
+
+          </div>
+
+        </div>
+
+      )}
+
+
+      {/* ======================================================
+          YEAR / MONTH LIST
+      ====================================================== */}
+
+      {listMode ===
+        "grouped" && (
+
+        <div className="rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+
+          <div className="flex flex-col gap-3 border-b border-slate-200 px-4 py-3 dark:border-slate-700 sm:flex-row sm:items-center sm:justify-between">
+
+            <div>
+
+              <h2 className="text-sm font-semibold text-slate-800 dark:text-white">
+                Holiday List —{" "}
+                {
+                  listYear
+                }
+              </h2>
+
+              <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                {
+                  yearTotals.government
+                }{" "}
+                Government
+                {" · "}
+                {
+                  yearTotals.office
+                }{" "}
+                Office
+              </p>
+
+            </div>
+
+
+            <select
+              value={
+                listYear
+              }
+              onChange={(
+                event
+              ) =>
+                setListYear(
+                  Number(
+                    event.target.value
+                  )
+                )
+              }
+              className="h-9 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none dark:border-slate-600 dark:bg-slate-800 dark:text-white sm:w-32"
+            >
+
+              {availableYears.map(
+                (year) => (
+                  <option
+                    key={year}
+                    value={year}
+                  >
+                    {
+                      year
+                    }
+                  </option>
+                )
+              )}
+
+            </select>
+
+          </div>
+
+
+          <div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2 xl:grid-cols-3">
+
+            {MONTH_NAMES.map(
+              (
+                monthName,
+                monthIndex
+              ) => {
+
+                const bucket =
+                  groupedByMonth[
+                    monthIndex
+                  ];
+
+
+                const monthHolidays = [
+                  ...bucket.government,
+                  ...bucket.office,
+                ];
+
+
+                if (
+                  monthHolidays.length ===
+                  0
+                ) {
+                  return null;
                 }
 
-                const hasAny = cell.saved.length > 0;
-                const cellDate = toISODate(calendarYear, calendarMonth, cell.day);
 
                 return (
                   <div
-                    key={cell.day}
-                    onClick={() => handleCellClick(cell)}
-                    title={formatDate(cellDate)}
-                    className={`group/day relative flex min-h-[92px] flex-col gap-1 rounded-lg border p-1.5 transition-colors sm:min-h-[104px] ${
-                      isToday(cell.day)
-                        ? "border-primary-400 bg-primary-50 dark:border-primary-500 dark:bg-primary-500/10"
-                        : hasAny
-                        ? "border-slate-200 bg-white hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800/60"
-                        : "border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/40"
-                    } ${canAdd ? "cursor-pointer" : hasAny ? "" : "cursor-default"}`}
+                    key={
+                      monthName
+                    }
+                    className="rounded-lg border border-slate-100 bg-slate-50/60 p-3 dark:border-slate-800 dark:bg-slate-800/40"
                   >
-                    <span className="pointer-events-none absolute -top-7 left-1/2 z-30 -translate-x-1/2 whitespace-nowrap rounded-md bg-slate-800 px-2 py-1 text-[10px] font-medium text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover/day:opacity-100 dark:bg-slate-700">
-                      {formatDate(cellDate)}
-                    </span>
 
-                    <span
-                      className={`text-xs font-semibold ${
-                        isToday(cell.day)
-                          ? "text-primary-700 dark:text-primary-400"
-                          : "text-slate-500 dark:text-slate-400"
-                      }`}
-                    >
-                      {cell.day}
-                    </span>
+                    <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                      {
+                        monthName
+                      }
+                    </h3>
 
-                    {hasAny && (
-                      <div className="flex flex-1 flex-col gap-1 overflow-hidden">
-                        {cell.saved.map((h) => {
-                          const isGovernment = (h.holiday_type || "Office") === "Government";
+
+                    <div className="space-y-2">
+
+                      {monthHolidays.map(
+                        (
+                          holiday
+                        ) => {
+
+                          const isGovernment =
+                            getHolidayType(
+                              holiday
+                            ) ===
+                            "Government";
+
+
+                          const parsed =
+                            parseHolidayDate(
+                              holiday.holiday_date
+                            );
+
+
                           return (
-                            <div
-                              key={h.id}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (canEdit) openEdit(h);
-                              }}
-                              title={h.name}
-                              className={`truncate rounded px-1.5 py-1 text-[10px] font-medium leading-tight ${
-                                isGovernment
-                                  ? "bg-violet-50 text-violet-700 hover:bg-violet-100 dark:bg-violet-500/15 dark:text-violet-300 dark:hover:bg-violet-500/25"
-                                  : "bg-sky-50 text-sky-700 hover:bg-sky-100 dark:bg-sky-500/15 dark:text-sky-300 dark:hover:bg-sky-500/25"
-                              } ${canEdit ? "cursor-pointer" : ""}`}
+                            <button
+                              key={
+                                holiday.id
+                              }
+                              type="button"
+                              onClick={() =>
+                                canEdit &&
+                                openEdit(
+                                  holiday
+                                )
+                              }
+                              className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left hover:bg-white dark:hover:bg-slate-800"
                             >
-                              {h.name}
-                            </div>
+
+                              <Badge
+                                className={
+                                  isGovernment
+                                    ? "shrink-0 rounded-full bg-violet-50 px-1.5 py-0.5 text-[9px] text-violet-700 dark:bg-violet-500/10 dark:text-violet-300"
+                                    : "shrink-0 rounded-full bg-sky-50 px-1.5 py-0.5 text-[9px] text-sky-700 dark:bg-sky-500/10 dark:text-sky-300"
+                                }
+                              >
+                                {
+                                  isGovernment
+                                    ? "Gov"
+                                    : "Off"
+                                }
+                              </Badge>
+
+
+                              <span className="min-w-0 flex-1 truncate text-sm text-slate-700 dark:text-slate-200">
+                                {
+                                  holiday.name
+                                }
+                              </span>
+
+
+                              <span className="shrink-0 text-xs text-slate-400">
+                                {
+                                  parsed?.day ||
+                                  "-"
+                                }
+                              </span>
+
+                            </button>
                           );
-                        })}
-                      </div>
-                    )}
+
+                        }
+                      )}
+
+                    </div>
+
                   </div>
                 );
-              })}
-            </div>
 
-            {calendarHolidaysThisMonth.length === 0 && (
-              <p className="mt-3 text-center text-xs text-slate-400">
-                No holidays recorded for {MONTH_NAMES[calendarMonth]} {calendarYear} yet.
-                {canAdd && " Click any date above to add one."}
-              </p>
+              }
             )}
-          </div>
-        </div>
-      )}
 
-      {/* YEAR / MONTH GROUPED HOLIDAY LIST */}
-      {listMode === "grouped" && (
-        <div className="rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
-          <div className="flex flex-col gap-3 border-b border-slate-200 px-4 py-3 dark:border-slate-700 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h2 className="text-sm font-semibold text-slate-800 dark:text-white">
-                Holiday List — {listYear}
-              </h2>
-              <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-                {yearTotals.government} Government &middot; {yearTotals.office} Office
-              </p>
-            </div>
 
-            <select
-              value={listYear}
-              onChange={(e) => setListYear(Number(e.target.value))}
-              className="h-9 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none dark:border-slate-600 dark:bg-slate-800 dark:text-white sm:w-32"
-            >
-              {availableYears.map((y) => (
-                <option key={y} value={y}>
-                  {y}
-                </option>
-              ))}
-            </select>
-          </div>
+            {
+              yearTotals.government ===
+                0 &&
+              yearTotals.office ===
+                0 && (
 
-          <div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2 xl:grid-cols-3">
-            {MONTH_NAMES.map((monthName, monthIndex) => {
-              const bucket = groupedByMonth[monthIndex];
-              const hasAny = bucket.government.length > 0 || bucket.office.length > 0;
-
-              if (!hasAny) return null;
-
-              return (
-                <div
-                  key={monthName}
-                  className="rounded-lg border border-slate-100 bg-slate-50/60 p-3 dark:border-slate-800 dark:bg-slate-800/40"
-                >
-                  <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                    {monthName}
-                  </h3>
-
-                  {bucket.government.length > 0 && (
-                    <div className="mb-2 space-y-1">
-                      {bucket.government.map((h) => (
-                        <div key={h.id} className="flex items-center gap-2 text-sm">
-                          <Badge className="shrink-0 rounded-full bg-violet-50 px-1.5 py-0.5 text-[9px] text-violet-700 dark:bg-violet-500/10 dark:text-violet-300">
-                            Gov
-                          </Badge>
-                          <span className="min-w-0 flex-1 truncate text-slate-700 dark:text-slate-200">
-                            {h.name}
-                          </span>
-                          <span className="shrink-0 text-xs text-slate-400">
-                            {new Date(h.holiday_date).getDate()}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {bucket.office.length > 0 && (
-                    <div className="space-y-1">
-                      {bucket.office.map((h) => (
-                        <div key={h.id} className="flex items-center gap-2 text-sm">
-                          <Badge className="shrink-0 rounded-full bg-sky-50 px-1.5 py-0.5 text-[9px] text-sky-700 dark:bg-sky-500/10 dark:text-sky-300">
-                            Off
-                          </Badge>
-                          <span className="min-w-0 flex-1 truncate text-slate-700 dark:text-slate-200">
-                            {h.name}
-                          </span>
-                          <span className="shrink-0 text-xs text-slate-400">
-                            {new Date(h.holiday_date).getDate()}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                <div className="col-span-full py-8 text-center text-sm text-slate-400">
+                  No active holidays recorded for{" "}
+                  {
+                    listYear
+                  }.
                 </div>
-              );
-            })}
 
-            {yearTotals.government === 0 && yearTotals.office === 0 && (
-              <div className="col-span-full py-8 text-center text-sm text-slate-400">
-                No active holidays recorded for {listYear}.
-              </div>
-            )}
+              )
+            }
+
           </div>
+
         </div>
+
       )}
+
+
+      {/* ======================================================
+          TABLE
+      ====================================================== */}
 
       <div className="w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+
         <div className="border-b border-slate-200 px-4 py-3 dark:border-slate-700">
+
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+
             <div className="w-full lg:max-w-sm">
+
               <TableSearchBar
                 value={value}
                 onChange={setValue}
                 placeholder="Search holidays..."
               />
+
             </div>
+
 
             <div className="flex flex-wrap items-center gap-2">
-              <div className="flex w-fit items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setTypeFilter("all")}
-                  className={`rounded-md px-3 py-1.5 text-xs font-medium transition ${
-                    typeFilter === "all"
-                      ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
-                      : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
-                  }`}
-                >
-                  All Types
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setTypeFilter("Government")}
-                  className={`rounded-md px-3 py-1.5 text-xs font-medium transition ${
-                    typeFilter === "Government"
-                      ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
-                      : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
-                  }`}
-                >
-                  Government
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setTypeFilter("Office")}
-                  className={`rounded-md px-3 py-1.5 text-xs font-medium transition ${
-                    typeFilter === "Office"
-                      ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
-                      : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
-                  }`}
-                >
-                  Office
-                </button>
+
+              <div className="flex items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
+
+                {[
+                  {
+                    value:
+                      "all",
+                    label:
+                      "All Types",
+                  },
+                  {
+                    value:
+                      "Government",
+                    label:
+                      "Government",
+                  },
+                  {
+                    value:
+                      "Office",
+                    label:
+                      "Office",
+                  },
+                ].map(
+                  (
+                    filter
+                  ) => (
+
+                    <button
+                      key={
+                        filter.value
+                      }
+                      type="button"
+                      onClick={() =>
+                        setTypeFilter(
+                          filter.value
+                        )
+                      }
+                      className={`rounded-md px-3 py-1.5 text-xs font-medium ${
+                        typeFilter ===
+                        filter.value
+                          ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
+                          : "text-slate-500 dark:text-slate-400"
+                      }`}
+                    >
+                      {
+                        filter.label
+                      }
+                    </button>
+
+                  )
+                )}
+
               </div>
 
-              <div className="flex w-fit items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setStatusFilter("active")}
-                  className={`rounded-md px-3 py-1.5 text-xs font-medium transition ${
-                    statusFilter === "active"
-                      ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
-                      : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
-                  }`}
-                >
-                  Active
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setStatusFilter("inactive")}
-                  className={`rounded-md px-3 py-1.5 text-xs font-medium transition ${
-                    statusFilter === "inactive"
-                      ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
-                      : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
-                  }`}
-                >
-                  Inactive
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setStatusFilter("all")}
-                  className={`rounded-md px-3 py-1.5 text-xs font-medium transition ${
-                    statusFilter === "all"
-                      ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
-                      : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
-                  }`}
-                >
-                  All
-                </button>
+
+              <div className="flex items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
+
+                {[
+                  {
+                    value:
+                      "active",
+                    label:
+                      "Active",
+                  },
+                  {
+                    value:
+                      "inactive",
+                    label:
+                      "Inactive",
+                  },
+                  {
+                    value:
+                      "all",
+                    label:
+                      "All",
+                  },
+                ].map(
+                  (
+                    filter
+                  ) => (
+
+                    <button
+                      key={
+                        filter.value
+                      }
+                      type="button"
+                      onClick={() =>
+                        setStatusFilter(
+                          filter.value
+                        )
+                      }
+                      className={`rounded-md px-3 py-1.5 text-xs font-medium ${
+                        statusFilter ===
+                        filter.value
+                          ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
+                          : "text-slate-500 dark:text-slate-400"
+                      }`}
+                    >
+                      {
+                        filter.label
+                      }
+                    </button>
+
+                  )
+                )}
+
               </div>
+
             </div>
+
           </div>
+
         </div>
+
 
         {isError && (
+
           <div className="m-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-600 dark:border-red-900/40 dark:bg-red-500/10 dark:text-red-400">
-            <p className="font-medium">Failed to load holidays.</p>
-            <p className="mt-1 text-xs opacity-80">Please refresh the page and try again.</p>
+
+            <p className="font-medium">
+              Failed to load holidays.
+            </p>
+
+            <p className="mt-1 text-xs opacity-80">
+              Please refresh the page and try again.
+            </p>
+
           </div>
+
         )}
+
 
         {!isError && (
-          <div className="w-full">
-            <DataTable columns={columns} data={filteredHolidays} loading={isLoading} />
-          </div>
+
+          <DataTable
+            columns={
+              columns
+            }
+            data={
+              filteredHolidays
+            }
+            loading={
+              isLoading
+            }
+          />
+
         )}
 
-        {!isLoading && !isError && filteredHolidays.length === 0 && (
-          <div className="flex min-h-[260px] flex-col items-center justify-center px-6 py-10 text-center">
-            <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800">
-              <span className="text-xl font-bold text-slate-400">H</span>
+
+        {!isLoading &&
+          !isError &&
+          filteredHolidays.length ===
+            0 && (
+
+            <div className="flex min-h-[260px] flex-col items-center justify-center px-6 py-10 text-center">
+
+              <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800">
+                <span className="text-xl font-bold text-slate-400">
+                  H
+                </span>
+              </div>
+
+
+              <h3 className="mt-4 text-sm font-semibold text-slate-800 dark:text-white">
+                No holidays found
+              </h3>
+
+
+              <p className="mt-1 max-w-sm text-xs text-slate-500 dark:text-slate-400">
+                No holidays match your current filters.
+              </p>
+
+
+              {canAdd && (
+
+                <Button
+                  onClick={
+                    openAdd
+                  }
+                  className="mt-4 h-9 px-4 text-sm"
+                >
+                  + Add Holiday
+                </Button>
+
+              )}
+
             </div>
-            <h3 className="mt-4 text-sm font-semibold text-slate-800 dark:text-white">
-              No holidays found
-            </h3>
-            <p className="mt-1 max-w-sm text-xs text-slate-500 dark:text-slate-400">
-              No holidays match your current search, type, or status filter.
-            </p>
-            {canAdd && (
-              <Button onClick={openAdd} className="mt-4 h-9 px-4 text-sm">
-                + Add Holiday
-              </Button>
-            )}
-          </div>
-        )}
+
+          )}
+
 
         <div className="border-t border-slate-200 px-2 dark:border-slate-700">
+
           <TablePagination
-            page={page}
-            pages={data?.pages || 1}
-            total={data?.total || 0}
-            perPage={perPage}
-            onPageChange={setPage}
-            onPerPageChange={setPerPage}
+            page={
+              page
+            }
+            pages={
+              data?.pages ||
+              1
+            }
+            total={
+              data?.total ||
+              0
+            }
+            perPage={
+              perPage
+            }
+            onPageChange={
+              setPage
+            }
+            onPerPageChange={
+              setPerPage
+            }
           />
+
         </div>
+
       </div>
 
+
+      {/* ======================================================
+          MODAL
+      ====================================================== */}
+
       <Modal
-        open={modalOpen}
+        open={
+          modalOpen
+        }
         onClose={() => {
-          setModalOpen(false);
-          setEditing(null);
-          setPrefillDate(null);
+          setModalOpen(
+            false
+          );
+
+          setEditing(
+            null
+          );
+
+          setPrefillDate(
+            null
+          );
         }}
-        title={editing ? "Edit Holiday" : "Add Holiday"}
+        title={
+          editing
+            ? "Edit Holiday"
+            : "Add Holiday"
+        }
       >
+
         <HolidayForm
-          initialData={editing || (prefillDate ? { holiday_date: prefillDate } : {})}
-          onSubmit={handleSubmit}
-          loading={createHoliday.isPending || updateHoliday.isPending}
+          initialData={
+            editing ||
+            (
+              prefillDate
+                ? {
+                    holiday_date:
+                      prefillDate,
+                  }
+                : {}
+            )
+          }
+          onSubmit={
+            handleSubmit
+          }
+          loading={
+            createHoliday.isPending ||
+            updateHoliday.isPending
+          }
           onCancel={() => {
-            setModalOpen(false);
-            setEditing(null);
-            setPrefillDate(null);
+            setModalOpen(
+              false
+            );
+
+            setEditing(
+              null
+            );
+
+            setPrefillDate(
+              null
+            );
           }}
-          isEdit={!!editing}
+          isEdit={
+            !!editing
+          }
         />
+
       </Modal>
 
+
+      {/* ======================================================
+          DEACTIVATE
+      ====================================================== */}
+
       <ConfirmDialog
-        open={!!confirmRow}
-        onClose={() => setConfirmRow(null)}
-        onConfirm={handleDeactivate}
+        open={
+          !!confirmRow
+        }
+        onClose={() =>
+          setConfirmRow(
+            null
+          )
+        }
+        onConfirm={
+          handleDeactivate
+        }
         title="Deactivate Holiday"
         message="Are you sure you want to deactivate this holiday?"
         confirmText="Deactivate"
-        loading={deactivateHoliday.isPending}
+        loading={
+          deactivateHoliday.isPending
+        }
       />
+
     </div>
   );
 }
