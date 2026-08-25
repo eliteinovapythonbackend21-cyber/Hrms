@@ -53,6 +53,7 @@ export const API = {
     HOLIDAY_GET: (id) => `/organization/holiday/${id}`,
     HOLIDAY_UPDATE: (id) => `/organization/holiday/${id}`,
     HOLIDAY_DELETE: (id) => `/organization/holiday/${id}`,
+    HOLIDAY_REPORT: "/organization/holiday/report", 
     COMPANIES: "/companies",
     COMPANY_GET: (id) => `/companies/${id}`,
     COMPANY_UPDATE: (id) => `/companies/${id}`,

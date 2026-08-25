@@ -17,8 +17,12 @@ import {
 import { useCRMEmployeeOptions } from "@/hooks/useLookupOptions";
 
 /* =========================================================
-   HELPERS
+   CONSTANTS
 ========================================================= */
+
+const CARD_PAGE_SIZE = 6;
+const TABLE_PAGE_SIZE = 10;
+const CARD_HEIGHT = "h-[220px]";
 
 const MONTH_OPTIONS = [
   { value: 1, label: "January" },
@@ -35,8 +39,18 @@ const MONTH_OPTIONS = [
   { value: 12, label: "December" },
 ];
 
+const now = new Date();
+
+/* =========================================================
+   HELPERS
+========================================================= */
+
 function getMonthLabel(month) {
   return MONTH_OPTIONS.find((m) => m.value === Number(month))?.label || month;
+}
+
+function getMonthShort(month) {
+  return (getMonthLabel(month) || "").slice(0, 3);
 }
 
 function formatDateTime(value) {
@@ -45,7 +59,181 @@ function formatDateTime(value) {
   return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString();
 }
 
-const now = new Date();
+function getEmployeeName(record) {
+  if (record?.employee) {
+    return `${record.employee.first_name || ""} ${record.employee.last_name || ""}`.trim();
+  }
+  return `Employee #${record?.employee_id ?? "-"}`;
+}
+
+function getInitials(name) {
+  if (!name) return "?";
+  const parts = name.trim().split(/\s+/);
+  return ((parts[0]?.[0] || "") + (parts[1]?.[0] || "")).toUpperCase() || name[0]?.toUpperCase();
+}
+
+/* =========================================================
+   ICONS
+========================================================= */
+
+const TargetIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <circle cx="12" cy="12" r="9" />
+    <circle cx="12" cy="12" r="5" />
+    <circle cx="12" cy="12" r="1" />
+  </svg>
+);
+
+const ActiveStatIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4" />
+    <circle cx="12" cy="12" r="9" />
+  </svg>
+);
+
+const CalendarIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 shrink-0 text-slate-400" fill="none" viewBox="0 0 20 20" stroke="currentColor" strokeWidth="1.4">
+    <rect x="3" y="4" width="14" height="13" rx="1.5" />
+    <path strokeLinecap="round" strokeLinejoin="round" d="M6.5 2.5v3M13.5 2.5v3M3 8h14" />
+  </svg>
+);
+
+const SumStatIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h10M4 18h6" />
+  </svg>
+);
+
+const InactiveStatIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636" />
+    <path strokeLinecap="round" strokeLinejoin="round" d="M5.636 18.364L18.364 5.636" />
+  </svg>
+);
+
+/* =========================================================
+   STAT CARD
+========================================================= */
+
+function StatCard({ icon, value, label, tone = "sky" }) {
+  const tones = {
+    sky: "bg-sky-50 text-sky-600 dark:bg-sky-500/10 dark:text-sky-400",
+    emerald: "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400",
+    red: "bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400",
+    amber: "bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400",
+  };
+
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+      <div className="flex items-center gap-3">
+        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${tones[tone]}`}>
+          {icon}
+        </div>
+        <div>
+          <p className="text-2xl font-bold text-slate-900 dark:text-white">{value}</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">{label}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* =========================================================
+   HOVER TRIGGER + DETAILS CARD
+========================================================= */
+
+function HoverDetailsTrigger({ children, panel, align = "left" }) {
+  const alignClasses = {
+    left: "left-0",
+    center: "left-1/2 -translate-x-1/2",
+    right: "right-0",
+  };
+
+  return (
+    <div tabIndex={0} className="group/target-details relative inline-flex max-w-full outline-none">
+      <div className="max-w-full">{children}</div>
+      <div
+        className={`
+          pointer-events-none invisible absolute top-full z-[100] mt-2 opacity-0 transition-all duration-150
+          group-hover/target-details:pointer-events-auto group-hover/target-details:visible group-hover/target-details:opacity-100
+          group-focus/target-details:pointer-events-auto group-focus/target-details:visible group-focus/target-details:opacity-100
+          ${alignClasses[align]}
+        `}
+      >
+        {panel}
+      </div>
+    </div>
+  );
+}
+
+function TargetDetailsCard({ record }) {
+  const isActive = record?.is_active !== false;
+  const employeeName = getEmployeeName(record);
+
+  return (
+    <div className="w-[320px] max-w-[calc(100vw-32px)] rounded-xl border border-slate-200 border-t-2 border-t-primary-500 bg-white p-4 text-left shadow-xl dark:border-slate-700 dark:bg-slate-800">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+            Target Details
+          </p>
+          <p className="mt-1 break-words text-sm font-semibold text-slate-800 dark:text-white">
+            {employeeName}
+          </p>
+        </div>
+        <span
+          className={`shrink-0 rounded-full px-2 py-1 text-[9px] font-semibold ${
+            isActive
+              ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300"
+              : "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300"
+          }`}
+        >
+          {isActive ? "Active" : "Inactive"}
+        </span>
+      </div>
+
+      <div className="my-3 border-t border-slate-100 dark:border-slate-700" />
+
+      <div className="space-y-2.5">
+        <div className="grid grid-cols-[100px_minmax(0,1fr)] gap-3">
+          <span className="text-xs text-slate-400">Employee Code</span>
+          <span className="text-right text-xs font-medium text-slate-700 dark:text-slate-200">
+            {record?.employee?.employee_code || "—"}
+          </span>
+        </div>
+        <div className="grid grid-cols-[100px_minmax(0,1fr)] gap-3">
+          <span className="text-xs text-slate-400">Period</span>
+          <span className="text-right text-xs font-medium text-slate-700 dark:text-slate-200">
+            {getMonthLabel(record?.month)} {record?.year}
+          </span>
+        </div>
+        <div className="grid grid-cols-[100px_minmax(0,1fr)] gap-3">
+          <span className="text-xs text-slate-400">Target</span>
+          <span className="text-right text-xs font-semibold text-slate-700 dark:text-slate-200">
+            {record?.target_customer_count} customers
+          </span>
+        </div>
+      </div>
+
+      <div className="my-3 border-t border-slate-100 dark:border-slate-700" />
+
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <p className="text-[10px] text-slate-400">Created</p>
+          <p className="mt-0.5 text-[10px] font-medium text-slate-700 dark:text-slate-200">
+            {formatDateTime(record?.created_at)}
+          </p>
+        </div>
+        <div>
+          <p className="text-[10px] text-slate-400">Updated</p>
+          <p className="mt-0.5 text-[10px] font-medium text-slate-700 dark:text-slate-200">
+            {formatDateTime(record?.updated_at)}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 /* =========================================================
    PAGE
@@ -72,12 +260,15 @@ export default function EmployeeTargetPage() {
   const employeeOptions = useCRMEmployeeOptions();
 
   /* -------------------------------------------------------
-     FILTERS / STATE
+     STATE
   ------------------------------------------------------- */
 
+  const [search, setSearch] = useState("");
   const [monthFilter, setMonthFilter] = useState("");
   const [yearFilter, setYearFilter] = useState("");
   const [activeFilter, setActiveFilter] = useState("active");
+  const [viewMode, setViewMode] = useState("card");
+  const [page, setPage] = useState(1);
 
   const [formOpen, setFormOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState(null);
@@ -91,7 +282,32 @@ export default function EmployeeTargetPage() {
     target_customer_count: "",
   });
 
+  /* -------------------------------------------------------
+     DERIVED
+  ------------------------------------------------------- */
+
+  const activeRecords = useMemo(
+    () => allRecords.filter((r) => r.is_active !== false),
+    [allRecords]
+  );
+  const inactiveRecords = useMemo(
+    () => allRecords.filter((r) => r.is_active === false),
+    [allRecords]
+  );
+  const totalTargetSum = useMemo(
+    () => activeRecords.reduce((sum, r) => sum + (Number(r.target_customer_count) || 0), 0),
+    [activeRecords]
+  );
+
+  const yearOptions = useMemo(() => {
+    const years = new Set(allRecords.map((r) => r.year));
+    years.add(now.getFullYear());
+    return Array.from(years).sort((a, b) => b - a);
+  }, [allRecords]);
+
   const filtered = useMemo(() => {
+    const normalizedSearch = search.trim().toLowerCase();
+
     return allRecords.filter((record) => {
       const isActive = record.is_active !== false;
 
@@ -100,15 +316,25 @@ export default function EmployeeTargetPage() {
       if (monthFilter && String(record.month) !== String(monthFilter)) return false;
       if (yearFilter && String(record.year) !== String(yearFilter)) return false;
 
+      if (normalizedSearch) {
+        const haystack = [
+          getEmployeeName(record),
+          record.employee?.employee_code,
+          getMonthLabel(record.month),
+          record.year,
+        ]
+          .join(" ")
+          .toLowerCase();
+        if (!haystack.includes(normalizedSearch)) return false;
+      }
+
       return true;
     });
-  }, [allRecords, activeFilter, monthFilter, yearFilter]);
+  }, [allRecords, search, activeFilter, monthFilter, yearFilter]);
 
-  const yearOptions = useMemo(() => {
-    const years = new Set(allRecords.map((r) => r.year));
-    years.add(now.getFullYear());
-    return Array.from(years).sort((a, b) => b - a);
-  }, [allRecords]);
+  const pageSize = viewMode === "card" ? CARD_PAGE_SIZE : TABLE_PAGE_SIZE;
+  const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const paged = filtered.slice((page - 1) * pageSize, page * pageSize);
 
   /* -------------------------------------------------------
      HANDLERS
@@ -195,6 +421,14 @@ export default function EmployeeTargetPage() {
     }
   };
 
+  const clearFilters = () => {
+    setSearch("");
+    setMonthFilter("");
+    setYearFilter("");
+    setActiveFilter("active");
+    setPage(1);
+  };
+
   const isSaving = createTarget.isPending || updateTarget.isPending;
 
   if (isError) {
@@ -209,175 +443,399 @@ export default function EmployeeTargetPage() {
     <div className="min-w-0 space-y-5">
       {/* HEADER */}
       <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-            Employee Targets
-          </h1>
-          <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
-            Monthly registered-customer quota per CRM employee — registrations above this limit count toward incentives
-          </p>
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary-600 text-white shadow-sm">
+            <TargetIcon />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+              Employee Targets
+            </h1>
+            <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
+              Monthly registered-customer quota per CRM employee
+            </p>
+          </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
           <TableToolbar onRefresh={refetch} refreshing={isFetching} />
-          <Button type="button" onClick={openAddForm} className="h-10 px-4">
+          <Button type="button" onClick={openAddForm} className="h-10 w-full px-4 sm:w-auto">
             <span className="mr-1.5 text-lg">+</span>
             Set Target
           </Button>
         </div>
       </div>
 
+      {/* STATS */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard icon={<TargetIcon />} value={allRecords.length} label="Total Targets" tone="sky" />
+        <StatCard icon={<ActiveStatIcon />} value={activeRecords.length} label="Active Targets" tone="emerald" />
+        <StatCard icon={<InactiveStatIcon />} value={inactiveRecords.length} label="Inactive Targets" tone="red" />
+        <StatCard icon={<SumStatIcon />} value={totalTargetSum} label="Total Active Quota" tone="amber" />
+      </div>
+
       {/* FILTERS */}
       <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-        <div className="flex flex-wrap items-center gap-2.5">
-          <select
-            value={monthFilter}
-            onChange={(e) => setMonthFilter(e.target.value)}
-            className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-white"
-          >
-            <option value="">All Months</option>
-            {MONTH_OPTIONS.map((m) => (
-              <option key={m.value} value={m.value}>
-                {m.label}
-              </option>
-            ))}
-          </select>
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-2.5 lg:flex-row lg:flex-wrap">
+            <div className="relative w-full sm:max-w-xs">
+              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35m2.35-5.65a8 8 0 11-16 0 8 8 0 0116 0z" />
+                </svg>
+              </span>
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setPage(1);
+                }}
+                placeholder="Search by employee name or code..."
+                className="h-10 w-full rounded-lg border border-slate-300 bg-white pl-9 pr-3 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+              />
+            </div>
 
-          <select
-            value={yearFilter}
-            onChange={(e) => setYearFilter(e.target.value)}
-            className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-white"
-          >
-            <option value="">All Years</option>
-            {yearOptions.map((y) => (
-              <option key={y} value={y}>
-                {y}
-              </option>
-            ))}
-          </select>
+            <select
+              value={monthFilter}
+              onChange={(e) => {
+                setMonthFilter(e.target.value);
+                setPage(1);
+              }}
+              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm sm:max-w-[160px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+            >
+              <option value="">All Months</option>
+              {MONTH_OPTIONS.map((m) => (
+                <option key={m.value} value={m.value}>
+                  {m.label}
+                </option>
+              ))}
+            </select>
 
-          <div className="ml-auto flex items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
-            {["active", "inactive", "all"].map((status) => (
+            <select
+              value={yearFilter}
+              onChange={(e) => {
+                setYearFilter(e.target.value);
+                setPage(1);
+              }}
+              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm sm:max-w-[120px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+            >
+              <option value="">All Years</option>
+              {yearOptions.map((y) => (
+                <option key={y} value={y}>
+                  {y}
+                </option>
+              ))}
+            </select>
+
+            {(search || monthFilter || yearFilter || activeFilter !== "active") && (
               <button
-                key={status}
                 type="button"
-                onClick={() => setActiveFilter(status)}
-                className={`rounded-md px-3 py-1.5 text-xs font-medium capitalize ${
-                  activeFilter === status
+                onClick={clearFilters}
+                className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-xs font-medium text-slate-600 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300"
+              >
+                Clear Filters
+              </button>
+            )}
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
+              {["active", "inactive", "all"].map((status) => (
+                <button
+                  key={status}
+                  type="button"
+                  onClick={() => {
+                    setActiveFilter(status);
+                    setPage(1);
+                  }}
+                  className={`rounded-md px-3 py-1.5 text-xs font-medium capitalize ${
+                    activeFilter === status
+                      ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
+                      : "text-slate-500 dark:text-slate-400"
+                  }`}
+                >
+                  {status}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
+              <button
+                type="button"
+                onClick={() => {
+                  setViewMode("card");
+                  setPage(1);
+                }}
+                className={`rounded-md px-3 py-1.5 text-xs font-medium ${
+                  viewMode === "card"
                     ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
                     : "text-slate-500 dark:text-slate-400"
                 }`}
               >
-                {status}
+                Card
               </button>
-            ))}
+              <button
+                type="button"
+                onClick={() => {
+                  setViewMode("table");
+                  setPage(1);
+                }}
+                className={`rounded-md px-3 py-1.5 text-xs font-medium ${
+                  viewMode === "table"
+                    ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
+                    : "text-slate-500 dark:text-slate-400"
+                }`}
+              >
+                Table
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* TABLE */}
-      <div className="w-full min-w-0 overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
-        <table className="w-full text-left text-sm">
-          <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-400">
-            <tr>
-              <th className="px-4 py-3 font-medium">Employee</th>
-              <th className="px-4 py-3 font-medium">Period</th>
-              <th className="px-4 py-3 font-medium">Target</th>
-              <th className="px-4 py-3 font-medium">Active</th>
-              <th className="px-4 py-3 text-right font-medium">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-            {isLoading ? (
-              <tr>
-                <td colSpan={5} className="px-4 py-10 text-center text-sm text-slate-400">
-                  Loading...
-                </td>
-              </tr>
-            ) : filtered.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="px-4 py-10 text-center text-sm text-slate-400">
-                  No targets found.
-                </td>
-              </tr>
-            ) : (
-              filtered
-                .slice()
-                .sort((a, b) => b.year - a.year || b.month - a.month)
-                .map((record) => {
-                  const isActive = record.is_active !== false;
-                  const employeeName = record.employee
-                    ? `${record.employee.first_name || ""} ${record.employee.last_name || ""}`.trim()
-                    : `Employee #${record.employee_id}`;
+      {/* DATA */}
+      {isLoading ? (
+        <div className="py-10 text-center text-sm text-slate-400">Loading...</div>
+      ) : paged.length === 0 ? (
+        <div className="flex min-h-[200px] flex-col items-center justify-center rounded-xl border border-slate-200 bg-white px-6 py-10 text-center shadow-sm dark:border-slate-700 dark:bg-slate-900">
+          <h3 className="text-sm font-semibold text-slate-800 dark:text-white">No targets found</h3>
+          <p className="mt-1 max-w-sm text-xs text-slate-500 dark:text-slate-400">
+            No records match your current search or filters.
+          </p>
+        </div>
+      ) : viewMode === "card" ? (
+        <div className="grid grid-cols-1 items-start gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {paged.map((record) => {
+            const isActive = record.is_active !== false;
+            const employeeName = getEmployeeName(record);
 
-                  return (
-                    <tr key={record.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
-                      <td className="px-4 py-3">
-                        <p className="font-medium text-slate-800 dark:text-slate-100">{employeeName}</p>
-                        <p className="text-[10px] text-slate-400">{record.employee?.employee_code}</p>
-                      </td>
-                      <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
-                        {getMonthLabel(record.month)} {record.year}
-                      </td>
-                      <td className="px-4 py-3 font-semibold text-slate-700 dark:text-slate-200">
+            return (
+              <div
+                key={record.id}
+                className={`relative ${CARD_HEIGHT} min-w-0 overflow-visible rounded-2xl border bg-white shadow-sm transition-shadow hover:shadow-lg dark:bg-slate-900 ${
+                  isActive ? "border-slate-200 dark:border-slate-700" : "border-red-100 dark:border-red-900/30"
+                }`}
+              >
+                <div className={`h-full p-4 pb-12 ${!isActive ? "opacity-75" : ""}`}>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex min-w-0 items-center gap-2.5">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary-50 text-xs font-bold text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
+                        {getInitials(employeeName)}
+                      </div>
+                      <div className="min-w-0">
+                        <HoverDetailsTrigger align="left" panel={<TargetDetailsCard record={record} />}>
+                          <p className="max-w-[180px] cursor-pointer truncate text-sm font-semibold text-slate-900 dark:text-white">
+                            {employeeName}
+                          </p>
+                        </HoverDetailsTrigger>
+                        <p className="mt-0.5 text-[10px] text-slate-400">
+                          {record.employee?.employee_code || `ID #${record.employee_id}`}
+                        </p>
+                      </div>
+                    </div>
+
+                    {!isActive && (
+                      <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-[9px] font-medium text-red-700 dark:bg-red-500/10 dark:text-red-300">
+                        <span className="h-1 w-1 rounded-full bg-red-500" />
+                        Inactive
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="my-3 border-t border-slate-100 dark:border-slate-800" />
+
+                  <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-300">
+                    <CalendarIcon />
+                    <span>{getMonthLabel(record.month)} {record.year}</span>
+                  </div>
+
+                  <div className="mt-3 rounded-lg bg-slate-50 p-3 text-center dark:bg-slate-800/60">
+                    <p className="text-[9px] font-semibold uppercase tracking-wide text-slate-400">
+                      Monthly Target
+                    </p>
+                    <p className="mt-1 text-2xl font-bold text-primary-600 dark:text-primary-400">
+                      {record.target_customer_count}
+                    </p>
+                    <p className="text-[10px] text-slate-400">registered customers</p>
+                  </div>
+                </div>
+
+                <div className="absolute inset-x-0 bottom-0 z-30 grid h-11 grid-cols-2 gap-px border-t border-slate-100 bg-slate-100 dark:border-slate-700 dark:bg-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => openEditForm(record)}
+                    className="bg-white text-xs font-semibold text-slate-600 hover:bg-slate-50 dark:bg-slate-900 dark:text-slate-300"
+                  >
+                    Edit
+                  </button>
+
+                  {isActive ? (
+                    <button
+                      type="button"
+                      disabled={mutatingId === record.id}
+                      onClick={() => setDeleteTarget(record)}
+                      className="bg-white text-xs font-semibold text-red-500 hover:bg-red-50 disabled:opacity-40 dark:bg-slate-900 dark:text-red-400"
+                    >
+                      Deactivate
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled={mutatingId === record.id}
+                      onClick={() => handleReactivate(record)}
+                      className="bg-white text-xs font-semibold text-emerald-600 hover:bg-emerald-50 disabled:opacity-40 dark:bg-slate-900 dark:text-emerald-400"
+                    >
+                      Reactivate
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="w-full min-w-0 overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+          <table className="w-full text-left text-sm">
+            <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-400">
+              <tr>
+                <th className="px-4 py-3 font-medium">Employee</th>
+                <th className="px-4 py-3 font-medium">Period</th>
+                <th className="px-4 py-3 font-medium">Target</th>
+                <th className="px-4 py-3 font-medium">Active</th>
+                <th className="px-4 py-3 text-right font-medium">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              {paged.map((record) => {
+                const isActive = record.is_active !== false;
+                const employeeName = getEmployeeName(record);
+
+                return (
+                  <tr key={record.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                    <td className="px-4 py-3">
+                      <HoverDetailsTrigger align="left" panel={<TargetDetailsCard record={record} />}>
+                        <div className="flex cursor-pointer items-center gap-2.5">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-[10px] font-bold text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
+                            {getInitials(employeeName)}
+                          </div>
+                          <div>
+                            <p className="font-medium text-slate-800 dark:text-slate-100">{employeeName}</p>
+                            <p className="text-[10px] text-slate-400">
+                              {record.employee?.employee_code || `ID #${record.employee_id}`}
+                            </p>
+                          </div>
+                        </div>
+                      </HoverDetailsTrigger>
+                    </td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
+                      <div className="flex items-center gap-1.5">
+                        <CalendarIcon />
+                        {getMonthShort(record.month)} {record.year}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="inline-flex items-center rounded-md bg-primary-50 px-2.5 py-1 text-sm font-semibold text-primary-700 dark:bg-primary-500/10 dark:text-primary-400">
                         {record.target_customer_count}
-                      </td>
-                      <td className="px-4 py-3">
-                        <Badge
-                          className={
-                            isActive
-                              ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300"
-                              : "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300"
-                          }
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-[10px] font-medium ${
+                          isActive
+                            ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300"
+                            : "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300"
+                        }`}
+                      >
+                        <span className={`h-1.5 w-1.5 rounded-full ${isActive ? "bg-emerald-500" : "bg-red-500"}`} />
+                        {isActive ? "Active" : "Inactive"}
+                      </span>
+                    </td>
+                    <td className="px-2 py-3">
+                      <div className="flex items-center justify-end gap-0.5">
+                        <button
+                          type="button"
+                          title="Edit"
+                          onClick={() => openEditForm(record)}
+                          className="flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-700"
                         >
-                          {isActive ? "Active" : "Inactive"}
-                        </Badge>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center justify-end gap-2">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a2.121 2.121 0 013 3l-9.9 9.9-4.137 1.034 1.034-4.137 9.9-9.9z" />
+                          </svg>
+                        </button>
+
+                        {isActive ? (
                           <button
                             type="button"
-                            onClick={() => openEditForm(record)}
-                            className="text-xs font-semibold text-slate-600 hover:underline dark:text-slate-300"
+                            title="Deactivate"
+                            disabled={mutatingId === record.id}
+                            onClick={() => setDeleteTarget(record)}
+                            className="flex h-8 w-8 items-center justify-center rounded-full text-red-500 transition-colors hover:bg-red-50 disabled:opacity-40 dark:text-red-400 dark:hover:bg-red-500/10"
                           >
-                            Edit
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M6 7h12M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m2 0v12a2 2 0 01-2 2H8a2 2 0 01-2-2V7h12z" />
+                            </svg>
                           </button>
-                          {isActive ? (
-                            <button
-                              type="button"
-                              disabled={mutatingId === record.id}
-                              onClick={() => setDeleteTarget(record)}
-                              className="text-xs font-semibold text-red-500 hover:underline disabled:opacity-40 dark:text-red-400"
-                            >
-                              Deactivate
-                            </button>
-                          ) : (
-                            <button
-                              type="button"
-                              disabled={mutatingId === record.id}
-                              onClick={() => handleReactivate(record)}
-                              className="text-xs font-semibold text-emerald-600 hover:underline disabled:opacity-40 dark:text-emerald-400"
-                            >
-                              Reactivate
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
-            )}
-          </tbody>
-        </table>
+                        ) : (
+                          <button
+                            type="button"
+                            title="Reactivate"
+                            disabled={mutatingId === record.id}
+                            onClick={() => handleReactivate(record)}
+                            className="flex h-8 w-8 items-center justify-center rounded-full text-emerald-600 transition-colors hover:bg-emerald-50 disabled:opacity-40 dark:text-emerald-400 dark:hover:bg-emerald-500/10"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M4 12a8 8 0 018-8 8.5 8.5 0 017 4M20 4v5h-5M20 12a8 8 0 01-8 8 8.5 8.5 0 01-7-4M4 20v-5h5" />
+                            </svg>
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* PAGINATION */}
+      <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
+        <span>
+          Page {page} of {pageCount}
+        </span>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            disabled={page <= 1}
+            onClick={() => setPage((current) => Math.max(1, current - 1))}
+            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800"
+          >
+            Previous
+          </button>
+          <button
+            type="button"
+            disabled={page >= pageCount}
+            onClick={() => setPage((current) => Math.min(pageCount, current + 1))}
+            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800"
+          >
+            Next
+          </button>
+        </div>
       </div>
 
       {/* ADD / EDIT FORM */}
       {formOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="w-full max-w-md rounded-xl bg-white p-5 shadow-xl dark:bg-slate-900">
-            <h2 className="mb-4 text-lg font-semibold text-slate-900 dark:text-white">
-              {editingRecord ? "Edit Target" : "Set Employee Target"}
-            </h2>
+            <div className="mb-4 flex items-center gap-2.5">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
+                <TargetIcon />
+              </div>
+              <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
+                {editingRecord ? "Edit Target" : "Set Employee Target"}
+              </h2>
+            </div>
 
             <form onSubmit={handleFormSubmit} className="space-y-3">
               <div>
@@ -388,7 +846,7 @@ export default function EmployeeTargetPage() {
                   required
                   value={formState.employee_id}
                   onChange={(e) => setFormState((s) => ({ ...s, employee_id: e.target.value }))}
-                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
                 >
                   <option value="">Select employee</option>
                   {employeeOptions.map((employee) => (
@@ -408,7 +866,7 @@ export default function EmployeeTargetPage() {
                     required
                     value={formState.month}
                     onChange={(e) => setFormState((s) => ({ ...s, month: e.target.value }))}
-                    className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                    className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
                   >
                     {MONTH_OPTIONS.map((m) => (
                       <option key={m.value} value={m.value}>
@@ -427,7 +885,7 @@ export default function EmployeeTargetPage() {
                     required
                     value={formState.year}
                     onChange={(e) => setFormState((s) => ({ ...s, year: e.target.value }))}
-                    className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                    className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
                   />
                 </div>
               </div>
@@ -441,10 +899,8 @@ export default function EmployeeTargetPage() {
                   min="0"
                   required
                   value={formState.target_customer_count}
-                  onChange={(e) =>
-                    setFormState((s) => ({ ...s, target_customer_count: e.target.value }))
-                  }
-                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                  onChange={(e) => setFormState((s) => ({ ...s, target_customer_count: e.target.value }))}
+                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
                 />
                 <p className="mt-1 text-[11px] text-slate-400">
                   Registrations above this number for the period are eligible for incentive calculation.
@@ -452,17 +908,17 @@ export default function EmployeeTargetPage() {
               </div>
 
               <div className="flex justify-end gap-2 pt-2">
-                <Button
+                <button
                   type="button"
-                  variant="secondary"
                   onClick={() => {
                     setFormOpen(false);
                     setEditingRecord(null);
                   }}
+                  className="h-10 rounded-lg border border-slate-300 bg-white px-4 text-sm font-medium text-slate-600 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300"
                 >
                   Cancel
-                </Button>
-                <Button type="submit" disabled={isSaving}>
+                </button>
+                <Button type="submit" disabled={isSaving} className="h-10 px-4">
                   {isSaving ? "Saving..." : editingRecord ? "Save Changes" : "Set Target"}
                 </Button>
               </div>
@@ -479,7 +935,7 @@ export default function EmployeeTargetPage() {
         title="Deactivate Target"
         message={
           deleteTarget
-            ? `Deactivate the ${getMonthLabel(deleteTarget.month)} ${deleteTarget.year} target for this employee?`
+            ? `Deactivate the ${getMonthLabel(deleteTarget.month)} ${deleteTarget.year} target for ${getEmployeeName(deleteTarget)}?`
             : ""
         }
         confirmText="Deactivate"

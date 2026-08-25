@@ -349,6 +349,97 @@ class Holiday(TimestampMixin, db.Model):
         data["holiday_type"] = self.holiday_type or "Office"
         return data
 
+    @classmethod
+    def generate_holiday_list_pdf(cls, year=None):
+        """Formal holiday-circular PDF, split into two sections:
+        Government Holidays and Office Holidays, sorted by date.
+        Active holidays only. If `year` is given, filters to that
+        calendar year; otherwise includes all active holidays."""
+        from io import BytesIO
+        from reportlab.lib import colors
+        from reportlab.lib.pagesizes import A4
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from reportlab.lib.units import cm
+        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+
+        query = cls.query.filter(cls.is_active == True)
+        if year is not None:
+            query = query.filter(db.extract("year", cls.holiday_date) == year)
+
+        holidays = query.order_by(cls.holiday_date).all()
+        government = [h for h in holidays if (h.holiday_type or "Office") == "Government"]
+        office = [h for h in holidays if (h.holiday_type or "Office") == "Office"]
+
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(
+            buffer,
+            pagesize=A4,
+            topMargin=2 * cm,
+            bottomMargin=2 * cm,
+            leftMargin=2 * cm,
+            rightMargin=2 * cm,
+        )
+
+        styles = getSampleStyleSheet()
+        title_style = ParagraphStyle(
+            "HolidayTitle", parent=styles["Title"], fontSize=18, spaceAfter=4,
+        )
+        subtitle_style = ParagraphStyle(
+            "HolidaySubtitle", parent=styles["Normal"], fontSize=10,
+            textColor=colors.HexColor("#64748b"), spaceAfter=20,
+        )
+        section_style = ParagraphStyle(
+            "SectionHeading", parent=styles["Heading2"], fontSize=13,
+            textColor=colors.HexColor("#1e293b"), spaceBefore=16, spaceAfter=8,
+        )
+        empty_style = ParagraphStyle(
+            "EmptyNote", parent=styles["Normal"], fontSize=9,
+            textColor=colors.HexColor("#94a3b8"), spaceAfter=8,
+        )
+
+        elements = []
+        heading_text = f"Holiday List{' — ' + str(year) if year else ''}"
+        elements.append(Paragraph(heading_text, title_style))
+        elements.append(Paragraph("Official schedule of Government and Office holidays", subtitle_style))
+
+        def _build_section(title, rows):
+            elements.append(Paragraph(title, section_style))
+            if not rows:
+                elements.append(Paragraph("No holidays recorded.", empty_style))
+                return
+
+            table_data = [["#", "Holiday Name", "Date", "Day"]]
+            for index, holiday in enumerate(rows, start=1):
+                table_data.append([
+                    str(index),
+                    holiday.name,
+                    holiday.holiday_date.strftime("%d %b %Y"),
+                    holiday.holiday_date.strftime("%A"),
+                ])
+
+            table = Table(table_data, colWidths=[1.2 * cm, 7 * cm, 3.5 * cm, 3.5 * cm])
+            table.setStyle(TableStyle([
+                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#4F81BD")),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+                ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                ("FONTSIZE", (0, 0), (-1, -1), 9),
+                ("ALIGN", (0, 0), (0, -1), "CENTER"),
+                ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#cbd5e1")),
+                ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f8fafc")]),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("TOPPADDING", (0, 0), (-1, -1), 6),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+            ]))
+            elements.append(table)
+
+        _build_section("Government Holidays", government)
+        elements.append(Spacer(1, 12))
+        _build_section("Office Holidays", office)
+
+        doc.build(elements)
+        buffer.seek(0)
+        return buffer
+
 
 class Company(TimestampMixin, db.Model):
 

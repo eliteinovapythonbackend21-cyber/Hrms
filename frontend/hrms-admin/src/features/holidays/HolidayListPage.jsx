@@ -6,6 +6,7 @@ import {
   useCreateHoliday,
   useUpdateHoliday,
   useDeactivateHoliday,
+  useDownloadHolidayList,
 } from "./useHolidays";
 
 import HolidayForm from "./HolidayForm";
@@ -65,6 +66,7 @@ export default function HolidayListPage() {
   const createHoliday = useCreateHoliday();
   const updateHoliday = useUpdateHoliday();
   const deactivateHoliday = useDeactivateHoliday();
+  const downloadHolidayList = useDownloadHolidayList();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -72,6 +74,8 @@ export default function HolidayListPage() {
 
   const [statusFilter, setStatusFilter] = useState("active");
   const [typeFilter, setTypeFilter] = useState("all");
+
+  const [reportYear, setReportYear] = useState(new Date().getFullYear());
 
   const holidays = data?.items || [];
 
@@ -83,6 +87,13 @@ export default function HolidayListPage() {
   );
   const officeHolidays = activeHolidays.filter(
     (h) => (h.holiday_type || "Office") === "Office"
+  );
+
+  const sortedGovernmentHolidays = [...governmentHolidays].sort(
+    (a, b) => new Date(a.holiday_date) - new Date(b.holiday_date)
+  );
+  const sortedOfficeHolidays = [...officeHolidays].sort(
+    (a, b) => new Date(a.holiday_date) - new Date(b.holiday_date)
   );
 
   const filteredHolidays = holidays.filter((holiday) => {
@@ -132,6 +143,18 @@ export default function HolidayListPage() {
       refetch();
     } catch (err) {
       showToast(err.response?.data?.message || "Operation failed", "error");
+    }
+  };
+
+  const handleDownloadHolidayList = async () => {
+    try {
+      await downloadHolidayList.mutateAsync(reportYear);
+      showToast("Holiday list downloaded", "success");
+    } catch (err) {
+      showToast(
+        err?.response?.data?.message || "Failed to download holiday list",
+        "error"
+      );
     }
   };
 
@@ -260,6 +283,26 @@ export default function HolidayListPage() {
             onExportPDF={exportPDF}
             exporting={exporting}
           />
+
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              value={reportYear}
+              onChange={(e) => setReportYear(Number(e.target.value))}
+              title="Year for holiday list"
+              className="h-10 w-24 rounded-lg border border-slate-300 bg-white px-2 text-sm outline-none dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+            />
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={handleDownloadHolidayList}
+              disabled={downloadHolidayList.isPending}
+              className="h-10 px-4"
+            >
+              {downloadHolidayList.isPending ? "Preparing..." : "Download Holiday List"}
+            </Button>
+          </div>
+
           {canAdd && (
             <Button onClick={openAdd} className="h-10 w-full px-4 sm:w-auto">
               <span className="mr-1.5 text-lg">+</span>
@@ -336,6 +379,75 @@ export default function HolidayListPage() {
               <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* GROUPED HOLIDAY LIST — Government / Office */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div className="rounded-xl border border-violet-100 bg-white p-4 shadow-sm dark:border-violet-900/30 dark:bg-slate-900">
+          <div className="mb-3 flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-violet-700 dark:text-violet-400">
+              Government Holidays
+            </h3>
+            <Badge className="inline-flex items-center gap-1.5 rounded-full bg-violet-50 px-2.5 py-1 text-xs text-violet-700 dark:bg-violet-500/10 dark:text-violet-300">
+              {sortedGovernmentHolidays.length}
+            </Badge>
+          </div>
+
+          {sortedGovernmentHolidays.length === 0 ? (
+            <p className="py-4 text-center text-xs text-slate-400">
+              No active government holidays.
+            </p>
+          ) : (
+            <ul className="max-h-64 space-y-1 overflow-y-auto pr-1">
+              {sortedGovernmentHolidays.map((h) => (
+                <li
+                  key={h.id}
+                  className="flex items-center justify-between rounded-lg px-2 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-800/60"
+                >
+                  <span className="min-w-0 truncate text-slate-700 dark:text-slate-200">
+                    {h.name}
+                  </span>
+                  <span className="ml-3 shrink-0 text-xs text-slate-400">
+                    {formatDate(h.holiday_date)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        <div className="rounded-xl border border-sky-100 bg-white p-4 shadow-sm dark:border-sky-900/30 dark:bg-slate-900">
+          <div className="mb-3 flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-sky-700 dark:text-sky-400">
+              Office Holidays
+            </h3>
+            <Badge className="inline-flex items-center gap-1.5 rounded-full bg-sky-50 px-2.5 py-1 text-xs text-sky-700 dark:bg-sky-500/10 dark:text-sky-300">
+              {sortedOfficeHolidays.length}
+            </Badge>
+          </div>
+
+          {sortedOfficeHolidays.length === 0 ? (
+            <p className="py-4 text-center text-xs text-slate-400">
+              No active office holidays.
+            </p>
+          ) : (
+            <ul className="max-h-64 space-y-1 overflow-y-auto pr-1">
+              {sortedOfficeHolidays.map((h) => (
+                <li
+                  key={h.id}
+                  className="flex items-center justify-between rounded-lg px-2 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-800/60"
+                >
+                  <span className="min-w-0 truncate text-slate-700 dark:text-slate-200">
+                    {h.name}
+                  </span>
+                  <span className="ml-3 shrink-0 text-xs text-slate-400">
+                    {formatDate(h.holiday_date)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
 
