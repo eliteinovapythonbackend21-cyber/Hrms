@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
 import {
@@ -6,7 +6,7 @@ import {
   useCreateHoliday,
   useUpdateHoliday,
   useDeactivateHoliday,
-  useDownloadHolidayList,
+  useSyncGovernmentHolidays,
 } from "./useHolidays";
 
 import HolidayForm from "./HolidayForm";
@@ -38,6 +38,20 @@ const EXPORT_COLUMNS = [
   { header: "Status", accessor: (r) => (r.is_active ? "Active" : "Inactive") },
 ];
 
+const MONTH_NAMES = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
+
+const COUNTRY_OPTIONS = [
+  { code: "IN", label: "India" },
+  { code: "US", label: "United States" },
+  { code: "GB", label: "United Kingdom" },
+  { code: "AE", label: "UAE" },
+  { code: "AU", label: "Australia" },
+  { code: "CA", label: "Canada" },
+];
+
 
 export default function HolidayListPage() {
   const { showToast } = useToast();
@@ -66,7 +80,7 @@ export default function HolidayListPage() {
   const createHoliday = useCreateHoliday();
   const updateHoliday = useUpdateHoliday();
   const deactivateHoliday = useDeactivateHoliday();
-  const downloadHolidayList = useDownloadHolidayList();
+  const syncGovernmentHolidays = useSyncGovernmentHolidays();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -75,7 +89,8 @@ export default function HolidayListPage() {
   const [statusFilter, setStatusFilter] = useState("active");
   const [typeFilter, setTypeFilter] = useState("all");
 
-  const [reportYear, setReportYear] = useState(new Date().getFullYear());
+  const [syncYear, setSyncYear] = useState(new Date().getFullYear());
+  const [syncCountry, setSyncCountry] = useState("IN");
 
   const holidays = data?.items || [];
 
@@ -89,12 +104,56 @@ export default function HolidayListPage() {
     (h) => (h.holiday_type || "Office") === "Office"
   );
 
-  const sortedGovernmentHolidays = [...governmentHolidays].sort(
-    (a, b) => new Date(a.holiday_date) - new Date(b.holiday_date)
-  );
-  const sortedOfficeHolidays = [...officeHolidays].sort(
-    (a, b) => new Date(a.holiday_date) - new Date(b.holiday_date)
-  );
+  /* -------------------------------------------------------
+     YEAR / MONTH GROUPED VIEW
+  ------------------------------------------------------- */
+
+  const availableYears = useMemo(() => {
+    const years = new Set(
+      activeHolidays
+        .map((h) => (h.holiday_date ? new Date(h.holiday_date).getFullYear() : null))
+        .filter(Boolean)
+    );
+    years.add(new Date().getFullYear());
+    return Array.from(years).sort((a, b) => b - a);
+  }, [activeHolidays]);
+
+  const [listYear, setListYear] = useState(new Date().getFullYear());
+
+  const groupedByMonth = useMemo(() => {
+    const buckets = Array.from({ length: 12 }, () => ({ government: [], office: [] }));
+
+    activeHolidays.forEach((holiday) => {
+      if (!holiday.holiday_date) return;
+      const date = new Date(holiday.holiday_date);
+      if (date.getFullYear() !== Number(listYear)) return;
+
+      const monthIndex = date.getMonth();
+      const type = (holiday.holiday_type || "Office") === "Government" ? "government" : "office";
+      buckets[monthIndex][type].push(holiday);
+    });
+
+    buckets.forEach((bucket) => {
+      bucket.government.sort((a, b) => new Date(a.holiday_date) - new Date(b.holiday_date));
+      bucket.office.sort((a, b) => new Date(a.holiday_date) - new Date(b.holiday_date));
+    });
+
+    return buckets;
+  }, [activeHolidays, listYear]);
+
+  const yearTotals = useMemo(() => {
+    return groupedByMonth.reduce(
+      (totals, bucket) => ({
+        government: totals.government + bucket.government.length,
+        office: totals.office + bucket.office.length,
+      }),
+      { government: 0, office: 0 }
+    );
+  }, [groupedByMonth]);
+
+  /* -------------------------------------------------------
+     TABLE FILTERS
+  ------------------------------------------------------- */
 
   const filteredHolidays = holidays.filter((holiday) => {
     if (statusFilter === "active" && !holiday.is_active) return false;
@@ -146,13 +205,18 @@ export default function HolidayListPage() {
     }
   };
 
-  const handleDownloadHolidayList = async () => {
+  const handleSyncGovernmentHolidays = async () => {
     try {
-      await downloadHolidayList.mutateAsync(reportYear);
-      showToast("Holiday list downloaded", "success");
+      const result = await syncGovernmentHolidays.mutateAsync({
+        year: syncYear,
+        countryCode: syncCountry,
+      });
+      showToast(result?.data?.message || "Government holidays synced", "success");
+      setListYear(syncYear);
+      refetch();
     } catch (err) {
       showToast(
-        err?.response?.data?.message || "Failed to download holiday list",
+        err?.response?.data?.message || "Failed to sync government holidays",
         "error"
       );
     }
@@ -283,32 +347,56 @@ export default function HolidayListPage() {
             onExportPDF={exportPDF}
             exporting={exporting}
           />
-
-          <div className="flex items-center gap-2">
-            <input
-              type="number"
-              value={reportYear}
-              onChange={(e) => setReportYear(Number(e.target.value))}
-              title="Year for holiday list"
-              className="h-10 w-24 rounded-lg border border-slate-300 bg-white px-2 text-sm outline-none dark:border-slate-600 dark:bg-slate-800 dark:text-white"
-            />
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={handleDownloadHolidayList}
-              disabled={downloadHolidayList.isPending}
-              className="h-10 px-4"
-            >
-              {downloadHolidayList.isPending ? "Preparing..." : "Download Holiday List"}
-            </Button>
-          </div>
-
           {canAdd && (
             <Button onClick={openAdd} className="h-10 w-full px-4 sm:w-auto">
               <span className="mr-1.5 text-lg">+</span>
               Add Holiday
             </Button>
           )}
+        </div>
+      </div>
+
+      {/* SYNC GOVERNMENT HOLIDAYS */}
+      <div className="rounded-xl border border-violet-100 bg-white p-4 shadow-sm dark:border-violet-900/30 dark:bg-slate-900">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h3 className="text-sm font-semibold text-slate-800 dark:text-white">
+              Sync Government Holidays
+            </h3>
+            <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+              Pulls the public holiday list for the selected year and country. Existing
+              records are never overwritten — only missing dates are added.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <input
+              type="number"
+              value={syncYear}
+              onChange={(e) => setSyncYear(Number(e.target.value))}
+              className="h-10 w-24 rounded-lg border border-slate-300 bg-white px-2 text-sm outline-none dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+            />
+            <select
+              value={syncCountry}
+              onChange={(e) => setSyncCountry(e.target.value)}
+              className="h-10 rounded-lg border border-slate-300 bg-white px-2 text-sm outline-none dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+            >
+              {COUNTRY_OPTIONS.map((c) => (
+                <option key={c.code} value={c.code}>
+                  {c.label}
+                </option>
+              ))}
+            </select>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={handleSyncGovernmentHolidays}
+              disabled={syncGovernmentHolidays.isPending}
+              className="h-10 px-4"
+            >
+              {syncGovernmentHolidays.isPending ? "Syncing..." : "Sync Government Holidays"}
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -382,71 +470,90 @@ export default function HolidayListPage() {
         </div>
       </div>
 
-      {/* GROUPED HOLIDAY LIST — Government / Office */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <div className="rounded-xl border border-violet-100 bg-white p-4 shadow-sm dark:border-violet-900/30 dark:bg-slate-900">
-          <div className="mb-3 flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-violet-700 dark:text-violet-400">
-              Government Holidays
-            </h3>
-            <Badge className="inline-flex items-center gap-1.5 rounded-full bg-violet-50 px-2.5 py-1 text-xs text-violet-700 dark:bg-violet-500/10 dark:text-violet-300">
-              {sortedGovernmentHolidays.length}
-            </Badge>
+      {/* YEAR / MONTH GROUPED HOLIDAY LIST */}
+      <div className="rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <div className="flex flex-col gap-3 border-b border-slate-200 px-4 py-3 dark:border-slate-700 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-sm font-semibold text-slate-800 dark:text-white">
+              Holiday List — {listYear}
+            </h2>
+            <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+              {yearTotals.government} Government &middot; {yearTotals.office} Office
+            </p>
           </div>
 
-          {sortedGovernmentHolidays.length === 0 ? (
-            <p className="py-4 text-center text-xs text-slate-400">
-              No active government holidays.
-            </p>
-          ) : (
-            <ul className="max-h-64 space-y-1 overflow-y-auto pr-1">
-              {sortedGovernmentHolidays.map((h) => (
-                <li
-                  key={h.id}
-                  className="flex items-center justify-between rounded-lg px-2 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-800/60"
-                >
-                  <span className="min-w-0 truncate text-slate-700 dark:text-slate-200">
-                    {h.name}
-                  </span>
-                  <span className="ml-3 shrink-0 text-xs text-slate-400">
-                    {formatDate(h.holiday_date)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
+          <select
+            value={listYear}
+            onChange={(e) => setListYear(Number(e.target.value))}
+            className="h-9 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none dark:border-slate-600 dark:bg-slate-800 dark:text-white sm:w-32"
+          >
+            {availableYears.map((y) => (
+              <option key={y} value={y}>
+                {y}
+              </option>
+            ))}
+          </select>
         </div>
 
-        <div className="rounded-xl border border-sky-100 bg-white p-4 shadow-sm dark:border-sky-900/30 dark:bg-slate-900">
-          <div className="mb-3 flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-sky-700 dark:text-sky-400">
-              Office Holidays
-            </h3>
-            <Badge className="inline-flex items-center gap-1.5 rounded-full bg-sky-50 px-2.5 py-1 text-xs text-sky-700 dark:bg-sky-500/10 dark:text-sky-300">
-              {sortedOfficeHolidays.length}
-            </Badge>
-          </div>
+        <div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2 xl:grid-cols-3">
+          {MONTH_NAMES.map((monthName, monthIndex) => {
+            const bucket = groupedByMonth[monthIndex];
+            const hasAny = bucket.government.length > 0 || bucket.office.length > 0;
 
-          {sortedOfficeHolidays.length === 0 ? (
-            <p className="py-4 text-center text-xs text-slate-400">
-              No active office holidays.
-            </p>
-          ) : (
-            <ul className="max-h-64 space-y-1 overflow-y-auto pr-1">
-              {sortedOfficeHolidays.map((h) => (
-                <li
-                  key={h.id}
-                  className="flex items-center justify-between rounded-lg px-2 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-800/60"
-                >
-                  <span className="min-w-0 truncate text-slate-700 dark:text-slate-200">
-                    {h.name}
-                  </span>
-                  <span className="ml-3 shrink-0 text-xs text-slate-400">
-                    {formatDate(h.holiday_date)}
-                  </span>
-                </li>
-              ))}
-            </ul>
+            if (!hasAny) return null;
+
+            return (
+              <div
+                key={monthName}
+                className="rounded-lg border border-slate-100 bg-slate-50/60 p-3 dark:border-slate-800 dark:bg-slate-800/40"
+              >
+                <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                  {monthName}
+                </h3>
+
+                {bucket.government.length > 0 && (
+                  <div className="mb-2 space-y-1">
+                    {bucket.government.map((h) => (
+                      <div key={h.id} className="flex items-center gap-2 text-sm">
+                        <Badge className="shrink-0 rounded-full bg-violet-50 px-1.5 py-0.5 text-[9px] text-violet-700 dark:bg-violet-500/10 dark:text-violet-300">
+                          Gov
+                        </Badge>
+                        <span className="min-w-0 flex-1 truncate text-slate-700 dark:text-slate-200">
+                          {h.name}
+                        </span>
+                        <span className="shrink-0 text-xs text-slate-400">
+                          {new Date(h.holiday_date).getDate()}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {bucket.office.length > 0 && (
+                  <div className="space-y-1">
+                    {bucket.office.map((h) => (
+                      <div key={h.id} className="flex items-center gap-2 text-sm">
+                        <Badge className="shrink-0 rounded-full bg-sky-50 px-1.5 py-0.5 text-[9px] text-sky-700 dark:bg-sky-500/10 dark:text-sky-300">
+                          Off
+                        </Badge>
+                        <span className="min-w-0 flex-1 truncate text-slate-700 dark:text-slate-200">
+                          {h.name}
+                        </span>
+                        <span className="shrink-0 text-xs text-slate-400">
+                          {new Date(h.holiday_date).getDate()}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+
+          {yearTotals.government === 0 && yearTotals.office === 0 && (
+            <div className="col-span-full py-8 text-center text-sm text-slate-400">
+              No active holidays recorded for {listYear}.
+            </div>
           )}
         </div>
       </div>

@@ -75,11 +75,8 @@ export const masterApi = {
   createHoliday: (payload) => axiosClient.post(API.MASTER.HOLIDAYS, payload),
   updateHoliday: (id, payload) => axiosClient.put(API.MASTER.HOLIDAY_UPDATE(id), payload),
   deactivateHoliday: (id) => axiosClient.delete(API.MASTER.HOLIDAY_DELETE(id)),
-  downloadHolidayList: (year) =>                                          
-    axiosClient.get(API.MASTER.HOLIDAY_REPORT, {
-      params: year ? { year } : {},
-      responseType: "blob",
-    }),
+  syncGovernmentHolidays: (year, countryCode) =>                                   // NEW
+    axiosClient.post(API.MASTER.HOLIDAY_SYNC_GOVERNMENT, { year, country_code: countryCode }),
 };
 
 export const holidayApi = {
@@ -87,5 +84,5 @@ export const holidayApi = {
   create: masterApi.createHoliday,
   update: masterApi.updateHoliday,
   remove: masterApi.deactivateHoliday,
-  downloadList: masterApi.downloadHolidayList,
+  syncGovernmentHolidays: masterApi.syncGovernmentHolidays,
 };
