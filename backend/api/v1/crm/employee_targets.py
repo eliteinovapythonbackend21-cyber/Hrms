@@ -3,31 +3,55 @@ from flask_jwt_extended import jwt_required
 
 from extensions import db
 from models import EmployeeTarget
-from utils import fetch_or_404, get_current_user, is_admin, register_crud_blueprint, with_token, ensure_crm_employee
+from utils import ensure_crm_employee, fetch_or_404, get_current_user, is_admin, register_crud_blueprint, with_token
 
 
-def _validate_crm_target(item, data):
-    employee_id = data.get("employee_id")
-    employee, error_response = ensure_crm_employee(employee_id)
+def _validate_target(item, data):
+    employee, error_response = ensure_crm_employee(data.get("employee_id"))
     if error_response:
         return error_response
+
+    period_type = data.get("period_type", "Monthly")
+    if period_type not in EmployeeTarget.PERIOD_TYPES:
+        return jsonify({"message": f"period_type must be one of {EmployeeTarget.PERIOD_TYPES}"}), 400
+
+    if period_type == "Monthly" and not data.get("month"):
+        return jsonify({"message": "month is required for a Monthly target"}), 400
+
+    if period_type == "Quarterly":
+        quarter = data.get("quarter")
+        if not quarter or int(quarter) not in (1, 2, 3, 4):
+            return jsonify({"message": "quarter must be 1-4 for a Quarterly target"}), 400
+
+    if period_type == "Weekly" and not data.get("week_start_date"):
+        return jsonify({"message": "week_start_date is required for a Weekly target"}), 400
+
     return None
 
 
 employee_targets_bp = register_crud_blueprint(
     "employee_targets_bp",
     EmployeeTarget,
-    create_fields=["employee_id", "month", "year", "target_customer_count", "is_active"],
+    create_fields=[
+        "employee_id",
+        "period_type",
+        "year",
+        "month",
+        "quarter",
+        "week_start_date",
+        "target_customer_count",
+        "is_active",
+    ],
     search_fields=[],
-    url_prefix_singular="",          # CHANGED from "employee-targets"
+    url_prefix_singular="",
     editable=True,
     deletable=False,
     admin_only=True,
-    on_create=_validate_crm_target,
+    on_create=_validate_target,
 )
 
 
-@employee_targets_bp.route("/<int:target_id>/deactivate", methods=["DELETE"])  # CHANGED: relative
+@employee_targets_bp.route("/<int:target_id>/deactivate", methods=["DELETE"])
 @jwt_required()
 @with_token
 def deactivate_employee_target(target_id, token_response):

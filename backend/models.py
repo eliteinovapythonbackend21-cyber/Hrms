@@ -2349,26 +2349,37 @@ class IncentiveSlab(TimestampMixin, db.Model):
 
 
 class EmployeeTarget(TimestampMixin, db.Model):
-    """The monthly registered-customer quota for a CRM employee. Only
-    customers registered above this limit count as 'additional' and
-    become incentive-eligible. If no target row exists for an
-    employee/month, the calculation falls back to DEFAULT_TARGET."""
+    """Registered-customer quota for a CRM employee, set on a Weekly,
+    Monthly, or Quarterly cadence. Only the field(s) relevant to
+    period_type are populated:
+      - Weekly:    week_start_date (year derived from it)
+      - Monthly:   month + year
+      - Quarterly: quarter (1-4) + year
+    Only registrations above this target count as 'additional' for
+    incentive calculation."""
 
     __tablename__ = "employee_targets"
 
-    DEFAULT_TARGET = 0  # fallback quota when no explicit target is set
+    DEFAULT_TARGET = 0
+    PERIOD_TYPES = ("Weekly", "Monthly", "Quarterly")
 
     id = db.Column(db.Integer, primary_key=True)
     employee_id = db.Column(db.Integer, db.ForeignKey("employees.id"), nullable=False)
-    month = db.Column(db.Integer, nullable=False)
+    period_type = db.Column(db.String(20), nullable=False, default="Monthly")
     year = db.Column(db.Integer, nullable=False)
+    month = db.Column(db.Integer, nullable=True)          # Monthly only, 1-12
+    quarter = db.Column(db.Integer, nullable=True)         # Quarterly only, 1-4
+    week_start_date = db.Column(db.Date, nullable=True)    # Weekly only
     target_customer_count = db.Column(db.Integer, nullable=False, default=0)
     is_active = db.Column(db.Boolean, default=True)
 
     employee = db.relationship("Employee")
 
     __table_args__ = (
-        db.UniqueConstraint("employee_id", "month", "year", name="uq_employee_target_period"),
+        db.UniqueConstraint(
+            "employee_id", "period_type", "year", "month", "quarter", "week_start_date",
+            name="uq_employee_target_period",
+        ),
     )
 
     def to_dict(self):

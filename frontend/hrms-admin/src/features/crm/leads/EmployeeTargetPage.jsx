@@ -22,7 +22,9 @@ import { useCRMEmployeeOptions } from "@/hooks/useLookupOptions";
 
 const CARD_PAGE_SIZE = 6;
 const TABLE_PAGE_SIZE = 10;
-const CARD_HEIGHT = "h-[220px]";
+const CARD_HEIGHT = "h-[230px]";
+
+const PERIOD_TYPES = ["Weekly", "Monthly", "Quarterly"];
 
 const MONTH_OPTIONS = [
   { value: 1, label: "January" },
@@ -39,6 +41,13 @@ const MONTH_OPTIONS = [
   { value: 12, label: "December" },
 ];
 
+const QUARTER_OPTIONS = [
+  { value: 1, label: "Q1 (Jan – Mar)" },
+  { value: 2, label: "Q2 (Apr – Jun)" },
+  { value: 3, label: "Q3 (Jul – Sep)" },
+  { value: 4, label: "Q4 (Oct – Dec)" },
+];
+
 const now = new Date();
 
 /* =========================================================
@@ -51,6 +60,16 @@ function getMonthLabel(month) {
 
 function getMonthShort(month) {
   return (getMonthLabel(month) || "").slice(0, 3);
+}
+
+function getQuarterLabel(quarter) {
+  return QUARTER_OPTIONS.find((q) => q.value === Number(quarter))?.label || `Q${quarter}`;
+}
+
+function formatDate(value) {
+  if (!value) return "-";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleDateString();
 }
 
 function formatDateTime(value) {
@@ -70,6 +89,41 @@ function getInitials(name) {
   if (!name) return "?";
   const parts = name.trim().split(/\s+/);
   return ((parts[0]?.[0] || "") + (parts[1]?.[0] || "")).toUpperCase() || name[0]?.toUpperCase();
+}
+
+// Human-readable period label for any period_type, used everywhere
+// a target's timeframe needs to be shown (cards, table, details panel).
+function getPeriodLabel(record) {
+  if (!record) return "-";
+  switch (record.period_type) {
+    case "Weekly":
+      return `Week of ${formatDate(record.week_start_date)}`;
+    case "Quarterly":
+      return `${getQuarterLabel(record.quarter)} ${record.year}`;
+    case "Monthly":
+    default:
+      return `${getMonthLabel(record.month)} ${record.year}`;
+  }
+}
+
+// Monday of the current week, ISO date string — sane default for the
+// week-start picker.
+function getCurrentWeekStart() {
+  const day = now.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  const monday = new Date(now);
+  monday.setDate(now.getDate() + diff);
+  return monday.toISOString().slice(0, 10);
+}
+
+const PERIOD_TYPE_BADGE_CLASS = {
+  Weekly: "bg-sky-50 text-sky-700 dark:bg-sky-500/10 dark:text-sky-400",
+  Monthly: "bg-primary-50 text-primary-700 dark:bg-primary-500/10 dark:text-primary-400",
+  Quarterly: "bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400",
+};
+
+function getPeriodTypeBadgeClass(periodType) {
+  return PERIOD_TYPE_BADGE_CLASS[periodType] || PERIOD_TYPE_BADGE_CLASS.Monthly;
 }
 
 /* =========================================================
@@ -129,9 +183,9 @@ function StatCard({ icon, value, label, tone = "sky" }) {
         <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${tones[tone]}`}>
           {icon}
         </div>
-        <div>
-          <p className="text-2xl font-bold text-slate-900 dark:text-white">{value}</p>
-          <p className="text-xs text-slate-500 dark:text-slate-400">{label}</p>
+        <div className="min-w-0">
+          <p className="truncate text-2xl font-bold text-slate-900 dark:text-white">{value}</p>
+          <p className="truncate text-xs text-slate-500 dark:text-slate-400">{label}</p>
         </div>
       </div>
     </div>
@@ -202,9 +256,15 @@ function TargetDetailsCard({ record }) {
           </span>
         </div>
         <div className="grid grid-cols-[100px_minmax(0,1fr)] gap-3">
+          <span className="text-xs text-slate-400">Cadence</span>
+          <span className="text-right text-xs font-medium text-slate-700 dark:text-slate-200">
+            {record?.period_type}
+          </span>
+        </div>
+        <div className="grid grid-cols-[100px_minmax(0,1fr)] gap-3">
           <span className="text-xs text-slate-400">Period</span>
           <span className="text-right text-xs font-medium text-slate-700 dark:text-slate-200">
-            {getMonthLabel(record?.month)} {record?.year}
+            {getPeriodLabel(record)}
           </span>
         </div>
         <div className="grid grid-cols-[100px_minmax(0,1fr)] gap-3">
@@ -264,7 +324,7 @@ export default function EmployeeTargetPage() {
   ------------------------------------------------------- */
 
   const [search, setSearch] = useState("");
-  const [monthFilter, setMonthFilter] = useState("");
+  const [periodTypeFilter, setPeriodTypeFilter] = useState("");
   const [yearFilter, setYearFilter] = useState("");
   const [activeFilter, setActiveFilter] = useState("active");
   const [viewMode, setViewMode] = useState("card");
@@ -275,12 +335,17 @@ export default function EmployeeTargetPage() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [mutatingId, setMutatingId] = useState(null);
 
-  const [formState, setFormState] = useState({
+  const defaultFormState = {
     employee_id: "",
-    month: now.getMonth() + 1,
+    period_type: "Monthly",
     year: now.getFullYear(),
+    month: now.getMonth() + 1,
+    quarter: Math.floor(now.getMonth() / 3) + 1,
+    week_start_date: getCurrentWeekStart(),
     target_customer_count: "",
-  });
+  };
+
+  const [formState, setFormState] = useState(defaultFormState);
 
   /* -------------------------------------------------------
      DERIVED
@@ -313,15 +378,14 @@ export default function EmployeeTargetPage() {
 
       if (activeFilter === "active" && !isActive) return false;
       if (activeFilter === "inactive" && isActive) return false;
-      if (monthFilter && String(record.month) !== String(monthFilter)) return false;
+      if (periodTypeFilter && record.period_type !== periodTypeFilter) return false;
       if (yearFilter && String(record.year) !== String(yearFilter)) return false;
 
       if (normalizedSearch) {
         const haystack = [
           getEmployeeName(record),
           record.employee?.employee_code,
-          getMonthLabel(record.month),
-          record.year,
+          getPeriodLabel(record),
         ]
           .join(" ")
           .toLowerCase();
@@ -330,11 +394,19 @@ export default function EmployeeTargetPage() {
 
       return true;
     });
-  }, [allRecords, search, activeFilter, monthFilter, yearFilter]);
+  }, [allRecords, search, activeFilter, periodTypeFilter, yearFilter]);
+
+  const sorted = useMemo(() => {
+    return filtered.slice().sort((a, b) => {
+      if (b.year !== a.year) return b.year - a.year;
+      // Fall back to created_at so mixed period types still sort sensibly
+      return new Date(b.created_at) - new Date(a.created_at);
+    });
+  }, [filtered]);
 
   const pageSize = viewMode === "card" ? CARD_PAGE_SIZE : TABLE_PAGE_SIZE;
-  const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
-  const paged = filtered.slice((page - 1) * pageSize, page * pageSize);
+  const pageCount = Math.max(1, Math.ceil(sorted.length / pageSize));
+  const paged = sorted.slice((page - 1) * pageSize, page * pageSize);
 
   /* -------------------------------------------------------
      HANDLERS
@@ -342,12 +414,7 @@ export default function EmployeeTargetPage() {
 
   const openAddForm = () => {
     setEditingRecord(null);
-    setFormState({
-      employee_id: "",
-      month: now.getMonth() + 1,
-      year: now.getFullYear(),
-      target_customer_count: "",
-    });
+    setFormState(defaultFormState);
     setFormOpen(true);
   };
 
@@ -355,8 +422,11 @@ export default function EmployeeTargetPage() {
     setEditingRecord(record);
     setFormState({
       employee_id: record.employee_id ?? record.employee?.id ?? "",
-      month: record.month,
-      year: record.year,
+      period_type: record.period_type || "Monthly",
+      year: record.year ?? now.getFullYear(),
+      month: record.month ?? now.getMonth() + 1,
+      quarter: record.quarter ?? Math.floor(now.getMonth() / 3) + 1,
+      week_start_date: record.week_start_date ?? getCurrentWeekStart(),
       target_customer_count: record.target_customer_count ?? "",
     });
     setFormOpen(true);
@@ -365,12 +435,40 @@ export default function EmployeeTargetPage() {
   const handleFormSubmit = async (event) => {
     event.preventDefault();
 
-    const payload = {
+    const basePayload = {
       employee_id: Number(formState.employee_id),
-      month: Number(formState.month),
-      year: Number(formState.year),
+      period_type: formState.period_type,
       target_customer_count: Number(formState.target_customer_count) || 0,
     };
+
+    let periodPayload = {};
+    if (formState.period_type === "Weekly") {
+      const weekYear = formState.week_start_date
+        ? new Date(formState.week_start_date).getFullYear()
+        : now.getFullYear();
+      periodPayload = {
+        year: weekYear,
+        week_start_date: formState.week_start_date,
+        month: null,
+        quarter: null,
+      };
+    } else if (formState.period_type === "Quarterly") {
+      periodPayload = {
+        year: Number(formState.year),
+        quarter: Number(formState.quarter),
+        month: null,
+        week_start_date: null,
+      };
+    } else {
+      periodPayload = {
+        year: Number(formState.year),
+        month: Number(formState.month),
+        quarter: null,
+        week_start_date: null,
+      };
+    }
+
+    const payload = { ...basePayload, ...periodPayload };
 
     try {
       if (editingRecord) {
@@ -387,7 +485,7 @@ export default function EmployeeTargetPage() {
       showToast(
         error?.response?.data?.message ||
           error?.message ||
-          "Failed to save target (a target for this employee + month may already exist, or the employee isn't in the CRM department)",
+          "Failed to save target (a target for this employee + period may already exist, or the employee isn't in the CRM department)",
         "error"
       );
     }
@@ -423,7 +521,7 @@ export default function EmployeeTargetPage() {
 
   const clearFilters = () => {
     setSearch("");
-    setMonthFilter("");
+    setPeriodTypeFilter("");
     setYearFilter("");
     setActiveFilter("active");
     setPage(1);
@@ -452,7 +550,7 @@ export default function EmployeeTargetPage() {
               Employee Targets
             </h1>
             <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
-              Monthly registered-customer quota per CRM employee
+              Weekly, Monthly, or Quarterly registered-customer quota per CRM employee
             </p>
           </div>
         </div>
@@ -497,17 +595,17 @@ export default function EmployeeTargetPage() {
             </div>
 
             <select
-              value={monthFilter}
+              value={periodTypeFilter}
               onChange={(e) => {
-                setMonthFilter(e.target.value);
+                setPeriodTypeFilter(e.target.value);
                 setPage(1);
               }}
               className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm sm:max-w-[160px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
             >
-              <option value="">All Months</option>
-              {MONTH_OPTIONS.map((m) => (
-                <option key={m.value} value={m.value}>
-                  {m.label}
+              <option value="">All Cadences</option>
+              {PERIOD_TYPES.map((type) => (
+                <option key={type} value={type}>
+                  {type}
                 </option>
               ))}
             </select>
@@ -528,7 +626,7 @@ export default function EmployeeTargetPage() {
               ))}
             </select>
 
-            {(search || monthFilter || yearFilter || activeFilter !== "active") && (
+            {(search || periodTypeFilter || yearFilter || activeFilter !== "active") && (
               <button
                 type="button"
                 onClick={clearFilters}
@@ -635,24 +733,29 @@ export default function EmployeeTargetPage() {
                       </div>
                     </div>
 
-                    {!isActive && (
-                      <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-[9px] font-medium text-red-700 dark:bg-red-500/10 dark:text-red-300">
-                        <span className="h-1 w-1 rounded-full bg-red-500" />
-                        Inactive
-                      </span>
-                    )}
+                    <div className="flex shrink-0 flex-col items-end gap-1">
+                      <Badge className={getPeriodTypeBadgeClass(record.period_type)}>
+                        {record.period_type}
+                      </Badge>
+                      {!isActive && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-[9px] font-medium text-red-700 dark:bg-red-500/10 dark:text-red-300">
+                          <span className="h-1 w-1 rounded-full bg-red-500" />
+                          Inactive
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   <div className="my-3 border-t border-slate-100 dark:border-slate-800" />
 
                   <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-300">
                     <CalendarIcon />
-                    <span>{getMonthLabel(record.month)} {record.year}</span>
+                    <span>{getPeriodLabel(record)}</span>
                   </div>
 
                   <div className="mt-3 rounded-lg bg-slate-50 p-3 text-center dark:bg-slate-800/60">
                     <p className="text-[9px] font-semibold uppercase tracking-wide text-slate-400">
-                      Monthly Target
+                      Target
                     </p>
                     <p className="mt-1 text-2xl font-bold text-primary-600 dark:text-primary-400">
                       {record.target_customer_count}
@@ -700,6 +803,7 @@ export default function EmployeeTargetPage() {
             <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-400">
               <tr>
                 <th className="px-4 py-3 font-medium">Employee</th>
+                <th className="px-4 py-3 font-medium">Cadence</th>
                 <th className="px-4 py-3 font-medium">Period</th>
                 <th className="px-4 py-3 font-medium">Target</th>
                 <th className="px-4 py-3 font-medium">Active</th>
@@ -728,10 +832,15 @@ export default function EmployeeTargetPage() {
                         </div>
                       </HoverDetailsTrigger>
                     </td>
+                    <td className="px-4 py-3">
+                      <Badge className={getPeriodTypeBadgeClass(record.period_type)}>
+                        {record.period_type}
+                      </Badge>
+                    </td>
                     <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                       <div className="flex items-center gap-1.5">
                         <CalendarIcon />
-                        {getMonthShort(record.month)} {record.year}
+                        {getPeriodLabel(record)}
                       </div>
                     </td>
                     <td className="px-4 py-3">
@@ -857,38 +966,113 @@ export default function EmployeeTargetPage() {
                 </select>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">
-                    Month
-                  </label>
-                  <select
-                    required
-                    value={formState.month}
-                    onChange={(e) => setFormState((s) => ({ ...s, month: e.target.value }))}
-                    className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
-                  >
-                    {MONTH_OPTIONS.map((m) => (
-                      <option key={m.value} value={m.value}>
-                        {m.label}
-                      </option>
-                    ))}
-                  </select>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">
+                  Target Cadence
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {PERIOD_TYPES.map((type) => (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => setFormState((s) => ({ ...s, period_type: type }))}
+                      className={`h-10 rounded-lg border text-sm font-medium transition-colors ${
+                        formState.period_type === type
+                          ? "border-primary-500 bg-primary-50 text-primary-700 dark:border-primary-500 dark:bg-primary-500/10 dark:text-primary-400"
+                          : "border-slate-300 bg-white text-slate-600 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300"
+                      }`}
+                    >
+                      {type}
+                    </button>
+                  ))}
                 </div>
+              </div>
 
+              {/* Period-specific fields */}
+              {formState.period_type === "Weekly" && (
                 <div>
                   <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">
-                    Year
+                    Week Starting
                   </label>
                   <input
-                    type="number"
+                    type="date"
                     required
-                    value={formState.year}
-                    onChange={(e) => setFormState((s) => ({ ...s, year: e.target.value }))}
+                    value={formState.week_start_date}
+                    onChange={(e) => setFormState((s) => ({ ...s, week_start_date: e.target.value }))}
                     className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
                   />
                 </div>
-              </div>
+              )}
+
+              {formState.period_type === "Monthly" && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">
+                      Month
+                    </label>
+                    <select
+                      required
+                      value={formState.month}
+                      onChange={(e) => setFormState((s) => ({ ...s, month: e.target.value }))}
+                      className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                    >
+                      {MONTH_OPTIONS.map((m) => (
+                        <option key={m.value} value={m.value}>
+                          {m.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">
+                      Year
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      value={formState.year}
+                      onChange={(e) => setFormState((s) => ({ ...s, year: e.target.value }))}
+                      className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {formState.period_type === "Quarterly" && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">
+                      Quarter
+                    </label>
+                    <select
+                      required
+                      value={formState.quarter}
+                      onChange={(e) => setFormState((s) => ({ ...s, quarter: e.target.value }))}
+                      className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                    >
+                      {QUARTER_OPTIONS.map((q) => (
+                        <option key={q.value} value={q.value}>
+                          {q.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">
+                      Year
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      value={formState.year}
+                      onChange={(e) => setFormState((s) => ({ ...s, year: e.target.value }))}
+                      className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                    />
+                  </div>
+                </div>
+              )}
 
               <div>
                 <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">
@@ -904,6 +1088,9 @@ export default function EmployeeTargetPage() {
                 />
                 <p className="mt-1 text-[11px] text-slate-400">
                   Registrations above this number for the period are eligible for incentive calculation.
+                  {formState.period_type !== "Monthly" && (
+                    <> Currently, only Monthly targets feed into automatic incentive calculation.</>
+                  )}
                 </p>
               </div>
 
@@ -935,7 +1122,7 @@ export default function EmployeeTargetPage() {
         title="Deactivate Target"
         message={
           deleteTarget
-            ? `Deactivate the ${getMonthLabel(deleteTarget.month)} ${deleteTarget.year} target for ${getEmployeeName(deleteTarget)}?`
+            ? `Deactivate the ${getPeriodLabel(deleteTarget)} target for ${getEmployeeName(deleteTarget)}?`
             : ""
         }
         confirmText="Deactivate"
