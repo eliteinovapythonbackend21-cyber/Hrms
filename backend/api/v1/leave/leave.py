@@ -47,7 +47,7 @@ def _parse_int(value):
         return None
 
 
-@leaves_bp.route("/", methods=["GET"])
+@leave_bp.route("/", methods=["GET"])
 @jwt_required()
 @with_token
 def list_leaves(token_response):
@@ -138,7 +138,7 @@ def list_leaves(token_response):
     }), 200
 
 
-@leaves_bp.route("/<int:leave_id>", methods=["GET"])
+@leave_bp.route("/<int:leave_id>", methods=["GET"])
 @jwt_required()
 @with_token
 def get_leave(leave_id, token_response):
@@ -148,7 +148,7 @@ def get_leave(leave_id, token_response):
     return jsonify({"message": "Leave fetched", "data": leave.to_dict(), "token_response": token_response}), 200
 
 
-@leaves_bp.route("/", methods=["POST"])
+@leave_bp.route("/", methods=["POST"])
 @jwt_required()
 @with_token
 def create_leave(token_response):
@@ -179,7 +179,7 @@ def create_leave(token_response):
     return jsonify({"message": "Leave created", "data": leave.to_dict(), "token_response": token_response}), 201
 
 
-@leaves_bp.route("/<int:leave_id>", methods=["PUT"])
+@leave_bp.route("/<int:leave_id>", methods=["PUT"])
 @jwt_required()
 @with_token
 def update_leave(leave_id, token_response):
@@ -208,7 +208,7 @@ def update_leave(leave_id, token_response):
     return jsonify({"message": "Leave updated", "data": leave.to_dict(), "token_response": token_response}), 200
 
 
-@leaves_bp.route("/<int:leave_id>/deactivate", methods=["DELETE"])
+@leave_bp.route("/<int:leave_id>/deactivate", methods=["DELETE"])
 @jwt_required()
 @with_token
 def deactivate_leave(leave_id, token_response):
@@ -226,7 +226,7 @@ def deactivate_leave(leave_id, token_response):
     return jsonify({"message": "Leave deactivated", "data": leave.to_dict(), "token_response": token_response}), 200
 
 
-@leaves_bp.route("/<int:leave_id>/approve", methods=["POST"])
+@leave_bp.route("/<int:leave_id>/approve", methods=["POST"])
 @jwt_required()
 @with_token
 def approve_leave(leave_id, token_response):
@@ -244,7 +244,7 @@ def approve_leave(leave_id, token_response):
     return jsonify({"message": "Leave approved", "data": leave.to_dict(), "token_response": token_response}), 200
 
 
-@leaves_bp.route("/<int:leave_id>/reject", methods=["POST"])
+@leave_bp.route("/<int:leave_id>/reject", methods=["POST"])
 @jwt_required()
 @with_token
 def reject_leave(leave_id, token_response):
@@ -262,7 +262,7 @@ def reject_leave(leave_id, token_response):
     return jsonify({"message": "Leave rejected", "data": leave.to_dict(), "token_response": token_response}), 200
 
 
-@leaves_bp.route("/report", methods=["GET"])
+@leave_bp.route("/report", methods=["GET"])
 @jwt_required()
 @with_token
 def leave_report(token_response):
