@@ -1,7 +1,3 @@
-"""Phase 0 — Organization masters beyond Department/Designation/LeaveType
-(which already live in master.py). Single-branch business: Holiday has no
-branch_id FK. Full CRUD (Master Control tier)."""
-
 import requests
 from flask import jsonify, request
 from flask_jwt_extended import jwt_required
@@ -26,11 +22,6 @@ organization_bp = register_crud_blueprint(
 @jwt_required()
 @with_token
 def sync_government_holidays(token_response):
-    """Pulls public holidays for the given year/country from the free
-    Nager.Date API (no key required) and inserts any that don't already
-    exist as Government-type Holiday rows, matched by date. Existing
-    rows for that date are left untouched (never overwritten), so
-    manual edits/deactivations survive repeated syncs."""
     current_user = get_current_user()
 
     if not is_admin(current_user):
@@ -53,9 +44,21 @@ def sync_government_holidays(token_response):
     try:
         response = requests.get(url, timeout=10)
         response.raise_for_status()
-        holidays_data = response.json()
     except requests.RequestException as exc:
         return jsonify({"message": f"Failed to fetch holidays: {exc}"}), 502
+
+    if response.status_code == 204 or not response.text.strip():
+        return jsonify(
+            {
+                "message": f"No public holiday data available yet for {year} ({country_code}). "
+                           f"Try a past or current year instead.",
+                "data": {"created": [], "created_count": 0, "skipped_count": 0},
+                "token_response": token_response,
+            }
+        ), 200
+
+    try:
+        holidays_data = response.json()
     except ValueError:
         return jsonify({"message": "Received an invalid response from the holiday provider"}), 502
 
@@ -110,6 +113,64 @@ def sync_government_holidays(token_response):
                 "created_count": len(created),
                 "skipped_count": skipped,
             },
+            "token_response": token_response,
+        }
+    ), 200
+
+@organization_bp.route("/holiday/preview-government", methods=["GET"])
+@jwt_required()
+@with_token
+def preview_government_holidays(token_response):
+    year = request.args.get("year")
+    country_code = (request.args.get("country_code") or "IN").upper()
+
+    if not year:
+        return jsonify({"message": "year is required"}), 400
+
+    try:
+        year = int(year)
+    except (TypeError, ValueError):
+        return jsonify({"message": "year must be an integer"}), 400
+
+    url = f"https://date.nager.at/api/v3/PublicHolidays/{year}/{country_code}"
+
+    try:
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()
+    except requests.RequestException as exc:
+        return jsonify({"message": f"Failed to fetch holidays: {exc}"}), 502
+
+    if response.status_code == 204 or not response.text.strip():
+        return jsonify(
+            {
+                "message": f"No public holiday data available yet for {year} ({country_code}).",
+                "data": [],
+                "token_response": token_response,
+            }
+        ), 200
+
+    try:
+        holidays_data = response.json()
+    except ValueError:
+        return jsonify({"message": "Received an invalid response from the holiday provider"}), 502
+
+    if not isinstance(holidays_data, list):
+        return jsonify({"message": "Unexpected response format from the holiday provider"}), 502
+
+    preview = [
+        {
+            "date": item.get("date"),
+            "name": item.get("localName") or item.get("name"),
+            "country_code": country_code,
+        }
+        for item in holidays_data
+        if item.get("date") and (item.get("localName") or item.get("name"))
+    ]
+
+    return jsonify(
+        {
+            "message": f"Preview fetched for {year} ({country_code})",
+            "data": preview,
             "token_response": token_response,
         }
     ), 200

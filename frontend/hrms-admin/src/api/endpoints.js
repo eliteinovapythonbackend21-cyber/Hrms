@@ -54,6 +54,7 @@ export const API = {
     HOLIDAY_UPDATE: (id) => `/organization/holiday/${id}`,
     HOLIDAY_DELETE: (id) => `/organization/holiday/${id}`,
     HOLIDAY_SYNC_GOVERNMENT: "/organization/holiday/sync-government",
+    HOLIDAY_PREVIEW_GOVERNMENT: "/organization/holiday/preview-government",
     HOLIDAY_REPORT: "/organization/holiday/report", 
     COMPANIES: "/companies",
     COMPANY_GET: (id) => `/companies/${id}`,

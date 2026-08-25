@@ -7,6 +7,7 @@ import {
   useUpdateHoliday,
   useDeactivateHoliday,
   useSyncGovernmentHolidays,
+  usePreviewGovernmentHolidays,
 } from "./useHolidays";
 
 import HolidayForm from "./HolidayForm";
@@ -43,6 +44,8 @@ const MONTH_NAMES = [
   "July", "August", "September", "October", "November", "December",
 ];
 
+const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
 const COUNTRY_OPTIONS = [
   { code: "IN", label: "India" },
   { code: "US", label: "United States" },
@@ -51,6 +54,18 @@ const COUNTRY_OPTIONS = [
   { code: "AU", label: "Australia" },
   { code: "CA", label: "Canada" },
 ];
+
+function toISODate(year, month, day) {
+  const mm = String(month + 1).padStart(2, "0");
+  const dd = String(day).padStart(2, "0");
+  return `${year}-${mm}-${dd}`;
+}
+
+function isSameDate(dateStr, year, month, day) {
+  if (!dateStr) return false;
+  const d = new Date(dateStr);
+  return d.getFullYear() === year && d.getMonth() === month && d.getDate() === day;
+}
 
 
 export default function HolidayListPage() {
@@ -85,12 +100,19 @@ export default function HolidayListPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [confirmRow, setConfirmRow] = useState(null);
+  const [prefillDate, setPrefillDate] = useState(null);
+  const [prefillName, setPrefillName] = useState(null);
+  const [prefillType, setPrefillType] = useState(null);
 
   const [statusFilter, setStatusFilter] = useState("active");
   const [typeFilter, setTypeFilter] = useState("all");
 
   const [syncYear, setSyncYear] = useState(new Date().getFullYear());
   const [syncCountry, setSyncCountry] = useState("IN");
+
+  const [listMode, setListMode] = useState("calendar"); // "calendar" | "grouped"
+  const [showReference, setShowReference] = useState(true);
+  const [referenceCountry, setReferenceCountry] = useState("IN");
 
   const holidays = data?.items || [];
 
@@ -152,6 +174,116 @@ export default function HolidayListPage() {
   }, [groupedByMonth]);
 
   /* -------------------------------------------------------
+     CALENDAR VIEW
+  ------------------------------------------------------- */
+
+  const today = new Date();
+  const [calendarYear, setCalendarYear] = useState(today.getFullYear());
+  const [calendarMonth, setCalendarMonth] = useState(today.getMonth()); // 0-indexed
+
+  const calendarHolidaysThisMonth = useMemo(() => {
+    return activeHolidays.filter((h) => {
+      if (!h.holiday_date) return false;
+      const d = new Date(h.holiday_date);
+      return d.getFullYear() === calendarYear && d.getMonth() === calendarMonth;
+    });
+  }, [activeHolidays, calendarYear, calendarMonth]);
+
+  // Live "official" reference calendar for the year currently being
+  // viewed - fetched read-only, never written to the DB automatically.
+  const {
+    data: referenceHolidays = [],
+    isLoading: referenceLoading,
+    isError: referenceError,
+  } = usePreviewGovernmentHolidays(calendarYear, referenceCountry, showReference);
+
+  const referenceHolidaysThisMonth = useMemo(() => {
+    return referenceHolidays.filter((h) => {
+      if (!h.date) return false;
+      const d = new Date(h.date);
+      return d.getMonth() === calendarMonth;
+    });
+  }, [referenceHolidays, calendarMonth]);
+
+  const isAlreadySaved = (dateStr) =>
+    activeHolidays.some((h) => h.holiday_date && h.holiday_date.slice(0, 10) === dateStr);
+
+  const calendarCells = useMemo(() => {
+    const firstOfMonth = new Date(calendarYear, calendarMonth, 1);
+    const startWeekday = firstOfMonth.getDay();
+    const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
+
+    const cells = [];
+    for (let i = 0; i < startWeekday; i++) {
+      cells.push(null);
+    }
+    for (let day = 1; day <= daysInMonth; day++) {
+      const savedForDay = calendarHolidaysThisMonth
+        .filter((h) => isSameDate(h.holiday_date, calendarYear, calendarMonth, day))
+        .sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+
+      const referenceForDay = showReference
+        ? referenceHolidaysThisMonth.filter((h) => {
+            const d = new Date(h.date);
+            return d.getDate() === day && !isAlreadySaved(h.date);
+          })
+        : [];
+
+      cells.push({ day, saved: savedForDay, reference: referenceForDay });
+    }
+    return cells;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [calendarYear, calendarMonth, calendarHolidaysThisMonth, referenceHolidaysThisMonth, showReference, activeHolidays]);
+
+  const goToPrevMonth = () => {
+    if (calendarMonth === 0) {
+      setCalendarMonth(11);
+      setCalendarYear((y) => y - 1);
+    } else {
+      setCalendarMonth((m) => m - 1);
+    }
+  };
+
+  const goToNextMonth = () => {
+    if (calendarMonth === 11) {
+      setCalendarMonth(0);
+      setCalendarYear((y) => y + 1);
+    } else {
+      setCalendarMonth((m) => m + 1);
+    }
+  };
+
+  const goToToday = () => {
+    setCalendarYear(today.getFullYear());
+    setCalendarMonth(today.getMonth());
+  };
+
+  const handleCellClick = (cell) => {
+    if (!cell) return;
+    if (!canAdd) return;
+    setPrefillDate(toISODate(calendarYear, calendarMonth, cell.day));
+    setPrefillName(null);
+    setPrefillType(null);
+    setEditing(null);
+    setModalOpen(true);
+  };
+
+  const handleAddReference = (e, refHoliday) => {
+    e.stopPropagation();
+    if (!canAdd) return;
+    setPrefillDate(refHoliday.date);
+    setPrefillName(refHoliday.name);
+    setPrefillType("Government");
+    setEditing(null);
+    setModalOpen(true);
+  };
+
+  const isToday = (day) =>
+    day === today.getDate() &&
+    calendarMonth === today.getMonth() &&
+    calendarYear === today.getFullYear();
+
+  /* -------------------------------------------------------
      TABLE FILTERS
   ------------------------------------------------------- */
 
@@ -164,11 +296,17 @@ export default function HolidayListPage() {
 
   const openAdd = () => {
     setEditing(null);
+    setPrefillDate(null);
+    setPrefillName(null);
+    setPrefillType(null);
     setModalOpen(true);
   };
 
   const openEdit = (row) => {
     setEditing(row);
+    setPrefillDate(null);
+    setPrefillName(null);
+    setPrefillType(null);
     setModalOpen(true);
   };
 
@@ -184,6 +322,9 @@ export default function HolidayListPage() {
 
       setModalOpen(false);
       setEditing(null);
+      setPrefillDate(null);
+      setPrefillName(null);
+      setPrefillType(null);
 
       queryClient.invalidateQueries({ queryKey: ["holidays"] });
       refetch();
@@ -213,6 +354,7 @@ export default function HolidayListPage() {
       });
       showToast(result?.data?.message || "Government holidays synced", "success");
       setListYear(syncYear);
+      setCalendarYear(syncYear);
       refetch();
     } catch (err) {
       showToast(
@@ -364,8 +506,9 @@ export default function HolidayListPage() {
               Sync Government Holidays
             </h3>
             <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-              Pulls the public holiday list for the selected year and country. Existing
-              records are never overwritten — only missing dates are added.
+              Bulk-saves the official calendar for the selected year/country into your holiday
+              list. Or just browse the calendar below — it shows the official reference dates
+              even if you haven't synced them yet.
             </p>
           </div>
 
@@ -470,93 +613,304 @@ export default function HolidayListPage() {
         </div>
       </div>
 
-      {/* YEAR / MONTH GROUPED HOLIDAY LIST */}
-      <div className="rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
-        <div className="flex flex-col gap-3 border-b border-slate-200 px-4 py-3 dark:border-slate-700 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 className="text-sm font-semibold text-slate-800 dark:text-white">
-              Holiday List — {listYear}
-            </h2>
-            <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-              {yearTotals.government} Government &middot; {yearTotals.office} Office
-            </p>
-          </div>
-
-          <select
-            value={listYear}
-            onChange={(e) => setListYear(Number(e.target.value))}
-            className="h-9 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none dark:border-slate-600 dark:bg-slate-800 dark:text-white sm:w-32"
+      {/* VIEW SWITCH: Calendar / Grouped List */}
+      <div className="flex items-center justify-end">
+        <div className="flex items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
+          <button
+            type="button"
+            onClick={() => setListMode("calendar")}
+            className={`rounded-md px-3 py-1.5 text-xs font-medium ${
+              listMode === "calendar"
+                ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
+                : "text-slate-500 dark:text-slate-400"
+            }`}
           >
-            {availableYears.map((y) => (
-              <option key={y} value={y}>
-                {y}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2 xl:grid-cols-3">
-          {MONTH_NAMES.map((monthName, monthIndex) => {
-            const bucket = groupedByMonth[monthIndex];
-            const hasAny = bucket.government.length > 0 || bucket.office.length > 0;
-
-            if (!hasAny) return null;
-
-            return (
-              <div
-                key={monthName}
-                className="rounded-lg border border-slate-100 bg-slate-50/60 p-3 dark:border-slate-800 dark:bg-slate-800/40"
-              >
-                <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                  {monthName}
-                </h3>
-
-                {bucket.government.length > 0 && (
-                  <div className="mb-2 space-y-1">
-                    {bucket.government.map((h) => (
-                      <div key={h.id} className="flex items-center gap-2 text-sm">
-                        <Badge className="shrink-0 rounded-full bg-violet-50 px-1.5 py-0.5 text-[9px] text-violet-700 dark:bg-violet-500/10 dark:text-violet-300">
-                          Gov
-                        </Badge>
-                        <span className="min-w-0 flex-1 truncate text-slate-700 dark:text-slate-200">
-                          {h.name}
-                        </span>
-                        <span className="shrink-0 text-xs text-slate-400">
-                          {new Date(h.holiday_date).getDate()}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {bucket.office.length > 0 && (
-                  <div className="space-y-1">
-                    {bucket.office.map((h) => (
-                      <div key={h.id} className="flex items-center gap-2 text-sm">
-                        <Badge className="shrink-0 rounded-full bg-sky-50 px-1.5 py-0.5 text-[9px] text-sky-700 dark:bg-sky-500/10 dark:text-sky-300">
-                          Off
-                        </Badge>
-                        <span className="min-w-0 flex-1 truncate text-slate-700 dark:text-slate-200">
-                          {h.name}
-                        </span>
-                        <span className="shrink-0 text-xs text-slate-400">
-                          {new Date(h.holiday_date).getDate()}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-
-          {yearTotals.government === 0 && yearTotals.office === 0 && (
-            <div className="col-span-full py-8 text-center text-sm text-slate-400">
-              No active holidays recorded for {listYear}.
-            </div>
-          )}
+            Calendar
+          </button>
+          <button
+            type="button"
+            onClick={() => setListMode("grouped")}
+            className={`rounded-md px-3 py-1.5 text-xs font-medium ${
+              listMode === "grouped"
+                ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
+                : "text-slate-500 dark:text-slate-400"
+            }`}
+          >
+            Year / Month List
+          </button>
         </div>
       </div>
+
+      {/* CALENDAR VIEW */}
+      {listMode === "calendar" && (
+        <div className="rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+          <div className="flex flex-col gap-3 border-b border-slate-200 px-4 py-3 dark:border-slate-700 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={goToPrevMonth}
+                className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800"
+              >
+                ‹
+              </button>
+              <h2 className="min-w-[160px] text-center text-sm font-semibold text-slate-800 dark:text-white">
+                {MONTH_NAMES[calendarMonth]} {calendarYear}
+              </h2>
+              <button
+                type="button"
+                onClick={goToNextMonth}
+                className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800"
+              >
+                ›
+              </button>
+              <button
+                type="button"
+                onClick={goToToday}
+                className="ml-2 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+              >
+                Today
+              </button>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3">
+              <label className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-300">
+                <input
+                  type="checkbox"
+                  checked={showReference}
+                  onChange={(e) => setShowReference(e.target.checked)}
+                  className="h-3.5 w-3.5 rounded border-slate-300"
+                />
+                Show official calendar reference
+              </label>
+
+              {showReference && (
+                <select
+                  value={referenceCountry}
+                  onChange={(e) => setReferenceCountry(e.target.value)}
+                  className="h-8 rounded-lg border border-slate-300 bg-white px-2 text-xs outline-none dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                >
+                  {COUNTRY_OPTIONS.map((c) => (
+                    <option key={c.code} value={c.code}>
+                      {c.label}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3 border-b border-slate-100 px-4 py-2 text-[11px] text-slate-500 dark:border-slate-800 dark:text-slate-400">
+            <span className="flex items-center gap-1">
+              <span className="h-2 w-2 rounded-full bg-violet-500" /> Saved — Government
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="h-2 w-2 rounded-full bg-sky-500" /> Saved — Office
+            </span>
+            {showReference && (
+              <span className="flex items-center gap-1">
+                <span className="h-2 w-2 rounded-full border border-dashed border-amber-500" />
+                Official reference (not yet saved)
+              </span>
+            )}
+            {showReference && referenceLoading && (
+              <span className="text-slate-400">Loading reference calendar…</span>
+            )}
+            {showReference && referenceError && (
+              <span className="text-red-500 dark:text-red-400">
+                Reference calendar unavailable for this year/country.
+              </span>
+            )}
+          </div>
+
+          <div className="p-4">
+            <div className="grid grid-cols-7 gap-1.5">
+              {WEEKDAY_LABELS.map((label) => (
+                <div
+                  key={label}
+                  className="py-1 text-center text-[10px] font-semibold uppercase tracking-wide text-slate-400"
+                >
+                  {label}
+                </div>
+              ))}
+
+              {calendarCells.map((cell, index) => {
+                if (!cell) {
+                  return <div key={`empty-${index}`} className="min-h-[100px] sm:min-h-[112px]" />;
+                }
+
+                const hasSaved = cell.saved.length > 0;
+                const hasReference = cell.reference.length > 0;
+                const hasAny = hasSaved || hasReference;
+                const cellDate = toISODate(calendarYear, calendarMonth, cell.day);
+
+                return (
+                  <div
+                    key={cell.day}
+                    onClick={() => handleCellClick(cell)}
+                    title={formatDate(cellDate)}
+                    className={`group/day relative flex min-h-[100px] flex-col gap-1 rounded-lg border p-1.5 transition-colors sm:min-h-[112px] ${
+                      isToday(cell.day)
+                        ? "border-primary-400 bg-primary-50 dark:border-primary-500 dark:bg-primary-500/10"
+                        : hasAny
+                        ? "border-slate-200 bg-white hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800/60"
+                        : "border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/40"
+                    } ${canAdd ? "cursor-pointer" : hasAny ? "" : "cursor-default"}`}
+                  >
+                    <span className="pointer-events-none absolute -top-7 left-1/2 z-30 -translate-x-1/2 whitespace-nowrap rounded-md bg-slate-800 px-2 py-1 text-[10px] font-medium text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover/day:opacity-100 dark:bg-slate-700">
+                      {formatDate(cellDate)}
+                    </span>
+
+                    <span
+                      className={`text-xs font-semibold ${
+                        isToday(cell.day)
+                          ? "text-primary-700 dark:text-primary-400"
+                          : "text-slate-500 dark:text-slate-400"
+                      }`}
+                    >
+                      {cell.day}
+                    </span>
+
+                    {hasAny && (
+                      <div className="flex flex-1 flex-col gap-1 overflow-hidden">
+                        {cell.saved.map((h) => {
+                          const isGovernment = (h.holiday_type || "Office") === "Government";
+                          return (
+                            <div
+                              key={h.id}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (canEdit) openEdit(h);
+                              }}
+                              title={h.name}
+                              className={`truncate rounded px-1.5 py-1 text-[10px] font-medium leading-tight ${
+                                isGovernment
+                                  ? "bg-violet-50 text-violet-700 hover:bg-violet-100 dark:bg-violet-500/15 dark:text-violet-300 dark:hover:bg-violet-500/25"
+                                  : "bg-sky-50 text-sky-700 hover:bg-sky-100 dark:bg-sky-500/15 dark:text-sky-300 dark:hover:bg-sky-500/25"
+                              } ${canEdit ? "cursor-pointer" : ""}`}
+                            >
+                              {h.name}
+                            </div>
+                          );
+                        })}
+
+                        {cell.reference.map((h) => (
+                          <div
+                            key={`ref-${h.date}-${h.name}`}
+                            onClick={(e) => handleAddReference(e, h)}
+                            title={`${h.name} (official reference — click to add)`}
+                            className={`truncate rounded border border-dashed border-amber-400 bg-amber-50 px-1.5 py-1 text-[10px] font-medium leading-tight text-amber-700 dark:border-amber-500/50 dark:bg-amber-500/10 dark:text-amber-400 ${
+                              canAdd ? "cursor-pointer hover:bg-amber-100 dark:hover:bg-amber-500/20" : ""
+                            }`}
+                          >
+                            {h.name}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {calendarHolidaysThisMonth.length === 0 && referenceHolidaysThisMonth.length === 0 && (
+              <p className="mt-3 text-center text-xs text-slate-400">
+                No holidays recorded for {MONTH_NAMES[calendarMonth]} {calendarYear} yet.
+                {canAdd && " Click any date above to add one."}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* YEAR / MONTH GROUPED HOLIDAY LIST */}
+      {listMode === "grouped" && (
+        <div className="rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+          <div className="flex flex-col gap-3 border-b border-slate-200 px-4 py-3 dark:border-slate-700 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-sm font-semibold text-slate-800 dark:text-white">
+                Holiday List — {listYear}
+              </h2>
+              <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                {yearTotals.government} Government &middot; {yearTotals.office} Office
+              </p>
+            </div>
+
+            <select
+              value={listYear}
+              onChange={(e) => setListYear(Number(e.target.value))}
+              className="h-9 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none dark:border-slate-600 dark:bg-slate-800 dark:text-white sm:w-32"
+            >
+              {availableYears.map((y) => (
+                <option key={y} value={y}>
+                  {y}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2 xl:grid-cols-3">
+            {MONTH_NAMES.map((monthName, monthIndex) => {
+              const bucket = groupedByMonth[monthIndex];
+              const hasAny = bucket.government.length > 0 || bucket.office.length > 0;
+
+              if (!hasAny) return null;
+
+              return (
+                <div
+                  key={monthName}
+                  className="rounded-lg border border-slate-100 bg-slate-50/60 p-3 dark:border-slate-800 dark:bg-slate-800/40"
+                >
+                  <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                    {monthName}
+                  </h3>
+
+                  {bucket.government.length > 0 && (
+                    <div className="mb-2 space-y-1">
+                      {bucket.government.map((h) => (
+                        <div key={h.id} className="flex items-center gap-2 text-sm">
+                          <Badge className="shrink-0 rounded-full bg-violet-50 px-1.5 py-0.5 text-[9px] text-violet-700 dark:bg-violet-500/10 dark:text-violet-300">
+                            Gov
+                          </Badge>
+                          <span className="min-w-0 flex-1 truncate text-slate-700 dark:text-slate-200">
+                            {h.name}
+                          </span>
+                          <span className="shrink-0 text-xs text-slate-400">
+                            {new Date(h.holiday_date).getDate()}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {bucket.office.length > 0 && (
+                    <div className="space-y-1">
+                      {bucket.office.map((h) => (
+                        <div key={h.id} className="flex items-center gap-2 text-sm">
+                          <Badge className="shrink-0 rounded-full bg-sky-50 px-1.5 py-0.5 text-[9px] text-sky-700 dark:bg-sky-500/10 dark:text-sky-300">
+                            Off
+                          </Badge>
+                          <span className="min-w-0 flex-1 truncate text-slate-700 dark:text-slate-200">
+                            {h.name}
+                          </span>
+                          <span className="shrink-0 text-xs text-slate-400">
+                            {new Date(h.holiday_date).getDate()}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+
+            {yearTotals.government === 0 && yearTotals.office === 0 && (
+              <div className="col-span-full py-8 text-center text-sm text-slate-400">
+                No active holidays recorded for {listYear}.
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
         <div className="border-b border-slate-200 px-4 py-3 dark:border-slate-700">
@@ -694,16 +1048,31 @@ export default function HolidayListPage() {
         onClose={() => {
           setModalOpen(false);
           setEditing(null);
+          setPrefillDate(null);
+          setPrefillName(null);
+          setPrefillType(null);
         }}
         title={editing ? "Edit Holiday" : "Add Holiday"}
       >
         <HolidayForm
-          initialData={editing || {}}
+          initialData={
+            editing ||
+            (prefillDate
+              ? {
+                  holiday_date: prefillDate,
+                  ...(prefillName ? { name: prefillName } : {}),
+                  ...(prefillType ? { holiday_type: prefillType } : {}),
+                }
+              : {})
+          }
           onSubmit={handleSubmit}
           loading={createHoliday.isPending || updateHoliday.isPending}
           onCancel={() => {
             setModalOpen(false);
             setEditing(null);
+            setPrefillDate(null);
+            setPrefillName(null);
+            setPrefillType(null);
           }}
           isEdit={!!editing}
         />

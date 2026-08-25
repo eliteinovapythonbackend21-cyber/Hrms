@@ -77,6 +77,8 @@ export const masterApi = {
   deactivateHoliday: (id) => axiosClient.delete(API.MASTER.HOLIDAY_DELETE(id)),
   syncGovernmentHolidays: (year, countryCode) =>                                   // NEW
     axiosClient.post(API.MASTER.HOLIDAY_SYNC_GOVERNMENT, { year, country_code: countryCode }),
+  previewGovernmentHolidays: (year, countryCode) =>
+    axiosClient.get(API.MASTER.HOLIDAY_PREVIEW_GOVERNMENT, { params: { year, country_code: countryCode } }),
 };
 
 export const holidayApi = {
@@ -85,4 +87,5 @@ export const holidayApi = {
   update: masterApi.updateHoliday,
   remove: masterApi.deactivateHoliday,
   syncGovernmentHolidays: masterApi.syncGovernmentHolidays,
+  previewGovernment: masterApi.previewGovernmentHolidays
 };
