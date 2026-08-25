@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 
 import { useAttendance } from "./useAttendance";
 import AttendanceTable from "./components/AttendanceTable";
@@ -14,6 +15,9 @@ import Button from "@/components/ui/Button";
 
 import { getUser } from "@/utils/tokenHelpers";
 import { attendanceApi } from "@/api/attendance.api";
+import { masterApi } from "@/api/master.api";
+import { useCompanies } from "@/features/master/company/useCompanies";
+import { useCompanyBranches } from "@/features/master/branches/useBranches";
 import { formatDate, formatTime } from "@/utils/formatDate";
 
 /*
@@ -181,7 +185,7 @@ const getMonthRange = (
     from_date: formatISODate(
       year,
       month,
-      1
+      firstDay.getDate()
     ),
 
     to_date: formatISODate(
@@ -291,7 +295,248 @@ export default function AttendanceListPage() {
 
   /*
    * ----------------------------------------------------------
-   * PERIOD DATE RANGE
+   * ORGANIZATION FILTERS
+   * ----------------------------------------------------------
+   *
+   * Company
+   *    ↓
+   * Branch
+   *    ↓
+   * Department
+   *    ↓
+   * Designation
+   */
+
+  const [
+    companyFilterId,
+    setCompanyFilterId,
+  ] = useState("");
+
+  const [
+    branchFilterId,
+    setBranchFilterId,
+  ] = useState("");
+
+  const [
+    departmentFilterId,
+    setDepartmentFilterId,
+  ] = useState("");
+
+  const [
+    designationFilterId,
+    setDesignationFilterId,
+  ] = useState("");
+
+  /*
+   * ----------------------------------------------------------
+   * COMPANIES
+   * ----------------------------------------------------------
+   */
+
+  const {
+    data: companyData,
+    isLoading: companiesLoading,
+  } = useCompanies({
+    page: 1,
+    per_page: 1000,
+    is_active: true,
+  });
+
+  const filterCompanies =
+    companyData?.items ||
+    companyData?.data ||
+    [];
+
+  /*
+   * ----------------------------------------------------------
+   * BRANCHES
+   * ----------------------------------------------------------
+   */
+
+  const {
+    data: branchData,
+    isLoading: branchesLoading,
+  } = useCompanyBranches(
+    companyFilterId || undefined,
+    {
+      page: 1,
+      per_page: 1000,
+      is_active: true,
+    }
+  );
+
+  const filterBranches =
+    branchData?.items ||
+    branchData?.data ||
+    [];
+
+  /*
+   * ----------------------------------------------------------
+   * DEPARTMENTS
+   * ----------------------------------------------------------
+   */
+
+  const {
+    data: departmentData,
+    isLoading: departmentsLoading,
+  } = useQuery({
+    queryKey: [
+      "attendance-filter-departments",
+      companyFilterId,
+      branchFilterId,
+    ],
+
+    queryFn: async () => {
+      const response =
+        await masterApi.listDepartments({
+          company_id: companyFilterId
+            ? Number(companyFilterId)
+            : undefined,
+
+          branch_id: branchFilterId
+            ? Number(branchFilterId)
+            : undefined,
+
+          page: 1,
+          per_page: 1000,
+          is_active: true,
+        });
+
+      return (
+        response?.data?.data ||
+        response?.data ||
+        {}
+      );
+    },
+
+    enabled:
+      isAdmin &&
+      !!branchFilterId,
+  });
+
+  const filterDepartments =
+    departmentData?.items ||
+    departmentData?.data ||
+    [];
+
+  /*
+   * ----------------------------------------------------------
+   * DESIGNATIONS
+   * ----------------------------------------------------------
+   */
+
+  const {
+    data: designationData,
+    isLoading: designationsLoading,
+  } = useQuery({
+    queryKey: [
+      "attendance-filter-designations",
+      companyFilterId,
+      branchFilterId,
+      departmentFilterId,
+    ],
+
+    queryFn: async () => {
+      const response =
+        await masterApi.listDesignations({
+          department_id:
+            departmentFilterId
+              ? Number(departmentFilterId)
+              : undefined,
+
+          page: 1,
+          per_page: 1000,
+          is_active: true,
+        });
+
+      return (
+        response?.data?.data ||
+        response?.data ||
+        {}
+      );
+    },
+
+    enabled:
+      isAdmin &&
+      !!departmentFilterId,
+  });
+
+  const filterDesignations =
+    designationData?.items ||
+    designationData?.data ||
+    [];
+
+  /*
+   * ----------------------------------------------------------
+   * FILTER HANDLERS
+   * ----------------------------------------------------------
+   */
+
+  const handleCompanyFilterChange = (
+    event
+  ) => {
+    const value = event.target.value;
+
+    setCompanyFilterId(value);
+
+    // Reset dependent filters.
+    setBranchFilterId("");
+    setDepartmentFilterId("");
+    setDesignationFilterId("");
+
+    // Always go back to page 1.
+    setPage(1);
+  };
+
+  const handleBranchFilterChange = (
+    event
+  ) => {
+    const value = event.target.value;
+
+    setBranchFilterId(value);
+
+    // Reset dependent filters.
+    setDepartmentFilterId("");
+    setDesignationFilterId("");
+
+    setPage(1);
+  };
+
+  const handleDepartmentFilterChange = (
+    event
+  ) => {
+    const value = event.target.value;
+
+    setDepartmentFilterId(value);
+
+    // Reset designation.
+    setDesignationFilterId("");
+
+    setPage(1);
+  };
+
+  const handleDesignationFilterChange = (
+    event
+  ) => {
+    const value = event.target.value;
+
+    setDesignationFilterId(value);
+
+    setPage(1);
+  };
+
+  const clearOrganizationFilters = () => {
+    setCompanyFilterId("");
+    setBranchFilterId("");
+    setDepartmentFilterId("");
+    setDesignationFilterId("");
+
+    setPage(1);
+  };
+
+  /*
+   * ----------------------------------------------------------
+   * PERIOD RANGE
    * ----------------------------------------------------------
    */
 
@@ -330,35 +575,97 @@ export default function AttendanceListPage() {
 
   /*
    * ----------------------------------------------------------
-   * QUERY PARAMS
+   * ATTENDANCE QUERY
    * ----------------------------------------------------------
    *
-   * Admin:
-   *   - sees all attendance
+   * THIS IS THE IMPORTANT FIX.
    *
-   * Employee:
-   *   - sees only their own attendance
+   * Send the selected organization IDs directly to the
+   * attendance endpoint.
    */
 
-  const queryParams = {
-    ...params,
+  const queryParams = useMemo(
+    () => ({
+      ...params,
 
-    from_date:
+      page,
+
+      per_page: perPage,
+
+      employee_id:
+        !isAdmin &&
+        user?.employee?.id
+          ? user.employee.id
+          : undefined,
+
+      /*
+       * Organization filters
+       */
+
+      company_id:
+        isAdmin &&
+        companyFilterId
+          ? Number(companyFilterId)
+          : undefined,
+
+      branch_id:
+        isAdmin &&
+        branchFilterId
+          ? Number(branchFilterId)
+          : undefined,
+
+      department_id:
+        isAdmin &&
+        departmentFilterId
+          ? Number(departmentFilterId)
+          : undefined,
+
+      designation_id:
+        isAdmin &&
+        designationFilterId
+          ? Number(designationFilterId)
+          : undefined,
+
+      /*
+       * Daily attendance endpoint supports attendance_date.
+       */
+
+      attendance_date:
+        periodType ===
+        PERIOD_TYPES.DAILY
+          ? selectedDate
+          : undefined,
+
+      /*
+       * Keep these for report/export usage.
+       */
+
+      from_date:
+        periodRange.from_date,
+
+      to_date:
+        periodRange.to_date,
+    }),
+    [
+      params,
+      page,
+      perPage,
+      isAdmin,
+      user?.employee?.id,
+      companyFilterId,
+      branchFilterId,
+      departmentFilterId,
+      designationFilterId,
+      periodType,
+      selectedDate,
       periodRange.from_date,
-
-    to_date:
       periodRange.to_date,
-
-    employee_id:
-      !isAdmin &&
-      user?.employee?.id
-        ? user.employee.id
-        : undefined,
-  };
+    ]
+  );
 
   /*
    * ----------------------------------------------------------
-   * ATTENDANCE QUERY
+   * ATTENDANCE
    * ----------------------------------------------------------
    */
 
@@ -372,31 +679,7 @@ export default function AttendanceListPage() {
 
   /*
    * ----------------------------------------------------------
-   * EXPORT
-   * ----------------------------------------------------------
-   */
-
-  const {
-    exporting,
-    exportExcel,
-    exportPDF,
-  } = useTableExport({
-    fetchAll: attendanceApi.list,
-    queryParams,
-    exportColumns: EXPORT_COLUMNS,
-    filename: `attendance-${periodType}`,
-    title: `Attendance - ${getPeriodTitle(
-      periodType,
-      selectedDate,
-      selectedMonth,
-      selectedQuarter,
-      selectedYear
-    )}`,
-  });
-
-  /*
-   * ----------------------------------------------------------
-   * DATA
+   * ATTENDANCE DATA
    * ----------------------------------------------------------
    */
 
@@ -405,13 +688,19 @@ export default function AttendanceListPage() {
 
   /*
    * ----------------------------------------------------------
-   * ATTENDANCE SUMMARY
+   * TOTAL RECORDS
    * ----------------------------------------------------------
    */
 
   const totalRecords =
     data?.total ??
     attendanceItems.length;
+
+  /*
+   * ----------------------------------------------------------
+   * SUMMARY
+   * ----------------------------------------------------------
+   */
 
   const presentCount =
     attendanceItems.filter(
@@ -435,7 +724,7 @@ export default function AttendanceListPage() {
 
   /*
    * ----------------------------------------------------------
-   * TOTAL WORKING HOURS
+   * WORKING HOURS
    * ----------------------------------------------------------
    */
 
@@ -443,7 +732,9 @@ export default function AttendanceListPage() {
     attendanceItems.reduce(
       (total, row) =>
         total +
-        Number(row?.working_hours || 0),
+        Number(
+          row?.working_hours || 0
+        ),
       0
     );
 
@@ -478,6 +769,45 @@ export default function AttendanceListPage() {
     );
 
   /*
+   * ----------------------------------------------------------
+   * EXPORT
+   * ----------------------------------------------------------
+   *
+   * Export uses the EXACT same filter parameters.
+   */
+
+  const {
+    exporting,
+    exportExcel,
+    exportPDF,
+  } = useTableExport({
+    fetchAll: attendanceApi.list,
+
+    queryParams,
+
+    exportColumns:
+      EXPORT_COLUMNS,
+
+    filename:
+      `attendance-${periodType}`,
+
+    title:
+      `Attendance - ${periodTitle}`,
+  });
+
+  /*
+   * ----------------------------------------------------------
+   * FILTER LOADING
+   * ----------------------------------------------------------
+   */
+
+  const filtersLoading =
+    companiesLoading ||
+    branchesLoading ||
+    departmentsLoading ||
+    designationsLoading;
+
+  /*
    * ==========================================================
    * EMPLOYEE VIEW
    * ==========================================================
@@ -486,14 +816,12 @@ export default function AttendanceListPage() {
   if (!isAdmin) {
     return (
       <div className="min-h-full space-y-6">
-        {/* ----------------------------------------------------
-            EMPLOYEE HEADER
-        ----------------------------------------------------- */}
 
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <div className="flex items-center gap-3">
+
                 <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
                   <svg
                     className="h-6 w-6"
@@ -522,24 +850,16 @@ export default function AttendanceListPage() {
                   </h1>
 
                   <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                    Manage your daily check-in and
-                    check-out
+                    Manage your daily check-in and check-out
                   </p>
                 </div>
+
               </div>
             </div>
           </div>
         </div>
 
-        {/* ----------------------------------------------------
-            CHECK IN / OUT
-        ----------------------------------------------------- */}
-
         <CheckInOutWidget />
-
-        {/* ----------------------------------------------------
-            EMPLOYEE PERIOD FILTER
-        ----------------------------------------------------- */}
 
         <AttendancePeriodSelector
           periodType={periodType}
@@ -554,11 +874,8 @@ export default function AttendanceListPage() {
           setSelectedYear={setSelectedYear}
         />
 
-        {/* ----------------------------------------------------
-            EMPLOYEE SUMMARY
-        ----------------------------------------------------- */}
-
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+
           <AttendanceMetric
             label="Present"
             value={presentCount}
@@ -582,21 +899,19 @@ export default function AttendanceListPage() {
 
           <AttendanceMetric
             label="Working Hours"
-            value={`${totalWorkingHours.toFixed(
-              2
-            )}h`}
+            value={`${totalWorkingHours.toFixed(2)}h`}
             description={periodTitle}
             icon="hours"
           />
+
         </div>
 
-        {/* ----------------------------------------------------
-            EMPLOYEE ATTENDANCE
-        ----------------------------------------------------- */}
-
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+
           <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+
             <div>
+
               <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
                 {periodType ===
                 PERIOD_TYPES.DAILY
@@ -610,11 +925,13 @@ export default function AttendanceListPage() {
               <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                 {periodTitle}
               </p>
+
             </div>
 
             <span className="w-fit rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-500 dark:bg-slate-800 dark:text-slate-400">
               {totalRecords} Records
             </span>
+
           </div>
 
           {isError ? (
@@ -630,6 +947,7 @@ export default function AttendanceListPage() {
               onSort={toggleSort}
             />
           )}
+
         </div>
       </div>
     );
@@ -643,16 +961,19 @@ export default function AttendanceListPage() {
 
   return (
     <div className="min-h-full space-y-6">
-      {/* ======================================================
-          PAGE HEADER
-      ======================================================= */}
+
+      {/* PAGE HEADER */}
 
       <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+
         <div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-primary-500/5 blur-3xl" />
 
         <div className="relative flex flex-col gap-5 p-6 xl:flex-row xl:items-center xl:justify-between">
+
           <div>
+
             <div className="flex items-center gap-3">
+
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
                 <svg
                   className="h-6 w-6"
@@ -678,7 +999,9 @@ export default function AttendanceListPage() {
               </div>
 
               <div>
+
                 <div className="flex flex-wrap items-center gap-2">
+
                   <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
                     Attendance
                   </h1>
@@ -688,21 +1011,21 @@ export default function AttendanceListPage() {
                       Updating
                     </span>
                   )}
+
                 </div>
 
                 <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                  Monitor employee attendance day-to-day,
-                  monthly and quarterly
+                  Monitor employee attendance day-to-day, monthly and quarterly
                 </p>
+
               </div>
+
             </div>
+
           </div>
 
-          {/* --------------------------------------------------
-              ACTIONS
-          --------------------------------------------------- */}
-
           <div className="flex flex-wrap items-center gap-2">
+
             <TableToolbar
               onRefresh={refetch}
               refreshing={isFetching}
@@ -722,13 +1045,14 @@ export default function AttendanceListPage() {
                 Reports
               </Button>
             </Link>
+
           </div>
+
         </div>
+
       </div>
 
-      {/* ======================================================
-          PERIOD SELECTOR
-      ======================================================= */}
+      {/* PERIOD SELECTOR */}
 
       <AttendancePeriodSelector
         periodType={periodType}
@@ -744,12 +1068,218 @@ export default function AttendanceListPage() {
       />
 
       {/* ======================================================
+          ORGANIZATION FILTERS
+      ======================================================= */}
+
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+
+        <div className="mb-4">
+
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+            Organization Filters
+          </p>
+
+          <h2 className="mt-1 text-lg font-semibold text-slate-900 dark:text-white">
+            Filter Attendance
+          </h2>
+
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+            Select Company → Branch → Department → Designation.
+          </p>
+
+        </div>
+
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+
+          {/* COMPANY */}
+
+          <select
+            value={companyFilterId}
+            onChange={handleCompanyFilterChange}
+            disabled={filtersLoading}
+            className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+          >
+
+            <option value="">
+              All Companies
+            </option>
+
+            {filterCompanies.map(
+              (company) => (
+                <option
+                  key={company.id}
+                  value={company.id}
+                >
+                  {company.name}
+                </option>
+              )
+            )}
+
+          </select>
+
+          {/* BRANCH */}
+
+          <select
+            value={branchFilterId}
+            onChange={handleBranchFilterChange}
+            disabled={
+              !companyFilterId ||
+              branchesLoading
+            }
+            className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+          >
+
+            <option value="">
+              {!companyFilterId
+                ? "Select Company First"
+                : branchesLoading
+                ? "Loading Branches..."
+                : "All Branches"}
+            </option>
+
+            {filterBranches.map(
+              (branch) => (
+                <option
+                  key={branch.id}
+                  value={branch.id}
+                >
+                  {branch.name}
+                </option>
+              )
+            )}
+
+          </select>
+
+          {/* DEPARTMENT */}
+
+          <select
+            value={departmentFilterId}
+            onChange={handleDepartmentFilterChange}
+            disabled={
+              !branchFilterId ||
+              departmentsLoading
+            }
+            className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+          >
+
+            <option value="">
+              {!branchFilterId
+                ? "Select Branch First"
+                : departmentsLoading
+                ? "Loading Departments..."
+                : "All Departments"}
+            </option>
+
+            {filterDepartments.map(
+              (department) => (
+                <option
+                  key={department.id}
+                  value={department.id}
+                >
+                  {department.department_name}
+                </option>
+              )
+            )}
+
+          </select>
+
+          {/* DESIGNATION */}
+
+          <select
+            value={designationFilterId}
+            onChange={handleDesignationFilterChange}
+            disabled={
+              !departmentFilterId ||
+              designationsLoading
+            }
+            className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+          >
+
+            <option value="">
+              {!departmentFilterId
+                ? "Select Department First"
+                : designationsLoading
+                ? "Loading Designations..."
+                : "All Designations"}
+            </option>
+
+            {filterDesignations.map(
+              (designation) => (
+                <option
+                  key={designation.id}
+                  value={designation.id}
+                >
+                  {designation.designation_name}
+                </option>
+              )
+            )}
+
+          </select>
+
+        </div>
+
+        {/* ACTIVE FILTERS */}
+
+        {(companyFilterId ||
+          branchFilterId ||
+          departmentFilterId ||
+          designationFilterId) && (
+
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+
+            <span className="text-xs font-medium text-slate-400">
+              Active filters:
+            </span>
+
+            {companyFilterId && (
+              <span className="rounded-full bg-primary-50 px-2.5 py-1 text-[11px] font-semibold text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
+                Company
+              </span>
+            )}
+
+            {branchFilterId && (
+              <span className="rounded-full bg-primary-50 px-2.5 py-1 text-[11px] font-semibold text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
+                Branch
+              </span>
+            )}
+
+            {departmentFilterId && (
+              <span className="rounded-full bg-primary-50 px-2.5 py-1 text-[11px] font-semibold text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
+                Department
+              </span>
+            )}
+
+            {designationFilterId && (
+              <span className="rounded-full bg-primary-50 px-2.5 py-1 text-[11px] font-semibold text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
+                Designation
+              </span>
+            )}
+
+            <button
+              type="button"
+              onClick={
+                clearOrganizationFilters
+              }
+              className="ml-1 text-xs font-medium text-slate-500 underline underline-offset-2 hover:text-primary-600 dark:text-slate-400 dark:hover:text-primary-400"
+            >
+              Clear filters
+            </button>
+
+          </div>
+        )}
+
+      </div>
+
+      {/* ======================================================
           PERIOD SUMMARY
       ======================================================= */}
 
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+
         <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+
           <div>
+
             <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
               Attendance Overview
             </p>
@@ -757,20 +1287,23 @@ export default function AttendanceListPage() {
             <h2 className="mt-1 text-xl font-bold text-slate-900 dark:text-white">
               {periodTitle}
             </h2>
+
           </div>
 
           <span className="w-fit rounded-full bg-primary-50 px-3 py-1 text-xs font-semibold text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
             {periodType ===
-              PERIOD_TYPES.DAILY
+            PERIOD_TYPES.DAILY
               ? "Daily"
               : periodType ===
                 PERIOD_TYPES.MONTHLY
               ? "Monthly"
               : "Quarterly"}
           </span>
+
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-6">
+
           <AttendanceMetric
             label="Total Records"
             value={totalRecords}
@@ -808,13 +1341,13 @@ export default function AttendanceListPage() {
 
           <AttendanceMetric
             label="Working Hours"
-            value={`${totalWorkingHours.toFixed(
-              2
-            )}h`}
+            value={`${totalWorkingHours.toFixed(2)}h`}
             description="Total hours"
             icon="hours"
           />
+
         </div>
+
       </div>
 
       {/* ======================================================
@@ -822,13 +1355,13 @@ export default function AttendanceListPage() {
       ======================================================= */}
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        {/* ----------------------------------------------------
-            ATTENDANCE RATE
-        ----------------------------------------------------- */}
 
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+
           <div className="flex items-start justify-between">
+
             <div>
+
               <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
                 Attendance Rate
               </p>
@@ -840,14 +1373,17 @@ export default function AttendanceListPage() {
               <p className="mt-1 text-xs text-slate-400">
                 {periodTitle}
               </p>
+
             </div>
 
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
               %
             </div>
+
           </div>
 
           <div className="mt-5 h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+
             <div
               className="h-full rounded-full bg-primary-500 transition-all duration-500"
               style={{
@@ -857,9 +1393,11 @@ export default function AttendanceListPage() {
                 )}%`,
               }}
             />
+
           </div>
 
           <div className="mt-3 flex justify-between text-xs text-slate-500 dark:text-slate-400">
+
             <span>
               {presentCount} present
             </span>
@@ -867,19 +1405,19 @@ export default function AttendanceListPage() {
             <span>
               {totalRecords} records
             </span>
+
           </div>
+
         </div>
 
-        {/* ----------------------------------------------------
-            STATUS BREAKDOWN
-        ----------------------------------------------------- */}
-
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+
           <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
             Status Breakdown
           </p>
 
           <div className="mt-4 space-y-3">
+
             <StatusRow
               label="Present"
               value={presentCount}
@@ -939,19 +1477,19 @@ export default function AttendanceListPage() {
               }
               type="late"
             />
+
           </div>
+
         </div>
 
-        {/* ----------------------------------------------------
-            QUICK ACTIONS
-        ----------------------------------------------------- */}
-
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+
           <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
             Attendance Tools
           </p>
 
           <div className="mt-4 grid grid-cols-2 gap-3">
+
             <Link
               to="/attendance/manual"
               className="group rounded-xl border border-slate-200 p-3 transition hover:border-primary-300 hover:bg-primary-50 dark:border-slate-700 dark:hover:border-primary-700 dark:hover:bg-primary-500/5"
@@ -985,8 +1523,11 @@ export default function AttendanceListPage() {
                 View reports
               </p>
             </Link>
+
           </div>
+
         </div>
+
       </div>
 
       {/* ======================================================
@@ -994,14 +1535,15 @@ export default function AttendanceListPage() {
       ======================================================= */}
 
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
-        {/* ----------------------------------------------------
-            TABLE HEADER
-        ----------------------------------------------------- */}
 
         <div className="border-b border-slate-200 px-5 py-5 dark:border-slate-700">
+
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+
             <div>
+
               <div className="flex items-center gap-2">
+
                 <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
                   {periodType ===
                   PERIOD_TYPES.DAILY
@@ -1015,23 +1557,24 @@ export default function AttendanceListPage() {
                 <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-500 dark:bg-slate-800 dark:text-slate-400">
                   {totalRecords}
                 </span>
+
               </div>
 
               <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                {periodTitle} · Employee check-in,
-                check-out and attendance status
+                {periodTitle} · Employee check-in, check-out and attendance status
               </p>
-            </div>
-          </div>
-        </div>
 
-        {/* ----------------------------------------------------
-            ERROR
-        ----------------------------------------------------- */}
+            </div>
+
+          </div>
+
+        </div>
 
         {isError && (
           <div className="mx-5 mt-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-600 dark:border-red-900/40 dark:bg-red-950/20 dark:text-red-400">
+
             <div className="flex items-center gap-2">
+
               <span className="font-semibold">
                 Unable to load attendance.
               </span>
@@ -1043,15 +1586,14 @@ export default function AttendanceListPage() {
               >
                 Try again
               </button>
+
             </div>
+
           </div>
         )}
 
-        {/* ----------------------------------------------------
-            TABLE
-        ----------------------------------------------------- */}
-
         <div className="overflow-x-auto">
+
           <AttendanceTable
             data={attendanceItems}
             loading={isLoading}
@@ -1059,23 +1601,27 @@ export default function AttendanceListPage() {
             sortDir={sortDir}
             onSort={toggleSort}
           />
+
         </div>
 
-        {/* ----------------------------------------------------
-            PAGINATION
-        ----------------------------------------------------- */}
-
         <div className="border-t border-slate-200 dark:border-slate-700">
+
           <TablePagination
             page={page}
             pages={data?.pages || 1}
             total={data?.total || 0}
             perPage={perPage}
             onPageChange={setPage}
-            onPerPageChange={setPerPage}
+            onPerPageChange={(value) => {
+              setPerPage(value);
+              setPage(1);
+            }}
           />
+
         </div>
+
       </div>
+
     </div>
   );
 }
@@ -1108,54 +1654,18 @@ function AttendancePeriodSelector({
   );
 
   const months = [
-    {
-      value: 1,
-      label: "January",
-    },
-    {
-      value: 2,
-      label: "February",
-    },
-    {
-      value: 3,
-      label: "March",
-    },
-    {
-      value: 4,
-      label: "April",
-    },
-    {
-      value: 5,
-      label: "May",
-    },
-    {
-      value: 6,
-      label: "June",
-    },
-    {
-      value: 7,
-      label: "July",
-    },
-    {
-      value: 8,
-      label: "August",
-    },
-    {
-      value: 9,
-      label: "September",
-    },
-    {
-      value: 10,
-      label: "October",
-    },
-    {
-      value: 11,
-      label: "November",
-    },
-    {
-      value: 12,
-      label: "December",
-    },
+    { value: 1, label: "January" },
+    { value: 2, label: "February" },
+    { value: 3, label: "March" },
+    { value: 4, label: "April" },
+    { value: 5, label: "May" },
+    { value: 6, label: "June" },
+    { value: 7, label: "July" },
+    { value: 8, label: "August" },
+    { value: 9, label: "September" },
+    { value: 10, label: "October" },
+    { value: 11, label: "November" },
+    { value: 12, label: "December" },
   ];
 
   const quarters = [
@@ -1183,11 +1693,9 @@ function AttendancePeriodSelector({
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-      {/* ------------------------------------------------------
-          PERIOD TABS
-      ------------------------------------------------------- */}
 
       <div className="flex flex-wrap gap-2">
+
         <PeriodTab
           active={
             periodType ===
@@ -1229,15 +1737,13 @@ function AttendancePeriodSelector({
         >
           Quarterly
         </PeriodTab>
-      </div>
 
-      {/* ------------------------------------------------------
-          DAILY FILTER
-      ------------------------------------------------------- */}
+      </div>
 
       {periodType ===
         PERIOD_TYPES.DAILY && (
         <div className="mt-5">
+
           <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-slate-400">
             Attendance Date
           </label>
@@ -1252,17 +1758,16 @@ function AttendancePeriodSelector({
             }
             className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 sm:w-64"
           />
+
         </div>
       )}
-
-      {/* ------------------------------------------------------
-          MONTHLY FILTER
-      ------------------------------------------------------- */}
 
       {periodType ===
         PERIOD_TYPES.MONTHLY && (
         <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+
           <div>
+
             <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-slate-400">
               Month
             </label>
@@ -1278,18 +1783,22 @@ function AttendancePeriodSelector({
               }
               className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
             >
-              {months.map((month) => (
-                <option
-                  key={month.value}
-                  value={month.value}
-                >
-                  {month.label}
-                </option>
-              ))}
+              {months.map(
+                (month) => (
+                  <option
+                    key={month.value}
+                    value={month.value}
+                  >
+                    {month.label}
+                  </option>
+                )
+              )}
             </select>
+
           </div>
 
           <div>
+
             <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-slate-400">
               Year
             </label>
@@ -1305,27 +1814,29 @@ function AttendancePeriodSelector({
               }
               className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
             >
-              {years.map((year) => (
-                <option
-                  key={year}
-                  value={year}
-                >
-                  {year}
-                </option>
-              ))}
+              {years.map(
+                (year) => (
+                  <option
+                    key={year}
+                    value={year}
+                  >
+                    {year}
+                  </option>
+                )
+              )}
             </select>
+
           </div>
+
         </div>
       )}
-
-      {/* ------------------------------------------------------
-          QUARTERLY FILTER
-      ------------------------------------------------------- */}
 
       {periodType ===
         PERIOD_TYPES.QUARTERLY && (
         <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+
           <div>
+
             <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-slate-400">
               Quarter
             </label>
@@ -1356,9 +1867,11 @@ function AttendancePeriodSelector({
                 )
               )}
             </select>
+
           </div>
 
           <div>
+
             <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-slate-400">
               Year
             </label>
@@ -1374,18 +1887,23 @@ function AttendancePeriodSelector({
               }
               className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
             >
-              {years.map((year) => (
-                <option
-                  key={year}
-                  value={year}
-                >
-                  {year}
-                </option>
-              ))}
+              {years.map(
+                (year) => (
+                  <option
+                    key={year}
+                    value={year}
+                  >
+                    {year}
+                  </option>
+                )
+              )}
             </select>
+
           </div>
+
         </div>
       )}
+
     </div>
   );
 }
@@ -1517,8 +2035,11 @@ function AttendanceMetric({
 
   return (
     <div className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md dark:border-slate-700 dark:bg-slate-900">
+
       <div className="flex items-start justify-between">
+
         <div className="min-w-0">
+
           <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
             {label}
           </p>
@@ -1530,6 +2051,7 @@ function AttendanceMetric({
           <p className="mt-1 truncate text-xs text-slate-400 dark:text-slate-500">
             {description}
           </p>
+
         </div>
 
         <div
@@ -1537,7 +2059,9 @@ function AttendanceMetric({
         >
           {icons[icon]}
         </div>
+
       </div>
+
     </div>
   );
 }
@@ -1563,7 +2087,9 @@ function StatusRow({
 
   return (
     <div>
+
       <div className="mb-1.5 flex items-center justify-between">
+
         <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
           {label}
         </span>
@@ -1575,9 +2101,11 @@ function StatusRow({
             ({percentage}%)
           </span>
         </span>
+
       </div>
 
       <div className="h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+
         <div
           className={`h-full rounded-full transition-all duration-500 ${barStyles[type]}`}
           style={{
@@ -1587,7 +2115,9 @@ function StatusRow({
             )}%`,
           }}
         />
+
       </div>
+
     </div>
   );
 }
