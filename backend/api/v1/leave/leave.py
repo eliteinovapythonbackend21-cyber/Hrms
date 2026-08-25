@@ -6,7 +6,7 @@ from functools import wraps
 from models import Leave, Employee, BaseUser, Department
 from utils import paginate_query
 
-leaves_bp = Blueprint("leaves_bp", __name__)
+leave_bp = Blueprint("leave_bp", __name__)
 
 
 def with_token(func):
