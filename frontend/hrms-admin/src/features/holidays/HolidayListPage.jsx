@@ -7,7 +7,6 @@ import {
   useUpdateHoliday,
   useDeactivateHoliday,
   useSyncGovernmentHolidays,
-  usePreviewGovernmentHolidays,
 } from "./useHolidays";
 
 import HolidayForm from "./HolidayForm";
@@ -101,8 +100,6 @@ export default function HolidayListPage() {
   const [editing, setEditing] = useState(null);
   const [confirmRow, setConfirmRow] = useState(null);
   const [prefillDate, setPrefillDate] = useState(null);
-  const [prefillName, setPrefillName] = useState(null);
-  const [prefillType, setPrefillType] = useState(null);
 
   const [statusFilter, setStatusFilter] = useState("active");
   const [typeFilter, setTypeFilter] = useState("all");
@@ -111,8 +108,17 @@ export default function HolidayListPage() {
   const [syncCountry, setSyncCountry] = useState("IN");
 
   const [listMode, setListMode] = useState("calendar"); // "calendar" | "grouped"
-  const [showReference, setShowReference] = useState(true);
-  const [referenceCountry, setReferenceCountry] = useState("IN");
+
+  // IMPORTANT: this page reads holidays with a plain per_page from
+  // usePagination() above, which may only fetch a small page of rows.
+  // The calendar and grouped views below need the FULL active holiday
+  // set (all months/years) to render correctly - not just one page.
+  // We fetch that separately here, uncapped, the same way the CRM
+  // pages do it (per_page: 1000), so the calendar isn't silently
+  // missing records outside whatever page/perPage the table happens
+  // to be on.
+  const { data: allHolidaysData } = useHolidays({ page: 1, per_page: 1000 });
+  const allHolidaysForCalendar = allHolidaysData?.items || [];
 
   const holidays = data?.items || [];
 
@@ -126,26 +132,32 @@ export default function HolidayListPage() {
     (h) => (h.holiday_type || "Office") === "Office"
   );
 
+  // Full, uncapped set of ACTIVE holidays used by calendar/grouped views.
+  const allActiveHolidays = useMemo(
+    () => allHolidaysForCalendar.filter((h) => h.is_active),
+    [allHolidaysForCalendar]
+  );
+
   /* -------------------------------------------------------
      YEAR / MONTH GROUPED VIEW
   ------------------------------------------------------- */
 
   const availableYears = useMemo(() => {
     const years = new Set(
-      activeHolidays
+      allActiveHolidays
         .map((h) => (h.holiday_date ? new Date(h.holiday_date).getFullYear() : null))
         .filter(Boolean)
     );
     years.add(new Date().getFullYear());
     return Array.from(years).sort((a, b) => b - a);
-  }, [activeHolidays]);
+  }, [allActiveHolidays]);
 
   const [listYear, setListYear] = useState(new Date().getFullYear());
 
   const groupedByMonth = useMemo(() => {
     const buckets = Array.from({ length: 12 }, () => ({ government: [], office: [] }));
 
-    activeHolidays.forEach((holiday) => {
+    allActiveHolidays.forEach((holiday) => {
       if (!holiday.holiday_date) return;
       const date = new Date(holiday.holiday_date);
       if (date.getFullYear() !== Number(listYear)) return;
@@ -161,7 +173,7 @@ export default function HolidayListPage() {
     });
 
     return buckets;
-  }, [activeHolidays, listYear]);
+  }, [allActiveHolidays, listYear]);
 
   const yearTotals = useMemo(() => {
     return groupedByMonth.reduce(
@@ -174,7 +186,7 @@ export default function HolidayListPage() {
   }, [groupedByMonth]);
 
   /* -------------------------------------------------------
-     CALENDAR VIEW
+     CALENDAR VIEW — shows SAVED holidays only (your DB records)
   ------------------------------------------------------- */
 
   const today = new Date();
@@ -182,31 +194,12 @@ export default function HolidayListPage() {
   const [calendarMonth, setCalendarMonth] = useState(today.getMonth()); // 0-indexed
 
   const calendarHolidaysThisMonth = useMemo(() => {
-    return activeHolidays.filter((h) => {
+    return allActiveHolidays.filter((h) => {
       if (!h.holiday_date) return false;
       const d = new Date(h.holiday_date);
       return d.getFullYear() === calendarYear && d.getMonth() === calendarMonth;
     });
-  }, [activeHolidays, calendarYear, calendarMonth]);
-
-  // Live "official" reference calendar for the year currently being
-  // viewed - fetched read-only, never written to the DB automatically.
-  const {
-    data: referenceHolidays = [],
-    isLoading: referenceLoading,
-    isError: referenceError,
-  } = usePreviewGovernmentHolidays(calendarYear, referenceCountry, showReference);
-
-  const referenceHolidaysThisMonth = useMemo(() => {
-    return referenceHolidays.filter((h) => {
-      if (!h.date) return false;
-      const d = new Date(h.date);
-      return d.getMonth() === calendarMonth;
-    });
-  }, [referenceHolidays, calendarMonth]);
-
-  const isAlreadySaved = (dateStr) =>
-    activeHolidays.some((h) => h.holiday_date && h.holiday_date.slice(0, 10) === dateStr);
+  }, [allActiveHolidays, calendarYear, calendarMonth]);
 
   const calendarCells = useMemo(() => {
     const firstOfMonth = new Date(calendarYear, calendarMonth, 1);
@@ -222,18 +215,10 @@ export default function HolidayListPage() {
         .filter((h) => isSameDate(h.holiday_date, calendarYear, calendarMonth, day))
         .sort((a, b) => (a.name || "").localeCompare(b.name || ""));
 
-      const referenceForDay = showReference
-        ? referenceHolidaysThisMonth.filter((h) => {
-            const d = new Date(h.date);
-            return d.getDate() === day && !isAlreadySaved(h.date);
-          })
-        : [];
-
-      cells.push({ day, saved: savedForDay, reference: referenceForDay });
+      cells.push({ day, saved: savedForDay });
     }
     return cells;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [calendarYear, calendarMonth, calendarHolidaysThisMonth, referenceHolidaysThisMonth, showReference, activeHolidays]);
+  }, [calendarYear, calendarMonth, calendarHolidaysThisMonth]);
 
   const goToPrevMonth = () => {
     if (calendarMonth === 0) {
@@ -262,18 +247,6 @@ export default function HolidayListPage() {
     if (!cell) return;
     if (!canAdd) return;
     setPrefillDate(toISODate(calendarYear, calendarMonth, cell.day));
-    setPrefillName(null);
-    setPrefillType(null);
-    setEditing(null);
-    setModalOpen(true);
-  };
-
-  const handleAddReference = (e, refHoliday) => {
-    e.stopPropagation();
-    if (!canAdd) return;
-    setPrefillDate(refHoliday.date);
-    setPrefillName(refHoliday.name);
-    setPrefillType("Government");
     setEditing(null);
     setModalOpen(true);
   };
@@ -297,16 +270,12 @@ export default function HolidayListPage() {
   const openAdd = () => {
     setEditing(null);
     setPrefillDate(null);
-    setPrefillName(null);
-    setPrefillType(null);
     setModalOpen(true);
   };
 
   const openEdit = (row) => {
     setEditing(row);
     setPrefillDate(null);
-    setPrefillName(null);
-    setPrefillType(null);
     setModalOpen(true);
   };
 
@@ -323,8 +292,6 @@ export default function HolidayListPage() {
       setModalOpen(false);
       setEditing(null);
       setPrefillDate(null);
-      setPrefillName(null);
-      setPrefillType(null);
 
       queryClient.invalidateQueries({ queryKey: ["holidays"] });
       refetch();
@@ -355,6 +322,7 @@ export default function HolidayListPage() {
       showToast(result?.data?.message || "Government holidays synced", "success");
       setListYear(syncYear);
       setCalendarYear(syncYear);
+      queryClient.invalidateQueries({ queryKey: ["holidays"] });
       refetch();
     } catch (err) {
       showToast(
@@ -506,9 +474,8 @@ export default function HolidayListPage() {
               Sync Government Holidays
             </h3>
             <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-              Bulk-saves the official calendar for the selected year/country into your holiday
-              list. Or just browse the calendar below — it shows the official reference dates
-              even if you haven't synced them yet.
+              Pulls the public holiday list for the selected year/country when available and
+              saves them here. Not all future years are published yet by the provider.
             </p>
           </div>
 
@@ -672,54 +639,18 @@ export default function HolidayListPage() {
               </button>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3">
-              <label className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-300">
-                <input
-                  type="checkbox"
-                  checked={showReference}
-                  onChange={(e) => setShowReference(e.target.checked)}
-                  className="h-3.5 w-3.5 rounded border-slate-300"
-                />
-                Show official calendar reference
-              </label>
-
-              {showReference && (
-                <select
-                  value={referenceCountry}
-                  onChange={(e) => setReferenceCountry(e.target.value)}
-                  className="h-8 rounded-lg border border-slate-300 bg-white px-2 text-xs outline-none dark:border-slate-600 dark:bg-slate-800 dark:text-white"
-                >
-                  {COUNTRY_OPTIONS.map((c) => (
-                    <option key={c.code} value={c.code}>
-                      {c.label}
-                    </option>
-                  ))}
-                </select>
-              )}
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3 border-b border-slate-100 px-4 py-2 text-[11px] text-slate-500 dark:border-slate-800 dark:text-slate-400">
-            <span className="flex items-center gap-1">
-              <span className="h-2 w-2 rounded-full bg-violet-500" /> Saved — Government
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="h-2 w-2 rounded-full bg-sky-500" /> Saved — Office
-            </span>
-            {showReference && (
+            <div className="flex items-center gap-3 text-[11px] text-slate-500 dark:text-slate-400">
               <span className="flex items-center gap-1">
-                <span className="h-2 w-2 rounded-full border border-dashed border-amber-500" />
-                Official reference (not yet saved)
+                <span className="h-2 w-2 rounded-full bg-violet-500" /> Government
               </span>
-            )}
-            {showReference && referenceLoading && (
-              <span className="text-slate-400">Loading reference calendar…</span>
-            )}
-            {showReference && referenceError && (
-              <span className="text-red-500 dark:text-red-400">
-                Reference calendar unavailable for this year/country.
+              <span className="flex items-center gap-1">
+                <span className="h-2 w-2 rounded-full bg-sky-500" /> Office
               </span>
-            )}
+              <span className="ml-1">
+                {calendarHolidaysThisMonth.length} holiday
+                {calendarHolidaysThisMonth.length === 1 ? "" : "s"} this month
+              </span>
+            </div>
           </div>
 
           <div className="p-4">
@@ -735,12 +666,10 @@ export default function HolidayListPage() {
 
               {calendarCells.map((cell, index) => {
                 if (!cell) {
-                  return <div key={`empty-${index}`} className="min-h-[100px] sm:min-h-[112px]" />;
+                  return <div key={`empty-${index}`} className="min-h-[92px] sm:min-h-[104px]" />;
                 }
 
-                const hasSaved = cell.saved.length > 0;
-                const hasReference = cell.reference.length > 0;
-                const hasAny = hasSaved || hasReference;
+                const hasAny = cell.saved.length > 0;
                 const cellDate = toISODate(calendarYear, calendarMonth, cell.day);
 
                 return (
@@ -748,7 +677,7 @@ export default function HolidayListPage() {
                     key={cell.day}
                     onClick={() => handleCellClick(cell)}
                     title={formatDate(cellDate)}
-                    className={`group/day relative flex min-h-[100px] flex-col gap-1 rounded-lg border p-1.5 transition-colors sm:min-h-[112px] ${
+                    className={`group/day relative flex min-h-[92px] flex-col gap-1 rounded-lg border p-1.5 transition-colors sm:min-h-[104px] ${
                       isToday(cell.day)
                         ? "border-primary-400 bg-primary-50 dark:border-primary-500 dark:bg-primary-500/10"
                         : hasAny
@@ -792,19 +721,6 @@ export default function HolidayListPage() {
                             </div>
                           );
                         })}
-
-                        {cell.reference.map((h) => (
-                          <div
-                            key={`ref-${h.date}-${h.name}`}
-                            onClick={(e) => handleAddReference(e, h)}
-                            title={`${h.name} (official reference — click to add)`}
-                            className={`truncate rounded border border-dashed border-amber-400 bg-amber-50 px-1.5 py-1 text-[10px] font-medium leading-tight text-amber-700 dark:border-amber-500/50 dark:bg-amber-500/10 dark:text-amber-400 ${
-                              canAdd ? "cursor-pointer hover:bg-amber-100 dark:hover:bg-amber-500/20" : ""
-                            }`}
-                          >
-                            {h.name}
-                          </div>
-                        ))}
                       </div>
                     )}
                   </div>
@@ -812,7 +728,7 @@ export default function HolidayListPage() {
               })}
             </div>
 
-            {calendarHolidaysThisMonth.length === 0 && referenceHolidaysThisMonth.length === 0 && (
+            {calendarHolidaysThisMonth.length === 0 && (
               <p className="mt-3 text-center text-xs text-slate-400">
                 No holidays recorded for {MONTH_NAMES[calendarMonth]} {calendarYear} yet.
                 {canAdd && " Click any date above to add one."}
@@ -1049,30 +965,17 @@ export default function HolidayListPage() {
           setModalOpen(false);
           setEditing(null);
           setPrefillDate(null);
-          setPrefillName(null);
-          setPrefillType(null);
         }}
         title={editing ? "Edit Holiday" : "Add Holiday"}
       >
         <HolidayForm
-          initialData={
-            editing ||
-            (prefillDate
-              ? {
-                  holiday_date: prefillDate,
-                  ...(prefillName ? { name: prefillName } : {}),
-                  ...(prefillType ? { holiday_type: prefillType } : {}),
-                }
-              : {})
-          }
+          initialData={editing || (prefillDate ? { holiday_date: prefillDate } : {})}
           onSubmit={handleSubmit}
           loading={createHoliday.isPending || updateHoliday.isPending}
           onCancel={() => {
             setModalOpen(false);
             setEditing(null);
             setPrefillDate(null);
-            setPrefillName(null);
-            setPrefillType(null);
           }}
           isEdit={!!editing}
         />

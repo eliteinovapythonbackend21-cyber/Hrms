@@ -18,6 +18,25 @@ organization_bp = register_crud_blueprint(
 )
 
 
+
+INDIA_FIXED_NATIONAL_HOLIDAYS = [
+    {"month": 1, "day": 26, "name": "Republic Day"},
+    {"month": 8, "day": 15, "name": "Independence Day"},
+    {"month": 10, "day": 2, "name": "Gandhi Jayanti"},
+]
+
+
+
+def _india_fallback_holidays(year):
+    from datetime import date as date_cls
+    return [
+        {
+            "date": date_cls(year, h["month"], h["day"]).isoformat(),
+            "localName": h["name"],
+        }
+        for h in INDIA_FIXED_NATIONAL_HOLIDAYS
+    ]
+
 @organization_bp.route("/holiday/sync-government", methods=["POST"])
 @jwt_required()
 @with_token
@@ -41,29 +60,36 @@ def sync_government_holidays(token_response):
 
     url = f"https://date.nager.at/api/v3/PublicHolidays/{year}/{country_code}"
 
+    holidays_data = []
+    used_fallback = False
+
     try:
         response = requests.get(url, timeout=10)
         response.raise_for_status()
+
+        if response.status_code != 204 and response.text.strip():
+            holidays_data = response.json()
+            if not isinstance(holidays_data, list):
+                holidays_data = []
     except requests.RequestException as exc:
         return jsonify({"message": f"Failed to fetch holidays: {exc}"}), 502
+    except ValueError:
+        holidays_data = []
 
-    if response.status_code == 204 or not response.text.strip():
+    # Nager.Date has no India coverage at all - fall back to the
+    # fixed-date national holiday list instead of returning nothing.
+    if not holidays_data and country_code == "IN":
+        holidays_data = _india_fallback_holidays(year)
+        used_fallback = True
+
+    if not holidays_data:
         return jsonify(
             {
-                "message": f"No public holiday data available yet for {year} ({country_code}). "
-                           f"Try a past or current year instead.",
+                "message": f"No public holiday data available for {year} ({country_code}).",
                 "data": {"created": [], "created_count": 0, "skipped_count": 0},
                 "token_response": token_response,
             }
         ), 200
-
-    try:
-        holidays_data = response.json()
-    except ValueError:
-        return jsonify({"message": "Received an invalid response from the holiday provider"}), 502
-
-    if not isinstance(holidays_data, list):
-        return jsonify({"message": "Unexpected response format from the holiday provider"}), 502
 
     existing_dates = {
         h.holiday_date
@@ -105,13 +131,24 @@ def sync_government_holidays(token_response):
 
     db.session.commit()
 
+    fallback_note = (
+        " (used built-in fixed-date fallback since Nager.Date does not support India — "
+        "Diwali, Holi, Eid, and other lunar-calendar or state-gazetted holidays must be added manually)"
+        if used_fallback
+        else ""
+    )
+
     return jsonify(
         {
-            "message": f"Synced {len(created)} government holidays for {year} ({country_code}); {skipped} already existed",
+            "message": (
+                f"Synced {len(created)} government holidays for {year} ({country_code}); "
+                f"{skipped} already existed{fallback_note}"
+            ),
             "data": {
                 "created": [h.to_dict() for h in created],
                 "created_count": len(created),
                 "skipped_count": skipped,
+                "used_fallback": used_fallback,
             },
             "token_response": token_response,
         }
