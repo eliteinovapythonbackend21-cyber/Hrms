@@ -1577,6 +1577,7 @@ class Training(TimestampMixin, db.Model):
     start_date = db.Column(db.Date)
     end_date = db.Column(db.Date)
     status = db.Column(db.String(20), default="Scheduled")
+    performance = db.Column(db.String(20), default="Not Rated")
     is_active = db.Column(db.Boolean, default=True)
     employee = db.relationship("Employee")
 

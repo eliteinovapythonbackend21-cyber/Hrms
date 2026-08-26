@@ -34,6 +34,19 @@ import { useModulePermissions } from "@/hooks/useModulePermissions";
 //                        actions entirely.
 //   "none"            -> Read-only / caller-controlled actions.
 //
+// queryParams: optional object of extra filters the caller wants
+// merged into every list request (period ranges, organization
+// filters, is_active, etc). Spread in AFTER the internal
+// page/per_page/search state so any key it defines takes
+// precedence, while GenericListPage's own pagination/search state
+// still supplies whatever externalQueryParams doesn't set. Defaults
+// to {} so pages that don't pass this prop are completely
+// unaffected. THIS WAS PREVIOUSLY MISSING ENTIRELY - callers could
+// pass queryParams={...} and it was silently dropped, since React
+// does not warn on unused props. That silent drop was the root
+// cause of TrainingProgramListPage's period/organization/status
+// filters never reaching the backend.
+//
 // The search/filter section uses a fixed 40px height so that the
 // TableSearchBar stays visually aligned with Select/Input controls
 // used by individual modules.
@@ -58,6 +71,7 @@ export default function GenericListPage({
   entityLabel = "record",
   autoOpenCreateWith = null,
   module = null,
+  queryParams: externalQueryParams = {},
 }) {
   const { showToast } = useToast();
 
@@ -101,9 +115,18 @@ export default function GenericListPage({
     debouncedValue,
   } = useDebouncedSearch();
 
+  /* ============================================================
+     QUERY PARAMS
+     Merges: internal pagination state -> internal search state ->
+     caller-supplied external filters (period range, org filters,
+     is_active, etc). externalQueryParams is spread last so any key
+     it defines wins over this component's own defaults.
+  ============================================================ */
+
   const queryParams = {
     ...params,
     search: debouncedValue || undefined,
+    ...externalQueryParams,
   };
 
   /* ============================================================

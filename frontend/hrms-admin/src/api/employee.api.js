@@ -49,8 +49,9 @@ export const employeeLifecycleApi = {
 
   // training_bp.py defines GET /, GET /<id>, POST /, PUT /<id>, and
   // DELETE /<id>/deactivate (no plain DELETE /<id> route exists) — so
-  // remove() must hit the /deactivate suffix, same convention used by
-  // leaves_bp.py, attendance_bp.py, and holidayApi elsewhere in this app.
+  // remove() must hit the /deactivate suffix. reactivate() reuses the
+  // existing PUT route, since update_training already applies
+  // is_active from the payload — no dedicated backend route needed.
   training: {
     list: (params) =>
       axiosClient.get(
@@ -80,6 +81,12 @@ export const employeeLifecycleApi = {
     remove: (id) =>
       axiosClient.delete(
         `${API.EMPLOYEE_LIFECYCLE.TRAINING_ITEM(id)}/deactivate`
+      ),
+
+    reactivate: (id) =>
+      axiosClient.put(
+        API.EMPLOYEE_LIFECYCLE.TRAINING_ITEM(id),
+        { is_active: true }
       ),
   },
   promotions: {

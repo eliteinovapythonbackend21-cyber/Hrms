@@ -55,6 +55,12 @@ def _parse_int(value):
         return None
 
 
+def _parse_bool(value):
+    if value is None:
+        return None
+    return str(value).strip().lower() in ("true", "1", "yes")
+
+
 @training_bp.route("/", methods=["GET"])
 @jwt_required()
 @with_token
@@ -65,6 +71,13 @@ def list_training(token_response):
 
     query = Training.query
 
+    # Active / Inactive / All record-status filter, used by the
+    # Active/Deactivated/All tabs on TrainingProgramListPage.
+    is_active_param = request.args.get("is_active")
+    parsed_is_active = _parse_bool(is_active_param)
+    if parsed_is_active is not None:
+        query = query.filter_by(is_active=parsed_is_active)
+
     if request.args.get("employee_id"):
         query = query.filter_by(employee_id=request.args.get("employee_id"))
 
@@ -72,8 +85,7 @@ def list_training(token_response):
         query = query.filter_by(status=request.args.get("status"))
 
     # Day-to-day: a training program is "on" a given date if that date
-    # falls within [start_date, end_date] inclusive - same overlap
-    # pattern used by Leave for its single-date case.
+    # falls within [start_date, end_date] inclusive.
     single_date_str = request.args.get("training_date")
     if single_date_str:
         single_date = _parse_date(single_date_str)

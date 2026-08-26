@@ -7,6 +7,14 @@ const STATUS_OPTIONS = [
   { value: "Completed", label: "Completed" },
 ];
 
+const PERFORMANCE_OPTIONS = [
+  { value: "Not Rated", label: "Not Rated" },
+  { value: "Excellent", label: "Excellent" },
+  { value: "Good", label: "Good" },
+  { value: "Average", label: "Average" },
+  { value: "Poor", label: "Poor" },
+];
+
 export default function TrainingProgramForm({
   formId = "training-form",
   initialData = {},
@@ -53,6 +61,15 @@ export default function TrainingProgramForm({
       options: STATUS_OPTIONS,
       defaultValue: "Scheduled",
       placeholder: "Select status",
+    },
+
+    {
+      name: "performance",
+      label: "Performance",
+      type: "select",
+      options: PERFORMANCE_OPTIONS,
+      defaultValue: "Not Rated",
+      placeholder: "Select performance rating",
     },
   ];
 

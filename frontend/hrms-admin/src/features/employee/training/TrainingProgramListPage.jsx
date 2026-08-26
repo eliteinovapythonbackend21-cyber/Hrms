@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 import GenericListPage from "@/components/table/GenericListPage";
 import TrainingProgramForm from "./TrainingProgramForm";
@@ -10,6 +11,7 @@ import {
   useCreateTrainingProgram,
   useUpdateTrainingProgram,
   useDeactivateTrainingProgram,
+  useReactivateTrainingProgram,
 } from "./useTrainingPrograms";
 
 import { formatDate } from "@/utils/formatDate";
@@ -23,6 +25,8 @@ import { useCompanyBranches } from "@/features/master/branches/useBranches";
 
 import { masterApi } from "@/api/master.api";
 
+import { useToast } from "@/components/feedback/Toast";
+
 
 /* ============================================================
    PERIOD TYPES
@@ -32,6 +36,17 @@ const PERIOD_TYPES = {
   DAILY: "daily",
   MONTHLY: "monthly",
   QUARTERLY: "quarterly",
+};
+
+
+/* ============================================================
+   RECORD STATUS TABS — Active / Inactive / All
+============================================================ */
+
+const RECORD_STATUS = {
+  ACTIVE: "active",
+  INACTIVE: "inactive",
+  ALL: "all",
 };
 
 
@@ -101,23 +116,44 @@ function getPeriodTitle(periodType, selectedDate, selectedMonth, selectedQuarter
 ============================================================ */
 
 const getStatusStyles = (status) => {
-  const normalizedStatus = String(
-    status || "Scheduled"
-  ).toLowerCase();
+  const normalizedStatus = String(status || "Scheduled").toLowerCase();
 
   const styles = {
     scheduled:
       "bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/20 dark:bg-blue-500/10 dark:text-blue-300",
-
     ongoing:
       "bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-600/20 dark:bg-amber-500/10 dark:text-amber-300",
-
     completed:
       "bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/20 dark:bg-emerald-500/10 dark:text-emerald-300",
   };
 
   return (
     styles[normalizedStatus] ||
+    "bg-slate-100 text-slate-700 ring-1 ring-inset ring-slate-600/20 dark:bg-slate-800 dark:text-slate-300"
+  );
+};
+
+
+/* ============================================================
+   PERFORMANCE HELPER
+============================================================ */
+
+const getPerformanceStyles = (performance) => {
+  const normalized = String(performance || "Not Rated").toLowerCase();
+
+  const styles = {
+    excellent:
+      "bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/20 dark:bg-emerald-500/10 dark:text-emerald-300",
+    good:
+      "bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/20 dark:bg-blue-500/10 dark:text-blue-300",
+    average:
+      "bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-600/20 dark:bg-amber-500/10 dark:text-amber-300",
+    poor:
+      "bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20 dark:bg-red-500/10 dark:text-red-300",
+  };
+
+  return (
+    styles[normalized] ||
     "bg-slate-100 text-slate-700 ring-1 ring-inset ring-slate-600/20 dark:bg-slate-800 dark:text-slate-300"
   );
 };
@@ -131,25 +167,19 @@ const EmployeeCell = ({ row }) => {
   const employee = row?.employee;
 
   const employeeName = employee
-    ? `${employee.first_name || ""} ${
-        employee.last_name || ""
-      }`.trim()
+    ? `${employee.first_name || ""} ${employee.last_name || ""}`.trim()
     : row?.employee_name || null;
 
   const employeeCode =
     employee?.employee_code ||
     row?.employee_code ||
-    (row?.employee_id
-      ? `ID: ${row.employee_id}`
-      : "-");
+    (row?.employee_id ? `ID: ${row.employee_id}` : "-");
 
   const initials =
     employeeName
       ?.split(" ")
       .filter(Boolean)
-      .map((name) =>
-        name.charAt(0)
-      )
+      .map((name) => name.charAt(0))
       .join("")
       .slice(0, 2)
       .toUpperCase() || "E";
@@ -178,104 +208,15 @@ const EmployeeCell = ({ row }) => {
    DATE CELL
 ============================================================ */
 
-const DateCell = ({
-  value,
-  label,
-}) => (
+const DateCell = ({ value, label }) => (
   <div className="min-w-[125px]">
     <p className="whitespace-nowrap text-sm font-semibold text-slate-800 dark:text-slate-200">
       {value ? formatDate(value) : "-"}
     </p>
 
-    <p className="mt-0.5 text-xs text-slate-400 dark:text-slate-500">
-      {label}
-    </p>
+    <p className="mt-0.5 text-xs text-slate-400 dark:text-slate-500">{label}</p>
   </div>
 );
-
-
-/* ============================================================
-   TABLE COLUMNS
-============================================================ */
-
-const COLUMNS = [
-  {
-    key: "employee_id",
-    label: "Employee",
-    sortable: true,
-
-    render: (row) => (
-      <EmployeeCell row={row} />
-    ),
-  },
-
-  {
-    key: "program_name",
-    label: "Training Program",
-    sortable: true,
-
-    render: (row) => (
-      <div className="min-w-[200px]">
-        <p className="font-semibold text-slate-900 dark:text-white">
-          {row.program_name || "-"}
-        </p>
-
-        <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-          Employee Development
-        </p>
-      </div>
-    ),
-  },
-
-  {
-    key: "start_date",
-    label: "Start Date",
-    sortable: true,
-
-    render: (row) => (
-      <DateCell
-        value={row.start_date}
-        label="Training start"
-      />
-    ),
-  },
-
-  {
-    key: "end_date",
-    label: "End Date",
-    sortable: true,
-
-    render: (row) => (
-      <DateCell
-        value={row.end_date}
-        label="Training end"
-      />
-    ),
-  },
-
-  {
-    key: "status",
-    label: "Status",
-    sortable: true,
-
-    render: (row) => {
-      const status =
-        row.status || "Scheduled";
-
-      return (
-        <span
-          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${getStatusStyles(
-            status
-          )}`}
-        >
-          <span className="h-1.5 w-1.5 rounded-full bg-current" />
-
-          {status}
-        </span>
-      );
-    },
-  },
-];
 
 
 /* ============================================================
@@ -286,19 +227,202 @@ export default function TrainingProgramListPage() {
   const today = getToday();
 
   const user = getUser();
+  const { showToast } = useToast();
+  const queryClient = useQueryClient();
 
-  const isAdmin =
-    String(
-      user?.role || ""
-    ).toLowerCase() === "admin";
+  const isAdmin = String(user?.role || "").toLowerCase() === "admin";
 
 
   /* ==========================================================
-     PERIOD STATE — Daily / Monthly / Quarterly, same pattern
-     as LeaveListPage.jsx. training_bp.py already supports
-     from_date/to_date with start_date<=to_date AND
-     end_date>=from_date overlap logic, so no backend change
-     is needed here.
+     RECORD STATUS TAB — Active / Inactive / All.
+  ========================================================== */
+
+  const [recordStatus, setRecordStatus] = useState(RECORD_STATUS.ACTIVE);
+
+  const reactivateMutation = useReactivateTrainingProgram();
+  const deactivateMutation = useDeactivateTrainingProgram();
+  const [mutatingId, setMutatingId] = useState(null);
+
+  // Broad, defensive invalidation - matches ANY cached query whose
+  // key starts with "training", regardless of the exact params
+  // object shape (period range, org filters, is_active, etc).
+  const invalidateAllTrainingQueries = () => {
+    queryClient.invalidateQueries({
+      predicate: (query) => query.queryKey[0] === "training",
+    });
+  };
+
+  const handleDeactivate = async (row) => {
+    try {
+      setMutatingId(row.id);
+      await deactivateMutation.mutateAsync(row.id);
+      invalidateAllTrainingQueries();
+      showToast("Training record deactivated", "success");
+    } catch (err) {
+      showToast(
+        err?.response?.data?.message || "Failed to deactivate training record",
+        "error"
+      );
+    } finally {
+      setMutatingId(null);
+    }
+  };
+
+  const handleReactivate = async (row) => {
+    try {
+      setMutatingId(row.id);
+      await reactivateMutation.mutateAsync(row.id);
+      invalidateAllTrainingQueries();
+      showToast("Training record reactivated", "success");
+    } catch (err) {
+      showToast(
+        err?.response?.data?.message || "Failed to reactivate training record",
+        "error"
+      );
+    } finally {
+      setMutatingId(null);
+    }
+  };
+
+
+  /* ==========================================================
+     COUNTS — dedicated lightweight fetches purely for live
+     Total/Active/Inactive numbers in the stat cards.
+  ========================================================== */
+
+  const { data: activeCountData } = useTrainingPrograms({ is_active: true, per_page: 1 });
+  const { data: inactiveCountData } = useTrainingPrograms({ is_active: false, per_page: 1 });
+
+  const activeCount = activeCountData?.total ?? 0;
+  const inactiveCount = inactiveCountData?.total ?? 0;
+  const totalCount = activeCount + inactiveCount;
+
+
+  /* ==========================================================
+     TABLE COLUMNS
+  ========================================================== */
+
+  const columns = useMemo(
+    () => [
+      {
+        key: "employee_id",
+        label: "Employee",
+        sortable: true,
+        render: (row) => <EmployeeCell row={row} />,
+      },
+      {
+        key: "program_name",
+        label: "Training Program",
+        sortable: true,
+        render: (row) => (
+          <div className="min-w-[200px]">
+            <p className="font-semibold text-slate-900 dark:text-white">
+              {row.program_name || "-"}
+            </p>
+            <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+              Employee Development
+            </p>
+          </div>
+        ),
+      },
+      {
+        key: "start_date",
+        label: "Start Date",
+        sortable: true,
+        render: (row) => <DateCell value={row.start_date} label="Training start" />,
+      },
+      {
+        key: "end_date",
+        label: "End Date",
+        sortable: true,
+        render: (row) => <DateCell value={row.end_date} label="Training end" />,
+      },
+      {
+        key: "status",
+        label: "Status",
+        sortable: true,
+        render: (row) => {
+          const status = row.status || "Scheduled";
+          return (
+            <span
+              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${getStatusStyles(status)}`}
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-current" />
+              {status}
+            </span>
+          );
+        },
+      },
+      {
+        key: "performance",
+        label: "Performance",
+        sortable: true,
+        render: (row) => {
+          const performance = row.performance || "Not Rated";
+          return (
+            <span
+              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${getPerformanceStyles(performance)}`}
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-current" />
+              {performance}
+            </span>
+          );
+        },
+      },
+      {
+        key: "record_status",
+        label: "Record",
+        sortable: false,
+        render: (row) => {
+          const isActive = row.is_active !== false;
+          const isMutating = mutatingId === row.id;
+
+          if (isActive) {
+            return (
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                  Active
+                </span>
+
+                <button
+                  type="button"
+                  disabled={isMutating}
+                  onClick={() => handleDeactivate(row)}
+                  className="text-xs font-semibold text-red-600 hover:underline disabled:opacity-40 dark:text-red-400"
+                >
+                  {isMutating ? "Deactivating..." : "Deactivate"}
+                </button>
+              </div>
+            );
+          }
+
+          return (
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-700 dark:bg-red-500/10 dark:text-red-300">
+                <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
+                Inactive
+              </span>
+
+              <button
+                type="button"
+                disabled={isMutating}
+                onClick={() => handleReactivate(row)}
+                className="text-xs font-semibold text-emerald-600 hover:underline disabled:opacity-40 dark:text-emerald-400"
+              >
+                {isMutating ? "Reactivating..." : "Reactivate"}
+              </button>
+            </div>
+          );
+        },
+      },
+    ],
+    [mutatingId]
+  );
+
+
+  /* ==========================================================
+     PERIOD STATE — Daily / Monthly / Quarterly
   ========================================================== */
 
   const [periodType, setPeriodType] = useState(PERIOD_TYPES.DAILY);
@@ -340,195 +464,76 @@ export default function TrainingProgramListPage() {
      ORGANIZATION FILTER STATE
   ========================================================== */
 
-  const [
-    companyFilterId,
-    setCompanyFilterId,
-  ] = useState("");
+  const [companyFilterId, setCompanyFilterId] = useState("");
+  const [branchFilterId, setBranchFilterId] = useState("");
+  const [departmentFilterId, setDepartmentFilterId] = useState("");
+  const [designationFilterId, setDesignationFilterId] = useState("");
 
-  const [
-    branchFilterId,
-    setBranchFilterId,
-  ] = useState("");
-
-  const [
-    departmentFilterId,
-    setDepartmentFilterId,
-  ] = useState("");
-
-  const [
-    designationFilterId,
-    setDesignationFilterId,
-  ] = useState("");
-
-
-  /* ==========================================================
-     COMPANY
-  ========================================================== */
-
-  const {
-    data: companyData,
-    isLoading: companiesLoading,
-  } = useCompanies({
+  const { data: companyData, isLoading: companiesLoading } = useCompanies({
     page: 1,
     per_page: 100,
     is_active: true,
   });
 
-
-  /* ==========================================================
-     BRANCH
-  ========================================================== */
-
-  const {
-    data: branchData,
-    isLoading: branchesLoading,
-  } = useCompanyBranches(
+  const { data: branchData, isLoading: branchesLoading } = useCompanyBranches(
     companyFilterId,
-    {
-      page: 1,
-      per_page: 100,
-      is_active: true,
-    }
+    { page: 1, per_page: 100, is_active: true }
   );
 
-
-  /* ==========================================================
-     DEPARTMENT
-  ========================================================== */
-
-  const {
-    data: departmentData,
-    isLoading: departmentsLoading,
-  } = useQuery({
-    queryKey: [
-      "training-departments-filter",
-      branchFilterId,
-    ],
-
+  const { data: departmentData, isLoading: departmentsLoading } = useQuery({
+    queryKey: ["training-departments-filter", branchFilterId],
     queryFn: async () => {
-      const response =
-        await masterApi.listDepartments({
-          branch_id:
-            branchFilterId,
-          page: 1,
-          per_page: 100,
-          is_active: true,
-        });
-
+      const response = await masterApi.listDepartments({
+        branch_id: branchFilterId,
+        page: 1,
+        per_page: 100,
+        is_active: true,
+      });
       return response.data.data;
     },
-
-    enabled:
-      isAdmin &&
-      !!branchFilterId,
+    enabled: isAdmin && !!branchFilterId,
   });
 
-
-  /* ==========================================================
-     DESIGNATION
-  ========================================================== */
-
-  const {
-    data: designationData,
-    isLoading: designationsLoading,
-  } = useQuery({
-    queryKey: [
-      "training-designations-filter",
-      departmentFilterId,
-    ],
-
+  const { data: designationData, isLoading: designationsLoading } = useQuery({
+    queryKey: ["training-designations-filter", departmentFilterId],
     queryFn: async () => {
-      const response =
-        await masterApi.listDesignations({
-          department_id:
-            departmentFilterId,
-          page: 1,
-          per_page: 100,
-          is_active: true,
-        });
-
+      const response = await masterApi.listDesignations({
+        department_id: departmentFilterId,
+        page: 1,
+        per_page: 100,
+        is_active: true,
+      });
       return response.data.data;
     },
-
-    enabled:
-      isAdmin &&
-      !!departmentFilterId,
+    enabled: isAdmin && !!departmentFilterId,
   });
 
+  const companies = companyData?.items || companyData?.data || [];
+  const branches = branchData?.items || branchData?.data || [];
+  const departments = departmentData?.items || departmentData?.data || [];
+  const designations = designationData?.items || designationData?.data || [];
 
-  /* ==========================================================
-     FILTER OPTIONS
-  ========================================================== */
-
-  const companies =
-    companyData?.items ||
-    companyData?.data ||
-    [];
-
-  const branches =
-    branchData?.items ||
-    branchData?.data ||
-    [];
-
-  const departments =
-    departmentData?.items ||
-    departmentData?.data ||
-    [];
-
-  const designations =
-    designationData?.items ||
-    designationData?.data ||
-    [];
-
-
-  /* ==========================================================
-     FILTER HANDLERS
-  ========================================================== */
-
-  const handleCompanyChange = (
-    event
-  ) => {
-    setCompanyFilterId(
-      event.target.value
-    );
-
+  const handleCompanyChange = (event) => {
+    setCompanyFilterId(event.target.value);
     setBranchFilterId("");
     setDepartmentFilterId("");
     setDesignationFilterId("");
   };
 
-
-  const handleBranchChange = (
-    event
-  ) => {
-    setBranchFilterId(
-      event.target.value
-    );
-
+  const handleBranchChange = (event) => {
+    setBranchFilterId(event.target.value);
     setDepartmentFilterId("");
     setDesignationFilterId("");
   };
 
-
-  const handleDepartmentChange = (
-    event
-  ) => {
-    setDepartmentFilterId(
-      event.target.value
-    );
-
+  const handleDepartmentChange = (event) => {
+    setDepartmentFilterId(event.target.value);
     setDesignationFilterId("");
   };
 
-
-  const handleDesignationChange = (
-    event
-  ) => {
-    setDesignationFilterId(
-      event.target.value
-    );
+  const handleDesignationChange = (event) => {
+    setDesignationFilterId(event.target.value);
   };
-
 
   const clearOrganizationFilters = () => {
     setCompanyFilterId("");
@@ -536,7 +541,6 @@ export default function TrainingProgramListPage() {
     setDepartmentFilterId("");
     setDesignationFilterId("");
   };
-
 
   const hasOrganizationFilters =
     Boolean(companyFilterId) ||
@@ -547,10 +551,6 @@ export default function TrainingProgramListPage() {
 
   /* ==========================================================
      QUERY PARAMS
-     Period filtering (from_date/to_date) always applies,
-     for both admin and employee views - matches
-     LeaveListPage.jsx, where day/month/quarter always narrow
-     the result set regardless of role.
   ========================================================== */
 
   const queryParams = useMemo(() => {
@@ -559,33 +559,17 @@ export default function TrainingProgramListPage() {
       to_date: periodRange.to_date,
     };
 
+    if (recordStatus !== RECORD_STATUS.ALL) {
+      params.is_active = recordStatus === RECORD_STATUS.ACTIVE;
+    }
+
     if (isAdmin) {
-      if (companyFilterId) {
-        params.company_id =
-          companyFilterId;
-      }
-
-      if (branchFilterId) {
-        params.branch_id =
-          branchFilterId;
-      }
-
-      if (departmentFilterId) {
-        params.department_id =
-          departmentFilterId;
-      }
-
-      if (designationFilterId) {
-        params.designation_id =
-          designationFilterId;
-      }
-    } else if (
-      user?.employee?.id
-    ) {
-      params.employee_id =
-        Number(
-          user.employee.id
-        );
+      if (companyFilterId) params.company_id = companyFilterId;
+      if (branchFilterId) params.branch_id = branchFilterId;
+      if (departmentFilterId) params.department_id = departmentFilterId;
+      if (designationFilterId) params.designation_id = designationFilterId;
+    } else if (user?.employee?.id) {
+      params.employee_id = Number(user.employee.id);
     }
 
     return params;
@@ -598,6 +582,7 @@ export default function TrainingProgramListPage() {
     designationFilterId,
     periodRange.from_date,
     periodRange.to_date,
+    recordStatus,
   ]);
 
 
@@ -608,57 +593,41 @@ export default function TrainingProgramListPage() {
   return (
     <div className="min-h-full w-full space-y-6">
 
-      {/* ======================================================
-          PAGE INTRO CARD
-      ====================================================== */}
+      {/* PAGE HEADER */}
 
-      <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
-
-        <div className="absolute -right-10 -top-10 h-44 w-44 rounded-full bg-primary-500/5 blur-3xl" />
-
-        <div className="relative flex flex-col gap-5 p-6 lg:flex-row lg:items-center lg:justify-between">
-
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
           <div className="flex items-center gap-4">
-
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
-
-              <svg
-                className="h-7 w-7"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.7"
-              >
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
+              <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
                 <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
                 <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z" />
                 <path d="M8 6h8" />
                 <path d="M8 10h8" />
                 <path d="M8 14h5" />
               </svg>
-
             </div>
-
             <div>
-
               <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
                 Training Programs
               </h1>
-
               <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                 Manage employee training and development programs
               </p>
-
             </div>
-
           </div>
-
         </div>
       </div>
 
+      {/* LIVE COUNT CARDS */}
 
-      {/* ======================================================
-          PERIOD SELECTOR — Daily / Monthly / Quarterly
-      ====================================================== */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <CountCard label="Total Training Records" value={totalCount} caption="Current page" tone="neutral" />
+        <CountCard label="Active Training Records" value={activeCount} caption="Currently active" tone="active" />
+        <CountCard label="Inactive Training Records" value={inactiveCount} caption="Deactivated records" tone="inactive" />
+      </div>
+
+      {/* PERIOD SELECTOR */}
 
       <TrainingPeriodSelector
         periodType={periodType}
@@ -673,302 +642,141 @@ export default function TrainingProgramListPage() {
         setSelectedYear={handleYearChange}
       />
 
+      {/* TRAINING METRICS */}
 
-      {/* ======================================================
-          TRAINING METRICS
-      ====================================================== */}
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-
-        <TrainingMetric
-          label="Training"
-          description="Employee development programs"
-          icon="training"
-        />
-
-        <TrainingMetric
-          label="Scheduled"
-          description="Upcoming training programs"
-          icon="scheduled"
-        />
-
-        <TrainingMetric
-          label="Ongoing"
-          description="Currently active training"
-          icon="ongoing"
-        />
-
-        <TrainingMetric
-          label="Completed"
-          description="Successfully completed"
-          icon="completed"
-        />
-
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <TrainingMetric label="Scheduled" description="Upcoming training programs" icon="scheduled" />
+        <TrainingMetric label="Ongoing" description="Currently active training" icon="ongoing" />
+        <TrainingMetric label="Completed" description="Successfully completed" icon="completed" />
       </div>
 
+      {/* RECORD STATUS TOGGLE */}
 
-      {/* ======================================================
-          ORGANIZATION FILTERS
-      ====================================================== */}
+      <div className="flex justify-end">
+        <div className="inline-flex rounded-lg border border-slate-200 bg-slate-50 p-1 dark:border-slate-700 dark:bg-slate-800">
+          <StatusTab active={recordStatus === RECORD_STATUS.ACTIVE} onClick={() => setRecordStatus(RECORD_STATUS.ACTIVE)}>
+            Active
+          </StatusTab>
+          <StatusTab active={recordStatus === RECORD_STATUS.INACTIVE} onClick={() => setRecordStatus(RECORD_STATUS.INACTIVE)}>
+            Inactive
+          </StatusTab>
+          <StatusTab active={recordStatus === RECORD_STATUS.ALL} onClick={() => setRecordStatus(RECORD_STATUS.ALL)}>
+            All
+          </StatusTab>
+        </div>
+      </div>
+
+      {/* ORGANIZATION FILTERS */}
 
       {isAdmin && (
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-
           <div className="mb-4">
-
             <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
               Organization Filters
             </p>
-
             <h2 className="mt-1 text-lg font-semibold text-slate-900 dark:text-white">
               Filter Training Programs
             </h2>
-
             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
               Select Company → Branch → Department → Designation.
             </p>
-
           </div>
-
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-
-            {/* COMPANY */}
-
             <select
-              value={
-                companyFilterId
-              }
-              onChange={
-                handleCompanyChange
-              }
-              disabled={
-                companiesLoading
-              }
+              value={companyFilterId}
+              onChange={handleCompanyChange}
+              disabled={companiesLoading}
               className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-primary-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
             >
-
-              <option value="">
-                {
-                  companiesLoading
-                    ? "Loading Companies..."
-                    : "All Companies"
-                }
-              </option>
-
-              {companies.map(
-                (company) => (
-                  <option
-                    key={
-                      company.id
-                    }
-                    value={
-                      company.id
-                    }
-                  >
-                    {
-                      company.name
-                    }
-                  </option>
-                )
-              )}
-
+              <option value="">{companiesLoading ? "Loading Companies..." : "All Companies"}</option>
+              {companies.map((company) => (
+                <option key={company.id} value={company.id}>{company.name}</option>
+              ))}
             </select>
-
-
-            {/* BRANCH */}
 
             <select
-              value={
-                branchFilterId
-              }
-              onChange={
-                handleBranchChange
-              }
-              disabled={
-                !companyFilterId ||
-                branchesLoading
-              }
+              value={branchFilterId}
+              onChange={handleBranchChange}
+              disabled={!companyFilterId || branchesLoading}
               className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-primary-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
             >
-
               <option value="">
-                {!companyFilterId
-                  ? "Select Company First"
-                  : branchesLoading
-                  ? "Loading Branches..."
-                  : "All Branches"}
+                {!companyFilterId ? "Select Company First" : branchesLoading ? "Loading Branches..." : "All Branches"}
               </option>
-
-              {branches.map(
-                (branch) => (
-                  <option
-                    key={
-                      branch.id
-                    }
-                    value={
-                      branch.id
-                    }
-                  >
-                    {
-                      branch.name
-                    }
-                  </option>
-                )
-              )}
-
+              {branches.map((branch) => (
+                <option key={branch.id} value={branch.id}>{branch.name}</option>
+              ))}
             </select>
-
-
-            {/* DEPARTMENT */}
 
             <select
-              value={
-                departmentFilterId
-              }
-              onChange={
-                handleDepartmentChange
-              }
-              disabled={
-                !branchFilterId ||
-                departmentsLoading
-              }
+              value={departmentFilterId}
+              onChange={handleDepartmentChange}
+              disabled={!branchFilterId || departmentsLoading}
               className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-primary-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
             >
-
               <option value="">
-                {!branchFilterId
-                  ? "Select Branch First"
-                  : departmentsLoading
-                  ? "Loading Departments..."
-                  : "All Departments"}
+                {!branchFilterId ? "Select Branch First" : departmentsLoading ? "Loading Departments..." : "All Departments"}
               </option>
-
-              {departments.map(
-                (department) => (
-                  <option
-                    key={
-                      department.id
-                    }
-                    value={
-                      department.id
-                    }
-                  >
-                    {
-                      department.department_name
-                    }
-                  </option>
-                )
-              )}
-
+              {departments.map((department) => (
+                <option key={department.id} value={department.id}>{department.department_name}</option>
+              ))}
             </select>
-
-
-            {/* DESIGNATION */}
 
             <select
-              value={
-                designationFilterId
-              }
-              onChange={
-                handleDesignationChange
-              }
-              disabled={
-                !departmentFilterId ||
-                designationsLoading
-              }
+              value={designationFilterId}
+              onChange={handleDesignationChange}
+              disabled={!departmentFilterId || designationsLoading}
               className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-primary-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
             >
-
               <option value="">
-                {!departmentFilterId
-                  ? "Select Department First"
-                  : designationsLoading
-                  ? "Loading Designations..."
-                  : "All Designations"}
+                {!departmentFilterId ? "Select Department First" : designationsLoading ? "Loading Designations..." : "All Designations"}
               </option>
-
-              {designations.map(
-                (designation) => (
-                  <option
-                    key={
-                      designation.id
-                    }
-                    value={
-                      designation.id
-                    }
-                  >
-                    {
-                      designation.designation_name
-                    }
-                  </option>
-                )
-              )}
-
+              {designations.map((designation) => (
+                <option key={designation.id} value={designation.id}>{designation.designation_name}</option>
+              ))}
             </select>
-
           </div>
-
 
           {hasOrganizationFilters && (
             <div className="mt-4 flex flex-wrap items-center gap-2">
-
-              <span className="text-xs font-medium text-slate-400">
-                Active filters:
-              </span>
-
+              <span className="text-xs font-medium text-slate-400">Active filters:</span>
               {companyFilterId && (
-                <span className="rounded-full bg-primary-50 px-2.5 py-1 text-[11px] font-semibold text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
-                  Company
-                </span>
+                <span className="rounded-full bg-primary-50 px-2.5 py-1 text-[11px] font-semibold text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">Company</span>
               )}
-
               {branchFilterId && (
-                <span className="rounded-full bg-primary-50 px-2.5 py-1 text-[11px] font-semibold text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
-                  Branch
-                </span>
+                <span className="rounded-full bg-primary-50 px-2.5 py-1 text-[11px] font-semibold text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">Branch</span>
               )}
-
               {departmentFilterId && (
-                <span className="rounded-full bg-primary-50 px-2.5 py-1 text-[11px] font-semibold text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
-                  Department
-                </span>
+                <span className="rounded-full bg-primary-50 px-2.5 py-1 text-[11px] font-semibold text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">Department</span>
               )}
-
               {designationFilterId && (
-                <span className="rounded-full bg-primary-50 px-2.5 py-1 text-[11px] font-semibold text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
-                  Designation
-                </span>
+                <span className="rounded-full bg-primary-50 px-2.5 py-1 text-[11px] font-semibold text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">Designation</span>
               )}
-
               <button
                 type="button"
-                onClick={
-                  clearOrganizationFilters
-                }
+                onClick={clearOrganizationFilters}
                 className="ml-1 text-xs font-medium text-slate-500 underline underline-offset-2 hover:text-primary-600 dark:text-slate-400 dark:hover:text-primary-400"
               >
                 Clear filters
               </button>
-
             </div>
           )}
-
         </div>
       )}
 
-
-      {/* ======================================================
-          MAIN LIST
-      ====================================================== */}
+      {/* MAIN LIST — actionsMode="none": Deactivate/Reactivate are
+          handled entirely in the "Record" column above; Edit is not
+          currently exposed here. If Edit should remain available,
+          switch actionsMode to "master" and remove the Deactivate
+          button rendered in the Record column to avoid duplication. */}
 
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
-
         <GenericListPage
           module="Training"
           title="Training Programs"
           subtitle={`Track employee training schedules, progress and completion · ${periodTitle}`}
-          columns={COLUMNS}
+          columns={columns}
           api={employeeLifecycleApi.training}
           useList={useTrainingPrograms}
           useCreate={useCreateTrainingProgram}
@@ -979,14 +787,74 @@ export default function TrainingProgramListPage() {
           FormComponent={TrainingProgramForm}
           formTitle="Training Program"
           addLabel="Add Training"
-          actionsMode="all"
+          actionsMode="none"
           entityLabel="Training record"
           queryParams={queryParams}
         />
-
       </div>
 
     </div>
+  );
+}
+
+
+/* ============================================================
+   COUNT CARD
+============================================================ */
+
+function CountCard({ label, value, caption, tone }) {
+  const tones = {
+    neutral: {
+      wrapper: "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900",
+      dot: "bg-slate-400",
+      value: "text-slate-900 dark:text-white",
+    },
+    active: {
+      wrapper: "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900",
+      dot: "bg-emerald-500",
+      value: "text-emerald-600 dark:text-emerald-400",
+    },
+    inactive: {
+      wrapper: "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900",
+      dot: "bg-red-500",
+      value: "text-red-600 dark:text-red-400",
+    },
+  };
+
+  const t = tones[tone] || tones.neutral;
+
+  return (
+    <div className={`rounded-2xl border p-5 shadow-sm ${t.wrapper}`}>
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{label}</p>
+          <p className={`mt-2 text-3xl font-bold tracking-tight ${t.value}`}>{value}</p>
+          <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">{caption}</p>
+        </div>
+        <span className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${t.dot}`} />
+      </div>
+    </div>
+  );
+}
+
+
+/* ============================================================
+   STATUS TAB
+============================================================ */
+
+function StatusTab({ active, onClick, children }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-md px-3.5 py-1.5 text-xs font-semibold transition ${
+        active
+          ? "bg-white text-slate-900 shadow-sm dark:bg-slate-900 dark:text-white"
+          : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+      }`}
+    >
+      {children}
+    </button>
   );
 }
 
@@ -1025,7 +893,6 @@ function TrainingPeriodSelector({
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-
       <div className="flex flex-wrap gap-2">
         <PeriodTab active={periodType === PERIOD_TYPES.DAILY} onClick={() => setPeriodType(PERIOD_TYPES.DAILY)}>
           Day-to-Day
@@ -1058,9 +925,7 @@ function TrainingPeriodSelector({
       {periodType === PERIOD_TYPES.MONTHLY && (
         <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-slate-400">
-              Month
-            </label>
+            <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-slate-400">Month</label>
             <select
               value={selectedMonth}
               onChange={setSelectedMonth}
@@ -1071,11 +936,8 @@ function TrainingPeriodSelector({
               ))}
             </select>
           </div>
-
           <div>
-            <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-slate-400">
-              Year
-            </label>
+            <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-slate-400">Year</label>
             <select
               value={selectedYear}
               onChange={setSelectedYear}
@@ -1092,9 +954,7 @@ function TrainingPeriodSelector({
       {periodType === PERIOD_TYPES.QUARTERLY && (
         <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-slate-400">
-              Quarter
-            </label>
+            <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-slate-400">Quarter</label>
             <select
               value={selectedQuarter}
               onChange={setSelectedQuarter}
@@ -1105,11 +965,8 @@ function TrainingPeriodSelector({
               ))}
             </select>
           </div>
-
           <div>
-            <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-slate-400">
-              Year
-            </label>
+            <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-slate-400">Year</label>
             <select
               value={selectedYear}
               onChange={setSelectedYear}
@@ -1129,7 +986,6 @@ function TrainingPeriodSelector({
           {getPeriodTitle(periodType, selectedDate, selectedMonth, selectedQuarter, selectedYear)}
         </span>
       </div>
-
     </div>
   );
 }
@@ -1160,27 +1016,14 @@ function PeriodTab({ active, onClick, children }) {
    TRAINING METRIC
 ============================================================ */
 
-function TrainingMetric({
-  label,
-  description,
-  icon,
-}) {
+function TrainingMetric({ label, description, icon }) {
   const styles = {
-    training:
-      "bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400",
-
-    scheduled:
-      "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400",
-
-    ongoing:
-      "bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400",
-
-    completed:
-      "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400",
+    scheduled: "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400",
+    ongoing: "bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400",
+    completed: "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400",
   };
 
   const icons = {
-    training: "T",
     scheduled: "◷",
     ongoing: "●",
     completed: "✓",
@@ -1188,29 +1031,15 @@ function TrainingMetric({
 
   return (
     <div className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md dark:border-slate-700 dark:bg-slate-900">
-
       <div className="flex items-start justify-between">
-
         <div>
-
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-            {label}
-          </p>
-
-          <p className="mt-2 text-sm font-medium text-slate-800 dark:text-slate-200">
-            {description}
-          </p>
-
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">{label}</p>
+          <p className="mt-2 text-sm font-medium text-slate-800 dark:text-slate-200">{description}</p>
         </div>
-
-        <div
-          className={`flex h-10 w-10 items-center justify-center rounded-xl text-sm font-bold ${styles[icon]}`}
-        >
+        <div className={`flex h-10 w-10 items-center justify-center rounded-xl text-sm font-bold ${styles[icon]}`}>
           {icons[icon]}
         </div>
-
       </div>
-
     </div>
   );
 }
