@@ -56,6 +56,8 @@ export const API = {
     HOLIDAY_SYNC_GOVERNMENT: "/organization/holiday/sync-government",
     HOLIDAY_UNSYNC_GOVERNMENT:"/organization/holiday/unsync-government",
     HOLIDAY_PREVIEW_GOVERNMENT: "/organization/holiday/preview-government",
+    HOLIDAY_SYNC_OFFICE_SUNDAYS:  "/organization/holiday/sync-office-sundays",
+    HOLIDAY_SYNC_OFFICE_SUNDAYS_BY_YEAR: "/organization/holiday/sync-office-sundays",
     HOLIDAY_REPORT: "/organization/holiday/report", 
     COMPANIES: "/companies",
     COMPANY_GET: (id) => `/companies/${id}`,

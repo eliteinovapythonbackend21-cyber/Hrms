@@ -264,7 +264,25 @@ export const masterApi = {
         },
       }
     ),
+
+  syncOfficeSundays: (
+    startYear,
+    endYear
+  ) =>
+    axiosClient.post(
+      API.MASTER.HOLIDAY_SYNC_OFFICE_SUNDAYS,
+      {
+        start_year:
+          startYear,
+
+        end_year:
+          endYear,
+      }
+    ),
+  
 };
+
+
 
 
 // ============================================================
@@ -300,4 +318,7 @@ export const holidayApi = {
 
   previewGovernmentHolidays:
     masterApi.previewGovernmentHolidays,
+
+  syncOfficeSundays:
+    masterApi.syncOfficeSundays,
 };

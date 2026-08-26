@@ -1,5 +1,5 @@
 import requests
-from datetime import date as date_cls
+from datetime import (date as date_cls,timedelta)
 
 from flask import jsonify, request
 from flask_jwt_extended import jwt_required
@@ -671,6 +671,284 @@ def unsync_government_holidays(
                 "country_code":
                     country_code,
             },
+            "token_response":
+                token_response,
+        }
+    ), 200
+
+
+# ============================================================
+# SYNC OFFICE SUNDAYS
+# ============================================================
+
+@organization_bp.route(
+    "/holiday/sync-office-sundays",
+    methods=["POST"],
+)
+@jwt_required()
+@with_token
+def sync_office_sundays(
+    token_response,
+):
+
+    current_user = get_current_user()
+
+    if not is_admin(current_user):
+        return jsonify(
+            {
+                "message": "Admin privileges required"
+            }
+        ), 403
+
+
+    data = request.get_json(
+        silent=True
+    ) or {}
+
+
+    start_year = data.get(
+        "start_year"
+    )
+
+    end_year = data.get(
+        "end_year"
+    )
+
+
+    # --------------------------------------------------------
+    # VALIDATE YEARS
+    # --------------------------------------------------------
+
+    if not start_year:
+        return jsonify(
+            {
+                "message":
+                    "start_year is required"
+            }
+        ), 400
+
+
+    if not end_year:
+        end_year = start_year
+
+
+    try:
+        start_year = int(
+            start_year
+        )
+
+        end_year = int(
+            end_year
+        )
+
+    except (
+        TypeError,
+        ValueError,
+    ):
+        return jsonify(
+            {
+                "message":
+                    "start_year and end_year must be integers"
+            }
+        ), 400
+
+
+    if (
+        start_year < 1900
+        or start_year > 2100
+        or end_year < 1900
+        or end_year > 2100
+    ):
+        return jsonify(
+            {
+                "message":
+                    "Years must be between 1900 and 2100"
+            }
+        ), 400
+
+
+    if end_year < start_year:
+        return jsonify(
+            {
+                "message":
+                    "end_year cannot be smaller than start_year"
+            }
+        ), 400
+
+
+    # Maximum 50-year range.
+    if (
+        end_year -
+        start_year
+        > 50
+    ):
+        return jsonify(
+            {
+                "message":
+                    "The maximum synchronization range is 50 years"
+            }
+        ), 400
+
+
+    # --------------------------------------------------------
+    # EXISTING OFFICE HOLIDAYS
+    # --------------------------------------------------------
+
+    existing_office_holidays = (
+        Holiday.query.filter(
+            Holiday.holiday_type == "Office",
+            db.extract(
+                "year",
+                Holiday.holiday_date,
+            ) >= start_year,
+            db.extract(
+                "year",
+                Holiday.holiday_date,
+            ) <= end_year,
+        ).all()
+    )
+
+
+    existing_by_date = {
+        holiday.holiday_date: holiday
+        for holiday in existing_office_holidays
+    }
+
+
+    created = []
+    skipped = 0
+
+
+    # --------------------------------------------------------
+    # CREATE EVERY SUNDAY
+    # --------------------------------------------------------
+
+    for year in range(
+        start_year,
+        end_year + 1,
+    ):
+
+        current_date = date_cls(
+            year,
+            1,
+            1,
+        )
+
+        end_date = date_cls(
+            year,
+            12,
+            31,
+        )
+
+
+        while current_date <= end_date:
+
+            # Python weekday:
+            # Monday    = 0
+            # Tuesday   = 1
+            # Wednesday = 2
+            # Thursday  = 3
+            # Friday    = 4
+            # Saturday  = 5
+            # Sunday    = 6
+
+            if current_date.weekday() == 6:
+
+                existing = existing_by_date.get(
+                    current_date
+                )
+
+
+                # ------------------------------------------------
+                # ALREADY EXISTS
+                # ------------------------------------------------
+
+                if existing:
+
+                    skipped += 1
+
+
+                # ------------------------------------------------
+                # CREATE SUNDAY HOLIDAY
+                # ------------------------------------------------
+
+                else:
+
+                    holiday = Holiday(
+                        name="Sunday",
+                        holiday_date=current_date,
+                        holiday_type="Office",
+                        is_active=True,
+                    )
+
+                    db.session.add(
+                        holiday
+                    )
+
+                    existing_by_date[
+                        current_date
+                    ] = holiday
+
+                    created.append(
+                        holiday
+                    )
+
+
+            current_date += timedelta(
+                days=1
+            )
+
+
+    # --------------------------------------------------------
+    # SAVE
+    # --------------------------------------------------------
+
+    db.session.commit()
+
+
+    # --------------------------------------------------------
+    # RESPONSE
+    # --------------------------------------------------------
+
+    return jsonify(
+        {
+            "message": (
+                f"Office Sundays synchronized "
+                f"from {start_year} "
+                f"to {end_year}."
+            ),
+
+            "data": {
+                "created": [
+                    holiday.to_dict()
+                    for holiday in created
+                ],
+
+                "created_count":
+                    len(created),
+
+                "skipped_count":
+                    skipped,
+
+                "total_count":
+                    (
+                        len(created)
+                        + skipped
+                    ),
+
+                "start_year":
+                    start_year,
+
+                "end_year":
+                    end_year,
+
+                "holiday_type":
+                    "Office",
+
+                "holiday_name":
+                    "Sunday",
+            },
+
             "token_response":
                 token_response,
         }

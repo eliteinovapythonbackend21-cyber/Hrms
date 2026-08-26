@@ -14,6 +14,10 @@ import {
 } from "@tanstack/react-query";
 
 
+/* ============================================================
+   HOLIDAY LIST
+============================================================ */
+
 export const useHolidays = (
   params
 ) =>
@@ -24,12 +28,20 @@ export const useHolidays = (
   );
 
 
+/* ============================================================
+   CREATE HOLIDAY
+============================================================ */
+
 export const useCreateHoliday = () =>
   useCrudCreate(
     "holidays",
     holidayApi
   );
 
+
+/* ============================================================
+   UPDATE HOLIDAY
+============================================================ */
 
 export const useUpdateHoliday = () =>
   useCrudUpdate(
@@ -38,6 +50,10 @@ export const useUpdateHoliday = () =>
   );
 
 
+/* ============================================================
+   DEACTIVATE HOLIDAY
+============================================================ */
+
 export const useDeactivateHoliday = () =>
   useCrudRemove(
     "holidays",
@@ -45,9 +61,9 @@ export const useDeactivateHoliday = () =>
   );
 
 
-// ============================================================
-// GOVERNMENT HOLIDAY SYNC
-// ============================================================
+/* ============================================================
+   GOVERNMENT HOLIDAY SYNC
+============================================================ */
 
 export function useSyncGovernmentHolidays() {
 
@@ -70,10 +86,13 @@ export function useSyncGovernmentHolidays() {
       return response.data;
     },
 
+
     onSuccess: async () => {
 
       await queryClient.invalidateQueries({
-        queryKey: ["holidays"],
+        queryKey: [
+          "holidays",
+        ],
       });
 
     },
@@ -82,16 +101,27 @@ export function useSyncGovernmentHolidays() {
 }
 
 
+/* ============================================================
+   GOVERNMENT HOLIDAY UNSYNC
+============================================================ */
+
 export function useUnsyncGovernmentHolidays() {
-  
+
   const queryClient =
     useQueryClient();
 
   return useMutation({
+
     mutationFn: async ({
       year,
       countryCode,
     }) => {
+
+      /*
+       * The backend unsync endpoint is expected to be
+       * exposed by holidayApi.unsyncGovernmentHolidays().
+       */
+
       const response =
         await holidayApi.unsyncGovernmentHolidays(
           year,
@@ -101,18 +131,64 @@ export function useUnsyncGovernmentHolidays() {
       return response.data;
     },
 
+
     onSuccess: async () => {
+
       await queryClient.invalidateQueries({
-        queryKey: ["holidays"],
+        queryKey: [
+          "holidays",
+        ],
       });
+
     },
+
   });
 }
 
 
-// ============================================================
-// GOVERNMENT HOLIDAY PREVIEW
-// ============================================================
+/* ============================================================
+   OFFICE SUNDAY SYNC
+============================================================ */
+
+export function useSyncOfficeSundays() {
+
+  const queryClient =
+    useQueryClient();
+
+  return useMutation({
+
+    mutationFn: async ({
+      startYear,
+      endYear,
+    }) => {
+
+      const response =
+        await holidayApi.syncOfficeSundays(
+          startYear,
+          endYear
+        );
+
+      return response.data;
+    },
+
+
+    onSuccess: async () => {
+
+      await queryClient.invalidateQueries({
+        queryKey: [
+          "holidays",
+        ],
+      });
+
+    },
+
+  });
+}
+
+
+/* ============================================================
+   GOVERNMENT HOLIDAY PREVIEW
+============================================================ */
 
 export function usePreviewGovernmentHolidays(
   year,
@@ -129,6 +205,7 @@ export function usePreviewGovernmentHolidays(
       countryCode,
     ],
 
+
     queryFn: async () => {
 
       const response =
@@ -138,7 +215,9 @@ export function usePreviewGovernmentHolidays(
         );
 
       return response.data;
+
     },
+
 
     enabled:
       enabled &&
