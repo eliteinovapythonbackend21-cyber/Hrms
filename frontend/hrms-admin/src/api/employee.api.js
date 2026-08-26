@@ -21,7 +21,42 @@ export const employeeLifecycleApi = {
         headers: { "Content-Type": undefined },
       }),
   },
-  permissions: createCrudApi({ listUrl: L.PERMISSIONS, itemUrl: L.PERMISSIONS_ITEM }),
+  // permissions: createCrudApi({ listUrl: L.PERMISSIONS, itemUrl: L.PERMISSIONS_ITEM }),
+  permissions: {
+    list: (params) =>
+      axiosClient.get(
+        L.PERMISSIONS,
+        { params }
+      ),
+
+    get: (id) =>
+      axiosClient.get(
+        L.PERMISSIONS_ITEM(id)
+      ),
+
+    create: (payload) =>
+      axiosClient.post(
+        L.PERMISSIONS,
+        payload
+      ),
+
+    update: (id, payload) =>
+      axiosClient.put(
+        L.PERMISSIONS_ITEM(id),
+        payload
+      ),
+
+    remove: (id) =>
+      axiosClient.delete(
+        `${L.PERMISSIONS_ITEM(id)}/deactivate`
+      ),
+
+    reactivate: (id) =>
+      axiosClient.put(
+        `${L.PERMISSIONS_ITEM(id)}/reactivate`
+      ),
+  },
+  
   overtime: createCrudApi({ listUrl: L.OVERTIME, itemUrl: L.OVERTIME_ITEM }),
   payroll: {
     ...createCrudApi({

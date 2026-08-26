@@ -113,7 +113,7 @@ export const API = {
     PROMOTIONS: "/promotions/",
     PROMOTIONS_ITEM: (id) => `/promotions/${id}`,
     TRANSFERS: "/transfers/",
-    TRANSFERS_ITEM: (id) => `/transfers/${id}`,
+    TRANSFERS_ITEM: (id) => `/transfers/${id}`, 
     RESIGNATIONS: "/resignations/",
     RESIGNATIONS_ITEM: (id) => `/resignations/${id}`,
     EXIT_MANAGEMENT: "/exit-management/",
