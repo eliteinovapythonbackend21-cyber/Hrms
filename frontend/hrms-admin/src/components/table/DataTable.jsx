@@ -63,15 +63,15 @@ export default function DataTable({
 
   if (data.length === 0) {
     return (
-      <div className="text-center py-16 text-slate-500 dark:text-slate-400">
+      <div className="py-16 text-center text-slate-500 dark:text-slate-400">
         {emptyText}
       </div>
     );
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full table-auto divide-y divide-slate-200 dark:divide-white/10">
+    <div className="w-full overflow-hidden">
+      <table className="w-full table-fixed divide-y divide-slate-200 dark:divide-white/10">
         <thead className="bg-slate-50 dark:bg-white/[0.03]">
           <tr>
             {columns.map((col) => (
