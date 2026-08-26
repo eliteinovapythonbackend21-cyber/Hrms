@@ -21,9 +21,18 @@ import { useModulePermissions } from "@/hooks/useModulePermissions";
 // Config-driven list page shared by master-data and transactional features.
 //
 // actionsMode:
-//   "master"       -> Edit + Delete
-//   "transactional" -> Delete only
-//   "none"         -> Read-only / caller-controlled actions
+//   "master" / "all" -> Edit + Deactivate (MasterListActions).
+//                        "all" is accepted as an alias for "master" so
+//                        pages written with actionsMode="all" (a common
+//                        mistake - there is no dedicated "all" action
+//                        set) still get the full Edit+Deactivate button
+//                        set instead of silently falling through to
+//                        Deactivate-only.
+//   "transactional"   -> Deactivate only (TransactionalListActions).
+//                        This is also the fallback for any other
+//                        unrecognized value, so a typo doesn't hide
+//                        actions entirely.
+//   "none"            -> Read-only / caller-controlled actions.
 //
 // The search/filter section uses a fixed 40px height so that the
 // TableSearchBar stays visually aligned with Select/Input controls
@@ -63,6 +72,12 @@ export default function GenericListPage({
   const viewDenied = module
     ? !permsLoading && !canView
     : false;
+
+  // Normalize actionsMode so "all" (a common but unrecognized value)
+  // behaves identically to "master" instead of silently falling
+  // through to the transactional (Deactivate-only) branch below.
+  const normalizedActionsMode =
+    actionsMode === "all" ? "master" : actionsMode;
 
   /* ============================================================
      PAGINATION
@@ -242,14 +257,14 @@ export default function GenericListPage({
   ============================================================ */
 
   const actionsColumn =
-    actionsMode === "none"
+    normalizedActionsMode === "none"
       ? null
       : {
           key: "actions",
           label: "Actions",
 
           render: (row) =>
-            actionsMode === "master" ? (
+            normalizedActionsMode === "master" ? (
               <MasterListActions
                 row={row}
                 onEdit={openEdit}

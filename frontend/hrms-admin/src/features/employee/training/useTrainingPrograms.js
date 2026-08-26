@@ -3,28 +3,60 @@ import { employeeLifecycleApi } from "@/api/employee.api";
 import {
   useCrudList,
   useCrudCreate,
+  useCrudUpdate,
   useCrudRemove,
 } from "@/hooks/useCrudResource";
 
-const api = employeeLifecycleApi.training;
+
+const api =
+  employeeLifecycleApi.training;
+
 
 /* ============================================================
    TRAINING LIST
 ============================================================ */
 
-export const useTrainingPrograms = (params) =>
-  useCrudList("training", api, params);
+export const useTrainingPrograms = (
+  params
+) =>
+  useCrudList(
+    "training",
+    api,
+    params
+  );
+
 
 /* ============================================================
    CREATE TRAINING
 ============================================================ */
 
-export const useCreateTrainingProgram = () =>
-  useCrudCreate("training", api);
+export const useCreateTrainingProgram =
+  () =>
+    useCrudCreate(
+      "training",
+      api
+    );
+
+
+/* ============================================================
+   UPDATE TRAINING
+============================================================ */
+
+export const useUpdateTrainingProgram =
+  () =>
+    useCrudUpdate(
+      "training",
+      api
+    );
+
 
 /* ============================================================
    DEACTIVATE TRAINING
 ============================================================ */
 
-export const useDeactivateTrainingProgram = () =>
-  useCrudRemove("training", api);
+export const useDeactivateTrainingProgram =
+  () =>
+    useCrudRemove(
+      "training",
+      api
+    );

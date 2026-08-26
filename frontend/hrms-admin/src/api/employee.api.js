@@ -23,10 +23,6 @@ export const employeeLifecycleApi = {
   },
   permissions: createCrudApi({ listUrl: L.PERMISSIONS, itemUrl: L.PERMISSIONS_ITEM }),
   overtime: createCrudApi({ listUrl: L.OVERTIME, itemUrl: L.OVERTIME_ITEM }),
-  // payroll: {
-  //   ...createCrudApi({ listUrl: L.PAYROLL, itemUrl: L.PAYROLL_ITEM }),
-  //   report: (params) => axiosClient.get(L.PAYROLL_REPORT, { params, responseType: "blob" }),
-  // },
   payroll: {
     ...createCrudApi({
       listUrl: L.PAYROLL,
@@ -48,9 +44,44 @@ export const employeeLifecycleApi = {
         }
       ),
   },
-  
+
   performance: createCrudApi({ listUrl: L.PERFORMANCE, itemUrl: L.PERFORMANCE_ITEM }),
-  training: createCrudApi({ listUrl: L.TRAINING, itemUrl: L.TRAINING_ITEM }),
+
+  // training_bp.py defines GET /, GET /<id>, POST /, PUT /<id>, and
+  // DELETE /<id>/deactivate (no plain DELETE /<id> route exists) — so
+  // remove() must hit the /deactivate suffix, same convention used by
+  // leaves_bp.py, attendance_bp.py, and holidayApi elsewhere in this app.
+  training: {
+    list: (params) =>
+      axiosClient.get(
+        API.EMPLOYEE_LIFECYCLE.TRAINING,
+        { params }
+      ),
+
+    get: (id) =>
+      axiosClient.get(
+        API.EMPLOYEE_LIFECYCLE.TRAINING_ITEM(id)
+      ),
+
+    create: (payload) =>
+      axiosClient.post(
+        API.EMPLOYEE_LIFECYCLE.TRAINING,
+        payload
+      ),
+
+    update: (id, payload) =>
+      axiosClient.put(
+        API.EMPLOYEE_LIFECYCLE.TRAINING_ITEM(
+          id
+        ),
+        payload
+      ),
+
+    remove: (id) =>
+      axiosClient.delete(
+        `${API.EMPLOYEE_LIFECYCLE.TRAINING_ITEM(id)}/deactivate`
+      ),
+  },
   promotions: {
     ...createCrudApi({ listUrl: L.PROMOTIONS, itemUrl: L.PROMOTIONS_ITEM }),
     // Promotions have no file field, so this is a plain JSON PUT — but it
