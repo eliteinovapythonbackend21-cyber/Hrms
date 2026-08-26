@@ -602,7 +602,7 @@ export default function EmployeeTargetPage() {
               }}
               className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm sm:max-w-[160px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
             >
-              <option value="">All Cadences</option>
+              <option value="">All Frequencies</option>
               {PERIOD_TYPES.map((type) => (
                 <option key={type} value={type}>
                   {type}
