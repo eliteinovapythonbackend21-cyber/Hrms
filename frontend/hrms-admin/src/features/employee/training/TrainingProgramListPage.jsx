@@ -3,6 +3,8 @@ import { useQueryClient } from "@tanstack/react-query";
 
 import GenericListPage from "@/components/table/GenericListPage";
 import TrainingProgramForm from "./TrainingProgramForm";
+import Modal from "@/components/ui/Modal";
+import Button from "@/components/ui/Button";
 
 import { employeeLifecycleApi } from "@/api/employee.api";
 
@@ -234,6 +236,45 @@ export default function TrainingProgramListPage() {
 
 
   /* ==========================================================
+     EDIT MODAL — managed manually here since actionsMode="none"
+     tells GenericListPage not to render its own actions column
+     (which otherwise also owns the Edit modal). This keeps Edit
+     available while avoiding a duplicate Deactivate button
+     alongside the Deactivate/Reactivate already in the Record
+     column below.
+  ========================================================== */
+
+  const [editFormOpen, setEditFormOpen] = useState(false);
+  const [editingRow, setEditingRow] = useState(null);
+  const updateMutation = useUpdateTrainingProgram();
+
+  const openEdit = (row) => {
+    setEditingRow(row);
+    setEditFormOpen(true);
+  };
+
+  const closeEdit = () => {
+    setEditFormOpen(false);
+    setEditingRow(null);
+  };
+
+  const handleEditSubmit = async (payload) => {
+    if (!editingRow) return;
+    try {
+      await updateMutation.mutateAsync({ id: editingRow.id, payload });
+      showToast("Training record updated", "success");
+      closeEdit();
+      invalidateAllTrainingQueries();
+    } catch (err) {
+      showToast(
+        err?.response?.data?.message || "Failed to update training record",
+        "error"
+      );
+    }
+  };
+
+
+  /* ==========================================================
      RECORD STATUS TAB — Active / Inactive / All.
   ========================================================== */
 
@@ -243,9 +284,6 @@ export default function TrainingProgramListPage() {
   const deactivateMutation = useDeactivateTrainingProgram();
   const [mutatingId, setMutatingId] = useState(null);
 
-  // Broad, defensive invalidation - matches ANY cached query whose
-  // key starts with "training", regardless of the exact params
-  // object shape (period range, org filters, is_active, etc).
   const invalidateAllTrainingQueries = () => {
     queryClient.invalidateQueries({
       predicate: (query) => query.queryKey[0] === "training",
@@ -286,8 +324,7 @@ export default function TrainingProgramListPage() {
 
 
   /* ==========================================================
-     COUNTS — dedicated lightweight fetches purely for live
-     Total/Active/Inactive numbers in the stat cards.
+     COUNTS
   ========================================================== */
 
   const { data: activeCountData } = useTrainingPrograms({ is_active: true, per_page: 1 });
@@ -299,7 +336,8 @@ export default function TrainingProgramListPage() {
 
 
   /* ==========================================================
-     TABLE COLUMNS
+     TABLE COLUMNS — Edit now lives here too, alongside
+     Deactivate/Reactivate, in a single "Actions" area.
   ========================================================== */
 
   const columns = useMemo(
@@ -377,14 +415,28 @@ export default function TrainingProgramListPage() {
           const isActive = row.is_active !== false;
           const isMutating = mutatingId === row.id;
 
-          if (isActive) {
-            return (
-              <div className="flex items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                  Active
-                </span>
+          return (
+            <div className="flex flex-wrap items-center gap-2">
+              <span
+                className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${
+                  isActive
+                    ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300"
+                    : "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300"
+                }`}
+              >
+                <span className={`h-1.5 w-1.5 rounded-full ${isActive ? "bg-emerald-500" : "bg-red-500"}`} />
+                {isActive ? "Active" : "Inactive"}
+              </span>
 
+              <button
+                type="button"
+                onClick={() => openEdit(row)}
+                className="text-xs font-semibold text-primary-600 hover:underline dark:text-primary-400"
+              >
+                Edit
+              </button>
+
+              {isActive ? (
                 <button
                   type="button"
                   disabled={isMutating}
@@ -393,25 +445,16 @@ export default function TrainingProgramListPage() {
                 >
                   {isMutating ? "Deactivating..." : "Deactivate"}
                 </button>
-              </div>
-            );
-          }
-
-          return (
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-700 dark:bg-red-500/10 dark:text-red-300">
-                <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
-                Inactive
-              </span>
-
-              <button
-                type="button"
-                disabled={isMutating}
-                onClick={() => handleReactivate(row)}
-                className="text-xs font-semibold text-emerald-600 hover:underline disabled:opacity-40 dark:text-emerald-400"
-              >
-                {isMutating ? "Reactivating..." : "Reactivate"}
-              </button>
+              ) : (
+                <button
+                  type="button"
+                  disabled={isMutating}
+                  onClick={() => handleReactivate(row)}
+                  className="text-xs font-semibold text-emerald-600 hover:underline disabled:opacity-40 dark:text-emerald-400"
+                >
+                  {isMutating ? "Reactivating..." : "Reactivate"}
+                </button>
+              )}
             </div>
           );
         },
@@ -765,11 +808,11 @@ export default function TrainingProgramListPage() {
         </div>
       )}
 
-      {/* MAIN LIST — actionsMode="none": Deactivate/Reactivate are
-          handled entirely in the "Record" column above; Edit is not
-          currently exposed here. If Edit should remain available,
-          switch actionsMode to "master" and remove the Deactivate
-          button rendered in the Record column to avoid duplication. */}
+      {/* MAIN LIST — actionsMode="none": GenericListPage renders no
+          actions column and no edit modal of its own. Edit,
+          Deactivate, and Reactivate are all handled manually in the
+          "Record" column + the Modal below, to avoid GenericListPage
+          duplicating any of them. */}
 
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
         <GenericListPage
@@ -780,8 +823,6 @@ export default function TrainingProgramListPage() {
           api={employeeLifecycleApi.training}
           useList={useTrainingPrograms}
           useCreate={useCreateTrainingProgram}
-          useUpdate={useUpdateTrainingProgram}
-          useRemove={useDeactivateTrainingProgram}
           filename="training"
           searchPlaceholder="Search employee, training program or status..."
           FormComponent={TrainingProgramForm}
@@ -792,6 +833,36 @@ export default function TrainingProgramListPage() {
           queryParams={queryParams}
         />
       </div>
+
+      {/* MANUAL EDIT MODAL */}
+
+      <Modal
+        open={editFormOpen}
+        onClose={closeEdit}
+        title="Edit Training Program"
+        footer={
+          <div className="flex items-center justify-end gap-2">
+            <Button variant="secondary" onClick={closeEdit} disabled={updateMutation.isPending}>
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              form="training-edit-form"
+              loading={updateMutation.isPending}
+              disabled={updateMutation.isPending}
+            >
+              {updateMutation.isPending ? "Saving..." : "Save"}
+            </Button>
+          </div>
+        }
+      >
+        <TrainingProgramForm
+          formId="training-edit-form"
+          initialData={editingRow || {}}
+          onSubmit={handleEditSubmit}
+          loading={updateMutation.isPending}
+        />
+      </Modal>
 
     </div>
   );
