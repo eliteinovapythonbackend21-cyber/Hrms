@@ -533,6 +533,150 @@ def sync_government_holidays(
     ), 200
 
 
+
+# ============================================================
+# UNSYNC GOVERNMENT HOLIDAYS
+# ============================================================
+
+@organization_bp.route(
+    "/holiday/unsync-government",
+    methods=["POST"],
+)
+@jwt_required()
+@with_token
+def unsync_government_holidays(
+    token_response,
+):
+    current_user = get_current_user()
+
+    if not is_admin(current_user):
+        return jsonify(
+            {
+                "message": "Admin privileges required"
+            }
+        ), 403
+
+    data = request.get_json(
+        silent=True
+    ) or {}
+
+    year = data.get("year")
+
+    country_code = (
+        data.get("country_code")
+        or "IN"
+    ).upper()
+
+    if not year:
+        return jsonify(
+            {
+                "message":
+                    "year is required"
+            }
+        ), 400
+
+    try:
+        year = int(year)
+    except (
+        TypeError,
+        ValueError,
+    ):
+        return jsonify(
+            {
+                "message":
+                    "year must be an integer"
+            }
+        ), 400
+
+    if year < 1900 or year > 2100:
+        return jsonify(
+            {
+                "message":
+                    "year must be between 1900 and 2100"
+            }
+        ), 400
+
+    # --------------------------------------------------------
+    # FIND GOVERNMENT HOLIDAYS FOR THE SELECTED YEAR
+    # --------------------------------------------------------
+
+    government_holidays = (
+        Holiday.query.filter(
+            db.extract(
+                "year",
+                Holiday.holiday_date,
+            ) == year,
+            Holiday.holiday_type ==
+                "Government",
+        ).all()
+    )
+
+    if not government_holidays:
+        return jsonify(
+            {
+                "message": (
+                    f"No government holidays "
+                    f"found for {year}."
+                ),
+                "data": {
+                    "deleted": [],
+                    "deleted_count": 0,
+                    "year": year,
+                    "country_code":
+                        country_code,
+                },
+                "token_response":
+                    token_response,
+            }
+        ), 200
+
+    # --------------------------------------------------------
+    # CAPTURE DATA BEFORE DELETE
+    # --------------------------------------------------------
+
+    deleted = [
+        holiday.to_dict()
+        for holiday
+        in government_holidays
+    ]
+
+    deleted_count = len(
+        government_holidays
+    )
+
+    # --------------------------------------------------------
+    # DELETE
+    # --------------------------------------------------------
+
+    for holiday in government_holidays:
+        db.session.delete(
+            holiday
+        )
+
+    db.session.commit()
+
+    return jsonify(
+        {
+            "message": (
+                f"Unsynced {deleted_count} "
+                f"government holiday(s) "
+                f"for {year} "
+                f"({country_code})."
+            ),
+            "data": {
+                "deleted": deleted,
+                "deleted_count":
+                    deleted_count,
+                "year": year,
+                "country_code":
+                    country_code,
+            },
+            "token_response":
+                token_response,
+        }
+    ), 200
+
+
 # ============================================================
 # PREVIEW GOVERNMENT HOLIDAYS
 # ============================================================
