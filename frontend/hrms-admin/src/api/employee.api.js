@@ -57,7 +57,42 @@ export const employeeLifecycleApi = {
       ),
   },
   
-  overtime: createCrudApi({ listUrl: L.OVERTIME, itemUrl: L.OVERTIME_ITEM }),
+  // overtime: createCrudApi({ listUrl: L.OVERTIME, itemUrl: L.OVERTIME_ITEM }),
+  overtime: {
+    list: (params) =>
+      axiosClient.get(
+        L.OVERTIME,
+        { params }
+      ),
+
+    get: (id) =>
+      axiosClient.get(
+        L.OVERTIME_ITEM(id)
+      ),
+
+    create: (payload) =>
+      axiosClient.post(
+        L.OVERTIME,
+        payload
+      ),
+
+    update: (id, payload) =>
+      axiosClient.put(
+        L.OVERTIME_ITEM(id),
+        payload
+      ),
+
+    remove: (id) =>
+      axiosClient.delete(
+        `${L.OVERTIME_ITEM(id)}/deactivate`
+      ),
+
+    reactivate: (id) =>
+      axiosClient.put(
+        `${L.OVERTIME_ITEM(id)}/reactivate`
+      ),
+  },
+  
   payroll: {
     ...createCrudApi({
       listUrl: L.PAYROLL,
