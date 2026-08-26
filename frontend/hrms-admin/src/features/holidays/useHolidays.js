@@ -82,6 +82,34 @@ export function useSyncGovernmentHolidays() {
 }
 
 
+export function useUnsyncGovernmentHolidays() {
+  
+  const queryClient =
+    useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      year,
+      countryCode,
+    }) => {
+      const response =
+        await holidayApi.unsyncGovernmentHolidays(
+          year,
+          countryCode
+        );
+
+      return response.data;
+    },
+
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["holidays"],
+      });
+    },
+  });
+}
+
+
 // ============================================================
 // GOVERNMENT HOLIDAY PREVIEW
 // ============================================================

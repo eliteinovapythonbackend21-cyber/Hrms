@@ -231,7 +231,20 @@ export const masterApi = {
           countryCode,
       }
     ),
+  
 
+  unsyncGovernmentHolidays: (
+    year,
+    countryCode = "IN"
+  ) =>
+    axiosClient.post(
+      API.MASTER.HOLIDAY_UNSYNC_GOVERNMENT,
+      {
+        year,
+        country_code:
+          countryCode,
+      }
+    ),
 
   // ============================================================
   // Government Holiday Preview
@@ -274,6 +287,9 @@ export const holidayApi = {
 
   syncGovernmentHolidays:
     masterApi.syncGovernmentHolidays,
+  
+  unsyncGovernmentHolidays:
+    masterApi.unsyncGovernmentHolidays,
 
   previewGovernment:
     masterApi.previewGovernmentHolidays,

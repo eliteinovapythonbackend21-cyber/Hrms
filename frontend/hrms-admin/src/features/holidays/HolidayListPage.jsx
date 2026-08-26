@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+
 import { useQueryClient } from "@tanstack/react-query";
 
 import {
@@ -7,6 +8,7 @@ import {
   useUpdateHoliday,
   useDeactivateHoliday,
   useSyncGovernmentHolidays,
+  useUnsyncGovernmentHolidays,
 } from "./useHolidays";
 
 import HolidayForm from "./HolidayForm";
@@ -31,24 +33,24 @@ import { formatDate } from "@/utils/formatDate";
 import { useModulePermissions } from "@/hooks/useModulePermissions";
 
 
+/* ============================================================
+   EXPORT COLUMNS
+============================================================ */
+
 const EXPORT_COLUMNS = [
   {
     header: "Name",
-    accessor: (row) =>
-      row.name,
+    accessor: (row) => row.name,
   },
   {
     header: "Date",
     accessor: (row) =>
-      formatDate(
-        row.holiday_date
-      ),
+      formatDate(row.holiday_date),
   },
   {
     header: "Type",
     accessor: (row) =>
-      row.holiday_type ||
-      "Office",
+      row.holiday_type || "Office",
   },
   {
     header: "Status",
@@ -59,6 +61,10 @@ const EXPORT_COLUMNS = [
   },
 ];
 
+
+/* ============================================================
+   MONTH NAMES
+============================================================ */
 
 const MONTH_NAMES = [
   "January",
@@ -76,6 +82,10 @@ const MONTH_NAMES = [
 ];
 
 
+/* ============================================================
+   WEEKDAY LABELS
+============================================================ */
+
 const WEEKDAY_LABELS = [
   "Sun",
   "Mon",
@@ -86,6 +96,10 @@ const WEEKDAY_LABELS = [
   "Sat",
 ];
 
+
+/* ============================================================
+   COUNTRY OPTIONS
+============================================================ */
 
 const COUNTRY_OPTIONS = [
   {
@@ -115,66 +129,72 @@ const COUNTRY_OPTIONS = [
 ];
 
 
-// ============================================================
-// DATE HELPERS
-// ============================================================
+/* ============================================================
+   DATE HELPERS
+============================================================ */
 
-function parseHolidayDate(
-  value
-) {
+/*
+ * Parse the YYYY-MM-DD portion manually.
+ *
+ * This avoids browser timezone conversion problems that can
+ * happen with:
+ *
+ * new Date("2026-08-15")
+ *
+ * especially in non-UTC environments.
+ */
+function parseHolidayDate(value) {
   if (!value) {
     return null;
   }
 
-  const raw =
-    String(value).slice(
-      0,
-      10
-    );
+  const raw = String(value).slice(0, 10);
 
-  const match =
-    raw.match(
-      /^(\d{4})-(\d{2})-(\d{2})$/
-    );
+  const match = raw.match(
+    /^(\d{4})-(\d{2})-(\d{2})$/
+  );
 
   if (!match) {
     return null;
   }
 
   return {
-    year:
-      Number(match[1]),
-
-    month:
-      Number(match[2]) - 1,
-
-    day:
-      Number(match[3]),
+    year: Number(match[1]),
+    month: Number(match[2]) - 1,
+    day: Number(match[3]),
   };
 }
 
 
-function holidayDateKey(
-  value
-) {
+/* ============================================================
+   HOLIDAY DATE KEY
+============================================================ */
+
+function holidayDateKey(value) {
   const parsed =
     parseHolidayDate(value);
 
   if (!parsed) {
-    return null;
+    return "";
   }
 
   return (
     `${parsed.year}-` +
-    `${String(
-      parsed.month + 1
-    ).padStart(2, "0")}-` +
-    `${String(
-      parsed.day
-    ).padStart(2, "0")}`
+    `${String(parsed.month + 1).padStart(
+      2,
+      "0"
+    )}-` +
+    `${String(parsed.day).padStart(
+      2,
+      "0"
+    )}`
   );
 }
 
+
+/* ============================================================
+   ISO DATE
+============================================================ */
 
 function toISODate(
   year,
@@ -183,9 +203,10 @@ function toISODate(
 ) {
   return (
     `${year}-` +
-    `${String(
-      month + 1
-    ).padStart(2, "0")}-` +
+    `${String(month + 1).padStart(
+      2,
+      "0"
+    )}-` +
     `${String(day).padStart(
       2,
       "0"
@@ -193,6 +214,10 @@ function toISODate(
   );
 }
 
+
+/* ============================================================
+   SAME HOLIDAY DATE
+============================================================ */
 
 function isSameHolidayDate(
   value,
@@ -215,9 +240,11 @@ function isSameHolidayDate(
 }
 
 
-function getHolidayType(
-  holiday
-) {
+/* ============================================================
+   HOLIDAY TYPE
+============================================================ */
+
+function getHolidayType(holiday) {
   return (
     holiday?.holiday_type ||
     "Office"
@@ -225,8 +252,11 @@ function getHolidayType(
 }
 
 
-export default function HolidayListPage() {
+/* ============================================================
+   PAGE
+============================================================ */
 
+export default function HolidayListPage() {
   const { showToast } =
     useToast();
 
@@ -234,9 +264,9 @@ export default function HolidayListPage() {
     useQueryClient();
 
 
-  // ==========================================================
-  // PAGINATION
-  // ==========================================================
+  /* ==========================================================
+     PAGINATION
+  ========================================================== */
 
   const {
     params,
@@ -247,6 +277,10 @@ export default function HolidayListPage() {
   } = usePagination();
 
 
+  /* ==========================================================
+     SEARCH
+  ========================================================== */
+
   const {
     value,
     setValue,
@@ -254,17 +288,20 @@ export default function HolidayListPage() {
   } = useDebouncedSearch();
 
 
-  // ==========================================================
-  // PAGINATED DATA
-  // ==========================================================
+  /* ==========================================================
+     QUERY PARAMS
+  ========================================================== */
 
   const queryParams = {
     ...params,
     search:
-      debouncedValue ||
-      undefined,
+      debouncedValue || undefined,
   };
 
+
+  /* ==========================================================
+     PAGINATED HOLIDAY DATA
+  ========================================================== */
 
   const {
     data,
@@ -272,15 +309,14 @@ export default function HolidayListPage() {
     isError,
     isFetching,
     refetch,
-  } =
-    useHolidays(
-      queryParams
-    );
+  } = useHolidays(
+    queryParams
+  );
 
 
-  // ==========================================================
-  // PERMISSIONS
-  // ==========================================================
+  /* ==========================================================
+     PERMISSIONS
+  ========================================================== */
 
   const {
     canAdd,
@@ -292,9 +328,9 @@ export default function HolidayListPage() {
     );
 
 
-  // ==========================================================
-  // EXPORT
-  // ==========================================================
+  /* ==========================================================
+     EXPORT
+  ========================================================== */
 
   const {
     exporting,
@@ -304,19 +340,23 @@ export default function HolidayListPage() {
     useTableExport({
       fetchAll:
         holidayApi.list,
+
       queryParams,
+
       exportColumns:
         EXPORT_COLUMNS,
+
       filename:
         "holidays",
+
       title:
         "Holidays",
     });
 
 
-  // ==========================================================
-  // MUTATIONS
-  // ==========================================================
+  /* ==========================================================
+     MUTATIONS
+  ========================================================== */
 
   const createHoliday =
     useCreateHoliday();
@@ -330,10 +370,13 @@ export default function HolidayListPage() {
   const syncGovernmentHolidays =
     useSyncGovernmentHolidays();
 
+  const unsyncGovernmentHolidays =
+    useUnsyncGovernmentHolidays();
 
-  // ==========================================================
-  // MODAL STATE
-  // ==========================================================
+
+  /* ==========================================================
+     MODAL STATE
+  ========================================================== */
 
   const [
     modalOpen,
@@ -356,9 +399,19 @@ export default function HolidayListPage() {
   ] = useState(null);
 
 
-  // ==========================================================
-  // FILTERS
-  // ==========================================================
+  /* ==========================================================
+     UNSYNC CONFIRMATION STATE
+  ========================================================== */
+
+  const [
+    unsyncConfirmOpen,
+    setUnsyncConfirmOpen,
+  ] = useState(false);
+
+
+  /* ==========================================================
+     TABLE FILTERS
+  ========================================================== */
 
   const [
     statusFilter,
@@ -371,9 +424,9 @@ export default function HolidayListPage() {
   ] = useState("all");
 
 
-  // ==========================================================
-  // GOVERNMENT SYNC STATE
-  // ==========================================================
+  /* ==========================================================
+     GOVERNMENT SYNC STATE
+  ========================================================== */
 
   const [
     syncYear,
@@ -388,42 +441,43 @@ export default function HolidayListPage() {
   ] = useState("IN");
 
 
-  // ==========================================================
-  // VIEW MODE
-  // ==========================================================
+  /* ==========================================================
+     VIEW MODE
+  ========================================================== */
 
   const [
     listMode,
     setListMode,
-  ] = useState(
-    "calendar"
-  );
+  ] = useState("calendar");
 
 
-  // ==========================================================
-  // FULL HOLIDAY LIST
-  // ==========================================================
+  /* ==========================================================
+     FULL HOLIDAY LIST
+  ==========================================================
+   *
+   * Calendar and grouped list need all records rather than
+   * only the currently paginated table records.
+   *
+   * ======================================================== */
 
   const {
     data: allHolidaysData,
-  } =
-    useHolidays({
-      page: 1,
-      per_page: 1000,
-    });
+  } = useHolidays({
+    page: 1,
+    per_page: 1000,
+  });
 
 
   const holidays =
     data?.items || [];
 
   const allHolidays =
-    allHolidaysData?.items ||
-    [];
+    allHolidaysData?.items || [];
 
 
-  // ==========================================================
-  // ACTIVE HOLIDAYS
-  // ==========================================================
+  /* ==========================================================
+     ACTIVE HOLIDAYS
+  ========================================================== */
 
   const allActiveHolidays =
     useMemo(
@@ -436,9 +490,9 @@ export default function HolidayListPage() {
     );
 
 
-  // ==========================================================
-  // INACTIVE HOLIDAYS
-  // ==========================================================
+  /* ==========================================================
+     INACTIVE HOLIDAYS
+  ========================================================== */
 
   const allInactiveHolidays =
     useMemo(
@@ -451,9 +505,9 @@ export default function HolidayListPage() {
     );
 
 
-  // ==========================================================
-  // GOVERNMENT HOLIDAYS
-  // ==========================================================
+  /* ==========================================================
+     GOVERNMENT HOLIDAYS
+  ========================================================== */
 
   const governmentHolidays =
     useMemo(
@@ -462,16 +516,15 @@ export default function HolidayListPage() {
           (holiday) =>
             getHolidayType(
               holiday
-            ) ===
-            "Government"
+            ) === "Government"
         ),
       [allActiveHolidays]
     );
 
 
-  // ==========================================================
-  // OFFICE HOLIDAYS
-  // ==========================================================
+  /* ==========================================================
+     OFFICE HOLIDAYS
+  ========================================================== */
 
   const officeHolidays =
     useMemo(
@@ -480,16 +533,15 @@ export default function HolidayListPage() {
           (holiday) =>
             getHolidayType(
               holiday
-            ) ===
-            "Office"
+            ) === "Office"
         ),
       [allActiveHolidays]
     );
 
 
-  // ==========================================================
-  // AVAILABLE YEARS
-  // ==========================================================
+  /* ==========================================================
+     AVAILABLE YEARS
+  ========================================================== */
 
   const currentYear =
     new Date().getFullYear();
@@ -497,14 +549,11 @@ export default function HolidayListPage() {
 
   const availableYears =
     useMemo(() => {
-
       const years =
         new Set();
 
-
       allHolidays.forEach(
         (holiday) => {
-
           const parsed =
             parseHolidayDate(
               holiday.holiday_date
@@ -515,31 +564,27 @@ export default function HolidayListPage() {
               parsed.year
             );
           }
-
         }
       );
-
 
       years.add(
         currentYear
       );
-
 
       return Array.from(
         years
       ).sort(
         (a, b) => b - a
       );
-
     }, [
       allHolidays,
       currentYear,
     ]);
 
 
-  // ==========================================================
-  // GROUPED YEAR
-  // ==========================================================
+  /* ==========================================================
+     GROUPED LIST YEAR
+  ========================================================== */
 
   const [
     listYear,
@@ -549,9 +594,12 @@ export default function HolidayListPage() {
   );
 
 
+  /* ==========================================================
+     GROUPED BY MONTH
+  ========================================================== */
+
   const groupedByMonth =
     useMemo(() => {
-
       const buckets =
         Array.from(
           {
@@ -566,7 +614,6 @@ export default function HolidayListPage() {
 
       allActiveHolidays.forEach(
         (holiday) => {
-
           const parsed =
             parseHolidayDate(
               holiday.holiday_date
@@ -586,33 +633,26 @@ export default function HolidayListPage() {
           if (
             getHolidayType(
               holiday
-            ) ===
-            "Government"
+            ) === "Government"
           ) {
-
             buckets[
               parsed.month
             ].government.push(
               holiday
             );
-
           } else {
-
             buckets[
               parsed.month
             ].office.push(
               holiday
             );
-
           }
-
         }
       );
 
 
       buckets.forEach(
         (bucket) => {
-
           bucket.government.sort(
             (a, b) =>
               holidayDateKey(
@@ -624,7 +664,6 @@ export default function HolidayListPage() {
               )
           );
 
-
           bucket.office.sort(
             (a, b) =>
               holidayDateKey(
@@ -635,28 +674,29 @@ export default function HolidayListPage() {
                 )
               )
           );
-
         }
       );
 
 
       return buckets;
-
     }, [
       allActiveHolidays,
       listYear,
     ]);
 
 
-  // ==========================================================
-  // YEAR TOTALS
-  // ==========================================================
+  /* ==========================================================
+     YEAR TOTALS
+  ========================================================== */
 
   const yearTotals =
     useMemo(
       () =>
         groupedByMonth.reduce(
-          (totals, bucket) => ({
+          (
+            totals,
+            bucket
+          ) => ({
             government:
               totals.government +
               bucket.government.length,
@@ -674,13 +714,12 @@ export default function HolidayListPage() {
     );
 
 
-  // ==========================================================
-  // CALENDAR STATE
-  // ==========================================================
+  /* ==========================================================
+     CALENDAR STATE
+  ========================================================== */
 
   const today =
     new Date();
-
 
   const [
     calendarYear,
@@ -688,7 +727,6 @@ export default function HolidayListPage() {
   ] = useState(
     today.getFullYear()
   );
-
 
   const [
     calendarMonth,
@@ -698,9 +736,9 @@ export default function HolidayListPage() {
   );
 
 
-  // ==========================================================
-  // MONTH HOLIDAYS
-  // ==========================================================
+  /* ==========================================================
+     CALENDAR MONTH HOLIDAYS
+  ========================================================== */
 
   const calendarHolidaysThisMonth =
     useMemo(
@@ -708,7 +746,6 @@ export default function HolidayListPage() {
         allActiveHolidays
           .filter(
             (holiday) => {
-
               const parsed =
                 parseHolidayDate(
                   holiday.holiday_date
@@ -724,7 +761,6 @@ export default function HolidayListPage() {
                 parsed.month ===
                   calendarMonth
               );
-
             }
           )
           .sort(
@@ -745,13 +781,12 @@ export default function HolidayListPage() {
     );
 
 
-  // ==========================================================
-  // CALENDAR CELLS
-  // ==========================================================
+  /* ==========================================================
+     CALENDAR CELLS
+  ========================================================== */
 
   const calendarCells =
     useMemo(() => {
-
       const firstOfMonth =
         new Date(
           calendarYear,
@@ -759,10 +794,8 @@ export default function HolidayListPage() {
           1
         );
 
-
       const startWeekday =
         firstOfMonth.getDay();
-
 
       const daysInMonth =
         new Date(
@@ -771,14 +804,13 @@ export default function HolidayListPage() {
           0
         ).getDate();
 
-
       const cells = [];
 
 
       for (
         let i = 0;
         i < startWeekday;
-        i++
+        i += 1
       ) {
         cells.push(null);
       }
@@ -787,9 +819,8 @@ export default function HolidayListPage() {
       for (
         let day = 1;
         day <= daysInMonth;
-        day++
+        day += 1
       ) {
-
         const savedForDay =
           calendarHolidaysThisMonth.filter(
             (holiday) =>
@@ -801,18 +832,14 @@ export default function HolidayListPage() {
               )
           );
 
-
         cells.push({
           day,
-          saved:
-            savedForDay,
+          saved: savedForDay,
         });
-
       }
 
 
       return cells;
-
     }, [
       calendarYear,
       calendarMonth,
@@ -820,18 +847,16 @@ export default function HolidayListPage() {
     ]);
 
 
-  // ==========================================================
-  // PREVIOUS MONTH
-  // ==========================================================
+  /* ==========================================================
+     PREVIOUS MONTH
+  ========================================================== */
 
   const goToPrevMonth =
     () => {
-
       if (
         calendarMonth ===
         0
       ) {
-
         setCalendarMonth(
           11
         );
@@ -840,31 +865,25 @@ export default function HolidayListPage() {
           (year) =>
             year - 1
         );
-
       } else {
-
         setCalendarMonth(
           (month) =>
             month - 1
         );
-
       }
-
     };
 
 
-  // ==========================================================
-  // NEXT MONTH
-  // ==========================================================
+  /* ==========================================================
+     NEXT MONTH
+  ========================================================== */
 
   const goToNextMonth =
     () => {
-
       if (
         calendarMonth ===
         11
       ) {
-
         setCalendarMonth(
           0
         );
@@ -873,26 +892,21 @@ export default function HolidayListPage() {
           (year) =>
             year + 1
         );
-
       } else {
-
         setCalendarMonth(
           (month) =>
             month + 1
         );
-
       }
-
     };
 
 
-  // ==========================================================
-  // TODAY
-  // ==========================================================
+  /* ==========================================================
+     GO TO TODAY
+  ========================================================== */
 
   const goToToday =
     () => {
-
       const now =
         new Date();
 
@@ -903,13 +917,12 @@ export default function HolidayListPage() {
       setCalendarMonth(
         now.getMonth()
       );
-
     };
 
 
-  // ==========================================================
-  // TODAY CHECK
-  // ==========================================================
+  /* ==========================================================
+     TODAY CHECK
+  ========================================================== */
 
   const isToday =
     (day) =>
@@ -921,13 +934,12 @@ export default function HolidayListPage() {
         today.getFullYear();
 
 
-  // ==========================================================
-  // DATE CLICK
-  // ==========================================================
+  /* ==========================================================
+     CALENDAR DATE CLICK
+  ========================================================== */
 
   const handleCellClick =
     (cell) => {
-
       if (
         !cell ||
         !canAdd
@@ -935,15 +947,15 @@ export default function HolidayListPage() {
         return;
       }
 
-
-      // Do not create duplicates
+      /*
+       * Prevent duplicate holidays.
+       */
       if (
         cell.saved.length >
         0
       ) {
         return;
       }
-
 
       setPrefillDate(
         toISODate(
@@ -955,18 +967,16 @@ export default function HolidayListPage() {
 
       setEditing(null);
       setModalOpen(true);
-
     };
 
 
-  // ==========================================================
-  // TABLE FILTER
-  // ==========================================================
+  /* ==========================================================
+     TABLE FILTER
+  ========================================================== */
 
   const filteredHolidays =
     holidays.filter(
       (holiday) => {
-
         if (
           statusFilter ===
             "active" &&
@@ -998,50 +1008,43 @@ export default function HolidayListPage() {
     );
 
 
-  // ==========================================================
-  // ADD HOLIDAY
-  // ==========================================================
+  /* ==========================================================
+     ADD HOLIDAY
+  ========================================================== */
 
   const openAdd =
     () => {
-
       setEditing(null);
       setPrefillDate(null);
       setModalOpen(true);
-
     };
 
 
-  // ==========================================================
-  // EDIT HOLIDAY
-  // ==========================================================
+  /* ==========================================================
+     EDIT HOLIDAY
+  ========================================================== */
 
   const openEdit =
     (holiday) => {
-
       setEditing(
         holiday
       );
 
       setPrefillDate(null);
       setModalOpen(true);
-
     };
 
 
-  // ==========================================================
-  // SUBMIT
-  // ==========================================================
+  /* ==========================================================
+     SUBMIT HOLIDAY
+  ========================================================== */
 
   const handleSubmit =
     async (
       payload
     ) => {
-
       try {
-
         if (editing) {
-
           await updateHoliday.mutateAsync(
             {
               id:
@@ -1054,9 +1057,7 @@ export default function HolidayListPage() {
             "Holiday updated successfully",
             "success"
           );
-
         } else {
-
           await createHoliday.mutateAsync(
             payload
           );
@@ -1065,7 +1066,6 @@ export default function HolidayListPage() {
             "Holiday created successfully",
             "success"
           );
-
         }
 
 
@@ -1081,50 +1081,40 @@ export default function HolidayListPage() {
           }
         );
 
-
       } catch (error) {
-
         showToast(
           error?.response?.data
             ?.message ||
             "Operation failed",
           "error"
         );
-
       }
-
     };
 
 
-  // ==========================================================
-  // DEACTIVATE
-  // ==========================================================
+  /* ==========================================================
+     DEACTIVATE HOLIDAY
+  ========================================================== */
 
   const handleDeactivate =
     async () => {
-
       if (!confirmRow) {
         return;
       }
 
-
       try {
-
         await deactivateHoliday.mutateAsync(
           confirmRow.id
         );
-
 
         showToast(
           "Holiday deactivated successfully",
           "success"
         );
 
-
         setConfirmRow(
           null
         );
-
 
         await queryClient.invalidateQueries(
           {
@@ -1132,31 +1122,24 @@ export default function HolidayListPage() {
               ["holidays"],
           }
         );
-
-
       } catch (error) {
-
         showToast(
           error?.response?.data
             ?.message ||
             "Operation failed",
           "error"
         );
-
       }
-
     };
 
 
-  // ==========================================================
-  // GOVERNMENT SYNC
-  // ==========================================================
+  /* ==========================================================
+     SYNC GOVERNMENT HOLIDAYS
+  ========================================================== */
 
   const handleSyncGovernmentHolidays =
     async () => {
-
       try {
-
         const result =
           await syncGovernmentHolidays.mutateAsync(
             {
@@ -1168,11 +1151,78 @@ export default function HolidayListPage() {
             }
           );
 
-
         showToast(
           result?.message ||
             "Government holidays synchronized",
           "success"
+        );
+
+
+        setListYear(
+          syncYear
+        );
+
+        setCalendarYear(
+          syncYear
+        );
+
+        /*
+         * Start at January after synchronizing the selected
+         * year. Change to syncYear's current month if you prefer.
+         */
+        setCalendarMonth(
+          0
+        );
+
+
+        await queryClient.invalidateQueries(
+          {
+            queryKey:
+              ["holidays"],
+          }
+        );
+
+
+        await refetch();
+
+      } catch (error) {
+        showToast(
+          error?.response?.data
+            ?.message ||
+            "Failed to sync government holidays",
+          "error"
+        );
+      }
+    };
+
+
+  /* ==========================================================
+     UNSYNC GOVERNMENT HOLIDAYS
+  ========================================================== */
+
+  const handleUnsyncGovernmentHolidays =
+    async () => {
+      try {
+        const result =
+          await unsyncGovernmentHolidays.mutateAsync(
+            {
+              year:
+                syncYear,
+
+              countryCode:
+                syncCountry,
+            }
+          );
+
+        showToast(
+          result?.message ||
+            "Government holidays unsynced successfully",
+          "success"
+        );
+
+
+        setUnsyncConfirmOpen(
+          false
         );
 
 
@@ -1199,24 +1249,20 @@ export default function HolidayListPage() {
 
         await refetch();
 
-
       } catch (error) {
-
         showToast(
           error?.response?.data
             ?.message ||
-            "Failed to sync government holidays",
+            "Failed to unsync government holidays",
           "error"
         );
-
       }
-
     };
 
 
-  // ==========================================================
-  // TABLE COLUMNS
-  // ==========================================================
+  /* ==========================================================
+     TABLE COLUMNS
+  ========================================================== */
 
   const columns = [
     {
@@ -1224,28 +1270,28 @@ export default function HolidayListPage() {
       label: "Holiday",
 
       render: (row) => {
-
         const firstLetter =
           row.name
             ?.charAt(0)
             ?.toUpperCase() ||
           "H";
 
-
         return (
           <div className="flex min-w-0 items-center gap-2">
 
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
+
               <span className="text-sm font-bold">
                 {firstLetter}
               </span>
+
             </div>
+
 
             <div className="min-w-0">
 
               <p className="truncate font-semibold text-slate-800 dark:text-white">
-                {row.name ||
-                  "-"}
+                {row.name || "-"}
               </p>
 
             </div>
@@ -1254,7 +1300,6 @@ export default function HolidayListPage() {
         );
       },
     },
-
 
     {
       key:
@@ -1273,7 +1318,6 @@ export default function HolidayListPage() {
         ),
     },
 
-
     {
       key:
         "holiday_type",
@@ -1283,7 +1327,6 @@ export default function HolidayListPage() {
 
       render:
         (row) => {
-
           const type =
             getHolidayType(
               row
@@ -1292,7 +1335,6 @@ export default function HolidayListPage() {
           const isGovernment =
             type ===
             "Government";
-
 
           return (
             <Badge
@@ -1305,10 +1347,8 @@ export default function HolidayListPage() {
               {type}
             </Badge>
           );
-
         },
     },
-
 
     {
       key:
@@ -1335,16 +1375,13 @@ export default function HolidayListPage() {
               }
             />
 
-            {
-              row.is_active
-                ? "Active"
-                : "Inactive"
-            }
+            {row.is_active
+              ? "Active"
+              : "Inactive"}
 
           </Badge>
         ),
     },
-
 
     {
       key:
@@ -1361,9 +1398,7 @@ export default function HolidayListPage() {
               <button
                 type="button"
                 onClick={() =>
-                  openEdit(
-                    row
-                  )
+                  openEdit(row)
                 }
                 className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-primary-600 transition hover:bg-primary-50 dark:border-slate-700 dark:bg-slate-800 dark:text-primary-400 dark:hover:bg-primary-500/10"
               >
@@ -1393,9 +1428,9 @@ export default function HolidayListPage() {
   ];
 
 
-  // ==========================================================
-  // RETURN
-  // ==========================================================
+  /* ==========================================================
+     RETURN
+  ========================================================== */
 
   return (
     <div className="space-y-5">
@@ -1475,12 +1510,12 @@ export default function HolidayListPage() {
 
 
       {/* ======================================================
-          GOVERNMENT SYNC
+          GOVERNMENT HOLIDAY SYNC / UNSYNC
       ====================================================== */}
 
       <div className="rounded-xl border border-violet-100 bg-white p-4 shadow-sm dark:border-violet-900/30 dark:bg-slate-900">
 
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div className="flex flex-col gap-4">
 
           <div>
 
@@ -1489,13 +1524,15 @@ export default function HolidayListPage() {
             </h3>
 
             <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-              Sync government holidays for the selected year and country.
+              Sync or remove Government holidays for the selected year and country.
             </p>
 
           </div>
 
 
           <div className="flex flex-wrap items-center gap-2">
+
+            {/* YEAR */}
 
             <input
               type="number"
@@ -1504,7 +1541,9 @@ export default function HolidayListPage() {
               value={
                 syncYear
               }
-              onChange={(event) =>
+              onChange={(
+                event
+              ) =>
                 setSyncYear(
                   Number(
                     event.target.value
@@ -1515,11 +1554,15 @@ export default function HolidayListPage() {
             />
 
 
+            {/* COUNTRY */}
+
             <select
               value={
                 syncCountry
               }
-              onChange={(event) =>
+              onChange={(
+                event
+              ) =>
                 setSyncCountry(
                   event.target.value
                 )
@@ -1547,6 +1590,8 @@ export default function HolidayListPage() {
             </select>
 
 
+            {/* SYNC */}
+
             <Button
               type="button"
               variant="secondary"
@@ -1554,7 +1599,8 @@ export default function HolidayListPage() {
                 handleSyncGovernmentHolidays
               }
               disabled={
-                syncGovernmentHolidays.isPending
+                syncGovernmentHolidays.isPending ||
+                unsyncGovernmentHolidays.isPending
               }
               className="h-10 px-4"
             >
@@ -1562,6 +1608,30 @@ export default function HolidayListPage() {
                 syncGovernmentHolidays.isPending
                   ? "Synchronizing..."
                   : "Sync Government Holidays"
+              }
+            </Button>
+
+
+            {/* UNSYNC */}
+
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() =>
+                setUnsyncConfirmOpen(
+                  true
+                )
+              }
+              disabled={
+                unsyncGovernmentHolidays.isPending ||
+                syncGovernmentHolidays.isPending
+              }
+              className="h-10 border-red-200 px-4 text-red-600 hover:bg-red-50 dark:border-red-900/50 dark:text-red-400 dark:hover:bg-red-500/10"
+            >
+              {
+                unsyncGovernmentHolidays.isPending
+                  ? "Unsyncing..."
+                  : "Unsync Government Holidays"
               }
             </Button>
 
@@ -1577,6 +1647,8 @@ export default function HolidayListPage() {
       ====================================================== */}
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+
+        {/* TOTAL */}
 
         <div className="h-[110px] rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-900">
 
@@ -1609,6 +1681,8 @@ export default function HolidayListPage() {
         </div>
 
 
+        {/* GOVERNMENT */}
+
         <div className="h-[110px] rounded-xl border border-violet-100 bg-white px-4 py-3 shadow-sm dark:border-violet-900/30 dark:bg-slate-900">
 
           <div className="flex h-full items-center justify-between">
@@ -1638,6 +1712,8 @@ export default function HolidayListPage() {
         </div>
 
 
+        {/* OFFICE */}
+
         <div className="h-[110px] rounded-xl border border-sky-100 bg-white px-4 py-3 shadow-sm dark:border-sky-900/30 dark:bg-slate-900">
 
           <div className="flex h-full items-center justify-between">
@@ -1666,6 +1742,8 @@ export default function HolidayListPage() {
 
         </div>
 
+
+        {/* INACTIVE */}
 
         <div className="h-[110px] rounded-xl border border-red-100 bg-white px-4 py-3 shadow-sm dark:border-red-900/30 dark:bg-slate-900">
 
@@ -1755,6 +1833,8 @@ export default function HolidayListPage() {
 
         <div className="rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
 
+          {/* CALENDAR HEADER */}
+
           <div className="flex flex-col gap-3 border-b border-slate-200 px-4 py-3 dark:border-slate-700 sm:flex-row sm:items-center sm:justify-between">
 
             <div className="flex flex-wrap items-center gap-2">
@@ -1809,14 +1889,20 @@ export default function HolidayListPage() {
             <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-500 dark:text-slate-400">
 
               <span className="flex items-center gap-1">
+
                 <span className="h-2 w-2 rounded-full bg-violet-500" />
+
                 Government
+
               </span>
 
 
               <span className="flex items-center gap-1">
+
                 <span className="h-2 w-2 rounded-full bg-sky-500" />
+
                 Office
+
               </span>
 
 
@@ -1839,9 +1925,13 @@ export default function HolidayListPage() {
           </div>
 
 
+          {/* CALENDAR BODY */}
+
           <div className="p-4">
 
             <div className="grid grid-cols-7 gap-1.5">
+
+              {/* WEEKDAYS */}
 
               {WEEKDAY_LABELS.map(
                 (label) => (
@@ -1855,6 +1945,8 @@ export default function HolidayListPage() {
               )}
 
 
+              {/* DAYS */}
+
               {calendarCells.map(
                 (
                   cell,
@@ -1862,14 +1954,12 @@ export default function HolidayListPage() {
                 ) => {
 
                   if (!cell) {
-
                     return (
                       <div
                         key={`empty-${index}`}
                         className="min-h-[100px]"
                       />
                     );
-
                   }
 
 
@@ -1912,7 +2002,7 @@ export default function HolidayListPage() {
                     >
 
                       {/* ==================================================
-                          HOLIDAY HOVER
+                          HOVER TOOLTIP
                       ================================================== */}
 
                       <div className="pointer-events-none absolute left-1/2 top-1 z-50 hidden w-[260px] -translate-x-1/2 -translate-y-full rounded-xl border border-slate-700 bg-slate-900 p-3 text-left shadow-xl group-hover/day:block">
@@ -1926,7 +2016,8 @@ export default function HolidayListPage() {
                         </div>
 
 
-                        {cell.saved.length ===
+                        {cell.saved
+                          .length ===
                         0 ? (
 
                           <div className="text-[10px] text-slate-400">
@@ -1995,7 +2086,7 @@ export default function HolidayListPage() {
                       </div>
 
 
-                      {/* DATE */}
+                      {/* DATE NUMBER */}
 
                       <span
                         className={`text-xs font-semibold ${
@@ -2012,7 +2103,7 @@ export default function HolidayListPage() {
                       </span>
 
 
-                      {/* HOLIDAY */}
+                      {/* HOLIDAY PILLS */}
 
                       {hasAny && (
 
@@ -2055,6 +2146,10 @@ export default function HolidayListPage() {
                                     isGovernment
                                       ? "bg-violet-50 text-violet-700 hover:bg-violet-100 dark:bg-violet-500/15 dark:text-violet-300 dark:hover:bg-violet-500/25"
                                       : "bg-sky-50 text-sky-700 hover:bg-sky-100 dark:bg-sky-500/15 dark:text-sky-300 dark:hover:bg-sky-500/25"
+                                  } ${
+                                    canEdit
+                                      ? "cursor-pointer"
+                                      : "cursor-default"
                                   }`}
                                 >
                                   {
@@ -2077,21 +2172,28 @@ export default function HolidayListPage() {
             </div>
 
 
+            {/* EMPTY MONTH */}
+
             {calendarHolidaysThisMonth.length ===
               0 && (
 
               <p className="mt-3 text-center text-xs text-slate-400">
+
                 No holidays recorded for{" "}
+
                 {
                   MONTH_NAMES[
                     calendarMonth
                   ]
                 }{" "}
+
                 {
                   calendarYear
                 }.
+
                 {canAdd &&
                   " Click an empty date to add a holiday."}
+
               </p>
 
             )}
@@ -2124,15 +2226,19 @@ export default function HolidayListPage() {
               </h2>
 
               <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+
                 {
                   yearTotals.government
                 }{" "}
                 Government
+
                 {" · "}
+
                 {
                   yearTotals.office
                 }{" "}
                 Office
+
               </p>
 
             </div>
@@ -2281,7 +2387,6 @@ export default function HolidayListPage() {
 
                             </button>
                           );
-
                         }
                       )}
 
@@ -2289,26 +2394,23 @@ export default function HolidayListPage() {
 
                   </div>
                 );
-
               }
             )}
 
 
-            {
-              yearTotals.government ===
-                0 &&
+            {yearTotals.government ===
+              0 &&
               yearTotals.office ===
                 0 && (
 
-                <div className="col-span-full py-8 text-center text-sm text-slate-400">
-                  No active holidays recorded for{" "}
-                  {
-                    listYear
-                  }.
-                </div>
+              <div className="col-span-full py-8 text-center text-sm text-slate-400">
+                No active holidays recorded for{" "}
+                {
+                  listYear
+                }.
+              </div>
 
-              )
-            }
+            )}
 
           </div>
 
@@ -2327,18 +2429,32 @@ export default function HolidayListPage() {
 
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
 
+            {/* SEARCH */}
+
             <div className="w-full lg:max-w-sm">
 
               <TableSearchBar
                 value={value}
-                onChange={setValue}
+                onChange={(
+                  newValue
+                ) => {
+                  setValue(
+                    newValue
+                  );
+
+                  setPage(1);
+                }}
                 placeholder="Search holidays..."
               />
 
             </div>
 
 
+            {/* FILTERS */}
+
             <div className="flex flex-wrap items-center gap-2">
+
+              {/* TYPE FILTER */}
 
               <div className="flex items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
 
@@ -2365,7 +2481,6 @@ export default function HolidayListPage() {
                   (
                     filter
                   ) => (
-
                     <button
                       key={
                         filter.value
@@ -2387,12 +2502,13 @@ export default function HolidayListPage() {
                         filter.label
                       }
                     </button>
-
                   )
                 )}
 
               </div>
 
+
+              {/* STATUS FILTER */}
 
               <div className="flex items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
 
@@ -2419,7 +2535,6 @@ export default function HolidayListPage() {
                   (
                     filter
                   ) => (
-
                     <button
                       key={
                         filter.value
@@ -2441,7 +2556,6 @@ export default function HolidayListPage() {
                         filter.label
                       }
                     </button>
-
                   )
                 )}
 
@@ -2453,6 +2567,8 @@ export default function HolidayListPage() {
 
         </div>
 
+
+        {/* ERROR */}
 
         {isError && (
 
@@ -2471,6 +2587,8 @@ export default function HolidayListPage() {
         )}
 
 
+        {/* TABLE */}
+
         {!isError && (
 
           <DataTable
@@ -2488,47 +2606,53 @@ export default function HolidayListPage() {
         )}
 
 
+        {/* EMPTY */}
+
         {!isLoading &&
           !isError &&
           filteredHolidays.length ===
             0 && (
 
-            <div className="flex min-h-[260px] flex-col items-center justify-center px-6 py-10 text-center">
+          <div className="flex min-h-[260px] flex-col items-center justify-center px-6 py-10 text-center">
 
-              <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800">
-                <span className="text-xl font-bold text-slate-400">
-                  H
-                </span>
-              </div>
+            <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800">
 
-
-              <h3 className="mt-4 text-sm font-semibold text-slate-800 dark:text-white">
-                No holidays found
-              </h3>
-
-
-              <p className="mt-1 max-w-sm text-xs text-slate-500 dark:text-slate-400">
-                No holidays match your current filters.
-              </p>
-
-
-              {canAdd && (
-
-                <Button
-                  onClick={
-                    openAdd
-                  }
-                  className="mt-4 h-9 px-4 text-sm"
-                >
-                  + Add Holiday
-                </Button>
-
-              )}
+              <span className="text-xl font-bold text-slate-400">
+                H
+              </span>
 
             </div>
 
-          )}
 
+            <h3 className="mt-4 text-sm font-semibold text-slate-800 dark:text-white">
+              No holidays found
+            </h3>
+
+
+            <p className="mt-1 max-w-sm text-xs text-slate-500 dark:text-slate-400">
+              No holidays match your current filters.
+            </p>
+
+
+            {canAdd && (
+
+              <Button
+                onClick={
+                  openAdd
+                }
+                className="mt-4 h-9 px-4 text-sm"
+              >
+                + Add Holiday
+              </Button>
+
+            )}
+
+          </div>
+
+        )}
+
+
+        {/* PAGINATION */}
 
         <div className="border-t border-slate-200 px-2 dark:border-slate-700">
 
@@ -2550,9 +2674,17 @@ export default function HolidayListPage() {
             onPageChange={
               setPage
             }
-            onPerPageChange={
-              setPerPage
-            }
+            onPerPageChange={(
+              value
+            ) => {
+
+              setPerPage(
+                value
+              );
+
+              setPage(1);
+
+            }}
           />
 
         </div>
@@ -2561,7 +2693,7 @@ export default function HolidayListPage() {
 
 
       {/* ======================================================
-          MODAL
+          ADD / EDIT MODAL
       ====================================================== */}
 
       <Modal
@@ -2569,6 +2701,7 @@ export default function HolidayListPage() {
           modalOpen
         }
         onClose={() => {
+
           setModalOpen(
             false
           );
@@ -2580,6 +2713,7 @@ export default function HolidayListPage() {
           setPrefillDate(
             null
           );
+
         }}
         title={
           editing
@@ -2608,6 +2742,7 @@ export default function HolidayListPage() {
             updateHoliday.isPending
           }
           onCancel={() => {
+
             setModalOpen(
               false
             );
@@ -2619,6 +2754,7 @@ export default function HolidayListPage() {
             setPrefillDate(
               null
             );
+
           }}
           isEdit={
             !!editing
@@ -2629,7 +2765,7 @@ export default function HolidayListPage() {
 
 
       {/* ======================================================
-          DEACTIVATE
+          SINGLE HOLIDAY DEACTIVATE
       ====================================================== */}
 
       <ConfirmDialog
@@ -2649,6 +2785,33 @@ export default function HolidayListPage() {
         confirmText="Deactivate"
         loading={
           deactivateHoliday.isPending
+        }
+      />
+
+
+      {/* ======================================================
+          GOVERNMENT HOLIDAY UNSYNC
+      ====================================================== */}
+
+      <ConfirmDialog
+        open={
+          unsyncConfirmOpen
+        }
+        onClose={() =>
+          setUnsyncConfirmOpen(
+            false
+          )
+        }
+        onConfirm={
+          handleUnsyncGovernmentHolidays
+        }
+        title="Unsync Government Holidays"
+        message={
+          `Are you sure you want to remove all Government holidays for ${syncYear}? This will remove the saved Government holiday records for the selected year.`
+        }
+        confirmText="Unsync Holidays"
+        loading={
+          unsyncGovernmentHolidays.isPending
         }
       />
 
