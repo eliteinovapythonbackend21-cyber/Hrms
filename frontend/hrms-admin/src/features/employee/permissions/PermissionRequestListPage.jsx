@@ -25,7 +25,6 @@ import { masterApi } from "@/api/master.api";
 
 import { useToast } from "@/components/feedback/Toast";
 
-
 /* ============================================================
    PERIOD TYPES
 ============================================================ */
@@ -35,7 +34,6 @@ const PERIOD_TYPES = {
   MONTHLY: "monthly",
   QUARTERLY: "quarterly",
 };
-
 
 /* ============================================================
    RECORD STATUS
@@ -47,7 +45,6 @@ const RECORD_STATUS = {
   ALL: "all",
 };
 
-
 /* ============================================================
    STATUS
 ============================================================ */
@@ -57,7 +54,6 @@ const STATUS_OPTIONS = {
   APPROVED: "Approved",
   REJECTED: "Rejected",
 };
-
 
 /* ============================================================
    DATE HELPERS
@@ -165,7 +161,6 @@ const getPeriodTitle = (
   return `Q${selectedQuarter} ${selectedYear} · ${quarterMonths[selectedQuarter]}`;
 };
 
-
 /* ============================================================
    STATUS STYLE
 ============================================================ */
@@ -191,7 +186,6 @@ const getStatusStyles = (status) => {
     "bg-slate-100 text-slate-700 ring-1 ring-inset ring-slate-600/20 dark:bg-slate-800 dark:text-slate-300"
   );
 };
-
 
 /* ============================================================
    EMPLOYEE CELL
@@ -225,7 +219,7 @@ const EmployeeCell = ({ row }) => {
       .toUpperCase() || "E";
 
   return (
-    <div className="flex min-w-[220px] items-center gap-3">
+    <div className="flex min-w-[200px] items-center gap-3">
       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-50 text-xs font-bold text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
         {initials}
       </div>
@@ -243,14 +237,13 @@ const EmployeeCell = ({ row }) => {
   );
 };
 
-
 /* ============================================================
    DATE CELL
 ============================================================ */
 
 const DateCell = ({ value }) => {
   return (
-    <div className="min-w-[130px]">
+    <div className="min-w-[125px]">
       <p className="whitespace-nowrap text-sm font-semibold text-slate-800 dark:text-slate-200">
         {value ? formatDate(value) : "-"}
       </p>
@@ -261,7 +254,6 @@ const DateCell = ({ value }) => {
     </div>
   );
 };
-
 
 /* ============================================================
    TIME CELL
@@ -277,12 +269,11 @@ const TimeCell = ({ value }) => {
   }
 
   return (
-    <span className="inline-flex whitespace-nowrap items-center rounded-lg bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 ring-1 ring-inset ring-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-700">
+    <span className="inline-flex whitespace-nowrap items-center rounded-lg bg-slate-50 px-2.5 py-1.5 text-xs font-semibold text-slate-700 ring-1 ring-inset ring-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-700">
       {value}
     </span>
   );
 };
-
 
 /* ============================================================
    REASON CELL
@@ -292,7 +283,7 @@ const ReasonCell = ({ value }) => {
   const reason = value || "-";
 
   return (
-    <div className="w-[240px]">
+    <div className="w-[180px] max-w-[180px]">
       <p
         title={reason}
         className="truncate text-sm text-slate-600 dark:text-slate-300"
@@ -302,7 +293,6 @@ const ReasonCell = ({ value }) => {
     </div>
   );
 };
-
 
 /* ============================================================
    STATUS CELL
@@ -324,7 +314,6 @@ const StatusCell = ({ value }) => {
   );
 };
 
-
 /* ============================================================
    PAGE
 ============================================================ */
@@ -341,7 +330,6 @@ export default function PermissionRequestListPage() {
   const isAdmin =
     String(user?.role || "").toLowerCase() ===
     "admin";
-
 
   /* ==========================================================
      EDIT MODAL
@@ -364,6 +352,14 @@ export default function PermissionRequestListPage() {
   const closeEdit = () => {
     setEditFormOpen(false);
     setEditingRow(null);
+  };
+
+  const invalidatePermissionQueries = () => {
+    queryClient.invalidateQueries({
+      predicate: (query) =>
+        query.queryKey[0] ===
+        "employee-permissions",
+    });
   };
 
   const handleEditSubmit = async (payload) => {
@@ -392,7 +388,6 @@ export default function PermissionRequestListPage() {
     }
   };
 
-
   /* ==========================================================
      RECORD STATUS
   ========================================================== */
@@ -408,16 +403,6 @@ export default function PermissionRequestListPage() {
 
   const [mutatingId, setMutatingId] =
     useState(null);
-
-
-  const invalidatePermissionQueries = () => {
-    queryClient.invalidateQueries({
-      predicate: (query) =>
-        query.queryKey[0] ===
-        "employee-permissions",
-    });
-  };
-
 
   /* ==========================================================
      DEACTIVATE
@@ -448,7 +433,6 @@ export default function PermissionRequestListPage() {
     }
   };
 
-
   /* ==========================================================
      REACTIVATE
   ========================================================== */
@@ -478,7 +462,6 @@ export default function PermissionRequestListPage() {
     }
   };
 
-
   /* ==========================================================
      COUNTS
   ========================================================== */
@@ -506,7 +489,6 @@ export default function PermissionRequestListPage() {
   const totalCount =
     activeCount + inactiveCount;
 
-
   /* ==========================================================
      PERIOD STATE
   ========================================================== */
@@ -533,7 +515,6 @@ export default function PermissionRequestListPage() {
     useState(
       Math.ceil(today.month / 3)
     );
-
 
   const periodRange = useMemo(() => {
     if (
@@ -568,7 +549,6 @@ export default function PermissionRequestListPage() {
     selectedYear,
   ]);
 
-
   const periodTitle = getPeriodTitle(
     periodType,
     selectedDate,
@@ -576,7 +556,6 @@ export default function PermissionRequestListPage() {
     selectedQuarter,
     selectedYear
   );
-
 
   /* ==========================================================
      ORGANIZATION FILTERS
@@ -602,7 +581,6 @@ export default function PermissionRequestListPage() {
     setDesignationFilterId,
   ] = useState("");
 
-
   const {
     data: companyData,
     isLoading: companiesLoading,
@@ -611,7 +589,6 @@ export default function PermissionRequestListPage() {
     per_page: 100,
     is_active: true,
   });
-
 
   const {
     data: branchData,
@@ -624,7 +601,6 @@ export default function PermissionRequestListPage() {
       is_active: true,
     }
   );
-
 
   const {
     data: departmentData,
@@ -651,7 +627,6 @@ export default function PermissionRequestListPage() {
       isAdmin &&
       !!branchFilterId,
   });
-
 
   const {
     data: designationData,
@@ -680,7 +655,6 @@ export default function PermissionRequestListPage() {
       !!departmentFilterId,
   });
 
-
   const companies =
     companyData?.items ||
     companyData?.data ||
@@ -701,7 +675,6 @@ export default function PermissionRequestListPage() {
     designationData?.data ||
     [];
 
-
   /* ==========================================================
      ORGANIZATION HANDLERS
   ========================================================== */
@@ -716,7 +689,6 @@ export default function PermissionRequestListPage() {
     setDesignationFilterId("");
   };
 
-
   const handleBranchChange = (event) => {
     setBranchFilterId(
       event.target.value
@@ -726,7 +698,6 @@ export default function PermissionRequestListPage() {
     setDesignationFilterId("");
   };
 
-
   const handleDepartmentChange = (event) => {
     setDepartmentFilterId(
       event.target.value
@@ -735,13 +706,11 @@ export default function PermissionRequestListPage() {
     setDesignationFilterId("");
   };
 
-
   const handleDesignationChange = (event) => {
     setDesignationFilterId(
       event.target.value
     );
   };
-
 
   const clearOrganizationFilters = () => {
     setCompanyFilterId("");
@@ -750,13 +719,11 @@ export default function PermissionRequestListPage() {
     setDesignationFilterId("");
   };
 
-
   const hasOrganizationFilters =
     Boolean(companyFilterId) ||
     Boolean(branchFilterId) ||
     Boolean(departmentFilterId) ||
     Boolean(designationFilterId);
-
 
   /* ==========================================================
      QUERY PARAMS
@@ -818,7 +785,6 @@ export default function PermissionRequestListPage() {
     recordStatus,
   ]);
 
-
   /* ==========================================================
      TABLE COLUMNS
   ========================================================== */
@@ -829,6 +795,7 @@ export default function PermissionRequestListPage() {
         key: "employee_id",
         label: "Employee",
         sortable: true,
+        className: "w-[220px]",
         render: (row) => (
           <EmployeeCell row={row} />
         ),
@@ -838,6 +805,7 @@ export default function PermissionRequestListPage() {
         key: "permission_date",
         label: "Permission Date",
         sortable: true,
+        className: "w-[140px]",
         render: (row) => (
           <DateCell
             value={row.permission_date}
@@ -849,6 +817,7 @@ export default function PermissionRequestListPage() {
         key: "from_time",
         label: "From",
         sortable: true,
+        className: "w-[90px]",
         render: (row) => (
           <TimeCell
             value={row.from_time}
@@ -860,6 +829,7 @@ export default function PermissionRequestListPage() {
         key: "to_time",
         label: "To",
         sortable: true,
+        className: "w-[90px]",
         render: (row) => (
           <TimeCell
             value={row.to_time}
@@ -871,6 +841,7 @@ export default function PermissionRequestListPage() {
         key: "reason",
         label: "Reason",
         sortable: false,
+        className: "w-[180px] max-w-[180px]",
         render: (row) => (
           <ReasonCell
             value={row.reason}
@@ -882,6 +853,7 @@ export default function PermissionRequestListPage() {
         key: "status",
         label: "Status",
         sortable: true,
+        className: "w-[120px]",
         render: (row) => (
           <StatusCell
             value={row.status}
@@ -893,6 +865,7 @@ export default function PermissionRequestListPage() {
         key: "record_status",
         label: "Record",
         sortable: false,
+        className: "w-[200px]",
 
         render: (row) => {
           const isActive =
@@ -903,7 +876,6 @@ export default function PermissionRequestListPage() {
 
           return (
             <div className="flex flex-wrap items-center gap-2">
-
               <span
                 className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${
                   isActive
@@ -969,7 +941,6 @@ export default function PermissionRequestListPage() {
     [mutatingId]
   );
 
-
   /* ==========================================================
      RENDER
   ========================================================== */
@@ -977,9 +948,7 @@ export default function PermissionRequestListPage() {
   return (
     <div className="min-h-full w-full space-y-6">
 
-      {/* ======================================================
-          PAGE HEADER
-      ====================================================== */}
+      {/* PAGE HEADER */}
 
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
         <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
@@ -1024,10 +993,7 @@ export default function PermissionRequestListPage() {
         </div>
       </div>
 
-
-      {/* ======================================================
-          COUNT CARDS
-      ====================================================== */}
+      {/* COUNT CARDS */}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
 
@@ -1054,10 +1020,7 @@ export default function PermissionRequestListPage() {
 
       </div>
 
-
-      {/* ======================================================
-          PERIOD SELECTOR
-      ====================================================== */}
+      {/* PERIOD SELECTOR */}
 
       <PermissionPeriodSelector
         periodType={periodType}
@@ -1072,10 +1035,7 @@ export default function PermissionRequestListPage() {
         setSelectedYear={setSelectedYear}
       />
 
-
-      {/* ======================================================
-          RECORD STATUS
-      ====================================================== */}
+      {/* RECORD STATUS */}
 
       <div className="flex justify-end">
 
@@ -1127,10 +1087,7 @@ export default function PermissionRequestListPage() {
 
       </div>
 
-
-      {/* ======================================================
-          ORGANIZATION FILTERS
-      ====================================================== */}
+      {/* ORGANIZATION FILTERS */}
 
       {isAdmin && (
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
@@ -1150,7 +1107,6 @@ export default function PermissionRequestListPage() {
             </p>
 
           </div>
-
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
 
@@ -1179,7 +1135,6 @@ export default function PermissionRequestListPage() {
                 )
               )}
             </select>
-
 
             {/* BRANCH */}
 
@@ -1211,7 +1166,6 @@ export default function PermissionRequestListPage() {
                 )
               )}
             </select>
-
 
             {/* DEPARTMENT */}
 
@@ -1245,7 +1199,6 @@ export default function PermissionRequestListPage() {
                 )
               )}
             </select>
-
 
             {/* DESIGNATION */}
 
@@ -1283,7 +1236,6 @@ export default function PermissionRequestListPage() {
             </select>
 
           </div>
-
 
           {/* ACTIVE FILTERS */}
 
@@ -1334,10 +1286,7 @@ export default function PermissionRequestListPage() {
         </div>
       )}
 
-
-      {/* ======================================================
-          MAIN LIST
-      ====================================================== */}
+      {/* MAIN LIST */}
 
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
 
@@ -1361,10 +1310,7 @@ export default function PermissionRequestListPage() {
 
       </div>
 
-
-      {/* ======================================================
-          EDIT MODAL
-      ====================================================== */}
+      {/* EDIT MODAL */}
 
       <Modal
         open={editFormOpen}
@@ -1416,7 +1362,6 @@ export default function PermissionRequestListPage() {
     </div>
   );
 }
-
 
 /* ============================================================
    COUNT CARD
@@ -1491,7 +1436,6 @@ function CountCard({
   );
 }
 
-
 /* ============================================================
    STATUS TAB
 ============================================================ */
@@ -1516,7 +1460,6 @@ function StatusTab({
   );
 }
 
-
 /* ============================================================
    FILTER BADGE
 ============================================================ */
@@ -1528,7 +1471,6 @@ function FilterBadge({ children }) {
     </span>
   );
 }
-
 
 /* ============================================================
    PERIOD SELECTOR
@@ -1626,7 +1568,6 @@ function PermissionPeriodSelector({
 
       </div>
 
-
       {/* DAILY */}
 
       {periodType ===
@@ -1654,7 +1595,6 @@ function PermissionPeriodSelector({
 
         </div>
       )}
-
 
       {/* MONTHLY */}
 
@@ -1693,7 +1633,6 @@ function PermissionPeriodSelector({
 
           </div>
 
-
           <div>
 
             <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-slate-400">
@@ -1725,7 +1664,6 @@ function PermissionPeriodSelector({
 
         </div>
       )}
-
 
       {/* QUARTERLY */}
 
@@ -1768,7 +1706,6 @@ function PermissionPeriodSelector({
 
           </div>
 
-
           <div>
 
             <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-slate-400">
@@ -1801,7 +1738,6 @@ function PermissionPeriodSelector({
         </div>
       )}
 
-
       {/* SELECTED PERIOD */}
 
       <div className="mt-5 flex flex-wrap items-center gap-2">
@@ -1825,7 +1761,6 @@ function PermissionPeriodSelector({
     </div>
   );
 }
-
 
 /* ============================================================
    PERIOD TAB
