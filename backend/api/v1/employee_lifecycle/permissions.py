@@ -9,7 +9,7 @@ from models import EmployeePermission, Employee, BaseUser
 from utils import paginate_query
 
 
-permission_bp = Blueprint("permission_bp", __name__)
+employee_permissions_bp = Blueprint( "employee_permissions_bp", __name__)
 
 
 ALLOWED_ROLES = [
@@ -118,7 +118,7 @@ def _parse_bool(value):
     )
 
 
-@permission_bp.route("/", methods=["GET"])
+@employee_permissions_bp.route("/", methods=["GET"])
 @jwt_required()
 @with_token
 def list_permissions(token_response):
@@ -344,7 +344,7 @@ def list_permissions(token_response):
     }), 200
 
 
-@permission_bp.route(
+@employee_permissions_bp.route(
     "/<int:permission_id>",
     methods=["GET"]
 )
@@ -377,7 +377,7 @@ def get_permission(
     }), 200
 
 
-@permission_bp.route(
+@employee_permissions_bp.route(
     "/",
     methods=["POST"]
 )
@@ -512,7 +512,7 @@ def create_permission(token_response):
     }), 201
 
 
-@permission_bp.route(
+@employee_permissions_bp.route(
     "/<int:permission_id>",
     methods=["PUT"]
 )
@@ -688,7 +688,7 @@ def update_permission(
     }), 200
 
 
-@permission_bp.route(
+@employee_permissions_bp.route(
     "/<int:permission_id>/deactivate",
     methods=["DELETE"]
 )
@@ -725,7 +725,7 @@ def deactivate_permission(
     }), 200
 
 
-@permission_bp.route(
+@employee_permissions_bp.route(
     "/<int:permission_id>/reactivate",
     methods=["PUT"]
 )
