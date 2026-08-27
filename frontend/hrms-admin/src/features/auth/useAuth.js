@@ -135,28 +135,13 @@ export function useForgotPassword() {
 
   return useMutation({
     mutationFn: async (data) => {
-      /*
-       * Expected payload:
-       *
-       * {
-       *   email: "user@example.com"
-       * }
-       *
-       * The backend will:
-       *
-       * 1. Find the user
-       * 2. Generate reset token
-       * 3. Load SMTP credentials
-       * 4. Send password reset email
-       */
-
       return await authApi.forgotPassword(data);
     },
 
     onSuccess: (response) => {
       showToast?.(
         response?.message ||
-          "Password reset instructions have been sent to your email.",
+          "OTP has been sent to your registered email.",
         "success"
       );
     },
@@ -166,7 +151,94 @@ export function useForgotPassword() {
         error?.response?.data?.message ||
         error?.response?.data?.error ||
         error?.message ||
-        "Unable to send password reset email.";
+        "Unable to send OTP. Please try again.";
+
+      showToast?.(message, "error");
+    },
+  });
+}
+
+/* ============================================================
+   VERIFY OTP
+============================================================ */
+
+export function useVerifyOtp() {
+  const navigate = useNavigate();
+  const { showToast } = useToast();
+
+  return useMutation({
+    mutationFn: async (data) => {
+      /*
+       * Expected payload:
+       *
+       * {
+       *   email: "user@example.com",
+       *   otp: "123456"
+       * }
+       */
+
+      return await authApi.verifyOtp(data);
+    },
+
+    onSuccess: (response) => {
+      /*
+       * The backend may return a reset token after
+       * successful OTP verification.
+       */
+
+      const resetToken =
+        response?.reset_token ||
+        response?.resetToken ||
+        response?.token ||
+        response?.data?.reset_token ||
+        response?.data?.resetToken ||
+        response?.data?.token;
+
+      /*
+       * Keep the reset token temporarily so that
+       * ResetPasswordPage can use it.
+       */
+      if (resetToken) {
+        sessionStorage.setItem(
+          "password_reset_token",
+          resetToken
+        );
+      }
+
+      /*
+       * Preserve email if the backend returns it.
+       */
+      const email =
+        response?.email ||
+        response?.data?.email;
+
+      if (email) {
+        sessionStorage.setItem(
+          "password_reset_email",
+          email
+        );
+      }
+
+      showToast?.(
+        response?.message ||
+          "OTP verified successfully.",
+        "success"
+      );
+
+      /*
+       * Go to reset password page.
+       */
+      navigate("/reset-password", {
+        replace: true,
+      });
+    },
+
+    onError: (error) => {
+      const message =
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.message ||
+        "Invalid or expired OTP.";
 
       showToast?.(message, "error");
     },
@@ -183,19 +255,21 @@ export function useResetPassword() {
 
   return useMutation({
     mutationFn: async (data) => {
-      /*
-       * Expected payload:
-       *
-       * {
-       *   token: "...",
-       *   password: "new password"
-       * }
-       */
-
       return await authApi.resetPassword(data);
     },
 
     onSuccess: (response) => {
+      /*
+       * Remove temporary password-reset information.
+       */
+      sessionStorage.removeItem(
+        "password_reset_token"
+      );
+
+      sessionStorage.removeItem(
+        "password_reset_email"
+      );
+
       showToast?.(
         response?.message ||
           "Password reset successfully. Please login with your new password.",
