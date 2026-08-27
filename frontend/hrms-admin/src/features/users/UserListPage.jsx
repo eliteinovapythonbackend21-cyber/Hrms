@@ -22,33 +22,43 @@ import TablePagination from "@/components/table/TablePagination";
 import { usersApi } from "@/api/users.api";
 import { useModulePermissions } from "@/hooks/useModulePermissions";
 
+
+/* ============================================================
+   EXPORT COLUMNS
+============================================================ */
+
 const EXPORT_COLUMNS = [
   {
     header: "ID",
-    accessor: (r) => r.id,
+    accessor: (row) => row.id,
   },
   {
     header: "Username",
-    accessor: (r) => r.username,
+    accessor: (row) => row.username || "-",
   },
   {
     header: "Email",
-    accessor: (r) => r.email,
+    accessor: (row) => row.email || "-",
   },
   {
     header: "Mobile",
-    accessor: (r) => r.mobile,
+    accessor: (row) => row.mobile || "-",
   },
   {
     header: "Role",
-    accessor: (r) => r.role,
+    accessor: (row) => row.role || "-",
   },
   {
     header: "Status",
-    accessor: (r) =>
-      r.is_active ? "Active" : "Inactive",
+    accessor: (row) =>
+      row.is_active ? "Active" : "Inactive",
   },
 ];
+
+
+/* ============================================================
+   PAGE
+============================================================ */
 
 export default function UserListPage({ role }) {
   const navigate = useNavigate();
@@ -68,24 +78,21 @@ export default function UserListPage({ role }) {
     debouncedValue,
   } = useDebouncedSearch();
 
-  /*
-   * IMPORTANT
-   *
-   * Keep role in the API request.
-   *
-   * Admin:
-   * /users/admins
-   * role = admin
-   *
-   * Employee:
-   * /users/employees
-   * role = employee
-   */
+
+  /* ==========================================================
+     QUERY PARAMS
+  ========================================================== */
+
   const queryParams = {
     ...params,
     search: debouncedValue || undefined,
     role: role || undefined,
   };
+
+
+  /* ==========================================================
+     USER LIST
+  ========================================================== */
 
   const {
     data,
@@ -93,11 +100,21 @@ export default function UserListPage({ role }) {
     isError,
   } = useUsers(queryParams);
 
+
+  /* ==========================================================
+     PERMISSIONS
+  ========================================================== */
+
   const {
     canAdd,
     canEdit,
     canDelete,
   } = useModulePermissions("Users");
+
+
+  /* ==========================================================
+     EXPORT
+  ========================================================== */
 
   const {
     exporting,
@@ -107,25 +124,60 @@ export default function UserListPage({ role }) {
     fetchAll: usersApi.list,
     queryParams,
     exportColumns: EXPORT_COLUMNS,
-    filename: role === "admin" ? "admins" : "employees",
-    title: role === "admin" ? "Admins" : "Employees",
+    filename:
+      role === "admin"
+        ? "admins"
+        : role === "employee"
+        ? "employees"
+        : "users",
+    title:
+      role === "admin"
+        ? "Admins"
+        : role === "employee"
+        ? "Employees"
+        : "Users",
   });
+
+
+  /* ==========================================================
+     DEACTIVATE
+  ========================================================== */
 
   const deactivateUser = useDeactivateUser();
 
   const [confirmRow, setConfirmRow] = useState(null);
 
-  /*
-   * ADD USER
-   *
-   * Store the current role in navigation state.
-   *
-   * Admin -> Add User
-   * state.role = admin
-   *
-   * Employee -> Add User
-   * state.role = employee
-   */
+
+  /* ==========================================================
+     PAGE LABELS
+  ========================================================== */
+
+  const pageTitle =
+    role === "admin"
+      ? "Admins"
+      : role === "employee"
+      ? "Employees"
+      : "Users";
+
+  const pageDescription =
+    role === "admin"
+      ? "Manage admin accounts"
+      : role === "employee"
+      ? "Manage employee accounts"
+      : "Manage user accounts";
+
+  const addButtonLabel =
+    role === "admin"
+      ? "Add Admin"
+      : role === "employee"
+      ? "Add Employee"
+      : "Add User";
+
+
+  /* ==========================================================
+     ADD USER
+  ========================================================== */
+
   const openAdd = () => {
     navigate("/users/new", {
       state: {
@@ -134,14 +186,11 @@ export default function UserListPage({ role }) {
     });
   };
 
-  /*
-   * EDIT USER
-   *
-   * Store the current list role.
-   *
-   * This allows UserFormPage to know which
-   * list the user came from.
-   */
+
+  /* ==========================================================
+     EDIT USER
+  ========================================================== */
+
   const openEdit = (row) => {
     navigate(`/users/${row.id}/edit`, {
       state: {
@@ -150,6 +199,11 @@ export default function UserListPage({ role }) {
     });
   };
 
+
+  /* ==========================================================
+     DEACTIVATE USER
+  ========================================================== */
+
   const handleDeactivate = async () => {
     if (!confirmRow) return;
 
@@ -157,7 +211,7 @@ export default function UserListPage({ role }) {
       await deactivateUser.mutateAsync(confirmRow.id);
 
       showToast(
-        "User deactivated",
+        "User deactivated successfully",
         "success"
       );
 
@@ -171,114 +225,276 @@ export default function UserListPage({ role }) {
     }
   };
 
+
+  /* ============================================================
+     TABLE COLUMNS
+
+     Layout:
+
+     ID
+     Username
+     Email
+     Mobile
+     Role
+     Status
+     Actions
+  ============================================================ */
+
   const columns = [
     {
       key: "id",
       label: "ID",
+      className:
+        "w-[80px] min-w-[80px] text-center",
+      headerClassName:
+        "w-[80px] min-w-[80px] text-center",
+      render: (row) => (
+        <span className="font-medium text-slate-700 dark:text-slate-200">
+          {row.id}
+        </span>
+      ),
     },
 
     {
       key: "username",
       label: "Username",
+      className:
+        "min-w-[160px] whitespace-nowrap",
+      headerClassName:
+        "min-w-[160px]",
+      render: (row) => (
+        <span className="font-medium text-slate-900 dark:text-white">
+          {row.username || "-"}
+        </span>
+      ),
     },
 
     {
       key: "email",
       label: "Email",
+      className:
+        "min-w-[220px]",
+      headerClassName:
+        "min-w-[220px]",
+      render: (row) => (
+        <span className="text-slate-600 dark:text-slate-300">
+          {row.email || "-"}
+        </span>
+      ),
     },
 
     {
       key: "mobile",
       label: "Mobile",
+      className:
+        "min-w-[140px] whitespace-nowrap",
+      headerClassName:
+        "min-w-[140px]",
+      render: (row) => (
+        <span className="text-slate-600 dark:text-slate-300">
+          {row.mobile || "-"}
+        </span>
+      ),
     },
 
     {
       key: "role",
       label: "Role",
+      className:
+        "w-[120px] min-w-[120px]",
+      headerClassName:
+        "w-[120px] min-w-[120px]",
+      render: (row) => (
+        <span className="capitalize text-slate-700 dark:text-slate-200">
+          {row.role || "-"}
+        </span>
+      ),
     },
+
+    /* ========================================================
+       STATUS
+       Only status belongs in this column.
+    ======================================================== */
 
     {
       key: "status",
       label: "Status",
+      className:
+        "w-[120px] min-w-[120px]",
+      headerClassName:
+        "w-[120px] min-w-[120px]",
+      render: (row) => (
+        <Badge
+          className={
+            row.is_active
+              ? "inline-flex items-center justify-center whitespace-nowrap bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300"
+              : "inline-flex items-center justify-center whitespace-nowrap bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300"
+          }
+        >
+          {row.is_active
+            ? "Active"
+            : "Inactive"}
+        </Badge>
+      ),
+    },
 
-      render: (r) => (
-        <div className="flex items-center gap-3">
-          <Badge
-            className={
-              r.is_active
-                ? "bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300"
-                : "bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300"
-            }
-          >
-            {r.is_active
-              ? "Active"
-              : "Inactive"}
-          </Badge>
+    /* ========================================================
+       ACTIONS
 
+       Keeping Actions separate gives the table a much
+       cleaner and more consistent alignment.
+    ======================================================== */
+
+    {
+      key: "actions",
+      label: "Actions",
+      className:
+        "w-[180px] min-w-[180px]",
+      headerClassName:
+        "w-[180px] min-w-[180px]",
+      render: (row) => (
+        <div className="flex items-center gap-3 whitespace-nowrap">
           {canEdit && (
             <button
               type="button"
-              onClick={() => openEdit(r)}
-              className="text-primary-600 hover:underline text-sm"
+              onClick={() => openEdit(row)}
+              className="
+                text-sm
+                font-medium
+                text-primary-600
+                hover:text-primary-700
+                hover:underline
+                dark:text-primary-400
+                dark:hover:text-primary-300
+              "
             >
               Edit
             </button>
           )}
 
-          {r.is_active && canDelete && (
+          {row.is_active && canDelete && (
             <button
               type="button"
               onClick={() =>
-                setConfirmRow(r)
+                setConfirmRow(row)
               }
-              className="text-red-600 hover:underline text-sm"
+              className="
+                text-sm
+                font-medium
+                text-red-600
+                hover:text-red-700
+                hover:underline
+                dark:text-red-400
+                dark:hover:text-red-300
+              "
             >
               Deactivate
             </button>
+          )}
+
+          {!canEdit && !canDelete && (
+            <span className="text-sm text-slate-400 dark:text-slate-500">
+              -
+            </span>
           )}
         </div>
       ),
     },
   ];
 
-  return (
-    <div>
-      {/* PAGE HEADER */}
 
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">
-            {role === "admin"
-              ? "Admins"
-              : role === "employee"
-              ? "Employees"
-              : "Users"}
+  /* ============================================================
+     RENDER
+  ============================================================ */
+
+  return (
+    <div className="w-full">
+
+
+      {/* ======================================================
+          PAGE HEADER
+      ====================================================== */}
+
+      <div
+        className="
+          mb-6
+          flex
+          flex-col
+          gap-4
+          sm:flex-row
+          sm:items-center
+          sm:justify-between
+        "
+      >
+        <div className="min-w-0">
+          <h1
+            className="
+              text-2xl
+              font-semibold
+              text-slate-900
+              dark:text-white
+            "
+          >
+            {pageTitle}
           </h1>
 
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            {role === "admin"
-              ? "Manage admin accounts"
-              : role === "employee"
-              ? "Manage employee accounts"
-              : "Manage user accounts"}
+          <p
+            className="
+              mt-1
+              text-sm
+              text-slate-500
+              dark:text-slate-400
+            "
+          >
+            {pageDescription}
           </p>
         </div>
+
+
+        {/* ADD BUTTON */}
 
         {canAdd && (
           <Button
             type="button"
             onClick={openAdd}
-            className="w-full sm:w-auto"
+            className="
+              w-full
+              shrink-0
+              sm:w-auto
+            "
           >
-            Add Admin
+            {addButtonLabel}
           </Button>
         )}
       </div>
 
-      {/* USER TABLE */}
 
-      <div className="card">
-        <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+      {/* ======================================================
+          TABLE CARD
+      ====================================================== */}
+
+      <div
+        className="
+          card
+          w-full
+          overflow-hidden
+        "
+      >
+
+
+        {/* ====================================================
+            SEARCH BAR
+        ==================================================== */}
+
+        <div
+          className="
+            border-b
+            border-slate-200
+            px-6
+            py-4
+            dark:border-slate-700
+          "
+        >
           <TableSearchBar
             value={value}
             onChange={setValue}
@@ -286,29 +502,72 @@ export default function UserListPage({ role }) {
           />
         </div>
 
+
+        {/* ====================================================
+            ERROR
+        ==================================================== */}
+
         {isError && (
-          <div className="p-4 text-red-600 dark:text-red-400">
+          <div
+            className="
+              border-b
+              border-red-100
+              bg-red-50
+              p-4
+              text-sm
+              text-red-600
+              dark:border-red-900/30
+              dark:bg-red-500/10
+              dark:text-red-400
+            "
+          >
             Failed to load users.
           </div>
         )}
 
-        <DataTable
-          columns={columns}
-          data={data?.items || []}
-          loading={isLoading}
-        />
 
-        <TablePagination
-          page={page}
-          pages={data?.pages || 1}
-          total={data?.total || 0}
-          perPage={perPage}
-          onPageChange={setPage}
-          onPerPageChange={setPerPage}
-        />
+        {/* ====================================================
+            TABLE
+
+            overflow-x-auto prevents the columns from
+            collapsing on smaller screens.
+        ==================================================== */}
+
+        <div className="w-full overflow-x-auto">
+          <DataTable
+            columns={columns}
+            data={data?.items || []}
+            loading={isLoading}
+          />
+        </div>
+
+
+        {/* ====================================================
+            PAGINATION
+        ==================================================== */}
+
+        <div
+          className="
+            border-t
+            border-slate-200
+            dark:border-slate-700
+          "
+        >
+          <TablePagination
+            page={page}
+            pages={data?.pages || 1}
+            total={data?.total || 0}
+            perPage={perPage}
+            onPageChange={setPage}
+            onPerPageChange={setPerPage}
+          />
+        </div>
       </div>
 
-      {/* DEACTIVATE CONFIRMATION */}
+
+      {/* ======================================================
+          DEACTIVATE CONFIRMATION
+      ====================================================== */}
 
       <ConfirmDialog
         open={!!confirmRow}
@@ -317,12 +576,15 @@ export default function UserListPage({ role }) {
         }
         onConfirm={handleDeactivate}
         title="Deactivate User"
-        message="Are you sure you want to deactivate this user?"
-        confirmText="Deactivate"
-        loading={
-          deactivateUser.isPending
+        message={
+          confirmRow
+            ? `Are you sure you want to deactivate "${confirmRow.username}"?`
+            : "Are you sure you want to deactivate this user?"
         }
+        confirmText="Deactivate"
+        loading={deactivateUser.isPending}
       />
+
     </div>
   );
 }
