@@ -40,22 +40,6 @@ export function useLogin() {
     },
 
     onSuccess: (response) => {
-      /*
-       * Supports both:
-       *
-       * {
-       *   token,
-       *   user
-       * }
-       *
-       * and:
-       *
-       * {
-       *   access_token,
-       *   user
-       * }
-       */
-
       const token =
         response?.token ||
         response?.access_token ||
@@ -116,10 +100,6 @@ export function useRegister() {
         response?.data?.user ||
         null;
 
-      /*
-       * If registration automatically logs the user in,
-       * store the authentication data.
-       */
       if (token) {
         saveAuthData(token, user);
 
@@ -147,6 +127,53 @@ export function useRegister() {
 }
 
 /* ============================================================
+   FORGOT PASSWORD
+============================================================ */
+
+export function useForgotPassword() {
+  const { showToast } = useToast();
+
+  return useMutation({
+    mutationFn: async (data) => {
+      /*
+       * Expected payload:
+       *
+       * {
+       *   email: "user@example.com"
+       * }
+       *
+       * The backend will:
+       *
+       * 1. Find the user
+       * 2. Generate reset token
+       * 3. Load SMTP credentials
+       * 4. Send password reset email
+       */
+
+      return await authApi.forgotPassword(data);
+    },
+
+    onSuccess: (response) => {
+      showToast?.(
+        response?.message ||
+          "Password reset instructions have been sent to your email.",
+        "success"
+      );
+    },
+
+    onError: (error) => {
+      const message =
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.message ||
+        "Unable to send password reset email.";
+
+      showToast?.(message, "error");
+    },
+  });
+}
+
+/* ============================================================
    RESET PASSWORD
 ============================================================ */
 
@@ -157,16 +184,14 @@ export function useResetPassword() {
   return useMutation({
     mutationFn: async (data) => {
       /*
-       * Expected data:
+       * Expected payload:
        *
        * {
        *   token: "...",
        *   password: "new password"
        * }
-       *
-       * or whatever structure your authApi.resetPassword()
-       * already expects.
        */
+
       return await authApi.resetPassword(data);
     },
 
@@ -177,10 +202,6 @@ export function useResetPassword() {
         "success"
       );
 
-      /*
-       * After successful password reset,
-       * send the user back to login.
-       */
       navigate("/login", {
         replace: true,
       });
@@ -208,13 +229,6 @@ export function useLogout() {
 
   return useMutation({
     mutationFn: async () => {
-      /*
-       * If your backend has a logout endpoint,
-       * this will call it.
-       *
-       * If authApi.logout() does not exist, remove this
-       * API call and only clear local authentication data.
-       */
       if (typeof authApi.logout === "function") {
         return await authApi.logout();
       }
@@ -236,10 +250,6 @@ export function useLogout() {
     },
 
     onError: () => {
-      /*
-       * Even if the backend logout request fails,
-       * clear the local session.
-       */
       clearAuthData();
 
       navigate("/login", {
