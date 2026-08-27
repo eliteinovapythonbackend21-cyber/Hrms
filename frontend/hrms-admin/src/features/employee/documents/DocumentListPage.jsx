@@ -4,10 +4,12 @@ import { useQuery } from "@tanstack/react-query";
 import { useCrudList } from "@/hooks/useCrudResource";
 import { employeeLifecycleApi } from "@/api/employee.api";
 import { employeesApi } from "@/api/employees.api";
+
 import {
   useDepartmentOptions,
   useDesignationOptions,
 } from "@/hooks/useLookupOptions";
+
 import { useCompanies } from "@/features/master/company/useCompanies";
 
 import {
@@ -16,6 +18,7 @@ import {
   useDeactivateDocument,
   getDocumentTypeOptions,
 } from "./useDocuments";
+
 import DocumentForm from "./DocumentForm";
 
 import Avatar from "@/components/ui/Avatar";
@@ -26,16 +29,25 @@ import TableToolbar from "@/components/table/TableToolbar";
 import { useToast } from "@/components/feedback/Toast";
 import { useTableExport } from "@/hooks/useTableExport";
 
+
+/* -------------------------------------------------------------------------- */
+/* FILE HELPERS                                                                */
+/* -------------------------------------------------------------------------- */
+
 const getExtension = (url = "") =>
   url.split("?")[0].split(".").pop()?.toLowerCase() || "";
 
-const isImage = (url) =>
-  ["png", "jpg", "jpeg", "gif"].includes(getExtension(url));
+const isImage = (url = "") =>
+  ["png", "jpg", "jpeg", "gif", "webp"].includes(
+    getExtension(url)
+  );
 
-const isPdf = (url) => getExtension(url) === "pdf";
+const isPdf = (url = "") =>
+  getExtension(url) === "pdf";
+
 
 /* -------------------------------------------------------------------------- */
-/* DOCUMENT TYPE BADGE                                                        */
+/* DOCUMENT TYPE BADGE                                                         */
 /* -------------------------------------------------------------------------- */
 
 const DocTypeIcon = () => (
@@ -56,14 +68,17 @@ const DocTypeIcon = () => (
 );
 
 const DocTypeBadge = ({ type }) => (
-  <span className="inline-flex items-center gap-1 rounded-full bg-primary-50 px-2 py-0.5 text-[11px] font-medium text-primary-700 ring-1 ring-inset ring-primary-600/20 dark:bg-primary-500/10 dark:text-primary-400 dark:ring-primary-400/30">
+  <span className="inline-flex max-w-[150px] items-center gap-1 truncate rounded-full bg-primary-50 px-2 py-0.5 text-[10px] font-medium text-primary-700 ring-1 ring-inset ring-primary-600/20 dark:bg-primary-500/10 dark:text-primary-400 dark:ring-primary-400/30">
     <DocTypeIcon />
-    {type || "Document"}
+    <span className="truncate">
+      {type || "Document"}
+    </span>
   </span>
 );
 
+
 /* -------------------------------------------------------------------------- */
-/* FILE ICON                                                                   */
+/* FILE ICON                                                                    */
 /* -------------------------------------------------------------------------- */
 
 const FileTypeIcon = ({ size = "h-7 w-7" }) => (
@@ -83,6 +98,7 @@ const FileTypeIcon = ({ size = "h-7 w-7" }) => (
         strokeLinejoin="round"
         d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
       />
+
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -92,11 +108,16 @@ const FileTypeIcon = ({ size = "h-7 w-7" }) => (
   </div>
 );
 
+
 /* -------------------------------------------------------------------------- */
 /* DOWNLOAD FILENAME                                                           */
 /* -------------------------------------------------------------------------- */
 
-const buildFilename = (row, url, contentType) => {
+const buildFilename = (
+  row,
+  url,
+  contentType
+) => {
   const slug = (row.doc_type || "document")
     .toLowerCase()
     .replace(/\s+/g, "-");
@@ -104,14 +125,19 @@ const buildFilename = (row, url, contentType) => {
   let ext = getExtension(url);
 
   if (!ext && contentType) {
-    if (contentType.includes("pdf")) ext = "pdf";
-    else if (contentType.includes("png")) ext = "png";
-    else if (contentType.includes("gif")) ext = "gif";
-    else if (
+    if (contentType.includes("pdf")) {
+      ext = "pdf";
+    } else if (contentType.includes("png")) {
+      ext = "png";
+    } else if (contentType.includes("gif")) {
+      ext = "gif";
+    } else if (
       contentType.includes("jpeg") ||
       contentType.includes("jpg")
     ) {
       ext = "jpg";
+    } else if (contentType.includes("webp")) {
+      ext = "webp";
     }
   }
 
@@ -120,11 +146,16 @@ const buildFilename = (row, url, contentType) => {
   }`;
 };
 
+
 /* -------------------------------------------------------------------------- */
 /* STAT CARD                                                                   */
 /* -------------------------------------------------------------------------- */
 
-function StatCard({ icon, value, label }) {
+function StatCard({
+  icon,
+  value,
+  label,
+}) {
   return (
     <div className="h-[76px] rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 shadow-sm transition hover:shadow-md dark:border-slate-700 dark:bg-slate-900">
       <div className="flex h-full items-center justify-between">
@@ -145,6 +176,7 @@ function StatCard({ icon, value, label }) {
     </div>
   );
 }
+
 
 /* -------------------------------------------------------------------------- */
 /* ORGANIZATION HIERARCHY                                                      */
@@ -174,8 +206,11 @@ const HierarchyTrail = ({
   return (
     <div className="flex flex-wrap items-center gap-1">
       {steps.map((step, i) => (
-        <div key={i} className="flex items-center gap-1">
-          <span className="rounded-full bg-sky-50 px-1.5 py-0.5 text-[10px] font-medium text-sky-700 dark:bg-sky-500/10 dark:text-sky-400">
+        <div
+          key={`${step}-${i}`}
+          className="flex items-center gap-1"
+        >
+          <span className="max-w-[150px] truncate rounded-full bg-sky-50 px-1.5 py-0.5 text-[9px] font-medium text-sky-700 dark:bg-sky-500/10 dark:text-sky-400">
             {step}
           </span>
 
@@ -189,6 +224,7 @@ const HierarchyTrail = ({
     </div>
   );
 };
+
 
 /* -------------------------------------------------------------------------- */
 /* DOCUMENTS OVERVIEW                                                          */
@@ -226,7 +262,8 @@ function DocumentsOverview({ docs }) {
 
       <div className="pointer-events-none invisible absolute left-0 top-full z-20 mt-2 w-52 rounded-lg border border-slate-200 bg-white p-2 opacity-0 shadow-lg transition-opacity duration-150 group-hover/docs:visible group-hover/docs:opacity-100 dark:border-slate-700 dark:bg-slate-800">
         <p className="mb-1.5 px-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
-          {docs.length} document{docs.length !== 1 ? "s" : ""}
+          {docs.length} document
+          {docs.length !== 1 ? "s" : ""}
         </p>
 
         <div className="max-h-44 space-y-0.5 overflow-y-auto">
@@ -241,7 +278,8 @@ function DocumentsOverview({ docs }) {
 
               <span className="flex shrink-0 items-center gap-1">
                 <span className="text-[10px] uppercase text-slate-400">
-                  {getExtension(d.file_url) || "file"}
+                  {getExtension(d.file_url) ||
+                    "file"}
                 </span>
 
                 <span
@@ -260,11 +298,15 @@ function DocumentsOverview({ docs }) {
   );
 }
 
+
 /* -------------------------------------------------------------------------- */
 /* EMPLOYEE DETAILS MODAL                                                      */
 /* -------------------------------------------------------------------------- */
 
-function EmployeeDetailsModal({ employee, onClose }) {
+function EmployeeDetailsModal({
+  employee,
+  onClose,
+}) {
   return (
     <Modal
       open={!!employee}
@@ -283,7 +325,8 @@ function EmployeeDetailsModal({ employee, onClose }) {
 
             <div className="min-w-0">
               <p className="truncate font-semibold text-slate-800 dark:text-white">
-                {employee.first_name} {employee.last_name}
+                {employee.first_name}{" "}
+                {employee.last_name}
               </p>
 
               <p className="font-mono text-xs text-slate-500 dark:text-slate-400">
@@ -298,23 +341,38 @@ function EmployeeDetailsModal({ employee, onClose }) {
             </p>
 
             <HierarchyTrail
-              company={employee.department?.company?.name}
-              branch={employee.department?.branch?.name}
-              department={employee.department?.department_name}
-              designation={employee.designation?.designation_name}
+              company={
+                employee.department?.company?.name
+              }
+              branch={
+                employee.department?.branch?.name
+              }
+              department={
+                employee.department?.department_name
+              }
+              designation={
+                employee.designation
+                  ?.designation_name
+              }
             />
           </div>
 
           <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
             <div>
-              <dt className="text-xs text-slate-400">Phone</dt>
+              <dt className="text-xs text-slate-400">
+                Phone
+              </dt>
+
               <dd className="mt-0.5 text-slate-700 dark:text-slate-200">
                 {employee.phone || "-"}
               </dd>
             </div>
 
             <div>
-              <dt className="text-xs text-slate-400">Email</dt>
+              <dt className="text-xs text-slate-400">
+                Email
+              </dt>
+
               <dd className="mt-0.5 truncate text-slate-700 dark:text-slate-200">
                 {employee.email || "-"}
               </dd>
@@ -326,6 +384,7 @@ function EmployeeDetailsModal({ employee, onClose }) {
   );
 }
 
+
 /* -------------------------------------------------------------------------- */
 /* CONSTANTS                                                                   */
 /* -------------------------------------------------------------------------- */
@@ -334,11 +393,24 @@ const PAGE_SIZE = 9;
 const TABLE_PAGE_SIZE = 10;
 
 const EXPORT_COLUMNS = [
-  { key: "employee_id", label: "Employee ID" },
-  { key: "doc_type", label: "Document Type" },
-  { key: "file_url", label: "File URL" },
-  { key: "is_active", label: "Active" },
+  {
+    key: "employee_id",
+    label: "Employee ID",
+  },
+  {
+    key: "doc_type",
+    label: "Document Type",
+  },
+  {
+    key: "file_url",
+    label: "File URL",
+  },
+  {
+    key: "is_active",
+    label: "Active",
+  },
 ];
+
 
 /* -------------------------------------------------------------------------- */
 /* TABLE ACTION BUTTON                                                         */
@@ -379,12 +451,14 @@ const TableIconButton = ({
   );
 };
 
+
 /* -------------------------------------------------------------------------- */
 /* PAGE                                                                        */
 /* -------------------------------------------------------------------------- */
 
 export default function DocumentListPage() {
   const { showToast } = useToast();
+
 
   /* ----------------------------- DOCUMENTS -------------------------------- */
 
@@ -405,54 +479,85 @@ export default function DocumentListPage() {
 
   const allDocuments = data?.items || [];
 
+
   /* ----------------------------- EMPLOYEES -------------------------------- */
 
-  const { data: employeesData } = useQuery({
-    queryKey: ["documents-page", "employees-full"],
+  const { data: employeesData } =
+    useQuery({
+      queryKey: [
+        "documents-page",
+        "employees-full",
+      ],
 
-    queryFn: async () =>
-      (
-        await employeesApi.list({
-          page: 1,
-          per_page: 1000,
-          is_active: true,
-        })
-      ).data.data,
-  });
+      queryFn: async () =>
+        (
+          await employeesApi.list({
+            page: 1,
+            per_page: 1000,
+            is_active: true,
+          })
+        ).data.data,
+    });
 
-  const employees = employeesData?.items || [];
+  const employees =
+    employeesData?.items || [];
+
+
+  /* ----------------------------- EMPLOYEE MAP ----------------------------- */
 
   const employeeMap = useMemo(
     () =>
       Object.fromEntries(
-        employees.map((e) => [e.id, e])
+        employees.map((e) => [
+          e.id,
+          e,
+        ])
       ),
     [employees]
   );
 
+
   /* ----------------------------- COMPANIES -------------------------------- */
 
-  const { data: companyData } = useCompanies({
-    page: 1,
-    per_page: 100,
-  });
+  const { data: companyData } =
+    useCompanies({
+      page: 1,
+      per_page: 100,
+    });
 
   const companies =
-    companyData?.items || companyData?.data || [];
+    companyData?.items ||
+    companyData?.data ||
+    [];
+
 
   /* ----------------------------- LOOKUPS ---------------------------------- */
 
-  const departmentOptions = useDepartmentOptions();
-  const designationOptions = useDesignationOptions();
+  const departmentOptions =
+    useDepartmentOptions();
+
+  const designationOptions =
+    useDesignationOptions();
+
 
   /* ----------------------------- FILTERS ---------------------------------- */
 
-  const [filterCompanyId, setFilterCompanyId] = useState("");
-  const [filterBranchId, setFilterBranchId] = useState("");
-  const [filterDepartmentId, setFilterDepartmentId] =
+  const [filterCompanyId, setFilterCompanyId] =
     useState("");
-  const [filterDesignationId, setFilterDesignationId] =
+
+  const [filterBranchId, setFilterBranchId] =
     useState("");
+
+  const [
+    filterDepartmentId,
+    setFilterDepartmentId,
+  ] = useState("");
+
+  const [
+    filterDesignationId,
+    setFilterDesignationId,
+  ] = useState("");
+
 
   /* ----------------------------- BRANCHES --------------------------------- */
 
@@ -460,13 +565,16 @@ export default function DocumentListPage() {
     const map = new Map();
 
     employees.forEach((e) => {
-      const branch = e.department?.branch;
+      const branch =
+        e.department?.branch;
 
       if (!branch?.id) return;
 
       if (
         filterCompanyId &&
-        String(e.department?.company?.id) !==
+        String(
+          e.department?.company?.id
+        ) !==
           String(filterCompanyId)
       ) {
         return;
@@ -475,21 +583,41 @@ export default function DocumentListPage() {
       map.set(branch.id, branch);
     });
 
-    return Array.from(map.values());
-  }, [employees, filterCompanyId]);
+    return Array.from(
+      map.values()
+    );
+  }, [
+    employees,
+    filterCompanyId,
+  ]);
+
 
   /* ----------------------------- MUTATIONS -------------------------------- */
 
-  const createMutation = useCreateDocument();
-  const updateMutation = useUpdateDocument();
-  const deactivateMutation = useDeactivateDocument();
+  const createMutation =
+    useCreateDocument();
+
+  const updateMutation =
+    useUpdateDocument();
+
+  const deactivateMutation =
+    useDeactivateDocument();
+
 
   /* ----------------------------- VIEW STATE ------------------------------- */
 
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("active");
-  const [viewMode, setViewMode] = useState("card");
-  const [page, setPage] = useState(1);
+  const [search, setSearch] =
+    useState("");
+
+  const [statusFilter, setStatusFilter] =
+    useState("active");
+
+  const [viewMode, setViewMode] =
+    useState("card");
+
+  const [page, setPage] =
+    useState(1);
+
 
   /* ----------------------------- EXPORT ----------------------------------- */
 
@@ -498,23 +626,38 @@ export default function DocumentListPage() {
     exportExcel,
     exportPDF,
   } = useTableExport({
-    fetchAll: employeeLifecycleApi.documents.list,
+    fetchAll:
+      employeeLifecycleApi.documents.list,
+
     queryParams: {
-      search: search || undefined,
+      search:
+        search || undefined,
     },
-    exportColumns: EXPORT_COLUMNS,
-    filename: "employee-documents",
-    title: "Employee Documents",
+
+    exportColumns:
+      EXPORT_COLUMNS,
+
+    filename:
+      "employee-documents",
+
+    title:
+      "Employee Documents",
   });
 
-  const [documentTypeOptions] = useState(
-    getDocumentTypeOptions()
-  );
+  const [documentTypeOptions] =
+    useState(
+      getDocumentTypeOptions()
+    );
+
 
   /* ----------------------------- MODALS ----------------------------------- */
 
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editing, setEditing] = useState(null);
+  const [modalOpen, setModalOpen] =
+    useState(false);
+
+  const [editing, setEditing] =
+    useState(null);
+
   const [presetEmployeeId, setPresetEmployeeId] =
     useState(null);
 
@@ -524,20 +667,25 @@ export default function DocumentListPage() {
   const [viewingEmployee, setViewingEmployee] =
     useState(null);
 
-  const [previewUrl, setPreviewUrl] = useState(null);
+  const [previewUrl, setPreviewUrl] =
+    useState(null);
 
   const [downloadingId, setDownloadingId] =
     useState(null);
 
+
   /* ----------------------------- STATS ------------------------------------ */
 
-  const activeDocs = allDocuments.filter(
-    (d) => d.is_active !== false
-  );
+  const activeDocs =
+    allDocuments.filter(
+      (d) => d.is_active !== false
+    );
 
-  const inactiveDocs = allDocuments.filter(
-    (d) => d.is_active === false
-  );
+  const inactiveDocs =
+    allDocuments.filter(
+      (d) => d.is_active === false
+    );
+
 
   /* ----------------------------- FILTERED DOCS ---------------------------- */
 
@@ -557,11 +705,14 @@ export default function DocumentListPage() {
         return false;
       }
 
-      const emp = employeeMap[d.employee_id];
+      const emp =
+        employeeMap[d.employee_id];
 
       if (
         filterCompanyId &&
-        String(emp?.department?.company?.id) !==
+        String(
+          emp?.department?.company?.id
+        ) !==
           String(filterCompanyId)
       ) {
         return false;
@@ -569,7 +720,9 @@ export default function DocumentListPage() {
 
       if (
         filterBranchId &&
-        String(emp?.department?.branch?.id) !==
+        String(
+          emp?.department?.branch?.id
+        ) !==
           String(filterBranchId)
       ) {
         return false;
@@ -577,7 +730,9 @@ export default function DocumentListPage() {
 
       if (
         filterDepartmentId &&
-        String(emp?.department?.id) !==
+        String(
+          emp?.department?.id
+        ) !==
           String(filterDepartmentId)
       ) {
         return false;
@@ -585,7 +740,9 @@ export default function DocumentListPage() {
 
       if (
         filterDesignationId &&
-        String(emp?.designation?.id) !==
+        String(
+          emp?.designation?.id
+        ) !==
           String(filterDesignationId)
       ) {
         return false;
@@ -602,7 +759,9 @@ export default function DocumentListPage() {
           `${d.doc_type || ""} ${name}`.toLowerCase();
 
         if (
-          !haystack.includes(search.toLowerCase())
+          !haystack.includes(
+            search.toLowerCase()
+          )
         ) {
           return false;
         }
@@ -621,41 +780,61 @@ export default function DocumentListPage() {
     filterDesignationId,
   ]);
 
+
   /* ----------------------------- GROUP DOCS ------------------------------- */
 
   const groupedDocs = useMemo(() => {
     const groups = new Map();
 
     filteredDocs.forEach((doc) => {
-      if (!groups.has(doc.employee_id)) {
-        groups.set(doc.employee_id, {
-          employeeId: doc.employee_id,
-          employee: employeeMap[doc.employee_id],
-          docs: [],
-        });
+      if (
+        !groups.has(
+          doc.employee_id
+        )
+      ) {
+        groups.set(
+          doc.employee_id,
+          {
+            employeeId:
+              doc.employee_id,
+            employee:
+              employeeMap[
+                doc.employee_id
+              ],
+            docs: [],
+          }
+        );
       }
 
-      groups.get(doc.employee_id).docs.push(doc);
+      groups
+        .get(doc.employee_id)
+        .docs.push(doc);
     });
 
-    return Array.from(groups.values()).sort(
-      (a, b) => {
-        const nameA = a.employee
-          ? `${a.employee.first_name || ""} ${
-              a.employee.last_name || ""
-            }`
-          : "";
+    return Array.from(
+      groups.values()
+    ).sort((a, b) => {
+      const nameA = a.employee
+        ? `${a.employee.first_name || ""} ${
+            a.employee.last_name || ""
+          }`
+        : "";
 
-        const nameB = b.employee
-          ? `${b.employee.first_name || ""} ${
-              b.employee.last_name || ""
-            }`
-          : "";
+      const nameB = b.employee
+        ? `${b.employee.first_name || ""} ${
+            b.employee.last_name || ""
+          }`
+        : "";
 
-        return nameA.localeCompare(nameB);
-      }
-    );
-  }, [filteredDocs, employeeMap]);
+      return nameA.localeCompare(
+        nameB
+      );
+    });
+  }, [
+    filteredDocs,
+    employeeMap,
+  ]);
+
 
   /* ----------------------------- PAGINATION ------------------------------- */
 
@@ -666,51 +845,72 @@ export default function DocumentListPage() {
 
   const pageCount = Math.max(
     1,
-    Math.ceil(groupedDocs.length / pageSize)
+    Math.ceil(
+      groupedDocs.length /
+        pageSize
+    )
   );
 
-  const pagedGroups = groupedDocs.slice(
-    (page - 1) * pageSize,
-    page * pageSize
-  );
+  const pagedGroups =
+    groupedDocs.slice(
+      (page - 1) * pageSize,
+      page * pageSize
+    );
+
 
   /* ----------------------------- DOWNLOAD --------------------------------- */
 
-  const downloadFile = async (row) => {
+  const downloadFile = async (
+    row
+  ) => {
     if (downloadingId) return;
 
     setDownloadingId(row.id);
 
     try {
-      const res = await fetch(row.file_url);
+      const res = await fetch(
+        row.file_url
+      );
 
       if (!res.ok) {
-        throw new Error("Download failed");
+        throw new Error(
+          "Download failed"
+        );
       }
 
-      const blob = await res.blob();
+      const blob =
+        await res.blob();
 
       const blobUrl =
-        URL.createObjectURL(blob);
+        URL.createObjectURL(
+          blob
+        );
 
       const link =
-        document.createElement("a");
+        document.createElement(
+          "a"
+        );
 
       link.href = blobUrl;
 
-      link.download = buildFilename(
-        row,
-        row.file_url,
-        blob.type
-      );
+      link.download =
+        buildFilename(
+          row,
+          row.file_url,
+          blob.type
+        );
 
-      document.body.appendChild(link);
+      document.body.appendChild(
+        link
+      );
 
       link.click();
 
       link.remove();
 
-      URL.revokeObjectURL(blobUrl);
+      URL.revokeObjectURL(
+        blobUrl
+      );
     } catch {
       showToast(
         "Couldn't download directly — opening the file instead",
@@ -727,6 +927,7 @@ export default function DocumentListPage() {
     }
   };
 
+
   /* ----------------------------- ADD -------------------------------------- */
 
   const handleAdd = () => {
@@ -734,6 +935,7 @@ export default function DocumentListPage() {
     setPresetEmployeeId(null);
     setModalOpen(true);
   };
+
 
   /* ----------------------------- EDIT ------------------------------------- */
 
@@ -743,6 +945,7 @@ export default function DocumentListPage() {
     setModalOpen(true);
   };
 
+
   /* ----------------------------- CLOSE MODAL ------------------------------ */
 
   const closeModal = () => {
@@ -751,22 +954,29 @@ export default function DocumentListPage() {
     setPresetEmployeeId(null);
   };
 
+
   /* ----------------------------- SUBMIT ----------------------------------- */
 
-  const handleSubmit = async (payload) => {
+  const handleSubmit = async (
+    payload
+  ) => {
     try {
       if (editing) {
-        await updateMutation.mutateAsync({
-          id: editing.id,
-          payload,
-        });
+        await updateMutation.mutateAsync(
+          {
+            id: editing.id,
+            payload,
+          }
+        );
 
         showToast(
           "Document updated",
           "success"
         );
       } else {
-        await createMutation.mutateAsync(payload);
+        await createMutation.mutateAsync(
+          payload
+        );
 
         showToast(
           "Document created",
@@ -785,62 +995,72 @@ export default function DocumentListPage() {
     }
   };
 
+
   /* ----------------------------- DELETE ----------------------------------- */
 
-  const confirmDelete = async () => {
-    if (!deleteTarget) return;
+  const confirmDelete =
+    async () => {
+      if (!deleteTarget) return;
 
-    try {
-      await deactivateMutation.mutateAsync(
-        deleteTarget.id
-      );
+      try {
+        await deactivateMutation.mutateAsync(
+          deleteTarget.id
+        );
 
-      showToast(
-        "Document deactivated",
-        "success"
-      );
+        showToast(
+          "Document deactivated",
+          "success"
+        );
 
-      setDeleteTarget(null);
+        setDeleteTarget(
+          null
+        );
 
-      refetch();
-    } catch (err) {
-      showToast(
-        err.response?.data?.message ||
-          "Operation failed",
-        "error"
-      );
-    }
-  };
+        refetch();
+      } catch (err) {
+        showToast(
+          err.response?.data?.message ||
+            "Operation failed",
+          "error"
+        );
+      }
+    };
+
 
   /* ----------------------------- REACTIVATE ------------------------------- */
 
-  const handleReactivate = async (doc) => {
-    try {
-      await updateMutation.mutateAsync({
-        id: doc.id,
-        payload: {
-          is_active: true,
-        },
-      });
+  const handleReactivate =
+    async (doc) => {
+      try {
+        await updateMutation.mutateAsync(
+          {
+            id: doc.id,
+            payload: {
+              is_active: true,
+            },
+          }
+        );
 
-      showToast(
-        "Document reactivated",
-        "success"
-      );
+        showToast(
+          "Document reactivated",
+          "success"
+        );
 
-      refetch();
-    } catch (err) {
-      showToast(
-        err.response?.data?.message ||
-          "Operation failed",
-        "error"
-      );
-    }
-  };
+        refetch();
+      } catch (err) {
+        showToast(
+          err.response?.data?.message ||
+            "Operation failed",
+          "error"
+        );
+      }
+    };
+
 
   const isSaving =
     createMutation.isPending ||
     updateMutation.isPending;
+
 
   /* ------------------------------------------------------------------------ */
   /* ERROR                                                                     */
@@ -854,13 +1074,18 @@ export default function DocumentListPage() {
     );
   }
 
+
   /* ------------------------------------------------------------------------ */
   /* RENDER                                                                    */
   /* ------------------------------------------------------------------------ */
 
   return (
     <div className="space-y-4">
-      {/* HEADER */}
+
+      {/* ================================================================== */}
+      {/* HEADER                                                             */}
+      {/* ================================================================== */}
+
       <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-600 text-white shadow-sm">
@@ -884,9 +1109,15 @@ export default function DocumentListPage() {
           <TableToolbar
             onRefresh={refetch}
             refreshing={isFetching}
-            onExportExcel={exportExcel}
-            onExportPDF={exportPDF}
-            exporting={exporting}
+            onExportExcel={
+              exportExcel
+            }
+            onExportPDF={
+              exportPDF
+            }
+            exporting={
+              exporting
+            }
           />
 
           <Button
@@ -902,7 +1133,11 @@ export default function DocumentListPage() {
         </div>
       </div>
 
-      {/* STAT CARDS */}
+
+      {/* ================================================================== */}
+      {/* STAT CARDS                                                         */}
+      {/* ================================================================== */}
+
       <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-4">
         <StatCard
           icon={
@@ -962,6 +1197,7 @@ export default function DocumentListPage() {
                 r="5"
                 strokeWidth="2"
               />
+
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -969,7 +1205,9 @@ export default function DocumentListPage() {
               />
             </svg>
           }
-          value={inactiveDocs.length}
+          value={
+            inactiveDocs.length
+          }
           label="Deactivated Documents"
         />
 
@@ -990,16 +1228,25 @@ export default function DocumentListPage() {
               />
             </svg>
           }
-          value={documentTypeOptions.length}
+          value={
+            documentTypeOptions.length
+          }
           label="Document Types"
         />
       </div>
 
-      {/* FILTERS */}
+
+      {/* ================================================================== */}
+      {/* FILTERS                                                            */}
+      {/* ================================================================== */}
+
       <div className="rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
         <div className="flex flex-col gap-2.5">
+
           <div className="flex flex-col gap-2 lg:flex-row lg:flex-wrap">
+
             {/* SEARCH */}
+
             <div className="relative w-full sm:max-w-xs">
               <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
                 <svg
@@ -1022,7 +1269,9 @@ export default function DocumentListPage() {
                 type="text"
                 value={search}
                 onChange={(e) => {
-                  setSearch(e.target.value);
+                  setSearch(
+                    e.target.value
+                  );
                   setPage(1);
                 }}
                 placeholder="Search by employee or document type..."
@@ -1030,7 +1279,9 @@ export default function DocumentListPage() {
               />
             </div>
 
+
             {/* COMPANY */}
+
             <select
               value={filterCompanyId}
               onChange={(e) => {
@@ -1056,7 +1307,9 @@ export default function DocumentListPage() {
               ))}
             </select>
 
+
             {/* BRANCH */}
+
             <select
               value={filterBranchId}
               onChange={(e) => {
@@ -1081,7 +1334,9 @@ export default function DocumentListPage() {
               ))}
             </select>
 
+
             {/* DEPARTMENT */}
+
             <select
               value={filterDepartmentId}
               onChange={(e) => {
@@ -1096,17 +1351,21 @@ export default function DocumentListPage() {
                 All Departments
               </option>
 
-              {departmentOptions.map((d) => (
-                <option
-                  key={d.value}
-                  value={d.value}
-                >
-                  {d.label}
-                </option>
-              ))}
+              {departmentOptions.map(
+                (d) => (
+                  <option
+                    key={d.value}
+                    value={d.value}
+                  >
+                    {d.label}
+                  </option>
+                )
+              )}
             </select>
 
+
             {/* DESIGNATION */}
+
             <select
               value={filterDesignationId}
               onChange={(e) => {
@@ -1121,24 +1380,31 @@ export default function DocumentListPage() {
                 All Designations
               </option>
 
-              {designationOptions.map((d) => (
-                <option
-                  key={d.value}
-                  value={d.value}
-                >
-                  {d.label}
-                </option>
-              ))}
+              {designationOptions.map(
+                (d) => (
+                  <option
+                    key={d.value}
+                    value={d.value}
+                  >
+                    {d.label}
+                  </option>
+                )
+              )}
             </select>
           </div>
 
+
+          {/* VIEW MODE + STATUS */}
+
           <div className="flex flex-wrap items-center justify-between gap-2">
-            {/* VIEW MODE */}
+
             <div className="flex w-fit items-center rounded-lg bg-slate-100 p-0.5 dark:bg-slate-800">
               <button
                 type="button"
                 onClick={() => {
-                  setViewMode("table");
+                  setViewMode(
+                    "table"
+                  );
                   setPage(1);
                 }}
                 className={`flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition ${
@@ -1147,30 +1413,15 @@ export default function DocumentListPage() {
                     : "text-slate-500 hover:text-slate-700 dark:text-slate-400"
                 }`}
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-3.5 w-3.5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <rect
-                    x="3"
-                    y="4"
-                    width="18"
-                    height="16"
-                    rx="1.5"
-                  />
-                  <path d="M3 9h18M9 9v11" />
-                </svg>
                 Table
               </button>
 
               <button
                 type="button"
                 onClick={() => {
-                  setViewMode("card");
+                  setViewMode(
+                    "card"
+                  );
                   setPage(1);
                 }}
                 className={`flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition ${
@@ -1179,48 +1430,11 @@ export default function DocumentListPage() {
                     : "text-slate-500 hover:text-slate-700 dark:text-slate-400"
                 }`}
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-3.5 w-3.5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <rect
-                    x="3"
-                    y="3"
-                    width="7"
-                    height="7"
-                    rx="1"
-                  />
-                  <rect
-                    x="14"
-                    y="3"
-                    width="7"
-                    height="7"
-                    rx="1"
-                  />
-                  <rect
-                    x="3"
-                    y="14"
-                    width="7"
-                    height="7"
-                    rx="1"
-                  />
-                  <rect
-                    x="14"
-                    y="14"
-                    width="7"
-                    height="7"
-                    rx="1"
-                  />
-                </svg>
                 Card
               </button>
             </div>
 
-            {/* STATUS */}
+
             <div className="flex w-fit items-center rounded-lg bg-slate-100 p-0.5 dark:bg-slate-800">
               {[
                 "active",
@@ -1231,11 +1445,14 @@ export default function DocumentListPage() {
                   key={s}
                   type="button"
                   onClick={() => {
-                    setStatusFilter(s);
+                    setStatusFilter(
+                      s
+                    );
                     setPage(1);
                   }}
                   className={`rounded-md px-2.5 py-1.5 text-xs font-medium capitalize transition ${
-                    statusFilter === s
+                    statusFilter ===
+                    s
                       ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
                       : "text-slate-500 hover:text-slate-700 dark:text-slate-400"
                   }`}
@@ -1248,23 +1465,28 @@ export default function DocumentListPage() {
         </div>
       </div>
 
-      {/* LOADING */}
+
+      {/* ================================================================== */}
+      {/* LOADING                                                            */}
+      {/* ================================================================== */}
+
       {isLoading && (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          {Array.from({ length: 6 }).map(
-            (_, i) => (
-              <div
-                key={i}
-                className="h-[220px] animate-pulse rounded-2xl border border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-800"
-              />
-            )
-          )}
+          {Array.from({
+            length: 6,
+          }).map((_, i) => (
+            <div
+              key={i}
+              className="h-[190px] animate-pulse rounded-xl border border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-800"
+            />
+          ))}
         </div>
       )}
 
-      {/* ==================================================================== */}
-      {/* TABLE VIEW                                                            */}
-      {/* ==================================================================== */}
+
+      {/* ================================================================== */}
+      {/* TABLE VIEW                                                         */}
+      {/* ================================================================== */}
 
       {!isLoading &&
         viewMode === "table" &&
@@ -1305,48 +1527,65 @@ export default function DocumentListPage() {
 
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {pagedGroups.map(
-                  (group, groupIdx) => {
-                    const emp = group.employee;
+                  (
+                    group,
+                    groupIdx
+                  ) => {
+                    const emp =
+                      group.employee;
 
-                    const empName = emp
-                      ? `${emp.first_name || ""} ${
-                          emp.last_name || ""
-                        }`.trim()
-                      : `Employee #${group.employeeId}`;
+                    const empName =
+                      emp
+                        ? `${emp.first_name || ""} ${
+                            emp.last_name || ""
+                          }`.trim()
+                        : `Employee #${group.employeeId}`;
 
                     const zebra =
-                      groupIdx % 2 === 1
+                      groupIdx %
+                        2 ===
+                      1
                         ? "bg-slate-50/60 dark:bg-slate-800/20"
                         : "";
 
                     return group.docs.map(
-                      (doc, idx) => {
+                      (
+                        doc,
+                        idx
+                      ) => {
                         const isDownloading =
-                          downloadingId === doc.id;
+                          downloadingId ===
+                          doc.id;
 
                         const isActive =
-                          doc.is_active !== false;
+                          doc.is_active !==
+                          false;
 
                         const isLastInGroup =
                           idx ===
-                          group.docs.length - 1;
+                          group.docs
+                            .length -
+                            1;
 
                         return (
                           <tr
-                            key={doc.id}
+                            key={
+                              doc.id
+                            }
                             className={`hover:bg-slate-100 dark:hover:bg-slate-800/50 ${zebra} ${
                               isLastInGroup
                                 ? "border-b-2 border-slate-300 dark:border-slate-600"
                                 : ""
                             }`}
                           >
-                            {/* EMPLOYEE */}
-                            {idx === 0 && (
+                            {idx ===
+                              0 && (
                               <>
                                 <td
                                   className="px-3 py-2 align-middle"
                                   rowSpan={
-                                    group.docs.length
+                                    group.docs
+                                      .length
                                   }
                                 >
                                   <button
@@ -1360,13 +1599,17 @@ export default function DocumentListPage() {
                                     className="flex items-center gap-2 text-left"
                                   >
                                     <Avatar
-                                      name={empName}
+                                      name={
+                                        empName
+                                      }
                                       size="sm"
                                     />
 
                                     <div className="min-w-0">
                                       <p className="truncate text-[13px] font-medium text-slate-800 hover:text-primary-600 dark:text-slate-100 dark:hover:text-primary-400">
-                                        {empName}
+                                        {
+                                          empName
+                                        }
                                       </p>
 
                                       <p className="text-[10px] text-slate-400">
@@ -1377,21 +1620,23 @@ export default function DocumentListPage() {
                                   </button>
                                 </td>
 
-                                {/* ORGANIZATION */}
                                 <td
                                   className="px-3 py-2 align-middle"
                                   rowSpan={
-                                    group.docs.length
+                                    group.docs
+                                      .length
                                   }
                                 >
                                   <HierarchyTrail
                                     company={
                                       emp?.department
-                                        ?.company?.name
+                                        ?.company
+                                        ?.name
                                     }
                                     branch={
                                       emp?.department
-                                        ?.branch?.name
+                                        ?.branch
+                                        ?.name
                                     }
                                     department={
                                       emp?.department
@@ -1404,28 +1649,30 @@ export default function DocumentListPage() {
                                   />
                                 </td>
 
-                                {/* DOCUMENT OVERVIEW */}
                                 <td
                                   className="overflow-visible px-3 py-2 align-middle"
                                   rowSpan={
-                                    group.docs.length
+                                    group.docs
+                                      .length
                                   }
                                 >
                                   <DocumentsOverview
-                                    docs={group.docs}
+                                    docs={
+                                      group.docs
+                                    }
                                   />
                                 </td>
                               </>
                             )}
 
-                            {/* DOCUMENT TYPE */}
                             <td className="px-3 py-2 align-middle">
                               <DocTypeBadge
-                                type={doc.doc_type}
+                                type={
+                                  doc.doc_type
+                                }
                               />
                             </td>
 
-                            {/* FILE */}
                             <td className="px-3 py-2 align-middle">
                               <div className="flex items-center gap-1.5">
                                 <FileTypeIcon size="h-6 w-6" />
@@ -1433,12 +1680,12 @@ export default function DocumentListPage() {
                                 <span className="text-[11px] font-medium uppercase text-slate-400">
                                   {getExtension(
                                     doc.file_url
-                                  ) || "file"}
+                                  ) ||
+                                    "file"}
                                 </span>
                               </div>
                             </td>
 
-                            {/* STATUS */}
                             <td className="px-3 py-2 align-middle">
                               <span
                                 className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-medium ${
@@ -1461,10 +1708,11 @@ export default function DocumentListPage() {
                               </span>
                             </td>
 
-                            {/* ACTIONS */}
                             <td className="px-3 py-2 align-middle">
                               <div className="flex items-center justify-end gap-0.5">
+
                                 {/* PREVIEW */}
+
                                 <TableIconButton
                                   title="Preview"
                                   onClick={() =>
@@ -1472,6 +1720,7 @@ export default function DocumentListPage() {
                                       doc.file_url
                                     )
                                   }
+                                  tone="primary"
                                 >
                                   <svg
                                     xmlns="http://www.w3.org/2000/svg"
@@ -1496,6 +1745,7 @@ export default function DocumentListPage() {
                                 </TableIconButton>
 
                                 {/* DOWNLOAD */}
+
                                 <TableIconButton
                                   title={
                                     isDownloading
@@ -1503,7 +1753,9 @@ export default function DocumentListPage() {
                                       : "Download"
                                   }
                                   onClick={() =>
-                                    downloadFile(doc)
+                                    downloadFile(
+                                      doc
+                                    )
                                   }
                                   disabled={
                                     isDownloading
@@ -1529,10 +1781,13 @@ export default function DocumentListPage() {
                                 <span className="mx-0.5 h-4 w-px bg-slate-200 dark:bg-slate-700" />
 
                                 {/* EDIT */}
+
                                 <TableIconButton
                                   title="Edit"
                                   onClick={() =>
-                                    handleEdit(doc)
+                                    handleEdit(
+                                      doc
+                                    )
                                   }
                                   tone="slate"
                                 >
@@ -1553,6 +1808,7 @@ export default function DocumentListPage() {
                                 </TableIconButton>
 
                                 {/* DELETE / REACTIVATE */}
+
                                 {isActive ? (
                                   <TableIconButton
                                     title="Delete"
@@ -1620,184 +1876,413 @@ export default function DocumentListPage() {
           </div>
         )}
 
-      {/* ==================================================================== */}
-      {/* CARD VIEW                                                             */}
-      {/* ==================================================================== */}
+
+      {/* ================================================================== */}
+      {/* COMPACT CARD VIEW                                                  */}
+      {/* ================================================================== */}
 
       {!isLoading &&
         viewMode === "card" &&
         pagedGroups.length > 0 && (
-          <div className="grid grid-cols-1 items-start gap-3.5 sm:grid-cols-2 xl:grid-cols-3">
-            {pagedGroups.map((group) => {
-              const emp = group.employee;
+          <div className="grid grid-cols-1 items-start gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {pagedGroups.map(
+              (group) => {
+                const emp =
+                  group.employee;
 
-              const empName = emp
-                ? `${emp.first_name || ""} ${
-                    emp.last_name || ""
-                  }`.trim()
-                : `Employee #${group.employeeId}`;
+                const empName = emp
+                  ? `${emp.first_name || ""} ${
+                      emp.last_name || ""
+                    }`.trim()
+                  : `Employee #${group.employeeId}`;
 
-              const activeCount =
-                group.docs.filter(
-                  (d) => d.is_active !== false
-                ).length;
+                const activeCount =
+                  group.docs.filter(
+                    (d) =>
+                      d.is_active !==
+                      false
+                  ).length;
 
-              const allInactive =
-                activeCount === 0;
+                const allInactive =
+                  activeCount ===
+                  0;
 
-              return (
-                <div
-                  key={group.employeeId}
-                  className={`group relative overflow-visible rounded-2xl border bg-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg dark:bg-slate-900 ${
-                    allInactive
-                      ? "border-red-100 bg-red-50/20 dark:border-red-900/30 dark:bg-red-950/10"
-                      : "border-slate-200 hover:border-primary-200 dark:border-slate-700 dark:hover:border-primary-500/40"
-                  }`}
-                >
+                return (
                   <div
-                    className={`absolute inset-x-0 top-0 h-0.5 rounded-t-2xl ${
+                    key={
+                      group.employeeId
+                    }
+                    className={`group relative overflow-hidden rounded-xl border bg-white shadow-sm transition-all duration-200 hover:shadow-md dark:bg-slate-900 ${
                       allInactive
-                        ? "bg-red-500"
-                        : "bg-primary-600"
+                        ? "border-red-100 bg-red-50/20 dark:border-red-900/30 dark:bg-red-950/10"
+                        : "border-slate-200 hover:border-primary-200 dark:border-slate-700 dark:hover:border-primary-500/40"
                     }`}
-                  />
+                  >
+                    {/* TOP ACCENT */}
 
-                  {/* CARD HEADER */}
-                  <div className="p-3.5 pb-3">
-                    <div className="flex items-start justify-between gap-2">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          emp &&
-                          setViewingEmployee(emp)
-                        }
-                        disabled={!emp}
-                        className="flex min-w-0 items-center gap-2.5 text-left disabled:cursor-default"
-                      >
-                        <Avatar
-                          name={empName}
-                          size="sm"
-                        />
+                    <div
+                      className={`absolute inset-x-0 top-0 h-0.5 ${
+                        allInactive
+                          ? "bg-red-500"
+                          : "bg-primary-600"
+                      }`}
+                    />
 
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold text-slate-900 hover:text-primary-600 dark:text-white dark:hover:text-primary-400">
-                            {empName}
-                          </p>
 
-                          <p className="text-[10px] text-slate-400">
-                            {emp?.employee_code ||
-                              `#${group.employeeId}`}
-                          </p>
-                        </div>
-                      </button>
+                    {/* ==================================================
+                        CARD HEADER
+                    ================================================== */}
 
-                      <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500 dark:bg-slate-800 dark:text-slate-400">
-                        {group.docs.length} doc
-                        {group.docs.length !== 1
-                          ? "s"
-                          : ""}
-                      </span>
-                    </div>
-
-                    {/* ORGANIZATION */}
-                    <div className="mt-2">
-                      <HierarchyTrail
-                        company={
-                          emp?.department?.company
-                            ?.name
-                        }
-                        branch={
-                          emp?.department?.branch
-                            ?.name
-                        }
-                        department={
-                          emp?.department
-                            ?.department_name
-                        }
-                        designation={
-                          emp?.designation
-                            ?.designation_name
-                        }
-                      />
-                    </div>
-
-                    {/* DOCUMENT OVERVIEW */}
-                    <div className="mt-2.5 flex items-center gap-2 rounded-lg bg-slate-50 px-2.5 py-1.5 dark:bg-slate-800/60">
-                      <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
-                        Overview
-                      </span>
-
-                      <DocumentsOverview
-                        docs={group.docs}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="border-t border-slate-100 dark:border-slate-800" />
-
-                  {/* DOCUMENT LIST - INFORMATION ONLY */}
-                  <div className="space-y-2 p-3.5 pt-3">
-                    {group.docs.map((doc) => {
-                      const isActive =
-                        doc.is_active !== false;
-
-                      return (
-                        <div
-                          key={doc.id}
-                          className="overflow-hidden rounded-lg border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800/60"
+                    <div className="px-3 py-2.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            emp &&
+                            setViewingEmployee(
+                              emp
+                            )
+                          }
+                          disabled={!emp}
+                          className="flex min-w-0 items-center gap-2 text-left disabled:cursor-default"
                         >
-                          <div className="flex items-center justify-between gap-2.5 px-2.5 py-2">
-                            <div className="flex min-w-0 items-center gap-2">
-                              <FileTypeIcon size="h-7 w-7" />
+                          <Avatar
+                            name={
+                              empName
+                            }
+                            size="sm"
+                          />
 
-                              <div className="flex min-w-0 flex-col gap-0.5">
-                                <DocTypeBadge
-                                  type={
-                                    doc.doc_type
-                                  }
-                                />
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-semibold text-slate-900 hover:text-primary-600 dark:text-white dark:hover:text-primary-400">
+                              {
+                                empName
+                              }
+                            </p>
 
-                                <span className="text-[10px] uppercase tracking-wide text-slate-400">
-                                  {getExtension(
-                                    doc.file_url
-                                  ) || "file"}
+                            <p className="text-[10px] text-slate-400">
+                              {emp?.employee_code ||
+                                `#${group.employeeId}`}
+                            </p>
+                          </div>
+                        </button>
+
+                        <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[9px] font-semibold text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                          {
+                            group
+                              .docs
+                              .length
+                          }{" "}
+                          doc
+                          {group.docs
+                            .length !==
+                          1
+                            ? "s"
+                            : ""}
+                        </span>
+                      </div>
+
+
+                      {/* ORGANIZATION */}
+
+                      <div className="mt-1.5">
+                        <HierarchyTrail
+                          company={
+                            emp
+                              ?.department
+                              ?.company
+                              ?.name
+                          }
+                          branch={
+                            emp
+                              ?.department
+                              ?.branch
+                              ?.name
+                          }
+                          department={
+                            emp
+                              ?.department
+                              ?.department_name
+                          }
+                          designation={
+                            emp
+                              ?.designation
+                              ?.designation_name
+                          }
+                        />
+                      </div>
+
+
+                      {/* DOCUMENT OVERVIEW */}
+
+                      <div className="mt-2 flex items-center gap-2 rounded-lg bg-slate-50 px-2 py-1 dark:bg-slate-800/60">
+                        <span className="text-[9px] font-semibold uppercase tracking-wide text-slate-400">
+                          Documents
+                        </span>
+
+                        <DocumentsOverview
+                          docs={
+                            group.docs
+                          }
+                        />
+                      </div>
+                    </div>
+
+
+                    <div className="border-t border-slate-100 dark:border-slate-800" />
+
+
+                    {/* ==================================================
+                        COMPACT DOCUMENT LIST
+                    ================================================== */}
+
+                    <div className="space-y-1.5 px-3 py-2.5">
+                      {group.docs.map(
+                        (doc) => {
+                          const isActive =
+                            doc.is_active !==
+                            false;
+
+                          const isDownloading =
+                            downloadingId ===
+                            doc.id;
+
+                          return (
+                            <div
+                              key={
+                                doc.id
+                              }
+                              className="rounded-lg border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800/60"
+                            >
+                              {/* DOCUMENT INFO */}
+
+                              <div className="flex items-center justify-between gap-2 px-2 py-1.5">
+                                <div className="flex min-w-0 items-center gap-2">
+                                  <FileTypeIcon size="h-6 w-6" />
+
+                                  <div className="min-w-0">
+                                    <div className="flex min-w-0 items-center gap-1.5">
+                                      <DocTypeBadge
+                                        type={
+                                          doc.doc_type
+                                        }
+                                      />
+
+                                      <span className="shrink-0 text-[9px] uppercase text-slate-400">
+                                        {getExtension(
+                                          doc.file_url
+                                        ) ||
+                                          "file"}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <span
+                                  className={`inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-[8px] font-semibold ${
+                                    isActive
+                                      ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300"
+                                      : "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300"
+                                  }`}
+                                >
+                                  <span
+                                    className={`h-1 w-1 rounded-full ${
+                                      isActive
+                                        ? "bg-emerald-500"
+                                        : "bg-red-500"
+                                    }`}
+                                  />
+
+                                  {isActive
+                                    ? "Active"
+                                    : "Inactive"}
                                 </span>
                               </div>
+
+
+                              {/* COMPACT ACTIONS */}
+
+                              <div className="flex items-center justify-end border-t border-slate-100 px-2 py-1 dark:border-slate-700">
+                                <div className="flex items-center gap-0.5">
+
+                                  {/* PREVIEW */}
+
+                                  <TableIconButton
+                                    title="Preview"
+                                    onClick={() =>
+                                      setPreviewUrl(
+                                        doc.file_url
+                                      )
+                                    }
+                                    tone="primary"
+                                  >
+                                    <svg
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      className="h-3.5 w-3.5"
+                                      fill="none"
+                                      viewBox="0 0 24 24"
+                                      stroke="currentColor"
+                                      strokeWidth={2}
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7z"
+                                      />
+
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                      />
+                                    </svg>
+                                  </TableIconButton>
+
+
+                                  {/* DOWNLOAD */}
+
+                                  <TableIconButton
+                                    title={
+                                      isDownloading
+                                        ? "Downloading..."
+                                        : "Download"
+                                    }
+                                    onClick={() =>
+                                      downloadFile(
+                                        doc
+                                      )
+                                    }
+                                    disabled={
+                                      isDownloading
+                                    }
+                                    tone="slate"
+                                  >
+                                    <svg
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      className="h-3.5 w-3.5"
+                                      fill="none"
+                                      viewBox="0 0 24 24"
+                                      stroke="currentColor"
+                                      strokeWidth={2}
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"
+                                      />
+                                    </svg>
+                                  </TableIconButton>
+
+
+                                  <span className="mx-0.5 h-4 w-px bg-slate-200 dark:bg-slate-700" />
+
+
+                                  {/* EDIT */}
+
+                                  <TableIconButton
+                                    title="Edit"
+                                    onClick={() =>
+                                      handleEdit(
+                                        doc
+                                      )
+                                    }
+                                    tone="slate"
+                                  >
+                                    <svg
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      className="h-3.5 w-3.5"
+                                      fill="none"
+                                      viewBox="0 0 24 24"
+                                      stroke="currentColor"
+                                      strokeWidth={2}
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        d="M16.862 4.487l1.687-1.688a2.121 2.121 0 013 3l-9.9 9.9-4.137 1.034 1.034-4.137 9.9-9.9z"
+                                      />
+                                    </svg>
+                                  </TableIconButton>
+
+
+                                  {/* DELETE / REACTIVATE */}
+
+                                  {isActive ? (
+                                    <TableIconButton
+                                      title="Delete"
+                                      onClick={() =>
+                                        setDeleteTarget(
+                                          doc
+                                        )
+                                      }
+                                      tone="red"
+                                    >
+                                      <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        className="h-3.5 w-3.5"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                        strokeWidth={2}
+                                      >
+                                        <path
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          d="M6 7h12M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m2 0v12a2 2 0 01-2 2H8a2 2 0 01-2-2V7h12z"
+                                        />
+                                      </svg>
+                                    </TableIconButton>
+                                  ) : (
+                                    <TableIconButton
+                                      title="Reactivate"
+                                      onClick={() =>
+                                        handleReactivate(
+                                          doc
+                                        )
+                                      }
+                                      disabled={
+                                        updateMutation.isPending
+                                      }
+                                      tone="emerald"
+                                    >
+                                      <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        className="h-3.5 w-3.5"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                        strokeWidth={2}
+                                      >
+                                        <path
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          d="M4 12a8 8 0 018-8 8.5 8.5 0 017 4M20 4v5h-5M20 12a8 8 0 01-8 8 8.5 8.5 0 01-7-4M4 20v-5h5"
+                                        />
+                                      </svg>
+                                    </TableIconButton>
+                                  )}
+                                </div>
+                              </div>
                             </div>
-
-                            <span
-                              className={`inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-[9px] font-semibold ${
-                                isActive
-                                  ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300"
-                                  : "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300"
-                              }`}
-                            >
-                              <span
-                                className={`h-1 w-1 rounded-full ${
-                                  isActive
-                                    ? "bg-emerald-500"
-                                    : "bg-red-500"
-                                }`}
-                              />
-
-                              {isActive
-                                ? "Active"
-                                : "Inactive"}
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    })}
+                          );
+                        }
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              }
+            )}
           </div>
         )}
 
-      {/* EMPTY STATE */}
+
+      {/* ================================================================== */}
+      {/* EMPTY STATE                                                        */}
+      {/* ================================================================== */}
+
       {!isLoading &&
-        pagedGroups.length === 0 && (
+        pagedGroups.length ===
+          0 && (
           <div className="flex min-h-[220px] flex-col items-center justify-center rounded-xl border border-slate-200 bg-white px-6 py-8 text-center shadow-sm dark:border-slate-700 dark:bg-slate-900">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800">
               <span className="text-lg font-bold text-slate-400">
@@ -1823,7 +2308,11 @@ export default function DocumentListPage() {
           </div>
         )}
 
-      {/* PAGINATION */}
+
+      {/* ================================================================== */}
+      {/* PAGINATION                                                         */}
+      {/* ================================================================== */}
+
       <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs text-slate-500 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
         <span>
           Page {page} of {pageCount}
@@ -1835,7 +2324,10 @@ export default function DocumentListPage() {
             disabled={page <= 1}
             onClick={() =>
               setPage((p) =>
-                Math.max(1, p - 1)
+                Math.max(
+                  1,
+                  p - 1
+                )
               )
             }
             className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium transition hover:bg-slate-50 disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700"
@@ -1845,10 +2337,15 @@ export default function DocumentListPage() {
 
           <button
             type="button"
-            disabled={page >= pageCount}
+            disabled={
+              page >= pageCount
+            }
             onClick={() =>
               setPage((p) =>
-                Math.min(pageCount, p + 1)
+                Math.min(
+                  pageCount,
+                  p + 1
+                )
               )
             }
             className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium transition hover:bg-slate-50 disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700"
@@ -1858,9 +2355,10 @@ export default function DocumentListPage() {
         </div>
       </div>
 
-      {/* ==================================================================== */}
-      {/* ADD / EDIT MODAL                                                      */}
-      {/* ==================================================================== */}
+
+      {/* ================================================================== */}
+      {/* ADD / EDIT MODAL                                                   */}
+      {/* ================================================================== */}
 
       <Modal
         open={modalOpen}
@@ -1886,7 +2384,9 @@ export default function DocumentListPage() {
               loading={isSaving}
               disabled={isSaving}
             >
-              {editing ? "Save" : "Submit"}
+              {editing
+                ? "Save"
+                : "Submit"}
             </Button>
           </>
         }
@@ -1906,50 +2406,67 @@ export default function DocumentListPage() {
           loading={isSaving}
           isEdit={!!editing}
           lockEmployee={
-            !editing && !!presetEmployeeId
+            !editing &&
+            !!presetEmployeeId
           }
         />
       </Modal>
 
-      {/* ==================================================================== */}
-      {/* PREVIEW MODAL                                                         */}
-      {/* ==================================================================== */}
+
+      {/* ================================================================== */}
+      {/* PREVIEW MODAL                                                      */}
+      {/* ================================================================== */}
 
       <Modal
         open={!!previewUrl}
-        onClose={() => setPreviewUrl(null)}
+        onClose={() =>
+          setPreviewUrl(null)
+        }
         title={
           <div className="flex items-center gap-2">
             <FileTypeIcon size="h-6 w-6" />
-            <span>Document Preview</span>
+            <span>
+              Document Preview
+            </span>
           </div>
         }
         size="lg"
       >
         {previewUrl &&
-          isImage(previewUrl) && (
+          isImage(
+            previewUrl
+          ) && (
             <img
-              src={previewUrl}
+              src={
+                previewUrl
+              }
               alt="Document preview"
               className="max-h-[70vh] w-full rounded-lg object-contain"
             />
           )}
 
         {previewUrl &&
-          isPdf(previewUrl) && (
+          isPdf(
+            previewUrl
+          ) && (
             <iframe
-              src={previewUrl}
+              src={
+                previewUrl
+              }
               title="Document preview"
               className="h-[70vh] w-full rounded-lg border border-slate-200 dark:border-slate-700"
             />
           )}
 
         {previewUrl &&
-          !isImage(previewUrl) &&
-          !isPdf(previewUrl) && (
+          !isImage(
+            previewUrl
+          ) &&
+          !isPdf(
+            previewUrl
+          ) && (
             <div className="py-10 text-center text-sm text-slate-500 dark:text-slate-400">
-              Preview isn't available for this
-              file type.{" "}
+              Preview isn't available for this file type.{" "}
               <button
                 type="button"
                 onClick={() =>
@@ -1968,14 +2485,23 @@ export default function DocumentListPage() {
           )}
       </Modal>
 
-      {/* ==================================================================== */}
-      {/* DELETE CONFIRM                                                        */}
-      {/* ==================================================================== */}
+
+      {/* ================================================================== */}
+      {/* DELETE CONFIRM                                                     */}
+      {/* ================================================================== */}
 
       <ConfirmDialog
-        open={!!deleteTarget}
-        onClose={() => setDeleteTarget(null)}
-        onConfirm={confirmDelete}
+        open={
+          !!deleteTarget
+        }
+        onClose={() =>
+          setDeleteTarget(
+            null
+          )
+        }
+        onConfirm={
+          confirmDelete
+        }
         title="Deactivate Document"
         message={
           deleteTarget
@@ -1988,14 +2514,19 @@ export default function DocumentListPage() {
         }
       />
 
-      {/* ==================================================================== */}
-      {/* EMPLOYEE DETAILS                                                      */}
-      {/* ==================================================================== */}
+
+      {/* ================================================================== */}
+      {/* EMPLOYEE DETAILS                                                   */}
+      {/* ================================================================== */}
 
       <EmployeeDetailsModal
-        employee={viewingEmployee}
+        employee={
+          viewingEmployee
+        }
         onClose={() =>
-          setViewingEmployee(null)
+          setViewingEmployee(
+            null
+          )
         }
       />
     </div>
