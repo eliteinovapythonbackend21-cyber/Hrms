@@ -6,6 +6,10 @@ import AdminLayout from "@/layout/AdminLayout";
 // Auth
 import LoginPage from "@/features/auth/LoginPage";
 import RegisterPage from "@/features/auth/RegisterPage";
+import ForgotPasswordPage from "@/features/auth/ForgotPasswordPage";
+import VerifyOtpPage from "@/features/auth/VerifyOtpPage";
+import ResetPasswordPage from "@/features/auth/ResetPasswordPage";
+
 
 // Dashboard
 import DashboardPage from "@/features/dashboard/DashboardPage";
@@ -94,6 +98,9 @@ export default function AppRouter() {
       {/* Public routes */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/verify-otp" element={<VerifyOtpPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
 
       {/* Protected admin routes */}
       <Route

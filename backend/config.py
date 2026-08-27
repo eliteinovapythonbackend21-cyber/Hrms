@@ -17,3 +17,11 @@ class Config:
     ALLOWED_DOCUMENT_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "pdf"}
     CLOUDINARY_URL = os.getenv("CLOUDINARY_URL")
     CORS_ORIGINS = [o.strip() for o in os.getenv("CORS_ORIGINS", "").split(",") if o.strip()]
+
+    SMTP_HOST = os.getenv("SMTP_HOST")
+    SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
+    SMTP_USER = os.getenv("SMTP_USER")
+    SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
+    SMTP_FROM = os.getenv("SMTP_FROM", SMTP_USER)
+    SMTP_USE_TLS = os.getenv("SMTP_USE_TLS", "true").lower() in {"true", "1", "yes"}
+    OTP_EXPIRES_MINUTES = int(os.getenv("OTP_EXPIRES_MINUTES", "10"))

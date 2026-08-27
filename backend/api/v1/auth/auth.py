@@ -1,5 +1,7 @@
 import re
-from datetime import timedelta
+import random
+import secrets
+from datetime import timedelta, datetime, timezone
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity, get_jwt
 from sqlalchemy.exc import IntegrityError
@@ -36,6 +38,9 @@ VALID_ROLES = tuple(ROLE_MAP.values())
 EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 MOBILE_RE = re.compile(r"^[0-9+\-\s]{10,15}$")
 NAME_RE = re.compile(r"^[A-Za-z][A-Za-z\s'-]*$")
+
+OTP_TTL_MINUTES = 10
+OTP_LENGTH = 6
 
 
 def _parse_int(value):
@@ -248,3 +253,142 @@ def list_public_designations():
             for d in designations
         ],
     }), 200
+
+
+# ============================================================
+# FORGOT PASSWORD / OTP / RESET PASSWORD / CHANGE PASSWORD
+# ============================================================
+
+def _generate_otp():
+    """Cryptographically secure 6-digit numeric OTP, zero-padded."""
+    return "".join(secrets.choice("0123456789") for _ in range(OTP_LENGTH))
+
+
+@auth_bp.route("/forgot-password", methods=["POST"])
+def forgot_password():
+    data = request.json or {}
+    email = data.get("email")
+
+    if not email:
+        return jsonify({"message": "email is required"}), 400
+
+    user = BaseUser.query.filter_by(email=email).first()
+
+    # Intentionally vague response whether or not the email exists, so this
+    # endpoint can't be used to enumerate registered accounts.
+    generic_response = jsonify({
+        "message": "If an account exists for this email, an OTP has been sent."
+    })
+
+    if not user or not user.is_active:
+        return generic_response, 200
+
+    otp_code = _generate_otp()
+
+    try:
+        send_otp_email(user.email, otp_code)
+    except Exception as exc:
+        # Don't touch the DB or leak SMTP errors to the client.
+        return jsonify({"message": "Failed to send OTP email. Please try again later."}), 502
+
+    user.otp = hash_password(otp_code)
+    user.otp_expires_at = datetime.now(timezone.utc) + timedelta(minutes=OTP_TTL_MINUTES)
+    user.smtp_verified = False
+    db.session.commit()
+
+    return generic_response, 200
+
+
+@auth_bp.route("/verify-otp", methods=["POST"])
+def verify_otp():
+    data = request.json or {}
+    email = data.get("email")
+    otp = data.get("otp")
+
+    if not email or not otp:
+        return jsonify({"message": "email and otp are required"}), 400
+
+    user = BaseUser.query.filter_by(email=email).first()
+    if not user or not user.otp or not user.otp_expires_at:
+        return jsonify({"message": "Invalid or expired OTP"}), 400
+
+    if datetime.now(timezone.utc) > user.otp_expires_at.replace(tzinfo=timezone.utc):
+        return jsonify({"message": "OTP has expired. Please request a new one."}), 400
+
+    if not verify_password(otp, user.otp):
+        return jsonify({"message": "Invalid OTP"}), 400
+
+    user.smtp_verified = True
+    db.session.commit()
+
+    return jsonify({"message": "OTP verified. You may now reset your password."}), 200
+
+
+@auth_bp.route("/reset-password", methods=["POST"])
+def reset_password():
+    data = request.json or {}
+    email = data.get("email")
+    new_password = data.get("new_password")
+    confirm_password = data.get("confirm_password")
+
+    if not email or not new_password or not confirm_password:
+        return jsonify({"message": "email, new_password and confirm_password are required"}), 400
+
+    if new_password != confirm_password:
+        return jsonify({"message": "new_password and confirm_password do not match"}), 400
+
+    if len(new_password) < 6:
+        return jsonify({"message": "password must be at least 6 characters"}), 400
+
+    user = BaseUser.query.filter_by(email=email).first()
+    if not user:
+        return jsonify({"message": "User not found"}), 404
+
+    if not user.smtp_verified:
+        return jsonify({"message": "OTP verification is required before resetting the password"}), 403
+
+    user.password = hash_password(new_password)
+
+    # Consume the OTP so it can't be reused for a second reset.
+    user.otp = None
+    user.otp_expires_at = None
+    user.smtp_verified = False
+
+    db.session.commit()
+
+    return jsonify({"message": "Password reset successfully"}), 200
+
+
+@auth_bp.route("/change-password", methods=["POST"])
+@jwt_required()
+@with_token
+def change_password(token_response):
+    data = request.json or {}
+    current_password = data.get("current_password")
+    new_password = data.get("new_password")
+    confirm_password = data.get("confirm_password")
+
+    if not current_password or not new_password or not confirm_password:
+        return jsonify({"message": "current_password, new_password and confirm_password are required"}), 400
+
+    if new_password != confirm_password:
+        return jsonify({"message": "new_password and confirm_password do not match"}), 400
+
+    if len(new_password) < 6:
+        return jsonify({"message": "password must be at least 6 characters"}), 400
+
+    current_user_id = int(get_jwt_identity())
+    user, error_response = _fetch_user(current_user_id)
+    if error_response:
+        return error_response
+
+    if not verify_password(current_password, user.password):
+        return jsonify({"message": "Current password is incorrect"}), 401
+
+    if verify_password(new_password, user.password):
+        return jsonify({"message": "New password must be different from the current password"}), 400
+
+    user.password = hash_password(new_password)
+    db.session.commit()
+
+    return jsonify({"message": "Password changed successfully", "token_response": token_response}), 200

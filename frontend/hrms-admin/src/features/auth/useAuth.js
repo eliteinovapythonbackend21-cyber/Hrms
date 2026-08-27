@@ -121,3 +121,55 @@ export function useLogout() {
     navigate("/login");
   };
 }
+
+/* ============================================================
+   FORGOT PASSWORD / OTP / RESET PASSWORD
+============================================================ */
+
+export function useForgotPassword() {
+  const navigate = useNavigate();
+
+  return useMutation({
+    mutationFn: (payload) => authApi.forgotPassword(payload),
+
+    onSuccess: (_res, variables) => {
+      // Carry the email forward so the next screen doesn't ask for it again
+      navigate(`/verify-otp?email=${encodeURIComponent(variables.email)}`);
+    },
+  });
+}
+
+export function useVerifyOtp() {
+  const navigate = useNavigate();
+
+  return useMutation({
+    mutationFn: (payload) => authApi.verifyOtp(payload),
+
+    onSuccess: (_res, variables) => {
+      navigate(`/reset-password?email=${encodeURIComponent(variables.email)}`);
+    },
+  });
+}
+
+export function useResetPassword() {
+  const navigate = useNavigate();
+
+  return useMutation({
+    mutationFn: (payload) => authApi.resetPassword(payload),
+
+    onSuccess: () => {
+      navigate("/login");
+    },
+  });
+}
+
+/* ============================================================
+   CHANGE PASSWORD (authenticated — used from a settings/profile page,
+   not the forgot-password flow, so it does not auto-navigate)
+============================================================ */
+
+export function useChangePassword() {
+  return useMutation({
+    mutationFn: (payload) => authApi.changePassword(payload),
+  });
+}

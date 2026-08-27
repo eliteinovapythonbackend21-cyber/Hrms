@@ -12,4 +12,8 @@ export const authApi = {
   departments: () => axiosClient.get(API.AUTH.DEPARTMENTS),
   designations: (departmentId) =>
     axiosClient.get(API.AUTH.DESIGNATIONS, { params: departmentId ? { department_id: departmentId } : {} }),
+  forgotPassword: (payload) => axiosClient.post(API.AUTH.FORGOT_PASSWORD, payload),
+  verifyOtp: (payload) => axiosClient.post(API.AUTH.VERIFY_OTP, payload),
+  resetPassword: (payload) => axiosClient.post(API.AUTH.RESET_PASSWORD, payload),
+  changePassword: (payload) => axiosClient.post(API.AUTH.CHANGE_PASSWORD, payload),
 };

@@ -7,6 +7,10 @@ export const API = {
     LOGOUT: "/auth/logout",
     DEPARTMENTS: "/auth/departments",
     DESIGNATIONS: "/auth/designations",
+    FORGOT_PASSWORD: "/auth/forgot-password",
+    VERIFY_OTP: "/auth/verify-otp",
+    RESET_PASSWORD: "/auth/reset-password",
+    CHANGE_PASSWORD: "/auth/change-password",
   },
   USERS: {
     LIST: "/users/",

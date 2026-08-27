@@ -132,6 +132,9 @@ class BaseUser(TimestampMixin, db.Model):
     profile_picture = db.Column(JSONB, nullable=True)
     is_active = db.Column(db.Boolean, default=True)
     last_login = db.Column(db.DateTime)
+    otp = db.Column(db.String(255), nullable=True)
+    otp_expires_at = db.Column(db.DateTime, nullable=True)
+    smtp_verified = db.Column(db.Boolean, default=False)
     role_obj = db.relationship("Role", back_populates="users")
     employee = db.relationship("Employee", back_populates="user", uselist=False, cascade="all, delete")
     audit_logs = db.relationship("AuditLog", back_populates="user")
@@ -142,6 +145,8 @@ class BaseUser(TimestampMixin, db.Model):
     def to_dict(self):
         data = super().to_dict()
         data.pop("password", None)
+        data.pop("otp", None)
+        data.pop("otp_expires_at", None)
         data["role_name"] = self.role_obj.name if self.role_obj else self.role
         data["employee"] = _summary(self.employee, ["id", "employee_code", "first_name", "last_name"]) if self.employee else None
         return data

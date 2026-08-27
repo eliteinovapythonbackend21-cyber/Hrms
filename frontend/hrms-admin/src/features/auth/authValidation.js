@@ -23,3 +23,36 @@ export const validateRegister = (data) => {
   if (!isRequired(data.designation_id)) errors.designation_id = "Designation is required";
   return errors;
 };
+
+export const validateForgotPassword = (data) => {
+  const errors = {};
+  if (!isRequired(data.email)) errors.email = "Email is required";
+  else if (!isValidEmail(data.email)) errors.email = "Enter a valid email address";
+  return errors;
+};
+
+export const validateOtp = (data) => {
+  const errors = {};
+  if (!isRequired(data.otp)) errors.otp = "OTP is required";
+  else if (!/^\d{6}$/.test(data.otp)) errors.otp = "Enter the 6-digit OTP";
+  return errors;
+};
+
+export const validateResetPassword = (data) => {
+  const errors = {};
+  if (!isRequired(data.new_password)) errors.new_password = "New password is required";
+  else if (data.new_password.length < 6) errors.new_password = "Password must be at least 6 characters";
+  if (!isRequired(data.confirm_password)) errors.confirm_password = "Please confirm your password";
+  else if (data.new_password !== data.confirm_password) errors.confirm_password = "Passwords do not match";
+  return errors;
+};
+
+export const validateChangePassword = (data) => {
+  const errors = {};
+  if (!isRequired(data.current_password)) errors.current_password = "Current password is required";
+  if (!isRequired(data.new_password)) errors.new_password = "New password is required";
+  else if (data.new_password.length < 6) errors.new_password = "Password must be at least 6 characters";
+  if (!isRequired(data.confirm_password)) errors.confirm_password = "Please confirm your password";
+  else if (data.new_password !== data.confirm_password) errors.confirm_password = "Passwords do not match";
+  return errors;
+};

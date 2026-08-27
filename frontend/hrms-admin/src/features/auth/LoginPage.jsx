@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useLogin } from "./useAuth";
 import { useToast } from "@/components/feedback/Toast";
 import { validateLogin } from "./authValidation";
@@ -199,6 +200,7 @@ const WarningIcon = () => (
 export default function LoginPage() {
   const { showToast } = useToast();
   const login = useLogin();
+  const navigate = useNavigate();
 
   const [form, setForm] = useState({
     email: "",
@@ -638,6 +640,7 @@ export default function LoginPage() {
                   {isAdminLogin && (
                     <button
                       type="button"
+                      onClick={() => navigate("/forgot-password")}
                       className="text-xs font-semibold text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
                     >
                       Forgot password?
