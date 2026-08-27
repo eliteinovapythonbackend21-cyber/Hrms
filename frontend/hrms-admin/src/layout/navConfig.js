@@ -39,7 +39,7 @@ export const navConfig = [
   },
 
   {
-    label: "Employees",
+    label: "Employee Attendance",
     path: "/employees",
     icon: "employees",
     // Every seeded HR sub-role carries at least Employee:view permission
