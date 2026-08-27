@@ -1,11 +1,13 @@
 from functools import wraps
-
+import smtplib
 import cloudinary.uploader
 import cloudinary.utils
-from flask import jsonify, request
+from flask import current_app, jsonify, request
 from flask_jwt_extended import get_jwt, get_jwt_identity, jwt_required
 from sqlalchemy import or_
 from sqlalchemy.exc import IntegrityError
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from werkzeug.security import check_password_hash, generate_password_hash
 
 
@@ -159,6 +161,125 @@ def hash_password(password):
 
 def verify_password(password, hashed_password):
     return check_password_hash(hashed_password, password)
+
+
+# ---------------------------------------------------------------------------
+# OTP / PASSWORD-RESET EMAIL
+# ---------------------------------------------------------------------------
+
+def send_otp_email(recipient_email, otp_code):
+    """
+    Send a password-reset OTP to the user's registered email address.
+
+    SMTP_USER and SMTP_PASSWORD are the admin/system mailbox credentials
+    used to authenticate with the SMTP server.  recipient_email is always
+    the user's registered email and is the actual destination of the OTP.
+    """
+
+    smtp_host = current_app.config.get("SMTP_HOST")
+    smtp_port = current_app.config.get("SMTP_PORT", 587)
+    smtp_user = current_app.config.get("SMTP_USER")
+    smtp_password = current_app.config.get("SMTP_PASSWORD")
+    smtp_from = current_app.config.get("SMTP_FROM") or smtp_user
+    smtp_use_tls = current_app.config.get("SMTP_USE_TLS", True)
+    otp_expires_minutes = current_app.config.get("OTP_EXPIRES_MINUTES", 10)
+
+    if not smtp_host:
+        raise RuntimeError("SMTP_HOST is not configured")
+    if not smtp_user:
+        raise RuntimeError("SMTP_USER is not configured")
+    if not smtp_password:
+        raise RuntimeError("SMTP_PASSWORD is not configured")
+    if not smtp_from:
+        raise RuntimeError("SMTP_FROM is not configured")
+    if not recipient_email:
+        raise ValueError("Recipient email is required")
+
+    subject = "HRMS Password Reset OTP"
+
+    text_body = f"""
+Hello,
+
+We received a request to reset your HRMS account password.
+
+Your One-Time Password (OTP) is:
+
+{otp_code}
+
+This OTP will expire in {otp_expires_minutes} minutes.
+
+If you did not request a password reset, please ignore this email.
+
+Regards,
+HRMS Administration
+""".strip()
+
+    html_body = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HRMS Password Reset</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f4f6f8;font-family:Arial,Helvetica,sans-serif;">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f4f6f8;padding:40px 15px;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;background-color:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 18px rgba(0,0,0,0.08);">
+                    <tr>
+                        <td style="background-color:#b97808;padding:28px;text-align:center;">
+                            <h1 style="margin:0;color:#ffffff;font-size:26px;">HRMS</h1>
+                            <p style="margin:8px 0 0;color:#ffffff;font-size:13px;">Human Resource Management System</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:40px 35px;text-align:center;">
+                            <h2 style="margin:0 0 15px;color:#222222;font-size:24px;">Password Reset Request</h2>
+                            <p style="margin:0 0 25px;color:#666666;font-size:15px;line-height:1.6;">We received a request to reset the password for your HRMS account.</p>
+                            <p style="margin:0 0 10px;color:#555555;font-size:14px;">Your verification code is:</p>
+                            <div style="display:inline-block;padding:16px 28px;margin:10px 0 20px;background-color:#fff7e6;border:2px dashed #b97808;border-radius:8px;">
+                                <span style="font-size:32px;font-weight:bold;letter-spacing:8px;color:#b97808;">{otp_code}</span>
+                            </div>
+                            <p style="margin:0 0 20px;color:#777777;font-size:14px;">This OTP will expire in <strong>{otp_expires_minutes} minutes</strong>.</p>
+                            <div style="margin-top:25px;padding:15px;background-color:#f8f8f8;border-radius:8px;">
+                                <p style="margin:0;color:#666666;font-size:13px;line-height:1.5;">If you did not request a password reset, you can safely ignore this email.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:20px 30px;background-color:#fafafa;border-top:1px solid #eeeeee;text-align:center;">
+                            <p style="margin:0;color:#999999;font-size:12px;">This is an automated email from HRMS. Please do not reply to this message.</p>
+                            <p style="margin:8px 0 0;color:#999999;font-size:12px;">HRMS Administration</p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+"""
+
+    message = MIMEMultipart("alternative")
+    message["Subject"] = subject
+    message["From"] = smtp_from
+    message["To"] = recipient_email
+    message.attach(MIMEText(text_body, "plain", "utf-8"))
+    message.attach(MIMEText(html_body, "html", "utf-8"))
+
+    if smtp_use_tls:
+        with smtplib.SMTP(smtp_host, smtp_port, timeout=30) as server:
+            server.ehlo()
+            server.starttls()
+            server.ehlo()
+            server.login(smtp_user, smtp_password)
+            server.sendmail(smtp_from, [recipient_email], message.as_string())
+    else:
+        with smtplib.SMTP(smtp_host, smtp_port, timeout=30) as server:
+            server.ehlo()
+            server.login(smtp_user, smtp_password)
+            server.sendmail(smtp_from, [recipient_email], message.as_string())
 
 
 # ---------------------------------------------------------------------------
