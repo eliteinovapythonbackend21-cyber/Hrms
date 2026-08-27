@@ -1,7 +1,7 @@
 import re
 from datetime import date
 from flask import Blueprint, request, jsonify, current_app
-from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
+from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt, create_access_token
 from sqlalchemy.exc import IntegrityError
 from extensions import db
 from models import BaseUser, Employee, Leave, Attendance, Role
@@ -333,24 +333,6 @@ def delete_user(user_id, token_response):
     user.is_active = False
     db.session.commit()
     return jsonify({"message": "User deactivated", "token_response": token_response}), 200
-
-
-# @user_bp.route("/login", methods=["POST"])
-# def login_user():
-#     data = request.json or {}
-#     identifier = data.get("username") or data.get("email")
-#     password = data.get("password")
-#     if not identifier or not password:
-#         return jsonify({"message": "Username/email and password are required"}), 400
-
-#     user = BaseUser.query.filter((BaseUser.username == identifier) | (BaseUser.email == identifier)).first()
-#     if not user or not verify_password(password, user.password):
-#         return jsonify({"message": "Invalid credentials"}), 401
-
-#     user.last_login = db.func.now()
-#     db.session.commit()
-#     return jsonify({"message": "Login successful", "data": {"user": user.to_dict(), "role": user.role}}), 200
-
 
 
 @user_bp.route("/login", methods=["POST"])
