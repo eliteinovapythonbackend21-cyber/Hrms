@@ -335,21 +335,92 @@ def delete_user(user_id, token_response):
     return jsonify({"message": "User deactivated", "token_response": token_response}), 200
 
 
+# @user_bp.route("/login", methods=["POST"])
+# def login_user():
+#     data = request.json or {}
+#     identifier = data.get("username") or data.get("email")
+#     password = data.get("password")
+#     if not identifier or not password:
+#         return jsonify({"message": "Username/email and password are required"}), 400
+
+#     user = BaseUser.query.filter((BaseUser.username == identifier) | (BaseUser.email == identifier)).first()
+#     if not user or not verify_password(password, user.password):
+#         return jsonify({"message": "Invalid credentials"}), 401
+
+#     user.last_login = db.func.now()
+#     db.session.commit()
+#     return jsonify({"message": "Login successful", "data": {"user": user.to_dict(), "role": user.role}}), 200
+
+
+
 @user_bp.route("/login", methods=["POST"])
 def login_user():
-    data = request.json or {}
-    identifier = data.get("username") or data.get("email")
-    password = data.get("password")
-    if not identifier or not password:
-        return jsonify({"message": "Username/email and password are required"}), 400
+    data = request.get_json(silent=True) or {}
 
-    user = BaseUser.query.filter((BaseUser.username == identifier) | (BaseUser.email == identifier)).first()
-    if not user or not verify_password(password, user.password):
-        return jsonify({"message": "Invalid credentials"}), 401
+    identifier = (
+        data.get("username")
+        or data.get("email")
+        or ""
+    ).strip()
+
+    password = data.get("password") or ""
+
+    if not identifier or not password:
+        return jsonify({
+            "message": (
+                "Username/email and password are required"
+            )
+        }), 400
+
+    user = BaseUser.query.filter(
+        (BaseUser.username == identifier) |
+        (BaseUser.email == identifier.lower())
+    ).first()
+
+    if not user:
+        return jsonify({
+            "message": "Invalid credentials"
+        }), 401
+
+    if not user.is_active:
+        return jsonify({
+            "message": "User account is inactive"
+        }), 403
+
+    if not verify_password(
+        password,
+        user.password
+    ):
+        return jsonify({
+            "message": "Invalid credentials"
+        }), 401
 
     user.last_login = db.func.now()
-    db.session.commit()
-    return jsonify({"message": "Login successful", "data": {"user": user.to_dict(), "role": user.role}}), 200
+
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+
+        return jsonify({
+            "message": "Failed to update login information"
+        }), 500
+
+    
+    access_token = create_access_token(
+        identity=str(user.id)
+    )
+
+    return jsonify({
+        "message": "Login successful",
+        "access_token": access_token,
+        "user": user.to_dict(),
+        "role": user.role,
+        "data": {
+            "user": user.to_dict(),
+            "role": user.role,
+        },
+    }), 200
 
 
 @user_bp.route("/profile/<int:user_id>", methods=["PUT"])

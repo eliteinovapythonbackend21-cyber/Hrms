@@ -40,6 +40,8 @@ export function useLogin() {
     },
 
     onSuccess: (response) => {
+
+
       const token =
         response?.token ||
         response?.access_token ||
@@ -50,6 +52,15 @@ export function useLogin() {
         response?.user ||
         response?.data?.user ||
         null;
+
+      if (!token) {
+        showToast?.(
+          "Login response did not contain an authentication token.",
+          "error"
+        );
+
+        return;
+      }
 
       saveAuthData(token, user);
 
@@ -141,7 +152,7 @@ export function useForgotPassword() {
     onSuccess: (response) => {
       showToast?.(
         response?.message ||
-          "OTP has been sent to your registered email.",
+          "An OTP has been sent to your registered email.",
         "success"
       );
     },
@@ -168,69 +179,57 @@ export function useVerifyOtp() {
 
   return useMutation({
     mutationFn: async (data) => {
-      /*
-       * Expected payload:
-       *
-       * {
-       *   email: "user@example.com",
-       *   otp: "123456"
-       * }
-       */
-
       return await authApi.verifyOtp(data);
     },
 
-    onSuccess: (response) => {
+    onSuccess: (response, variables) => {
       /*
-       * The backend may return a reset token after
-       * successful OTP verification.
-       */
-
-      const resetToken =
-        response?.reset_token ||
-        response?.resetToken ||
-        response?.token ||
-        response?.data?.reset_token ||
-        response?.data?.resetToken ||
-        response?.data?.token;
-
-      /*
-       * Keep the reset token temporarily so that
-       * ResetPasswordPage can use it.
-       */
-      if (resetToken) {
-        sessionStorage.setItem(
-          "password_reset_token",
-          resetToken
-        );
-      }
-
-      /*
-       * Preserve email if the backend returns it.
+       * Always preserve the email used for OTP verification.
+       *
+       * The backend may also return email, but variables.email
+       * is the most reliable source.
        */
       const email =
         response?.email ||
-        response?.data?.email;
+        response?.data?.email ||
+        variables?.email ||
+        "";
 
-      if (email) {
-        sessionStorage.setItem(
-          "password_reset_email",
-          email
+      if (!email) {
+        showToast?.(
+          "OTP verified, but the account email could not be determined.",
+          "error"
         );
+
+        return;
       }
 
-      showToast?.(
-        response?.message ||
-          "OTP verified successfully.",
-        "success"
+      /*
+       * Keep the email temporarily.
+       */
+      sessionStorage.setItem(
+        "password_reset_email",
+        email
       );
 
       /*
-       * Go to reset password page.
+       * OTP verification is now complete.
+       *
+       * IMPORTANT:
+       * The reset page expects email from the query string.
        */
-      navigate("/reset-password", {
-        replace: true,
-      });
+      navigate(
+        `/reset-password?email=${encodeURIComponent(email)}`,
+        {
+          replace: true,
+        }
+      );
+
+      showToast?.(
+        response?.message ||
+          "OTP verified successfully. You can now create a new password.",
+        "success"
+      );
     },
 
     onError: (error) => {
@@ -260,19 +259,28 @@ export function useResetPassword() {
 
     onSuccess: (response) => {
       /*
-       * Remove temporary password-reset information.
+       * Clear all temporary reset data.
        */
+      sessionStorage.removeItem(
+        "password_reset_email"
+      );
+
       sessionStorage.removeItem(
         "password_reset_token"
       );
 
       sessionStorage.removeItem(
-        "password_reset_email"
+        "password_reset_otp"
       );
 
+      /*
+       * Do NOT save JWT.
+       * Do NOT save user.
+       * Do NOT redirect to dashboard.
+       */
       showToast?.(
         response?.message ||
-          "Password reset successfully. Please login with your new password.",
+          "Password reset successfully. Please sign in with your new password.",
         "success"
       );
 
@@ -282,13 +290,37 @@ export function useResetPassword() {
     },
 
     onError: (error) => {
+      const responseData =
+        error?.response?.data || {};
+
+      const errorCode =
+        responseData?.code ||
+        error?.code ||
+        "";
+
+      /*
+       * Previous password reuse.
+       */
+      if (errorCode === "SAME_PASSWORD") {
+        /*
+         * Let ResetPasswordPage handle the popup.
+         * Re-throw the error because mutateAsync() needs
+         * to enter the component catch block.
+         */
+        throw error;
+      }
+
       const message =
-        error?.response?.data?.message ||
-        error?.response?.data?.error ||
+        responseData?.message ||
         error?.message ||
         "Unable to reset password. Please try again.";
 
       showToast?.(message, "error");
+
+      /*
+       * Keep the mutation rejected.
+       */
+      throw error;
     },
   });
 }
@@ -324,6 +356,10 @@ export function useLogout() {
     },
 
     onError: () => {
+      /*
+       * Clear frontend authentication even if
+       * backend logout fails.
+       */
       clearAuthData();
 
       navigate("/login", {

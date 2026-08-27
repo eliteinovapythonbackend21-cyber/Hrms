@@ -210,7 +210,6 @@ def verify_otp():
 
     expires_at = user.otp_expires_at
 
-    # Normalize a naive database datetime to UTC.
     if expires_at.tzinfo is None:
         expires_at = expires_at.replace(
             tzinfo=timezone.utc
@@ -224,7 +223,10 @@ def verify_otp():
             )
         }), 400
 
-    if not verify_password(otp, user.otp):
+    if not verify_password(
+        otp,
+        user.otp
+    ):
         return jsonify({
             "message": "Invalid OTP"
         }), 400
@@ -233,6 +235,7 @@ def verify_otp():
 
     try:
         db.session.commit()
+
     except Exception:
         db.session.rollback()
 
@@ -244,7 +247,8 @@ def verify_otp():
         "message": (
             "OTP verified. "
             "You may now reset your password."
-        )
+        ),
+        "email": user.email,
     }), 200
 
 
@@ -292,6 +296,25 @@ def reset_password():
             "message": "User not found"
         }), 404
 
+    if not user.is_active:
+        return jsonify({
+            "message": "User account is inactive"
+        }), 403
+
+    
+    if verify_password(
+        new_password,
+        user.password,
+    ):
+        return jsonify({
+            "code": "SAME_PASSWORD",
+            "message": (
+                "You cannot use your previous password. "
+                "Please choose a different password."
+            ),
+        }), 400
+
+    
     if not user.smtp_verified:
         return jsonify({
             "message": (
@@ -300,17 +323,19 @@ def reset_password():
             )
         }), 403
 
+    
     user.password = hash_password(
         new_password
     )
 
-    # Consume the OTP so it cannot be reused.
+    
     user.otp = None
     user.otp_expires_at = None
     user.smtp_verified = False
 
     try:
         db.session.commit()
+
     except Exception:
         db.session.rollback()
 
@@ -319,7 +344,10 @@ def reset_password():
         }), 500
 
     return jsonify({
-        "message": "Password reset successfully"
+        "message": (
+            "Password reset successfully. "
+            "Please login with your new password."
+        )
     }), 200
 
 
