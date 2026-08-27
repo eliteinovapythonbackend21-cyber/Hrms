@@ -40,8 +40,6 @@ export function useLogin() {
     },
 
     onSuccess: (response) => {
-
-
       const token =
         response?.token ||
         response?.access_token ||
@@ -184,10 +182,7 @@ export function useVerifyOtp() {
 
     onSuccess: (response, variables) => {
       /*
-       * Always preserve the email used for OTP verification.
-       *
-       * The backend may also return email, but variables.email
-       * is the most reliable source.
+       * Preserve the email used during OTP verification.
        */
       const email =
         response?.email ||
@@ -197,7 +192,7 @@ export function useVerifyOtp() {
 
       if (!email) {
         showToast?.(
-          "OTP verified, but the account email could not be determined.",
+          "OTP verified, but the email address could not be determined.",
           "error"
         );
 
@@ -205,7 +200,7 @@ export function useVerifyOtp() {
       }
 
       /*
-       * Keep the email temporarily.
+       * Store email temporarily.
        */
       sessionStorage.setItem(
         "password_reset_email",
@@ -213,10 +208,7 @@ export function useVerifyOtp() {
       );
 
       /*
-       * OTP verification is now complete.
-       *
-       * IMPORTANT:
-       * The reset page expects email from the query string.
+       * Move to reset password page.
        */
       navigate(
         `/reset-password?email=${encodeURIComponent(email)}`,
@@ -227,7 +219,7 @@ export function useVerifyOtp() {
 
       showToast?.(
         response?.message ||
-          "OTP verified successfully. You can now create a new password.",
+          "OTP verified successfully. You can now reset your password.",
         "success"
       );
     },
@@ -259,7 +251,7 @@ export function useResetPassword() {
 
     onSuccess: (response) => {
       /*
-       * Clear all temporary reset data.
+       * Clear temporary password reset data.
        */
       sessionStorage.removeItem(
         "password_reset_email"
@@ -274,9 +266,8 @@ export function useResetPassword() {
       );
 
       /*
-       * Do NOT save JWT.
-       * Do NOT save user.
-       * Do NOT redirect to dashboard.
+       * Do not save a JWT here.
+       * The user must login again with the new password.
        */
       showToast?.(
         response?.message ||
@@ -290,37 +281,25 @@ export function useResetPassword() {
     },
 
     onError: (error) => {
+      /*
+       * SAME_PASSWORD is handled by ResetPasswordPage.jsx.
+       */
       const responseData =
         error?.response?.data || {};
 
-      const errorCode =
-        responseData?.code ||
-        error?.code ||
-        "";
-
-      /*
-       * Previous password reuse.
-       */
-      if (errorCode === "SAME_PASSWORD") {
-        /*
-         * Let ResetPasswordPage handle the popup.
-         * Re-throw the error because mutateAsync() needs
-         * to enter the component catch block.
-         */
-        throw error;
+      if (
+        responseData?.code === "SAME_PASSWORD"
+      ) {
+        return;
       }
 
       const message =
         responseData?.message ||
+        responseData?.error ||
         error?.message ||
         "Unable to reset password. Please try again.";
 
       showToast?.(message, "error");
-
-      /*
-       * Keep the mutation rejected.
-       */
-      throw error;
     },
   });
 }
@@ -357,7 +336,7 @@ export function useLogout() {
 
     onError: () => {
       /*
-       * Clear frontend authentication even if
+       * Clear local authentication even if
        * backend logout fails.
        */
       clearAuthData();

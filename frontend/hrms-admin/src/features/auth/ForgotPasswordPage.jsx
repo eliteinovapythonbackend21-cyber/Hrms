@@ -1,10 +1,16 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+
 import { useForgotPassword } from "./useAuth";
 import { useToast } from "@/components/feedback/Toast";
 import { validateForgotPassword } from "./authValidation";
+
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
+
+/* ============================================================
+   ICONS
+============================================================ */
 
 const MailIcon = () => (
   <svg
@@ -96,28 +102,61 @@ const KeyIcon = () => (
   </svg>
 );
 
+/* ============================================================
+   PAGE
+============================================================ */
+
 export default function ForgotPasswordPage() {
-  const { showToast } = useToast();
   const navigate = useNavigate();
+  const { showToast } = useToast();
+
   const forgotPassword = useForgotPassword();
 
-  const [form, setForm] = useState({ email: "" });
+  const [form, setForm] = useState({
+    email: "",
+  });
+
   const [errors, setErrors] = useState({});
+
+  /* ==========================================================
+     INPUT CHANGE
+  ========================================================== */
 
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    setForm((prev) => ({ ...prev, [name]: value }));
+    setForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
 
     if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: "" }));
+      setErrors((prev) => ({
+        ...prev,
+        [name]: "",
+      }));
     }
   };
+
+  /* ==========================================================
+     SUBMIT
+  ========================================================== */
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const validationErrors = validateForgotPassword(form);
+    const normalizedEmail = form.email
+      .trim()
+      .toLowerCase();
+
+    /*
+     * Validate email.
+     */
+    const validationErrors =
+      validateForgotPassword({
+        email: normalizedEmail,
+      });
+
     setErrors(validationErrors);
 
     if (Object.keys(validationErrors).length > 0) {
@@ -125,11 +164,45 @@ export default function ForgotPasswordPage() {
     }
 
     try {
-      await forgotPassword.mutateAsync(form);
-      showToast("An OTP has been sent to your email.", "success");
+      /*
+       * Send OTP to backend.
+       */
+      await forgotPassword.mutateAsync({
+        email: normalizedEmail,
+      });
+
+      /*
+       * Keep the email in session storage.
+       */
+      sessionStorage.setItem(
+        "password_reset_email",
+        normalizedEmail
+      );
+
+      /*
+       * Show success message.
+       */
+      showToast(
+        "An OTP has been sent to your email.",
+        "success"
+      );
+
+      /*
+       * IMPORTANT:
+       * Navigate to OTP verification page.
+       */
+      navigate(
+        `/verify-otp?email=${encodeURIComponent(
+          normalizedEmail
+        )}`,
+        {
+          replace: true,
+        }
+      );
     } catch (err) {
       const msg =
         err?.response?.data?.message ||
+        err?.response?.data?.error ||
         err?.message ||
         "Failed to send OTP. Please try again.";
 
@@ -137,18 +210,27 @@ export default function ForgotPasswordPage() {
     }
   };
 
+  /* ==========================================================
+     RENDER
+  ========================================================== */
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-50 px-5 py-8 dark:bg-slate-950 sm:px-8">
       <div className="w-full max-w-[470px]">
 
-        {/* Logo */}
+        {/* ====================================================
+            LOGO
+        ==================================================== */}
+
         <div className="mb-8 flex items-center justify-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-600 text-white">
             <ShieldIcon />
           </div>
 
           <div>
-            <p className="font-bold text-slate-900 dark:text-white">HRMS</p>
+            <p className="font-bold text-slate-900 dark:text-white">
+              HRMS
+            </p>
 
             <p className="text-[9px] uppercase tracking-wider text-slate-400">
               Human Resource Management
@@ -156,27 +238,40 @@ export default function ForgotPasswordPage() {
           </div>
         </div>
 
-        {/* Card */}
+        {/* ====================================================
+            CARD
+        ==================================================== */}
+
         <div className="rounded-2xl border border-slate-200 bg-white p-7 shadow-xl shadow-slate-200/50 dark:border-white/10 dark:bg-slate-900 dark:shadow-black/20 sm:p-8">
 
-          {/* Icon */}
+          {/* ==================================================
+              ICON
+          ================================================== */}
+
           <div className="mb-5 flex justify-center">
             <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary-50 text-primary-600 ring-8 ring-primary-50/60 dark:bg-primary-500/10 dark:text-primary-400 dark:ring-primary-500/5">
               <KeyIcon />
             </div>
           </div>
 
-          {/* Header */}
+          {/* ==================================================
+              HEADER
+          ================================================== */}
+
           <div className="mb-7 text-center">
             <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
               Forgot Password?
             </h1>
 
             <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
-              Enter the email address linked to your account. We'll send a
-              one-time code to verify it's you.
+              Enter the email address linked to your account.
+              We'll send a one-time code to verify it's you.
             </p>
           </div>
+
+          {/* ==================================================
+              FORM
+          ================================================== */}
 
           <form onSubmit={handleSubmit}>
             <Input
@@ -196,10 +291,21 @@ export default function ForgotPasswordPage() {
               className="group mt-6 h-12 w-full text-sm font-semibold"
               isLoading={forgotPassword.isPending}
             >
-              <span>Send OTP</span>
-              {!forgotPassword.isPending && <ArrowIcon />}
+              <span>
+                {forgotPassword.isPending
+                  ? "Sending OTP..."
+                  : "Send OTP"}
+              </span>
+
+              {!forgotPassword.isPending && (
+                <ArrowIcon />
+              )}
             </Button>
           </form>
+
+          {/* ==================================================
+              BACK TO LOGIN
+          ================================================== */}
 
           <div className="mt-6 border-t border-slate-100 pt-5 dark:border-white/10">
             <button
@@ -213,9 +319,13 @@ export default function ForgotPasswordPage() {
           </div>
         </div>
 
+        {/* ====================================================
+            FOOTER
+        ==================================================== */}
+
         <p className="mt-5 text-center text-[10px] text-slate-400 dark:text-slate-600">
-          By continuing, you agree to your organization's authentication
-          and security policies.
+          By continuing, you agree to your organization's
+          authentication and security policies.
         </p>
       </div>
     </div>
