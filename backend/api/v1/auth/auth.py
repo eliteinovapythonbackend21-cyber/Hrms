@@ -289,6 +289,8 @@ def forgot_password():
         send_otp_email(user.email, otp_code)
     except Exception as exc:
         # Don't touch the DB or leak SMTP errors to the client.
+        import traceback
+        traceback.print_exc()
         return jsonify({"message": "Failed to send OTP email. Please try again later."}), 502
 
     user.otp = hash_password(otp_code)
