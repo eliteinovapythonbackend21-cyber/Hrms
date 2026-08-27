@@ -419,11 +419,44 @@ export default function HolidayListPage() {
   } = useDebouncedSearch();
 
 
+  /* ==========================================================
+     TABLE FILTERS
+     (declared before queryParams so they can be included below)
+  ========================================================== */
+
+  const [
+    statusFilter,
+    setStatusFilter,
+  ] = useState("active");
+
+  const [
+    typeFilter,
+    setTypeFilter,
+  ] = useState("all");
+
+
+  /* ==========================================================
+     QUERY PARAMS
+     NOTE: holiday_type / is_active are now sent to the backend
+     as real filters (see organization.py filter_fields), instead
+     of being applied only client-side after the page was fetched.
+  ========================================================== */
+
   const queryParams = {
     ...params,
     search:
       debouncedValue ||
       undefined,
+    holiday_type:
+      typeFilter !== "all"
+        ? typeFilter
+        : undefined,
+    is_active:
+      statusFilter === "all"
+        ? undefined
+        : statusFilter === "active"
+        ? "true"
+        : "false",
   };
 
 
@@ -548,21 +581,6 @@ export default function HolidayListPage() {
     selectedHoliday,
     setSelectedHoliday,
   ] = useState(null);
-
-
-  /* ==========================================================
-     TABLE FILTERS
-  ========================================================== */
-
-  const [
-    statusFilter,
-    setStatusFilter,
-  ] = useState("active");
-
-  const [
-    typeFilter,
-    setTypeFilter,
-  ] = useState("all");
 
 
   /* ==========================================================
@@ -1249,6 +1267,10 @@ export default function HolidayListPage() {
 
   /* ==========================================================
      FILTERED HOLIDAYS
+     Kept as a client-side safety net now that the backend also
+     filters by holiday_type / is_active. If the API params ever
+     get dropped upstream, the table still shows correct rows for
+     whatever page was returned.
   ========================================================== */
 
   const filteredHolidays =
@@ -3419,11 +3441,15 @@ export default function HolidayListPage() {
                         filter.value
                       }
                       type="button"
-                      onClick={() =>
+                      onClick={() => {
+
                         setTypeFilter(
                           filter.value
-                        )
-                      }
+                        );
+
+                        setPage(1);
+
+                      }}
                       className={`rounded-md px-2.5 py-1.5 text-[10px] font-medium ${
                         typeFilter ===
                         filter.value
@@ -3473,11 +3499,15 @@ export default function HolidayListPage() {
                         filter.value
                       }
                       type="button"
-                      onClick={() =>
+                      onClick={() => {
+
                         setStatusFilter(
                           filter.value
-                        )
-                      }
+                        );
+
+                        setPage(1);
+
+                      }}
                       className={`rounded-md px-2.5 py-1.5 text-[10px] font-medium ${
                         statusFilter ===
                         filter.value

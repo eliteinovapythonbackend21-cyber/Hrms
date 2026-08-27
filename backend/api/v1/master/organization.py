@@ -27,6 +27,9 @@ organization_bp = register_crud_blueprint(
         "name",
         "holiday_type",
     ],
+    filter_fields=[
+        "holiday_type",
+    ],
     url_prefix_singular="holiday",
     editable=True,
     deletable=True,

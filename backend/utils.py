@@ -308,6 +308,7 @@ def register_crud_blueprint(
     url_prefix_singular=None,
     on_create=None,
     serialize=None,
+    filter_fields=None,
 ):
     """Factory that builds a Blueprint exposing GET (list) / GET (detail) /
     POST (create) / PUT (edit, only if `editable`) / DELETE (soft-delete
@@ -317,12 +318,17 @@ def register_crud_blueprint(
     Used for both Master Control (full CRUD, editable=True) and add-only
     module lists (editable=False) so the CRUD-shape isn't re-implemented
     per blueprint file — only the field lists/business hooks differ.
+
+    filter_fields: optional list of column names that should support
+    exact-match filtering via query params (e.g. ?holiday_type=Office),
+    independent of the fuzzy `search` param built from `search_fields`.
     """
     from extensions import db
 
     bp = __import__("flask").Blueprint(name, __name__)
     url = name if url_prefix_singular is None else url_prefix_singular
     search_fields = search_fields or []
+    filter_fields = filter_fields or []
     update_fields = update_fields if update_fields is not None else create_fields
     serialize = serialize or (lambda item: item.to_dict())
 
@@ -344,11 +350,24 @@ def register_crud_blueprint(
         guard = _guard()
         if guard:
             return guard
+
         query = model.query
+
         if search_fields:
             query = apply_search_filters(query, request.args, search_fields)
+
+        # Exact-match filters (e.g. holiday_type=Office), separate from
+        # the fuzzy `search` box above.
+        for field in filter_fields:
+            value = request.args.get(field)
+            if value not in (None, "") and hasattr(model, field):
+                query = query.filter(getattr(model, field) == value)
+
         if request.args.get("is_active") is not None and hasattr(model, "is_active"):
-            query = query.filter(model.is_active == (request.args.get("is_active").lower() in {"true", "1", "yes"}))
+            query = query.filter(
+                model.is_active == (request.args.get("is_active").lower() in {"true", "1", "yes"})
+            )
+
         return jsonify({
             "message": f"{model.__name__} list fetched",
             "data": paginate_query(query, request.args),
