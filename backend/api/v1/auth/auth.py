@@ -6,6 +6,7 @@ from flask_jwt_extended import (
     get_jwt,
     get_jwt_identity,
     jwt_required,
+    create_access_token,
 )
 
 from extensions import db
@@ -66,6 +67,85 @@ def _fetch_user(user_id):
         )
 
     return user, None
+
+
+# ============================================================
+# LOGIN
+# ============================================================
+
+@auth_bp.route("/login", methods=["POST"])
+def login():
+    """
+    Authenticates a user by username/email + password and issues a JWT.
+    This is the canonical login route — the frontend's authApi.login()
+    calls /auth/login (API.AUTH.LOGIN), so it must live in auth_bp.
+    """
+
+    data = request.get_json(silent=True) or {}
+
+    identifier = (
+        data.get("username")
+        or data.get("email")
+        or ""
+    ).strip()
+
+    password = data.get("password") or ""
+
+    if not identifier or not password:
+        return jsonify({
+            "message": (
+                "Username/email and password are required"
+            )
+        }), 400
+
+    user = BaseUser.query.filter(
+        (BaseUser.username == identifier) |
+        (BaseUser.email == identifier.lower())
+    ).first()
+
+    if not user:
+        return jsonify({
+            "message": "Invalid credentials"
+        }), 401
+
+    if not user.is_active:
+        return jsonify({
+            "message": "User account is inactive"
+        }), 403
+
+    if not verify_password(
+        password,
+        user.password,
+    ):
+        return jsonify({
+            "message": "Invalid credentials"
+        }), 401
+
+    user.last_login = db.func.now()
+
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+
+        return jsonify({
+            "message": "Failed to update login information"
+        }), 500
+
+    access_token = create_access_token(
+        identity=str(user.id)
+    )
+
+    return jsonify({
+        "message": "Login successful",
+        "access_token": access_token,
+        "user": user.to_dict(),
+        "role": user.role,
+        "data": {
+            "user": user.to_dict(),
+            "role": user.role,
+        },
+    }), 200
 
 
 # ============================================================

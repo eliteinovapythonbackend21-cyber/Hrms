@@ -1,7 +1,7 @@
 import re
 from datetime import date
 from flask import Blueprint, request, jsonify, current_app
-from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt, create_access_token
+from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from sqlalchemy.exc import IntegrityError
 from extensions import db
 from models import BaseUser, Employee, Leave, Attendance, Role
@@ -335,74 +335,13 @@ def delete_user(user_id, token_response):
     return jsonify({"message": "User deactivated", "token_response": token_response}), 200
 
 
-@user_bp.route("/login", methods=["POST"])
-def login_user():
-    data = request.get_json(silent=True) or {}
-
-    identifier = (
-        data.get("username")
-        or data.get("email")
-        or ""
-    ).strip()
-
-    password = data.get("password") or ""
-
-    if not identifier or not password:
-        return jsonify({
-            "message": (
-                "Username/email and password are required"
-            )
-        }), 400
-
-    user = BaseUser.query.filter(
-        (BaseUser.username == identifier) |
-        (BaseUser.email == identifier.lower())
-    ).first()
-
-    if not user:
-        return jsonify({
-            "message": "Invalid credentials"
-        }), 401
-
-    if not user.is_active:
-        return jsonify({
-            "message": "User account is inactive"
-        }), 403
-
-    if not verify_password(
-        password,
-        user.password
-    ):
-        return jsonify({
-            "message": "Invalid credentials"
-        }), 401
-
-    user.last_login = db.func.now()
-
-    try:
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
-
-        return jsonify({
-            "message": "Failed to update login information"
-        }), 500
-
-    
-    access_token = create_access_token(
-        identity=str(user.id)
-    )
-
-    return jsonify({
-        "message": "Login successful",
-        "access_token": access_token,
-        "user": user.to_dict(),
-        "role": user.role,
-        "data": {
-            "user": user.to_dict(),
-            "role": user.role,
-        },
-    }), 200
+# NOTE: /login was removed from this blueprint. The frontend's
+# authApi.login() calls /auth/login (API.AUTH.LOGIN in endpoints.js),
+# which is served by auth_bp (see auth.py). Keeping a second, separately
+# maintained login implementation here caused it to silently drift out of
+# sync with auth_bp's version (missing create_access_token import) while
+# never actually being hit by the frontend at all. Login now lives in
+# exactly one place: auth.py's /auth/login route.
 
 
 @user_bp.route("/profile/<int:user_id>", methods=["PUT"])
