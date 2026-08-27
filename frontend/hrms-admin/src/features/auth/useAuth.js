@@ -17,7 +17,10 @@ const saveAuthData = (token, user) => {
   }
 
   if (user) {
-    localStorage.setItem(USER_KEY, JSON.stringify(user));
+    localStorage.setItem(
+      USER_KEY,
+      JSON.stringify(user)
+    );
   }
 };
 
@@ -40,30 +43,36 @@ export function useLogin() {
     },
 
     onSuccess: (response) => {
+      const responseData =
+        response?.data && typeof response.data === "object"
+          ? response.data
+          : response;
+
       const token =
         response?.token ||
         response?.access_token ||
-        response?.data?.token ||
-        response?.data?.access_token;
+        responseData?.token ||
+        responseData?.access_token;
 
       const user =
         response?.user ||
-        response?.data?.user ||
+        responseData?.user ||
         null;
 
       if (!token) {
         showToast?.(
-          "Login response did not contain an authentication token.",
+          "Login failed: authentication token was not returned by the server.",
           "error"
         );
-
         return;
       }
 
       saveAuthData(token, user);
 
       showToast?.(
-        response?.message || "Login successful",
+        response?.message ||
+          responseData?.message ||
+          "Login successful",
         "success"
       );
 
@@ -98,15 +107,20 @@ export function useRegister() {
     },
 
     onSuccess: (response) => {
+      const responseData =
+        response?.data && typeof response.data === "object"
+          ? response.data
+          : response;
+
       const token =
         response?.token ||
         response?.access_token ||
-        response?.data?.token ||
-        response?.data?.access_token;
+        responseData?.token ||
+        responseData?.access_token;
 
       const user =
         response?.user ||
-        response?.data?.user ||
+        responseData?.user ||
         null;
 
       if (token) {
@@ -118,7 +132,9 @@ export function useRegister() {
       }
 
       showToast?.(
-        response?.message || "Registration successful",
+        response?.message ||
+          responseData?.message ||
+          "Registration successful",
         "success"
       );
     },
@@ -140,29 +156,9 @@ export function useRegister() {
 ============================================================ */
 
 export function useForgotPassword() {
-  const { showToast } = useToast();
-
   return useMutation({
     mutationFn: async (data) => {
       return await authApi.forgotPassword(data);
-    },
-
-    onSuccess: (response) => {
-      showToast?.(
-        response?.message ||
-          "An OTP has been sent to your registered email.",
-        "success"
-      );
-    },
-
-    onError: (error) => {
-      const message =
-        error?.response?.data?.message ||
-        error?.response?.data?.error ||
-        error?.message ||
-        "Unable to send OTP. Please try again.";
-
-      showToast?.(message, "error");
     },
   });
 }
@@ -181,37 +177,46 @@ export function useVerifyOtp() {
     },
 
     onSuccess: (response, variables) => {
-      /*
-       * Preserve the email used during OTP verification.
-       */
+      const responseData =
+        response?.data && typeof response.data === "object"
+          ? response.data
+          : response;
+
       const email =
         response?.email ||
-        response?.data?.email ||
+        responseData?.email ||
         variables?.email ||
+        sessionStorage.getItem(
+          "password_reset_email"
+        ) ||
         "";
 
       if (!email) {
         showToast?.(
-          "OTP verified, but the email address could not be determined.",
+          "OTP verified, but the email address was not found.",
           "error"
         );
-
         return;
       }
 
-      /*
-       * Store email temporarily.
-       */
+      const normalizedEmail =
+        email.trim().toLowerCase();
+
       sessionStorage.setItem(
         "password_reset_email",
-        email
+        normalizedEmail
       );
 
       /*
-       * Move to reset password page.
+       * Move to Reset Password.
+       *
+       * Email is included in URL because
+       * ResetPasswordPage reads searchParams.
        */
       navigate(
-        `/reset-password?email=${encodeURIComponent(email)}`,
+        `/reset-password?email=${encodeURIComponent(
+          normalizedEmail
+        )}`,
         {
           replace: true,
         }
@@ -219,7 +224,8 @@ export function useVerifyOtp() {
 
       showToast?.(
         response?.message ||
-          "OTP verified successfully. You can now reset your password.",
+          responseData?.message ||
+          "OTP verified successfully.",
         "success"
       );
     },
@@ -250,8 +256,13 @@ export function useResetPassword() {
     },
 
     onSuccess: (response) => {
+      const responseData =
+        response?.data && typeof response.data === "object"
+          ? response.data
+          : response;
+
       /*
-       * Clear temporary password reset data.
+       * Clear all password reset information.
        */
       sessionStorage.removeItem(
         "password_reset_email"
@@ -265,16 +276,17 @@ export function useResetPassword() {
         "password_reset_otp"
       );
 
-      /*
-       * Do not save a JWT here.
-       * The user must login again with the new password.
-       */
       showToast?.(
         response?.message ||
+          responseData?.message ||
           "Password reset successfully. Please sign in with your new password.",
         "success"
       );
 
+      /*
+       * IMPORTANT:
+       * Never automatically login after resetting password.
+       */
       navigate("/login", {
         replace: true,
       });
@@ -282,7 +294,8 @@ export function useResetPassword() {
 
     onError: (error) => {
       /*
-       * SAME_PASSWORD is handled by ResetPasswordPage.jsx.
+       * ResetPasswordPage handles SAME_PASSWORD
+       * itself and displays its popup.
        */
       const responseData =
         error?.response?.data || {};
@@ -314,7 +327,9 @@ export function useLogout() {
 
   return useMutation({
     mutationFn: async () => {
-      if (typeof authApi.logout === "function") {
+      if (
+        typeof authApi.logout === "function"
+      ) {
         return await authApi.logout();
       }
 
@@ -335,10 +350,6 @@ export function useLogout() {
     },
 
     onError: () => {
-      /*
-       * Clear local authentication even if
-       * backend logout fails.
-       */
       clearAuthData();
 
       navigate("/login", {

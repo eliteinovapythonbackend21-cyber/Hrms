@@ -119,7 +119,7 @@ export default function ForgotPasswordPage() {
   const [errors, setErrors] = useState({});
 
   /* ==========================================================
-     INPUT CHANGE
+     HANDLE CHANGE
   ========================================================== */
 
   const handleChange = (e) => {
@@ -139,19 +139,18 @@ export default function ForgotPasswordPage() {
   };
 
   /* ==========================================================
-     SUBMIT
+     HANDLE SUBMIT
   ========================================================== */
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const normalizedEmail = form.email
+    const normalizedEmail = (
+      form.email || ""
+    )
       .trim()
       .toLowerCase();
 
-    /*
-     * Validate email.
-     */
     const validationErrors =
       validateForgotPassword({
         email: normalizedEmail,
@@ -159,20 +158,23 @@ export default function ForgotPasswordPage() {
 
     setErrors(validationErrors);
 
-    if (Object.keys(validationErrors).length > 0) {
+    if (
+      Object.keys(validationErrors).length > 0
+    ) {
       return;
     }
 
     try {
       /*
-       * Send OTP to backend.
+       * 1. Send OTP
        */
-      await forgotPassword.mutateAsync({
-        email: normalizedEmail,
-      });
+      const response =
+        await forgotPassword.mutateAsync({
+          email: normalizedEmail,
+        });
 
       /*
-       * Keep the email in session storage.
+       * 2. Save email for the complete reset flow.
        */
       sessionStorage.setItem(
         "password_reset_email",
@@ -180,16 +182,31 @@ export default function ForgotPasswordPage() {
       );
 
       /*
-       * Show success message.
+       * 3. Optional cleanup of old reset data.
+       */
+      sessionStorage.removeItem(
+        "password_reset_token"
+      );
+
+      sessionStorage.removeItem(
+        "password_reset_otp"
+      );
+
+      /*
+       * 4. Show success.
        */
       showToast(
-        "An OTP has been sent to your email.",
+        response?.message ||
+          "An OTP has been sent to your email.",
         "success"
       );
 
       /*
-       * IMPORTANT:
-       * Navigate to OTP verification page.
+       * 5. VERY IMPORTANT:
+       * Navigate to Verify OTP.
+       *
+       * Do not navigate directly to Reset Password,
+       * because OTP verification must happen first.
        */
       navigate(
         `/verify-otp?email=${encodeURIComponent(
@@ -199,14 +216,14 @@ export default function ForgotPasswordPage() {
           replace: true,
         }
       );
-    } catch (err) {
-      const msg =
-        err?.response?.data?.message ||
-        err?.response?.data?.error ||
-        err?.message ||
+    } catch (error) {
+      const message =
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.message ||
         "Failed to send OTP. Please try again.";
 
-      showToast(msg, "error");
+      showToast(message, "error");
     }
   };
 
@@ -264,8 +281,9 @@ export default function ForgotPasswordPage() {
             </h1>
 
             <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
-              Enter the email address linked to your account.
-              We'll send a one-time code to verify it's you.
+              Enter the email address linked to
+              your account. We'll send a one-time
+              code to verify it's you.
             </p>
           </div>
 
@@ -310,7 +328,9 @@ export default function ForgotPasswordPage() {
           <div className="mt-6 border-t border-slate-100 pt-5 dark:border-white/10">
             <button
               type="button"
-              onClick={() => navigate("/login")}
+              onClick={() =>
+                navigate("/login")
+              }
               className="flex w-full items-center justify-center gap-1.5 text-xs font-semibold text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
             >
               <BackArrowIcon />
@@ -324,8 +344,9 @@ export default function ForgotPasswordPage() {
         ==================================================== */}
 
         <p className="mt-5 text-center text-[10px] text-slate-400 dark:text-slate-600">
-          By continuing, you agree to your organization's
-          authentication and security policies.
+          By continuing, you agree to your
+          organization's authentication and
+          security policies.
         </p>
       </div>
     </div>
