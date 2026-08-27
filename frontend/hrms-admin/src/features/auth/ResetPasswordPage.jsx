@@ -135,6 +135,23 @@ const KeyIcon = () => (
   </svg>
 );
 
+const AlertIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className="h-6 w-6"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    strokeWidth={1.8}
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M12 9v4m0 4h.01M10.29 3.86l-7.36 12.75A2 2 0 004.67 19.6h14.66a2 2 0 001.73-2.99L13.7 3.86a2 2 0 00-3.41 0z"
+    />
+  </svg>
+);
+
 function PasswordToggle({ visible, onToggle }) {
   return (
     <button
@@ -181,14 +198,21 @@ export default function ResetPasswordPage() {
   const [errors, setErrors] = useState({});
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showSamePasswordPopup, setShowSamePasswordPopup] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    setForm((prev) => ({ ...prev, [name]: value }));
+    setForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
 
     if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: "" }));
+      setErrors((prev) => ({
+        ...prev,
+        [name]: "",
+      }));
     }
   };
 
@@ -196,24 +220,59 @@ export default function ResetPasswordPage() {
     e.preventDefault();
 
     if (!email) {
-      showToast("Missing email. Please restart the reset process.", "error");
+      showToast(
+        "Missing email. Please restart the reset process.",
+        "error"
+      );
+
       navigate("/forgot-password");
       return;
     }
 
     const validationErrors = validateResetPassword(form);
+
     setErrors(validationErrors);
 
     if (Object.keys(validationErrors).length > 0) {
       return;
     }
 
+    // Close any previous warning before starting a new request.
+    setShowSamePasswordPopup(false);
+
     try {
-      await resetPassword.mutateAsync({ email, ...form });
-      showToast("Password reset successfully. Please sign in.", "success");
+      await resetPassword.mutateAsync({
+        email,
+        ...form,
+      });
+
+      showToast(
+        "Password reset successfully. Please sign in.",
+        "success"
+      );
     } catch (err) {
+      const responseData = err?.response?.data;
+      const errorCode =
+        responseData?.code ||
+        err?.code ||
+        "";
+
+      // Backend response:
+      // {
+      //   code: "SAME_PASSWORD",
+      //   message: "You cannot use your previous password..."
+      // }
+      if (errorCode === "SAME_PASSWORD") {
+        setShowSamePasswordPopup(true);
+        setErrors((prev) => ({
+          ...prev,
+          new_password: responseData?.message || "",
+        }));
+        return;
+      }
+
       const msg =
-        err?.response?.data?.message ||
+        responseData?.message ||
         err?.message ||
         "Failed to reset password. Please try again.";
 
@@ -221,116 +280,207 @@ export default function ResetPasswordPage() {
     }
   };
 
+  const handleSamePasswordPopupClose = () => {
+    setShowSamePasswordPopup(false);
+
+    setForm((prev) => ({
+      ...prev,
+      new_password: "",
+      confirm_password: "",
+    }));
+
+    setErrors((prev) => ({
+      ...prev,
+      new_password: "",
+      confirm_password: "",
+    }));
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 px-5 py-8 dark:bg-slate-950 sm:px-8">
-      <div className="w-full max-w-[470px]">
+    <>
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 px-5 py-8 dark:bg-slate-950 sm:px-8">
+        <div className="w-full max-w-[470px]">
 
-        {/* Logo */}
-        <div className="mb-8 flex items-center justify-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-600 text-white">
-            <ShieldIcon />
-          </div>
+          {/* Logo */}
+          <div className="mb-8 flex items-center justify-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-600 text-white">
+              <ShieldIcon />
+            </div>
 
-          <div>
-            <p className="font-bold text-slate-900 dark:text-white">HRMS</p>
+            <div>
+              <p className="font-bold text-slate-900 dark:text-white">
+                HRMS
+              </p>
 
-            <p className="text-[9px] uppercase tracking-wider text-slate-400">
-              Human Resource Management
-            </p>
-          </div>
-        </div>
-
-        {/* Card */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-7 shadow-xl shadow-slate-200/50 dark:border-white/10 dark:bg-slate-900 dark:shadow-black/20 sm:p-8">
-
-          {/* Icon */}
-          <div className="mb-5 flex justify-center">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary-50 text-primary-600 ring-8 ring-primary-50/60 dark:bg-primary-500/10 dark:text-primary-400 dark:ring-primary-500/5">
-              <KeyIcon />
+              <p className="text-[9px] uppercase tracking-wider text-slate-400">
+                Human Resource Management
+              </p>
             </div>
           </div>
 
-          {/* Header */}
-          <div className="mb-7 text-center">
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-              Reset Password
-            </h1>
+          {/* Card */}
+          <div className="rounded-2xl border border-slate-200 bg-white p-7 shadow-xl shadow-slate-200/50 dark:border-white/10 dark:bg-slate-900 dark:shadow-black/20 sm:p-8">
 
-            <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
-              Choose a new password for{" "}
-              <span className="font-semibold text-slate-700 dark:text-slate-200">
-                {email || "your account"}
-              </span>
-              .
-            </p>
-          </div>
-
-          <form onSubmit={handleSubmit}>
-            <div className="space-y-1">
-              <Input
-                label="New Password"
-                name="new_password"
-                type={showNewPassword ? "text" : "password"}
-                placeholder="Enter new password"
-                value={form.new_password}
-                onChange={handleChange}
-                error={errors.new_password}
-                icon={<LockIcon />}
-                rightIcon={
-                  <PasswordToggle
-                    visible={showNewPassword}
-                    onToggle={() => setShowNewPassword((prev) => !prev)}
-                  />
-                }
-                required
-              />
-
-              <Input
-                label="Confirm Password"
-                name="confirm_password"
-                type={showConfirmPassword ? "text" : "password"}
-                placeholder="Re-enter new password"
-                value={form.confirm_password}
-                onChange={handleChange}
-                error={errors.confirm_password}
-                icon={<LockIcon />}
-                rightIcon={
-                  <PasswordToggle
-                    visible={showConfirmPassword}
-                    onToggle={() => setShowConfirmPassword((prev) => !prev)}
-                  />
-                }
-                required
-              />
+            {/* Icon */}
+            <div className="mb-5 flex justify-center">
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary-50 text-primary-600 ring-8 ring-primary-50/60 dark:bg-primary-500/10 dark:text-primary-400 dark:ring-primary-500/5">
+                <KeyIcon />
+              </div>
             </div>
 
-            <Button
-              type="submit"
-              className="group mt-6 h-12 w-full text-sm font-semibold"
-              isLoading={resetPassword.isPending}
-            >
-              <span>Reset Password</span>
-              {!resetPassword.isPending && <ArrowIcon />}
-            </Button>
-          </form>
+            {/* Header */}
+            <div className="mb-7 text-center">
+              <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+                Reset Password
+              </h1>
 
-          <div className="mt-6 border-t border-slate-100 pt-5 dark:border-white/10">
-            <button
-              type="button"
-              onClick={() => navigate("/login")}
-              className="flex w-full items-center justify-center gap-1.5 text-xs font-semibold text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
-            >
-              <BackArrowIcon />
-              Back to Sign In
-            </button>
+              <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
+                Choose a new password for{" "}
+                <span className="font-semibold text-slate-700 dark:text-slate-200">
+                  {email || "your account"}
+                </span>
+                .
+              </p>
+            </div>
+
+            <form onSubmit={handleSubmit}>
+              <div className="space-y-1">
+                <Input
+                  label="New Password"
+                  name="new_password"
+                  type={showNewPassword ? "text" : "password"}
+                  placeholder="Enter new password"
+                  value={form.new_password}
+                  onChange={handleChange}
+                  error={errors.new_password}
+                  icon={<LockIcon />}
+                  rightIcon={
+                    <PasswordToggle
+                      visible={showNewPassword}
+                      onToggle={() =>
+                        setShowNewPassword((prev) => !prev)
+                      }
+                    />
+                  }
+                  required
+                />
+
+                <Input
+                  label="Confirm Password"
+                  name="confirm_password"
+                  type={showConfirmPassword ? "text" : "password"}
+                  placeholder="Re-enter new password"
+                  value={form.confirm_password}
+                  onChange={handleChange}
+                  error={errors.confirm_password}
+                  icon={<LockIcon />}
+                  rightIcon={
+                    <PasswordToggle
+                      visible={showConfirmPassword}
+                      onToggle={() =>
+                        setShowConfirmPassword((prev) => !prev)
+                      }
+                    />
+                  }
+                  required
+                />
+              </div>
+
+              <Button
+                type="submit"
+                className="group mt-6 h-12 w-full text-sm font-semibold"
+                isLoading={resetPassword.isPending}
+              >
+                <span>Reset Password</span>
+                {!resetPassword.isPending && <ArrowIcon />}
+              </Button>
+            </form>
+
+            <div className="mt-6 border-t border-slate-100 pt-5 dark:border-white/10">
+              <button
+                type="button"
+                onClick={() => navigate("/login")}
+                className="flex w-full items-center justify-center gap-1.5 text-xs font-semibold text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
+              >
+                <BackArrowIcon />
+                Back to Sign In
+              </button>
+            </div>
           </div>
-        </div>
 
-        <p className="mt-5 text-center text-[10px] text-slate-400 dark:text-slate-600">
-          By continuing, you agree to your organization's authentication
-          and security policies.
-        </p>
+          <p className="mt-5 text-center text-[10px] text-slate-400 dark:text-slate-600">
+            By continuing, you agree to your organization's authentication
+            and security policies.
+          </p>
+        </div>
       </div>
-    </div>
+
+      {/* ============================================================
+          SAME PASSWORD POPUP
+      ============================================================ */}
+      {showSamePasswordPopup && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/55 px-4 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="same-password-title"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) {
+              handleSamePasswordPopupClose();
+            }
+          }}
+        >
+          <div className="w-full max-w-md overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-white/10 dark:bg-slate-900">
+            {/* Header */}
+            <div className="flex items-start gap-4 border-b border-slate-100 px-6 py-5 dark:border-white/10">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400">
+                <AlertIcon />
+              </div>
+
+              <div className="min-w-0">
+                <h2
+                  id="same-password-title"
+                  className="text-base font-bold text-slate-900 dark:text-white"
+                >
+                  Previous Password Cannot Be Reused
+                </h2>
+
+                <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
+                  Please create a password that is different from your
+                  previous password.
+                </p>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="px-6 py-5">
+              <div className="rounded-xl border border-amber-100 bg-amber-50/70 px-4 py-3 dark:border-amber-500/20 dark:bg-amber-500/10">
+                <p className="text-sm leading-6 text-amber-800 dark:text-amber-200">
+                  For security reasons, your previous password cannot be
+                  used again. Enter a new password and confirm it below.
+                </p>
+              </div>
+
+              <div className="mt-4 space-y-2 text-xs text-slate-500 dark:text-slate-400">
+                <p>• Use a password different from your previous one.</p>
+                <p>• Make sure both password fields match.</p>
+                <p>• Your password must contain at least 6 characters.</p>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex justify-end gap-3 border-t border-slate-100 px-6 py-4 dark:border-white/10">
+              <button
+                type="button"
+                onClick={handleSamePasswordPopupClose}
+                className="rounded-lg bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900"
+              >
+                Choose New Password
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

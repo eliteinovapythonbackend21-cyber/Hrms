@@ -1,175 +1,250 @@
 import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
+
 import { authApi } from "@/api/auth.api";
-import { setToken, setUser, clearToken } from "@/utils/tokenHelpers";
+import { useToast } from "@/components/feedback/Toast";
 
-/**
- * Validate whether the selected login type matches
- * the authenticated user's actual account type.
- */
-const validateLoginType = (user, loginType) => {
-  const role = String(
-    user?.role ||
-      user?.role_name ||
-      user?.user_role ||
-      user?.user_type ||
-      ""
-  ).toLowerCase();
+/* ============================================================
+   AUTH STORAGE HELPERS
+============================================================ */
 
-  const adminRoles = [
-    "admin",
-    "super_admin",
-    "superadmin",
-    "hr_admin",
-    "hradmin",
-  ];
+const TOKEN_KEY = "token";
+const USER_KEY = "user";
 
-  const employeeRoles = [
-    "employee",
-    "staff",
-  ];
-
-  const isAdmin = adminRoles.includes(role);
-  const isEmployee = employeeRoles.includes(role);
-
-  // Admin Login selected, but Employee account used
-  if (loginType === "admin" && !isAdmin) {
-    const error = new Error(
-      "This account is registered as an Employee. Please use Employee Login."
-    );
-
-    error.code = "WRONG_LOGIN_TYPE";
-
-    error.response = {
-      data: {
-        message:
-          "This account is registered as an Employee. Please use Employee Login.",
-        loginType: "employee",
-      },
-    };
-
-    throw error;
+const saveAuthData = (token, user) => {
+  if (token) {
+    localStorage.setItem(TOKEN_KEY, token);
   }
 
-  // Employee Login selected, but Admin account used
-  if (loginType === "employee" && !isEmployee) {
-    const error = new Error(
-      "This account is registered as an Admin. Please use Admin Login."
-    );
-
-    error.code = "WRONG_LOGIN_TYPE";
-
-    error.response = {
-      data: {
-        message:
-          "This account is registered as an Admin. Please use Admin Login.",
-        loginType: "admin",
-      },
-    };
-
-    throw error;
+  if (user) {
+    localStorage.setItem(USER_KEY, JSON.stringify(user));
   }
-
-  return true;
 };
+
+const clearAuthData = () => {
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(USER_KEY);
+};
+
+/* ============================================================
+   LOGIN
+============================================================ */
 
 export function useLogin() {
   const navigate = useNavigate();
+  const { showToast } = useToast();
 
   return useMutation({
-    mutationFn: async (payload) => {
-      // Authenticate email and password first
-      const response = await authApi.login(payload);
-
-      const { user } = response.data;
-
-      // Validate login type before saving authentication data
-      validateLoginType(user, payload.login_type);
-
-      return response;
+    mutationFn: async (credentials) => {
+      return await authApi.login(credentials);
     },
 
-    onSuccess: (res) => {
-      const { access_token, user } = res.data;
+    onSuccess: (response) => {
+      /*
+       * Supports both:
+       *
+       * {
+       *   token,
+       *   user
+       * }
+       *
+       * and:
+       *
+       * {
+       *   access_token,
+       *   user
+       * }
+       */
 
-      // Save token/user only after login type validation succeeds
-      setToken(access_token);
-      setUser(user);
+      const token =
+        response?.token ||
+        response?.access_token ||
+        response?.data?.token ||
+        response?.data?.access_token;
 
-      navigate("/dashboard");
+      const user =
+        response?.user ||
+        response?.data?.user ||
+        null;
+
+      saveAuthData(token, user);
+
+      showToast?.(
+        response?.message || "Login successful",
+        "success"
+      );
+
+      navigate("/dashboard", {
+        replace: true,
+      });
+    },
+
+    onError: (error) => {
+      const message =
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.message ||
+        "Login failed. Please check your credentials.";
+
+      showToast?.(message, "error");
     },
   });
 }
+
+/* ============================================================
+   REGISTER
+============================================================ */
 
 export function useRegister() {
   const navigate = useNavigate();
+  const { showToast } = useToast();
 
   return useMutation({
-    mutationFn: (payload) => authApi.register(payload),
+    mutationFn: async (data) => {
+      return await authApi.register(data);
+    },
 
-    onSuccess: () => {
-      navigate("/login");
+    onSuccess: (response) => {
+      const token =
+        response?.token ||
+        response?.access_token ||
+        response?.data?.token ||
+        response?.data?.access_token;
+
+      const user =
+        response?.user ||
+        response?.data?.user ||
+        null;
+
+      /*
+       * If registration automatically logs the user in,
+       * store the authentication data.
+       */
+      if (token) {
+        saveAuthData(token, user);
+
+        navigate("/dashboard", {
+          replace: true,
+        });
+      }
+
+      showToast?.(
+        response?.message || "Registration successful",
+        "success"
+      );
+    },
+
+    onError: (error) => {
+      const message =
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.message ||
+        "Registration failed.";
+
+      showToast?.(message, "error");
     },
   });
-}
-
-export function useLogout() {
-  const navigate = useNavigate();
-
-  return () => {
-    clearToken();
-    navigate("/login");
-  };
 }
 
 /* ============================================================
-   FORGOT PASSWORD / OTP / RESET PASSWORD
+   RESET PASSWORD
 ============================================================ */
-
-export function useForgotPassword() {
-  const navigate = useNavigate();
-
-  return useMutation({
-    mutationFn: (payload) => authApi.forgotPassword(payload),
-
-    onSuccess: (_res, variables) => {
-      // Carry the email forward so the next screen doesn't ask for it again
-      navigate(`/verify-otp?email=${encodeURIComponent(variables.email)}`);
-    },
-  });
-}
-
-export function useVerifyOtp() {
-  const navigate = useNavigate();
-
-  return useMutation({
-    mutationFn: (payload) => authApi.verifyOtp(payload),
-
-    onSuccess: (_res, variables) => {
-      navigate(`/reset-password?email=${encodeURIComponent(variables.email)}`);
-    },
-  });
-}
 
 export function useResetPassword() {
   const navigate = useNavigate();
+  const { showToast } = useToast();
 
   return useMutation({
-    mutationFn: (payload) => authApi.resetPassword(payload),
+    mutationFn: async (data) => {
+      /*
+       * Expected data:
+       *
+       * {
+       *   token: "...",
+       *   password: "new password"
+       * }
+       *
+       * or whatever structure your authApi.resetPassword()
+       * already expects.
+       */
+      return await authApi.resetPassword(data);
+    },
 
-    onSuccess: () => {
-      navigate("/login");
+    onSuccess: (response) => {
+      showToast?.(
+        response?.message ||
+          "Password reset successfully. Please login with your new password.",
+        "success"
+      );
+
+      /*
+       * After successful password reset,
+       * send the user back to login.
+       */
+      navigate("/login", {
+        replace: true,
+      });
+    },
+
+    onError: (error) => {
+      const message =
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.message ||
+        "Unable to reset password. Please try again.";
+
+      showToast?.(message, "error");
     },
   });
 }
 
 /* ============================================================
-   CHANGE PASSWORD (authenticated — used from a settings/profile page,
-   not the forgot-password flow, so it does not auto-navigate)
+   LOGOUT
 ============================================================ */
 
-export function useChangePassword() {
+export function useLogout() {
+  const navigate = useNavigate();
+  const { showToast } = useToast();
+
   return useMutation({
-    mutationFn: (payload) => authApi.changePassword(payload),
+    mutationFn: async () => {
+      /*
+       * If your backend has a logout endpoint,
+       * this will call it.
+       *
+       * If authApi.logout() does not exist, remove this
+       * API call and only clear local authentication data.
+       */
+      if (typeof authApi.logout === "function") {
+        return await authApi.logout();
+      }
+
+      return true;
+    },
+
+    onSuccess: () => {
+      clearAuthData();
+
+      showToast?.(
+        "Logged out successfully",
+        "success"
+      );
+
+      navigate("/login", {
+        replace: true,
+      });
+    },
+
+    onError: () => {
+      /*
+       * Even if the backend logout request fails,
+       * clear the local session.
+       */
+      clearAuthData();
+
+      navigate("/login", {
+        replace: true,
+      });
+    },
   });
 }
