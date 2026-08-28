@@ -348,10 +348,11 @@ function DesignationBadge({
 ========================================================= */
 
 function DesignationDetailsCard({
-  roleLabel,
   tone,
-  designation,
-  designationFallback,
+  fromDesignation,
+  fromDesignationFallback,
+  toDesignation,
+  toDesignationFallback,
   employeeName,
   employeeCode,
   reason,
@@ -373,15 +374,36 @@ function DesignationDetailsCard({
       className={`w-[300px] max-w-[calc(100vw-32px)] rounded-xl border border-slate-200 border-t-2 bg-white p-4 text-left shadow-xl dark:border-slate-700 dark:bg-slate-800 ${accentTones[tone]}`}
     >
       <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-            {roleLabel}
-          </p>
+        <div className="min-w-0 flex-1 space-y-2.5">
+          {/* CURRENT DESIGNATION */}
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+              Current Designation
+            </p>
 
-          <p className="mt-1 break-words text-sm font-semibold leading-5 text-slate-800 dark:text-white">
-            {designation?.designation_name ||
-              designationFallback}
-          </p>
+            <p className="mt-0.5 break-words text-sm font-semibold leading-5 text-slate-800 dark:text-white">
+              {fromDesignation?.designation_name ||
+                fromDesignationFallback}
+            </p>
+          </div>
+
+          {/* ARROW + PROMOTED TO */}
+          <div className="flex items-start gap-1.5">
+            <span className="mt-1 shrink-0 text-slate-300 dark:text-slate-600">
+              →
+            </span>
+
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-sky-500 dark:text-sky-400">
+                Promoted To
+              </p>
+
+              <p className="mt-0.5 break-words text-sm font-semibold leading-5 text-slate-800 dark:text-white">
+                {toDesignation?.designation_name ||
+                  toDesignationFallback}
+              </p>
+            </div>
+          </div>
         </div>
 
         <span
@@ -397,18 +419,35 @@ function DesignationDetailsCard({
         </span>
       </div>
 
-      {designation?.description && (
+      {(fromDesignation?.description ||
+        toDesignation?.description) && (
         <>
           <div className="my-3 border-t border-slate-100 dark:border-slate-700" />
 
-          <div>
-            <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
-              Description
-            </p>
+          <div className="space-y-2">
+            {fromDesignation?.description && (
+              <div>
+                <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
+                  Current Designation Description
+                </p>
 
-            <p className="text-xs leading-5 text-slate-600 dark:text-slate-300">
-              {designation.description}
-            </p>
+                <p className="text-xs leading-5 text-slate-600 dark:text-slate-300">
+                  {fromDesignation.description}
+                </p>
+              </div>
+            )}
+
+            {toDesignation?.description && (
+              <div>
+                <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
+                  Promoted To Description
+                </p>
+
+                <p className="text-xs leading-5 text-slate-600 dark:text-slate-300">
+                  {toDesignation.description}
+                </p>
+              </div>
+            )}
           </div>
         </>
       )}
@@ -483,6 +522,27 @@ function DesignationDetailsCard({
    HOVER TRIGGER
 ========================================================= */
 
+/*
+ * NOTE ON THE HOVER GAP FIX:
+ *
+ * The trigger badge and its floating detail panel are two
+ * separate boxes. The panel is positioned "top-full" below
+ * the badge. Previously the gap between them was created with
+ * `mt-2` (margin), which is NOT part of the hoverable box.
+ * Moving the mouse in a straight line from the badge down into
+ * the panel meant the cursor briefly left the hoverable area
+ * while crossing that margin gap, which caused the panel to
+ * flicker/disappear (i.e. "remove the previous record") before
+ * the user could actually read or interact with it.
+ *
+ * Fix: the gap is now `pt-2` (padding) on the same absolutely
+ * positioned wrapper that holds the panel. Padding IS part of
+ * the box, so the hoverable region is continuous from the
+ * badge all the way into the panel — the popover stays visible
+ * the whole time the pointer is moving from the trigger to the
+ * panel, with no dead zone in between.
+ */
+
 function DesignationHoverTrigger({
   children,
   panel,
@@ -511,9 +571,9 @@ function DesignationHoverTrigger({
           absolute
           top-full
           z-[100]
-          mt-2
+          pt-2
           opacity-0
-          transition-all
+          transition-opacity
           duration-150
           group-hover/desig:pointer-events-auto
           group-hover/desig:visible
@@ -521,6 +581,9 @@ function DesignationHoverTrigger({
           group-focus/desig:pointer-events-auto
           group-focus/desig:visible
           group-focus/desig:opacity-100
+          group-focus-within/desig:pointer-events-auto
+          group-focus-within/desig:visible
+          group-focus-within/desig:opacity-100
           ${alignClasses[align]}
         `}
       >
@@ -2406,12 +2469,15 @@ export default function PromotionListPage() {
                             align="left"
                             panel={
                               <DesignationDetailsCard
-                                roleLabel="Current Designation"
                                 tone="from"
-                                designation={
+                                fromDesignation={
                                   fromDesignation
                                 }
-                                designationFallback={`#${promotion.from_designation_id}`}
+                                fromDesignationFallback={`#${promotion.from_designation_id}`}
+                                toDesignation={
+                                  toDesignation
+                                }
+                                toDesignationFallback={`#${promotion.to_designation_id}`}
                                 employeeName={
                                   employeeName
                                 }
@@ -2422,10 +2488,10 @@ export default function PromotionListPage() {
                                   promotion.reason
                                 }
                                 promotionDate={formatDate(
-                                  previousRoleStart
+                                  promotion.promotion_date
                                 )}
                                 duration={
-                                  timeInPreviousRole
+                                  timeInNewRole
                                 }
                                 accomplishments={
                                   promotion.accomplishments
@@ -2451,12 +2517,15 @@ export default function PromotionListPage() {
                             align="left"
                             panel={
                               <DesignationDetailsCard
-                                roleLabel="Promoted To"
                                 tone="to"
-                                designation={
+                                fromDesignation={
+                                  fromDesignation
+                                }
+                                fromDesignationFallback={`#${promotion.from_designation_id}`}
+                                toDesignation={
                                   toDesignation
                                 }
-                                designationFallback={`#${promotion.to_designation_id}`}
+                                toDesignationFallback={`#${promotion.to_designation_id}`}
                                 employeeName={
                                   employeeName
                                 }
@@ -2740,12 +2809,15 @@ export default function PromotionListPage() {
                                       align="left"
                                       panel={
                                         <DesignationDetailsCard
-                                          roleLabel="Existing Designation"
                                           tone="from"
-                                          designation={
+                                          fromDesignation={
                                             fromDesig
                                           }
-                                          designationFallback={`#${promotion.from_designation_id}`}
+                                          fromDesignationFallback={`#${promotion.from_designation_id}`}
+                                          toDesignation={
+                                            toDesig
+                                          }
+                                          toDesignationFallback={`#${promotion.to_designation_id}`}
                                           employeeName={
                                             employeeName
                                           }
@@ -2756,10 +2828,10 @@ export default function PromotionListPage() {
                                             promotion.reason
                                           }
                                           promotionDate={formatDate(
-                                            previousRoleStart
+                                            promotion.promotion_date
                                           )}
                                           duration={
-                                            timeInPreviousRole
+                                            timeInNewRole
                                           }
                                           accomplishments={
                                             promotion.accomplishments
@@ -2785,12 +2857,15 @@ export default function PromotionListPage() {
                                       align="left"
                                       panel={
                                         <DesignationDetailsCard
-                                          roleLabel="Current Designation"
                                           tone="to"
-                                          designation={
+                                          fromDesignation={
+                                            fromDesig
+                                          }
+                                          fromDesignationFallback={`#${promotion.from_designation_id}`}
+                                          toDesignation={
                                             toDesig
                                           }
-                                          designationFallback={`#${promotion.to_designation_id}`}
+                                          toDesignationFallback={`#${promotion.to_designation_id}`}
                                           employeeName={
                                             employeeName
                                           }

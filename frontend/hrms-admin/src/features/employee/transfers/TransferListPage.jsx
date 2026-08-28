@@ -31,6 +31,37 @@ import {
 
 import { formatDate } from "@/utils/formatDate";
 
+/**
+ * formatDate() assumes a valid date value. Several date
+ * fields on a transfer record (relieving_date, joining_date,
+ * and the "Current Department" side of the hover card) are
+ * frequently missing/null, especially on older records or a
+ * transfer that hasn't been relieved/joined yet. Passing that
+ * straight into formatDate() renders things like
+ * "Invalid Date" or an empty string instead of a clean
+ * placeholder.
+ *
+ * safeFormatDate() guards both cases:
+ *  - no value at all                              -> "—"
+ *  - value present but formatDate can't parse it   -> "—"
+ */
+function safeFormatDate(value) {
+  if (!value) {
+    return "—";
+  }
+
+  const formatted = formatDate(value);
+
+  if (
+    !formatted ||
+    formatted === "Invalid Date"
+  ) {
+    return "—";
+  }
+
+  return formatted;
+}
+
 /* =========================================================
    CONSTANTS
 ========================================================= */
@@ -468,10 +499,11 @@ function DepartmentHoverTrigger({
 ========================================================= */
 
 function DepartmentDetailsCard({
-  roleLabel,
-  tone,
-  department,
-  departmentFallback,
+  focusTone = "from",
+  fromDepartment,
+  fromDepartmentFallback,
+  toDepartment,
+  toDepartmentFallback,
   employeeName,
   employeeCode,
   currentLocation,
@@ -491,26 +523,40 @@ function DepartmentDetailsCard({
       "border-t-sky-500 dark:border-t-sky-400",
   };
 
-  const departmentName =
-    getDepartmentName(
-      department,
-      departmentFallback
-    );
+  const DepartmentRow = ({
+    label,
+    tone,
+    department,
+    fallback,
+  }) => (
+    <div className="grid grid-cols-[105px_minmax(0,1fr)] gap-3">
+      <span className="text-xs text-slate-400 dark:text-slate-500">
+        {label}
+      </span>
+
+      <span
+        className={`break-words text-right text-xs font-semibold ${
+          tone === "to"
+            ? "text-sky-700 dark:text-sky-400"
+            : "text-slate-700 dark:text-slate-200"
+        }`}
+      >
+        {getDepartmentName(
+          department,
+          fallback
+        )}
+      </span>
+    </div>
+  );
 
   return (
     <div
-      className={`w-[360px] max-w-[calc(100vw-32px)] rounded-xl border border-slate-200 border-t-2 bg-white p-4 text-left shadow-xl dark:border-slate-700 dark:bg-slate-800 ${accentTones[tone]}`}
+      className={`w-[360px] max-w-[calc(100vw-32px)] rounded-xl border border-slate-200 border-t-2 bg-white p-4 text-left shadow-xl dark:border-slate-700 dark:bg-slate-800 ${accentTones[focusTone]}`}
     >
       <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-            {roleLabel}
-          </p>
-
-          <p className="mt-1 break-words text-sm font-semibold leading-5 text-slate-800 dark:text-white">
-            {departmentName}
-          </p>
-        </div>
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+          Transfer Details
+        </p>
 
         <span
           className={`shrink-0 rounded-full px-2 py-1 text-[9px] font-semibold ${
@@ -541,6 +587,28 @@ function DepartmentDetailsCard({
               : ""}
           </span>
         </div>
+
+        <DepartmentRow
+          label="Current Department"
+          tone="from"
+          department={
+            fromDepartment
+          }
+          fallback={
+            fromDepartmentFallback
+          }
+        />
+
+        <DepartmentRow
+          label="Transfer Department"
+          tone="to"
+          department={
+            toDepartment
+          }
+          fallback={
+            toDepartmentFallback
+          }
+        />
 
         <div className="grid grid-cols-[105px_minmax(0,1fr)] gap-3">
           <span className="text-xs text-slate-400 dark:text-slate-500">
@@ -581,11 +649,9 @@ function DepartmentDetailsCard({
           </span>
 
           <span className="text-right text-xs font-medium text-slate-700 dark:text-slate-200">
-            {transferApplyDate
-              ? formatDate(
-                  transferApplyDate
-                )
-              : "—"}
+            {safeFormatDate(
+              transferApplyDate
+            )}
           </span>
         </div>
 
@@ -595,11 +661,9 @@ function DepartmentDetailsCard({
           </span>
 
           <span className="text-right text-xs font-medium text-slate-700 dark:text-slate-200">
-            {relievingDate
-              ? formatDate(
-                  relievingDate
-                )
-              : "—"}
+            {safeFormatDate(
+              relievingDate
+            )}
           </span>
         </div>
 
@@ -609,11 +673,9 @@ function DepartmentDetailsCard({
           </span>
 
           <span className="text-right text-xs font-medium text-slate-700 dark:text-slate-200">
-            {joiningDate
-              ? formatDate(
-                  joiningDate
-                )
-              : "—"}
+            {safeFormatDate(
+              joiningDate
+            )}
           </span>
         </div>
       </div>
@@ -2188,12 +2250,15 @@ export default function TransferListPage() {
                           align="left"
                           panel={
                             <DepartmentDetailsCard
-                              roleLabel="Current Department"
-                              tone="from"
-                              department={
+                              focusTone="from"
+                              fromDepartment={
                                 fromDepartment
                               }
-                              departmentFallback={`#${transfer.from_department_id || "—"}`}
+                              fromDepartmentFallback={`#${transfer.from_department_id || "—"}`}
+                              toDepartment={
+                                toDepartment
+                              }
+                              toDepartmentFallback={`#${transfer.to_department_id || "—"}`}
                               employeeName={
                                 employeeName
                               }
@@ -2245,12 +2310,15 @@ export default function TransferListPage() {
                           align="left"
                           panel={
                             <DepartmentDetailsCard
-                              roleLabel="Transfer Department"
-                              tone="to"
-                              department={
+                              focusTone="to"
+                              fromDepartment={
+                                fromDepartment
+                              }
+                              fromDepartmentFallback={`#${transfer.from_department_id || "—"}`}
+                              toDepartment={
                                 toDepartment
                               }
-                              departmentFallback={`#${transfer.to_department_id || "—"}`}
+                              toDepartmentFallback={`#${transfer.to_department_id || "—"}`}
                               employeeName={
                                 employeeName
                               }
@@ -2333,7 +2401,7 @@ export default function TransferListPage() {
                             <span className="font-medium text-slate-400">
                               Apply:
                             </span>{" "}
-                            {formatDate(
+                            {safeFormatDate(
                               transfer.transfer_apply_date
                             )}
                           </p>
@@ -2342,7 +2410,7 @@ export default function TransferListPage() {
                             <span className="font-medium text-slate-400">
                               Relieve:
                             </span>{" "}
-                            {formatDate(
+                            {safeFormatDate(
                               transfer.relieving_date ||
                                 transfer.releiving_date
                             )}
@@ -2352,7 +2420,7 @@ export default function TransferListPage() {
                             <span className="font-medium text-slate-400">
                               Join:
                             </span>{" "}
-                            {formatDate(
+                            {safeFormatDate(
                               transfer.joining_date
                             )}
                           </p>
@@ -2583,12 +2651,15 @@ export default function TransferListPage() {
                         align="left"
                         panel={
                           <DepartmentDetailsCard
-                            roleLabel="Current Department"
-                            tone="from"
-                            department={
+                            focusTone="from"
+                            fromDepartment={
                               fromDepartment
                             }
-                            departmentFallback={`#${transfer.from_department_id || "—"}`}
+                            fromDepartmentFallback={`#${transfer.from_department_id || "—"}`}
+                            toDepartment={
+                              toDepartment
+                            }
+                            toDepartmentFallback={`#${transfer.to_department_id || "—"}`}
                             employeeName={
                               employeeName
                             }
@@ -2638,12 +2709,15 @@ export default function TransferListPage() {
                         align="left"
                         panel={
                           <DepartmentDetailsCard
-                            roleLabel="Transfer Department"
-                            tone="to"
-                            department={
+                            focusTone="to"
+                            fromDepartment={
+                              fromDepartment
+                            }
+                            fromDepartmentFallback={`#${transfer.from_department_id || "—"}`}
+                            toDepartment={
                               toDepartment
                             }
-                            departmentFallback={`#${transfer.to_department_id || "—"}`}
+                            toDepartmentFallback={`#${transfer.to_department_id || "—"}`}
                             employeeName={
                               employeeName
                             }
@@ -2731,7 +2805,7 @@ export default function TransferListPage() {
                     <div className="mt-3 flex items-center gap-1.5 text-[10px] text-slate-400">
                       <SmallCalendarIcon />
 
-                      {formatDate(
+                      {safeFormatDate(
                         transfer.transfer_apply_date
                       )}
                     </div>
@@ -2743,7 +2817,7 @@ export default function TransferListPage() {
                         Relieving:
                       </span>
 
-                      {formatDate(
+                      {safeFormatDate(
                         transfer.relieving_date ||
                           transfer.releiving_date
                       )}
@@ -2756,7 +2830,7 @@ export default function TransferListPage() {
                         Joining:
                       </span>
 
-                      {formatDate(
+                      {safeFormatDate(
                         transfer.joining_date
                       )}
                     </div>
