@@ -56,6 +56,7 @@ const RECORD_STATUS = {
 const padNumber = (value) =>
   String(value).padStart(2, "0");
 
+
 const formatISODate = (
   year,
   month,
@@ -97,6 +98,7 @@ const getMonthRange = (
       month,
       firstDay.getDate()
     ),
+
     to_date: formatISODate(
       year,
       month,
@@ -128,6 +130,7 @@ const getQuarterRange = (
       startMonth,
       1
     ),
+
     to_date: formatISODate(
       year,
       endMonth,
@@ -311,6 +314,36 @@ const HoursCell = ({ value }) => {
         ? "hour"
         : "hours"}
     </span>
+  );
+};
+
+
+/* ============================================================
+   DESCRIPTION CELL
+============================================================ */
+
+const DescriptionCell = ({ value }) => {
+  const description = String(
+    value || ""
+  ).trim();
+
+  if (!description) {
+    return (
+      <span className="text-sm text-slate-400 dark:text-slate-500">
+        -
+      </span>
+    );
+  }
+
+  return (
+    <div className="min-w-[240px] max-w-[360px]">
+      <p
+        title={description}
+        className="line-clamp-2 text-sm leading-5 text-slate-700 dark:text-slate-300"
+      >
+        {description}
+      </p>
+    </div>
   );
 };
 
@@ -934,6 +967,18 @@ export default function OvertimeListPage() {
       },
 
       {
+        key: "description",
+        label: "Description",
+        sortable: false,
+
+        render: (row) => (
+          <DescriptionCell
+            value={row.description}
+          />
+        ),
+      },
+
+      {
         key: "status",
         label: "Status",
         sortable: true,
@@ -1088,7 +1133,7 @@ export default function OvertimeListPage() {
 
               <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                 Manage employee overtime records,
-                hours and approval status
+                hours, descriptions and approval status
               </p>
 
             </div>
@@ -1429,13 +1474,13 @@ export default function OvertimeListPage() {
         <GenericListPage
           module="Overtime"
           title="Overtime Records"
-          subtitle={`Track employee overtime hours and approval status · ${periodTitle}`}
+          subtitle={`Track employee overtime hours, descriptions and approval status · ${periodTitle}`}
           columns={columns}
           api={employeeLifecycleApi.overtime}
           useList={useOvertime}
           useCreate={useCreateOvertime}
           filename="overtime"
-          searchPlaceholder="Search employee, date or status..."
+          searchPlaceholder="Search employee, description or status..."
           FormComponent={OvertimeForm}
           formTitle="Overtime Record"
           addLabel="Add Overtime"
@@ -1521,7 +1566,9 @@ function CountCard({
     neutral: {
       wrapper:
         "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900",
+
       dot: "bg-slate-400",
+
       value:
         "text-slate-900 dark:text-white",
     },
@@ -1529,7 +1576,9 @@ function CountCard({
     active: {
       wrapper:
         "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900",
+
       dot: "bg-emerald-500",
+
       value:
         "text-emerald-600 dark:text-emerald-400",
     },
@@ -1537,7 +1586,9 @@ function CountCard({
     inactive: {
       wrapper:
         "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900",
+
       dot: "bg-red-500",
+
       value:
         "text-red-600 dark:text-red-400",
     },

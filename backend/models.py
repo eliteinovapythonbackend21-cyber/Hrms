@@ -1342,6 +1342,7 @@ class Overtime(TimestampMixin, db.Model):
     employee_id = db.Column(db.Integer, db.ForeignKey("employees.id"), nullable=False)
     overtime_date = db.Column(db.Date, nullable=False)
     hours = db.Column(db.Numeric(4, 2), nullable=False)
+    description = db.Column(db.Text,nullable=True)
     status = db.Column(db.String(20), default="Pending")
     is_active = db.Column(db.Boolean, default=True)
     employee = db.relationship("Employee")
@@ -1349,6 +1350,7 @@ class Overtime(TimestampMixin, db.Model):
     def to_dict(self):
         data = super().to_dict()
         data["employee"] = _summary(self.employee, ["id", "employee_code", "first_name", "last_name"])
+        data["description"] = (self.description)
         return data
 
 

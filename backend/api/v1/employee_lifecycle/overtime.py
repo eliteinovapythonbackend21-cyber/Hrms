@@ -142,6 +142,7 @@ def _parse_int(value):
 
 # ============================================================
 # FLOAT PARSER
+# ============================================================
 
 def _parse_float(value):
     if value is None or value == "":
@@ -158,6 +159,7 @@ def _parse_float(value):
 
 # ============================================================
 # BOOLEAN PARSER
+# ============================================================
 
 def _parse_bool(value):
     if value is None:
@@ -184,6 +186,29 @@ ALLOWED_STATUSES = {
     "Completed",
     "Cancelled",
 }
+
+
+# ============================================================
+# DESCRIPTION PARSER
+# ============================================================
+
+def _parse_description(value):
+    if value is None:
+        return None
+
+    description = str(
+        value
+    ).strip()
+
+    if not description:
+        return None
+
+    if len(description) > 2000:
+        raise ValueError(
+            "description cannot exceed 2000 characters"
+        )
+
+    return description
 
 
 # ============================================================
@@ -221,7 +246,6 @@ def list_overtime(token_response):
     )
 
     if parsed_is_active is not None:
-
         query = query.filter(
             Overtime.is_active
             == parsed_is_active
@@ -239,7 +263,6 @@ def list_overtime(token_response):
     )
 
     if employee_id:
-
         query = query.filter(
             Overtime.employee_id
             == employee_id
@@ -255,7 +278,6 @@ def list_overtime(token_response):
     )
 
     if status:
-
         query = query.filter(
             Overtime.status
             == status
@@ -264,9 +286,6 @@ def list_overtime(token_response):
 
     # ========================================================
     # SINGLE DAY
-    #
-    # from_date = to_date is supported by frontend for
-    # Day-to-Day mode.
     # ========================================================
 
     overtime_date_param = request.args.get(
@@ -356,6 +375,7 @@ def list_overtime(token_response):
             query = query.filter(
                 Overtime.overtime_date
                 >= from_date,
+
                 Overtime.overtime_date
                 <= to_date,
             )
@@ -423,14 +443,12 @@ def list_overtime(token_response):
         )
 
         if department_id:
-
             query = query.filter(
                 Employee.department_id
                 == department_id
             )
 
         if designation_id:
-
             query = query.filter(
                 Employee.designation_id
                 == designation_id
@@ -502,6 +520,10 @@ def list_overtime(token_response):
                 ),
 
                 Overtime.status.ilike(
+                    search_value
+                ),
+
+                Overtime.description.ilike(
                     search_value
                 ),
             )
@@ -666,6 +688,20 @@ def create_overtime(
 
 
     # ========================================================
+    # DESCRIPTION
+    # ========================================================
+
+    try:
+        description = _parse_description(
+            data.get("description")
+        )
+    except ValueError as exc:
+        return jsonify({
+            "message": str(exc),
+        }), 400
+
+
+    # ========================================================
     # STATUS
     # ========================================================
 
@@ -692,11 +728,15 @@ def create_overtime(
         employee_id=employee_id,
         overtime_date=overtime_date,
         hours=hours,
+        description=description,
         status=status,
         is_active=True,
     )
 
-    db.session.add(overtime)
+    db.session.add(
+        overtime
+    )
+
     db.session.commit()
 
 
@@ -832,6 +872,26 @@ def update_overtime(
             }), 400
 
         overtime.hours = hours
+
+
+    # ========================================================
+    # DESCRIPTION
+    # ========================================================
+
+    if "description" in data:
+
+        try:
+            overtime.description = (
+                _parse_description(
+                    data.get("description")
+                )
+            )
+
+        except ValueError as exc:
+
+            return jsonify({
+                "message": str(exc),
+            }), 400
 
 
     # ========================================================

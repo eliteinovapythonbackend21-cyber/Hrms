@@ -7,10 +7,12 @@ const STATUS_OPTIONS = [
     value: "Pending",
     label: "Pending",
   },
+
   {
     value: "Approved",
     label: "Approved",
   },
+
   {
     value: "Rejected",
     label: "Rejected",
@@ -51,6 +53,15 @@ export default function OvertimeForm({
       type: "number",
       required: true,
       placeholder: "Enter overtime hours",
+    },
+
+    {
+      name: "description",
+      label: "Overtime Description",
+      type: "textarea",
+      required: false,
+      placeholder:
+        "Enter the reason or details for this overtime record",
     },
 
     {
