@@ -227,8 +227,9 @@ export default function ResignationForm({
       name: "description",
       label: "Resignation Description",
       type: "textarea",
+      maxLength: 300,
       placeholder:
-        "Add any further detail behind the resignation reason - context, circumstances, or notes for HR records...",
+        "Add any further detail behind the resignation reason - context, circumstances, or notes for HR records... (max 300 characters)",
     },
 
     {

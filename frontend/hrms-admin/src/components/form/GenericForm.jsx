@@ -701,6 +701,13 @@ export default function GenericForm({
             field.type ===
             "textarea"
           ) {
+            const currentLength =
+              (
+                form[
+                  field.name
+                ] || ""
+              ).length;
+
             return (
               <div
                 className="mb-4"
@@ -733,6 +740,10 @@ export default function GenericForm({
                     handleChange
                   }
                   rows={3}
+                  maxLength={
+                    field.maxLength ??
+                    undefined
+                  }
                   className={`input ${
                     errors[
                       field.name
@@ -747,6 +758,20 @@ export default function GenericForm({
                     field.disabled
                   }
                 />
+
+                {field.maxLength && (
+                  <p
+                    className={`mt-1 text-right text-[11px] ${
+                      currentLength >=
+                      field.maxLength
+                        ? "text-amber-600 dark:text-amber-400"
+                        : "text-slate-400 dark:text-slate-500"
+                    }`}
+                  >
+                    {currentLength}/
+                    {field.maxLength}
+                  </p>
+                )}
 
                 {errors[
                   field.name
