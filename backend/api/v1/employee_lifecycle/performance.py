@@ -791,8 +791,25 @@ def update_performance(
 
 # ============================================================
 # DEACTIVATE PERFORMANCE REVIEW
+#
+# Registered at BOTH:
+#   DELETE /<id>              (register_crud_blueprint's convention -
+#                               this module was originally built on
+#                               that factory, so the frontend api
+#                               client was almost certainly generated
+#                               to call this shape)
+#   DELETE /<id>/deactivate   (training_bp's convention, kept as a
+#                               fallback in case anything calls this
+#                               shape instead)
+#
+# Both point at the same handler - whichever one the frontend
+# actually calls, it works.
 # ============================================================
 
+@performance_bp.route(
+    "/<int:performance_id>",
+    methods=["DELETE"]
+)
 @performance_bp.route(
     "/<int:performance_id>/deactivate",
     methods=["DELETE"]

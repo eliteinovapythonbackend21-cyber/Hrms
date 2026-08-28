@@ -901,22 +901,22 @@ export default function PerformanceReviewListPage() {
 
       {/* ======================================================
           TABLE
+
+          Company / Branch / Department / Designation / Hierarchy
+          Level columns intentionally removed here per request -
+          they're still available in the filter bar above and in
+          the Excel/PDF export, and still shown in the Card view.
       ====================================================== */}
 
       {!isLoading &&
         viewMode === "table" &&
         filteredReviews.length > 0 && (
           <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
-            <table className="w-full min-w-[1200px] text-left text-sm">
+            <table className="w-full min-w-[820px] text-left text-sm">
               <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-400">
                 <tr>
                   <th className="px-4 py-3">Employee</th>
                   <th className="px-4 py-3">Review Period</th>
-                  <th className="px-4 py-3">Company</th>
-                  <th className="px-4 py-3">Branch</th>
-                  <th className="px-4 py-3">Department</th>
-                  <th className="px-4 py-3">Designation</th>
-                  <th className="px-4 py-3">Hierarchy</th>
                   <th className="px-4 py-3">Day-to-Day</th>
                   <th className="px-4 py-3">Work</th>
                   <th className="px-4 py-3">Behavior</th>
@@ -948,26 +948,6 @@ export default function PerformanceReviewListPage() {
 
                     <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                       {review.review_period || "-"}
-                    </td>
-
-                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
-                      {getCompanyName(review)}
-                    </td>
-
-                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
-                      {getBranchName(review)}
-                    </td>
-
-                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
-                      {getDepartmentName(review)}
-                    </td>
-
-                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
-                      {getDesignationName(review)}
-                    </td>
-
-                    <td className="px-4 py-3">
-                      {review.hierarchy_level || "-"}
                     </td>
 
                     <td className="px-4 py-3 font-medium">
