@@ -160,7 +160,7 @@ export const navConfig = [
       { label: "Attendance", path: "/attendance", icon: "attendance", roles: ["admin", ...EMPLOYEE_LIKE_ROLES] },
       { label: "Leaves", path: "/leaves", icon: "leaves", roles: ["admin", ...EMPLOYEE_LIKE_ROLES] },
       { label: "Training", path: "/employee/training", icon: "employeeLifecycle", roles: TRAINING_ROLES },
-      { label: "Permissions", path: "/employee/permissions", icon: "employeeLifecycle", roles: HR_ADMIN_ROLES },
+      { label: "Leave Permissions", path: "/employee/permissions", icon: "employeeLifecycle", roles: HR_ADMIN_ROLES },
       { label: "Overtime", path: "/employee/overtime", icon: "employeeLifecycle", roles: HR_ADMIN_ROLES },
       // ...HR_SUB_ROLES.filter((role) => role !== "HR").map((role) => ({
       //   label: role,
