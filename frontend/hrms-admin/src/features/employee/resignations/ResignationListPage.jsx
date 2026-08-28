@@ -165,6 +165,8 @@ function OrganizationHoverCard({
 
   const reason = resignation?.reason;
 
+  const description = resignation?.description;
+
   const noticeDate = formatDate(
     resignation?.notice_date
   );
@@ -415,6 +417,22 @@ function OrganizationHoverCard({
                 </span>
               </div>
             </div>
+
+            {description && (
+              <>
+                <div className="my-3 border-t border-slate-100 dark:border-slate-800" />
+
+                <div>
+                  <p className="mb-1 text-[9px] font-medium uppercase tracking-wide text-slate-400">
+                    Resignation Description
+                  </p>
+
+                  <p className="whitespace-pre-wrap text-xs leading-5 text-slate-600 dark:text-slate-300">
+                    {description}
+                  </p>
+                </div>
+              </>
+            )}
 
             {accomplishments && (
               <>
@@ -784,6 +802,11 @@ const EXPORT_COLUMNS = [
   },
 
   {
+    header: "Resignation Description",
+    accessor: (r) => r.description || "",
+  },
+
+  {
     header: "Overall Records / Accomplishments",
     accessor: (r) => r.accomplishments || "",
   },
@@ -1070,6 +1093,7 @@ export default function ResignationListPage() {
           const haystack = `
             ${employeeName}
             ${resignation.reason || ""}
+            ${resignation.description || ""}
             ${resignation.accomplishments || ""}
             ${resignation.status || ""}
             ${
@@ -1981,6 +2005,26 @@ export default function ResignationListPage() {
                         className="mt-0.5 line-clamp-2 text-xs leading-4 text-slate-600 dark:text-slate-300"
                       >
                         {resignation.reason}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Description */}
+                  {resignation.description && (
+                    <div className="mt-2 rounded-lg border border-slate-100 bg-white px-3 py-2 dark:border-slate-800 dark:bg-slate-900">
+                      <p className="text-[9px] font-medium uppercase tracking-wide text-slate-400">
+                        Resignation Description
+                      </p>
+
+                      <p
+                        title={
+                          resignation.description
+                        }
+                        className="mt-0.5 line-clamp-3 whitespace-pre-wrap text-xs leading-4 text-slate-600 dark:text-slate-300"
+                      >
+                        {
+                          resignation.description
+                        }
                       </p>
                     </div>
                   )}

@@ -1963,6 +1963,7 @@ class Resignation(TimestampMixin, db.Model):
     last_working_date = db.Column(db.Date, nullable=False)
 
     reason = db.Column(db.Text)
+    description = db.Column(db.Text)
     accomplishments = db.Column(db.Text)
 
     # Previous organization details

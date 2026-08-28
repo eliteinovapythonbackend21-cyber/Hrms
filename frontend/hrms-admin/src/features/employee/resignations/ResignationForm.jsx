@@ -224,6 +224,14 @@ export default function ResignationForm({
     },
 
     {
+      name: "description",
+      label: "Resignation Description",
+      type: "textarea",
+      placeholder:
+        "Add any further detail behind the resignation reason - context, circumstances, or notes for HR records...",
+    },
+
+    {
       name: "accomplishments",
       label: "Overall Records / Accomplishments",
       type: "textarea",
