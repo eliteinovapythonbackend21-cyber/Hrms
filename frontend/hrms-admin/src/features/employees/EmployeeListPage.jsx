@@ -10,12 +10,8 @@ import {
 
 import EmployeeTable from "./components/EmployeeTable";
 
-import { usePagination } from "@/hooks/usePagination";
-import { useDebouncedSearch } from "@/hooks/useDebouncedSearch";
 import { useTableExport } from "@/hooks/useTableExport";
 
-import TableSearchBar from "@/components/table/TableSearchBar";
-import TablePagination from "@/components/table/TablePagination";
 import TableToolbar from "@/components/table/TableToolbar";
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
@@ -24,6 +20,8 @@ import { useToast } from "@/components/feedback/Toast";
 
 import { employeesApi } from "@/api/employees.api";
 import { masterApi } from "@/api/master.api";
+import { useCompanies } from "@/features/master/company/useCompanies";
+import { useCompanyBranches } from "@/features/master/branches/useBranches";
 import { formatCurrency } from "@/utils/formatCurrency";
 import { useModulePermissions } from "@/hooks/useModulePermissions";
 
@@ -82,6 +80,9 @@ const ACCENT = {
     "bg-sky-50 text-sky-700 dark:bg-sky-500/10 dark:text-sky-400",
 };
 
+const EMPLOYEE_LIST_PAGE_SIZE = 10;
+const EMPLOYEE_LIST_CARD_PAGE_SIZE = 6;
+
 export default function EmployeeListPage({
   restricted = false,
   hideSalary = false,
@@ -94,37 +95,239 @@ export default function EmployeeListPage({
     );
   }
 
-  const {
-    params,
-    page,
-    perPage,
-    setPage,
-    setPerPage,
-    sortBy,
-    sortDir,
-    toggleSort,
-  } = usePagination();
+  const { showToast } =
+    useToast();
 
-  const {
-    value,
-    setValue,
-    debouncedValue,
-  } =
-    useDebouncedSearch();
+  const updateEmployee =
+    useUpdateEmployee();
+
+  const deactivateEmployee =
+    useDeactivateEmployee();
+
+  const { canAdd } =
+    useModulePermissions(
+      "Employees"
+    );
+
+  /* =======================================================
+     UI STATE
+  ======================================================= */
+
+  const [page, setPage] =
+    useState(1);
+
+  const [search, setSearch] =
+    useState("");
 
   const [
     statusFilter,
     setStatusFilter,
-  ] = useState(
-    "active"
-  );
+  ] = useState("active");
 
-  const queryParams = {
-    ...params,
-    search:
-      debouncedValue ||
-      undefined,
+  const [
+    viewMode,
+    setViewMode,
+  ] = useState("table");
+
+  /*
+   * Simple client-side sort state for the Table view's column headers.
+   * Actual reordering happens further down against the full fetched
+   * dataset (see `sortedEmployees`).
+   */
+  const [sortBy, setSortBy] =
+    useState(null);
+
+  const [sortDir, setSortDir] =
+    useState("asc");
+
+  const toggleSort = (
+    field
+  ) => {
+    if (sortBy === field) {
+      setSortDir((current) =>
+        current === "asc"
+          ? "desc"
+          : "asc"
+      );
+    } else {
+      setSortBy(field);
+      setSortDir("asc");
+    }
+
+    setPage(1);
   };
+
+  /* =======================================================
+     COMPANY / BRANCH / DEPARTMENT / DESIGNATION FILTERS
+
+     Mirrors DesignationListPage's cascading dropdowns: each level
+     narrows the options available for the next one, and resets
+     everything downstream when changed.
+  ======================================================= */
+
+  const [
+    companyFilterId,
+    setCompanyFilterId,
+  ] = useState("");
+
+  const [
+    branchFilterId,
+    setBranchFilterId,
+  ] = useState("");
+
+  const [
+    departmentFilterId,
+    setDepartmentFilterId,
+  ] = useState("");
+
+  const [
+    designationFilterId,
+    setDesignationFilterId,
+  ] = useState("");
+
+  const { data: companyData } =
+    useCompanies({
+      page: 1,
+      per_page: 100,
+      is_active: true,
+    });
+
+  const { data: branchData } =
+    useCompanyBranches(
+      companyFilterId,
+      {
+        page: 1,
+        per_page: 100,
+        is_active: true,
+      }
+    );
+
+  const {
+    data: departmentData,
+  } = useQuery({
+    queryKey: [
+      "employees-page",
+      "departments-filter",
+      branchFilterId,
+    ],
+
+    queryFn: async () =>
+      (
+        await masterApi.listDepartments(
+          {
+            branch_id:
+              branchFilterId,
+            page: 1,
+            per_page: 100,
+            is_active: true,
+          }
+        )
+      ).data.data,
+
+    enabled: !!branchFilterId,
+  });
+
+  const {
+    data: designationData,
+  } = useQuery({
+    queryKey: [
+      "employees-page",
+      "designations-filter",
+      departmentFilterId,
+    ],
+
+    queryFn: async () =>
+      (
+        await masterApi.listDesignations(
+          {
+            department_id:
+              departmentFilterId,
+            page: 1,
+            per_page: 100,
+            is_active: true,
+          }
+        )
+      ).data.data,
+
+    enabled:
+      !!departmentFilterId,
+  });
+
+  const filterCompanies =
+    companyData?.items ||
+    companyData?.data ||
+    [];
+
+  const filterBranches =
+    branchData?.items ||
+    branchData?.data ||
+    [];
+
+  const filterDepartments =
+    departmentData?.items ||
+    [];
+
+  const filterDesignations =
+    designationData?.items ||
+    [];
+
+  const handleCompanyFilterChange = (
+    event
+  ) => {
+    setCompanyFilterId(
+      event.target.value
+    );
+    setBranchFilterId("");
+    setDepartmentFilterId("");
+    setDesignationFilterId(
+      ""
+    );
+    setPage(1);
+  };
+
+  const handleBranchFilterChange = (
+    event
+  ) => {
+    setBranchFilterId(
+      event.target.value
+    );
+    setDepartmentFilterId("");
+    setDesignationFilterId(
+      ""
+    );
+    setPage(1);
+  };
+
+  const handleDepartmentFilterChange = (
+    event
+  ) => {
+    setDepartmentFilterId(
+      event.target.value
+    );
+    setDesignationFilterId(
+      ""
+    );
+    setPage(1);
+  };
+
+  const handleDesignationFilterChange = (
+    event
+  ) => {
+    setDesignationFilterId(
+      event.target.value
+    );
+    setPage(1);
+  };
+
+  /* =======================================================
+     DATA
+
+     Fetch a large page of employees and filter/paginate
+     client-side so the Company / Branch / Department /
+     Designation filters work correctly regardless of what the
+     backend's list endpoint natively supports - the same
+     pattern already used by the CRM employees view below.
+  ======================================================= */
 
   const {
     data,
@@ -132,14 +335,293 @@ export default function EmployeeListPage({
     isError,
     isFetching,
     refetch,
-  } = useEmployees(
-    queryParams
+  } = useEmployees({
+    page: 1,
+    per_page: 1000,
+  });
+
+  const allEmployees =
+    data?.items || [];
+
+  const activeEmployees =
+    allEmployees.filter(
+      (employee) =>
+        employee.is_active !==
+        false
+    );
+
+  const inactiveEmployees =
+    allEmployees.filter(
+      (employee) =>
+        employee.is_active ===
+        false
+    );
+
+  const filteredEmployees =
+    useMemo(() => {
+      const normalizedSearch =
+        search
+          .trim()
+          .toLowerCase();
+
+      return allEmployees.filter(
+        (employee) => {
+          if (
+            statusFilter ===
+              "active" &&
+            employee.is_active ===
+              false
+          ) {
+            return false;
+          }
+
+          if (
+            statusFilter ===
+              "inactive" &&
+            employee.is_active !==
+              false
+          ) {
+            return false;
+          }
+
+          const companyId =
+            employee.department
+              ?.company?.id;
+
+          const branchId =
+            employee.department
+              ?.branch?.id;
+
+          const departmentId =
+            employee.department_id ??
+            employee.department
+              ?.id;
+
+          const designationId =
+            employee.designation_id ??
+            employee.designation
+              ?.id;
+
+          if (
+            companyFilterId &&
+            String(
+              companyId
+            ) !==
+              String(
+                companyFilterId
+              )
+          ) {
+            return false;
+          }
+
+          if (
+            branchFilterId &&
+            String(
+              branchId
+            ) !==
+              String(
+                branchFilterId
+              )
+          ) {
+            return false;
+          }
+
+          if (
+            departmentFilterId &&
+            String(
+              departmentId
+            ) !==
+              String(
+                departmentFilterId
+              )
+          ) {
+            return false;
+          }
+
+          if (
+            designationFilterId &&
+            String(
+              designationId
+            ) !==
+              String(
+                designationFilterId
+              )
+          ) {
+            return false;
+          }
+
+          if (
+            normalizedSearch
+          ) {
+            const haystack = [
+              employee.employee_code,
+              `${
+                employee.first_name ||
+                ""
+              } ${
+                employee.last_name ||
+                ""
+              }`,
+              employee.department
+                ?.company
+                ?.name,
+              employee.department
+                ?.branch
+                ?.name,
+              employee.department
+                ?.department_name,
+              employee.designation
+                ?.designation_name,
+            ]
+              .join(" ")
+              .toLowerCase();
+
+            if (
+              !haystack.includes(
+                normalizedSearch
+              )
+            ) {
+              return false;
+            }
+          }
+
+          return true;
+        }
+      );
+    }, [
+      allEmployees,
+      search,
+      statusFilter,
+      companyFilterId,
+      branchFilterId,
+      departmentFilterId,
+      designationFilterId,
+    ]);
+
+  const sortedEmployees =
+    useMemo(() => {
+      if (!sortBy) {
+        return filteredEmployees;
+      }
+
+      const getSortValue = (
+        employee
+      ) => {
+        switch (sortBy) {
+          case "name":
+            return `${
+              employee.first_name ||
+              ""
+            } ${
+              employee.last_name ||
+              ""
+            }`
+              .trim()
+              .toLowerCase();
+
+          case "employee_code":
+            return (
+              employee.employee_code ||
+              ""
+            ).toLowerCase();
+
+          case "company":
+            return (
+              employee.department
+                ?.company
+                ?.name || ""
+            ).toLowerCase();
+
+          case "branch":
+            return (
+              employee.department
+                ?.branch
+                ?.name || ""
+            ).toLowerCase();
+
+          case "department":
+            return (
+              employee.department
+                ?.department_name ||
+              ""
+            ).toLowerCase();
+
+          case "designation":
+            return (
+              employee
+                .designation
+                ?.designation_name ||
+              ""
+            ).toLowerCase();
+
+          case "salary":
+            return (
+              employee.salary ??
+              0
+            );
+
+          default:
+            return "";
+        }
+      };
+
+      return [
+        ...filteredEmployees,
+      ].sort((a, b) => {
+        const aValue =
+          getSortValue(a);
+
+        const bValue =
+          getSortValue(b);
+
+        if (
+          aValue < bValue
+        ) {
+          return sortDir ===
+            "asc"
+            ? -1
+            : 1;
+        }
+
+        if (
+          aValue > bValue
+        ) {
+          return sortDir ===
+            "asc"
+            ? 1
+            : -1;
+        }
+
+        return 0;
+      });
+    }, [
+      filteredEmployees,
+      sortBy,
+      sortDir,
+    ]);
+
+  const pageSize =
+    viewMode === "card"
+      ? EMPLOYEE_LIST_CARD_PAGE_SIZE
+      : EMPLOYEE_LIST_PAGE_SIZE;
+
+  const pageCount = Math.max(
+    1,
+    Math.ceil(
+      sortedEmployees.length /
+        pageSize
+    )
   );
 
-  const { canAdd } =
-    useModulePermissions(
-      "Employees"
+  const pagedEmployees =
+    sortedEmployees.slice(
+      (page - 1) * pageSize,
+      page * pageSize
     );
+
+  /* =======================================================
+     EXPORT
+  ======================================================= */
 
   const {
     exporting,
@@ -149,7 +631,10 @@ export default function EmployeeListPage({
     useTableExport({
       fetchAll:
         employeesApi.list,
-      queryParams,
+      queryParams: {
+        search:
+          search || undefined,
+      },
       exportColumns:
         EXPORT_COLUMNS,
       filename:
@@ -157,49 +642,114 @@ export default function EmployeeListPage({
       title: "Employees",
     });
 
-  const employees =
-    data?.items || [];
+  /* =======================================================
+     DEACTIVATE / REACTIVATE
+  ======================================================= */
 
-  const activeEmployees =
-    employees.filter(
-      (employee) =>
-        employee.is_active !==
-        false
-    );
+  const isMutating =
+    deactivateEmployee.isPending ||
+    updateEmployee.isPending;
 
-  const inactiveEmployees =
-    employees.filter(
-      (employee) =>
-        employee.is_active ===
-        false
-    );
-
-  const filteredEmployees =
-    employees.filter(
-      (employee) => {
-        if (
-          statusFilter ===
-          "active"
-        ) {
-          return (
-            employee.is_active !==
-            false
-          );
-        }
-
-        if (
-          statusFilter ===
-          "inactive"
-        ) {
-          return (
-            employee.is_active ===
-            false
-          );
-        }
-
-        return true;
+  const handleDeactivate =
+    async (employee) => {
+      if (!employee?.id) {
+        return;
       }
+
+      try {
+        await deactivateEmployee.mutateAsync(
+          Number(employee.id)
+        );
+
+        showToast(
+          "Employee deactivated",
+          "success"
+        );
+
+        await refetch();
+      } catch (error) {
+        showToast(
+          error?.response
+            ?.data
+            ?.message ||
+            "Failed to deactivate employee",
+          "error"
+        );
+      }
+    };
+
+  const handleReactivate =
+    async (employee) => {
+      if (!employee?.id) {
+        return;
+      }
+
+      try {
+        const payload =
+          buildEmployeeUpdatePayload(
+            employee,
+            {
+              is_active: true,
+            }
+          );
+
+        await updateEmployee.mutateAsync(
+          {
+            id: Number(
+              employee.id
+            ),
+            payload,
+          }
+        );
+
+        showToast(
+          "Employee reactivated",
+          "success"
+        );
+
+        await refetch();
+      } catch (error) {
+        showToast(
+          error?.response
+            ?.data
+            ?.message ||
+            "Failed to reactivate employee",
+          "error"
+        );
+      }
+    };
+
+  const statusBadge = (
+    isActive
+  ) => (
+    <Badge
+      className={
+        isActive
+          ? "inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-medium text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300"
+          : "inline-flex items-center gap-1.5 rounded-full bg-red-50 px-2 py-1 text-[10px] font-medium text-red-700 dark:bg-red-500/10 dark:text-red-300"
+      }
+    >
+      <span
+        className={
+          isActive
+            ? "h-1.5 w-1.5 rounded-full bg-emerald-500"
+            : "h-1.5 w-1.5 rounded-full bg-red-500"
+        }
+      />
+
+      {isActive
+        ? "Active"
+        : "Inactive"}
+    </Badge>
+  );
+
+  if (isError) {
+    return (
+      <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-600 dark:border-red-900/40 dark:bg-red-950/20 dark:text-red-400">
+        Failed to load employees.
+      </div>
     );
+  }
 
   return (
     <div className="space-y-5">
@@ -266,11 +816,13 @@ export default function EmployeeListPage({
               </p>
 
               <p className="mt-1 text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-                {employees.length}
+                {
+                  allEmployees.length
+                }
               </p>
 
               <p className="mt-0.5 text-[11px] text-slate-400">
-                Current page
+                All records
               </p>
             </div>
 
@@ -333,15 +885,225 @@ export default function EmployeeListPage({
         </div>
       </div>
 
-      <div className="w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
-        <div className="border-b border-slate-200 px-4 py-3 dark:border-slate-700">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <div className="w-full lg:max-w-sm">
-              <TableSearchBar
-                value={value}
-                onChange={setValue}
+      {/* SEARCH + COMPANY/BRANCH/DEPARTMENT/DESIGNATION FILTERS + VIEW TOGGLE + STATUS */}
+      <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-2.5 lg:flex-row lg:flex-wrap">
+            <div className="relative w-full sm:max-w-xs">
+              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M21 21l-4.35-4.35m2.35-5.65a8 8 0 11-16 0 8 8 0 0116 0z"
+                  />
+                </svg>
+              </span>
+
+              <input
+                type="text"
+                value={search}
+                onChange={(
+                  event
+                ) => {
+                  setSearch(
+                    event
+                      .target
+                      .value
+                  );
+                  setPage(1);
+                }}
                 placeholder="Search employees..."
+                className="h-10 w-full rounded-lg border border-slate-300 bg-white pl-9 pr-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
               />
+            </div>
+
+            <select
+              value={
+                companyFilterId
+              }
+              onChange={
+                handleCompanyFilterChange
+              }
+              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 sm:max-w-[180px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+            >
+              <option value="">
+                All Companies
+              </option>
+
+              {filterCompanies.map(
+                (company) => (
+                  <option
+                    key={
+                      company.id
+                    }
+                    value={
+                      company.id
+                    }
+                  >
+                    {
+                      company.name
+                    }
+                  </option>
+                )
+              )}
+            </select>
+
+            <select
+              value={
+                branchFilterId
+              }
+              onChange={
+                handleBranchFilterChange
+              }
+              disabled={
+                !companyFilterId
+              }
+              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 disabled:cursor-not-allowed disabled:opacity-50 sm:max-w-[180px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+            >
+              <option value="">
+                {companyFilterId
+                  ? "All Branches"
+                  : "Select a company first"}
+              </option>
+
+              {filterBranches.map(
+                (branch) => (
+                  <option
+                    key={
+                      branch.id
+                    }
+                    value={
+                      branch.id
+                    }
+                  >
+                    {
+                      branch.name
+                    }
+                  </option>
+                )
+              )}
+            </select>
+
+            <select
+              value={
+                departmentFilterId
+              }
+              onChange={
+                handleDepartmentFilterChange
+              }
+              disabled={
+                !branchFilterId
+              }
+              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 disabled:cursor-not-allowed disabled:opacity-50 sm:max-w-[180px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+            >
+              <option value="">
+                {branchFilterId
+                  ? "All Departments"
+                  : "Select a branch first"}
+              </option>
+
+              {filterDepartments.map(
+                (department) => (
+                  <option
+                    key={
+                      department.id
+                    }
+                    value={
+                      department.id
+                    }
+                  >
+                    {
+                      department.department_name
+                    }
+                  </option>
+                )
+              )}
+            </select>
+
+            <select
+              value={
+                designationFilterId
+              }
+              onChange={
+                handleDesignationFilterChange
+              }
+              disabled={
+                !departmentFilterId
+              }
+              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 disabled:cursor-not-allowed disabled:opacity-50 sm:max-w-[180px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+            >
+              <option value="">
+                {departmentFilterId
+                  ? "All Designations"
+                  : "Select a department first"}
+              </option>
+
+              {filterDesignations.map(
+                (
+                  designation
+                ) => (
+                  <option
+                    key={
+                      designation.id
+                    }
+                    value={
+                      designation.id
+                    }
+                  >
+                    {
+                      designation.designation_name
+                    }
+                  </option>
+                )
+              )}
+            </select>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex w-fit items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
+              <button
+                type="button"
+                onClick={() => {
+                  setViewMode(
+                    "table"
+                  );
+                  setPage(1);
+                }}
+                className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition ${
+                  viewMode ===
+                  "table"
+                    ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
+                    : "text-slate-500 hover:text-slate-700 dark:text-slate-400"
+                }`}
+              >
+                Table
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setViewMode(
+                    "card"
+                  );
+                  setPage(1);
+                }}
+                className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition ${
+                  viewMode ===
+                  "card"
+                    ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
+                    : "text-slate-500 hover:text-slate-700 dark:text-slate-400"
+                }`}
+              >
+                Card
+              </button>
             </div>
 
             <div className="flex w-fit items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
@@ -352,7 +1114,9 @@ export default function EmployeeListPage({
               ].map(
                 (status) => (
                   <button
-                    key={status}
+                    key={
+                      status
+                    }
                     type="button"
                     onClick={() => {
                       setStatusFilter(
@@ -374,27 +1138,22 @@ export default function EmployeeListPage({
             </div>
           </div>
         </div>
+      </div>
 
-        {isError && (
-          <div className="m-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-600 dark:border-red-900/40 dark:bg-red-500/10 dark:text-red-400">
-            Failed to load employees.
-          </div>
-        )}
-
-        {!isError && (
+      {isLoading ? (
+        <div className="py-10 text-center text-sm text-slate-400">
+          Loading employees...
+        </div>
+      ) : viewMode ===
+        "table" ? (
+        <div className="w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
           <EmployeeTable
             data={
-              filteredEmployees
+              pagedEmployees
             }
-            loading={
-              isLoading
-            }
-            sortBy={
-              sortBy
-            }
-            sortDir={
-              sortDir
-            }
+            loading={false}
+            sortBy={sortBy}
+            sortDir={sortDir}
             onSort={
               toggleSort
             }
@@ -408,27 +1167,307 @@ export default function EmployeeListPage({
               hideActions
             }
           />
-        )}
+        </div>
+      ) : pagedEmployees.length ===
+        0 ? (
+        <div className="flex min-h-[260px] flex-col items-center justify-center rounded-xl border border-slate-200 bg-white px-6 py-10 text-center shadow-sm dark:border-slate-700 dark:bg-slate-900">
+          <h3 className="text-sm font-semibold text-slate-800 dark:text-white">
+            No employees found
+          </h3>
 
-        <div className="border-t border-slate-200 px-2 dark:border-slate-700">
-          <TablePagination
-            page={page}
-            pages={
-              data?.pages || 1
+          <p className="mt-1 max-w-sm text-xs text-slate-500 dark:text-slate-400">
+            No records match your current search or filters.
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {pagedEmployees.map(
+            (employee) => {
+              const name =
+                `${
+                  employee.first_name ||
+                  ""
+                } ${
+                  employee.last_name ||
+                  ""
+                }`.trim() ||
+                `Employee #${employee.id}`;
+
+              const isActive =
+                employee.is_active !==
+                false;
+
+              return (
+                <div
+                  key={
+                    employee.id
+                  }
+                  className={`relative overflow-hidden rounded-2xl border bg-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg dark:bg-slate-900 ${
+                    isActive
+                      ? "border-slate-200 dark:border-slate-700"
+                      : "border-red-100 bg-red-50/20 dark:border-red-900/30 dark:bg-red-950/10"
+                  }`}
+                >
+                  <div
+                    className={`absolute inset-x-0 top-0 h-0.5 ${
+                      isActive
+                        ? "bg-primary-600"
+                        : "bg-red-500"
+                    }`}
+                  />
+
+                  <div className="p-4">
+                    <div className="flex items-start justify-between gap-2.5">
+                      <div className="flex min-w-0 items-center gap-2.5">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-50 font-bold text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
+                          {name
+                            .charAt(
+                              0
+                            )
+                            .toUpperCase()}
+                        </div>
+
+                        <div className="min-w-0">
+                          <p
+                            title={
+                              name
+                            }
+                            className="truncate font-semibold text-slate-900 dark:text-white"
+                          >
+                            {
+                              name
+                            }
+                          </p>
+
+                          <p className="font-mono text-[10px] text-slate-400">
+                            {employee.employee_code ||
+                              `#${employee.id}`}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="shrink-0">
+                        {statusBadge(
+                          isActive
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="my-3 border-t border-slate-100 dark:border-slate-800" />
+
+                    <div className="space-y-2 text-xs">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="shrink-0 text-slate-400">
+                          Company
+                        </span>
+
+                        <span
+                          title={
+                            employee
+                              .department
+                              ?.company
+                              ?.name ||
+                            ""
+                          }
+                          className="truncate text-right font-semibold text-slate-700 dark:text-slate-200"
+                        >
+                          {employee
+                            .department
+                            ?.company
+                            ?.name ||
+                            "—"}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="shrink-0 text-slate-400">
+                          Branch
+                        </span>
+
+                        <span
+                          title={
+                            employee
+                              .department
+                              ?.branch
+                              ?.name ||
+                            ""
+                          }
+                          className="truncate text-right font-medium text-slate-700 dark:text-slate-200"
+                        >
+                          {employee
+                            .department
+                            ?.branch
+                            ?.name ||
+                            "—"}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="shrink-0 text-slate-400">
+                          Department
+                        </span>
+
+                        <span
+                          title={
+                            employee
+                              .department
+                              ?.department_name ||
+                            ""
+                          }
+                          className="truncate text-right font-semibold text-slate-700 dark:text-slate-200"
+                        >
+                          {employee
+                            .department
+                            ?.department_name ||
+                            "—"}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="shrink-0 text-slate-400">
+                          Designation
+                        </span>
+
+                        <span
+                          title={
+                            employee
+                              .designation
+                              ?.designation_name ||
+                            ""
+                          }
+                          className="truncate text-right font-semibold text-slate-700 dark:text-slate-200"
+                        >
+                          {employee
+                            .designation
+                            ?.designation_name ||
+                            "—"}
+                        </span>
+                      </div>
+
+                      {!hideSalary &&
+                        employee.salary !=
+                          null && (
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="shrink-0 text-slate-400">
+                              Salary
+                            </span>
+
+                            <span className="truncate text-right font-semibold text-slate-700 dark:text-slate-200">
+                              {formatCurrency(
+                                employee.salary
+                              )}
+                            </span>
+                          </div>
+                        )}
+                    </div>
+
+                    {!hideActions && (
+                      <div className="mt-3 grid grid-cols-3 gap-2">
+                        <Link
+                          to={`/employees/${employee.id}${
+                            restricted
+                              ? "?restricted=1"
+                              : ""
+                          }`}
+                          className="rounded-lg border border-slate-200 px-3 py-2 text-center text-xs font-semibold text-slate-700 transition-all hover:border-primary-200 hover:bg-primary-50 hover:text-primary-600 dark:border-slate-700 dark:text-slate-200 dark:hover:border-primary-500/40 dark:hover:bg-primary-500/10 dark:hover:text-primary-400"
+                        >
+                          View
+                        </Link>
+
+                        {!restricted && (
+                          <Link
+                            to={`/employees/${employee.id}/edit`}
+                            className="rounded-lg border border-slate-200 px-3 py-2 text-center text-xs font-semibold text-slate-700 transition-all hover:border-primary-200 hover:bg-primary-50 hover:text-primary-600 dark:border-slate-700 dark:text-slate-200 dark:hover:border-primary-500/40 dark:hover:bg-primary-500/10 dark:hover:text-primary-400"
+                          >
+                            Edit
+                          </Link>
+                        )}
+
+                        {!restricted && (
+                          <button
+                            type="button"
+                            disabled={
+                              isMutating
+                            }
+                            onClick={() => {
+                              if (
+                                isActive
+                              ) {
+                                handleDeactivate(
+                                  employee
+                                );
+                              } else {
+                                handleReactivate(
+                                  employee
+                                );
+                              }
+                            }}
+                            className={`rounded-lg px-3 py-2 text-xs font-semibold transition-all disabled:cursor-not-allowed disabled:opacity-50 ${
+                              isActive
+                                ? "border border-red-200 bg-white text-red-600 hover:bg-red-50 dark:border-red-900/40 dark:bg-slate-800 dark:text-red-400 dark:hover:bg-red-500/10"
+                                : "border border-emerald-200 bg-white text-emerald-600 hover:bg-emerald-50 dark:border-emerald-900/40 dark:bg-slate-800 dark:text-emerald-400 dark:hover:bg-emerald-500/10"
+                            }`}
+                          >
+                            {isActive
+                              ? "Deactivate"
+                              : "Reactivate"}
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
             }
-            total={
-              data?.total || 0
+          )}
+        </div>
+      )}
+
+      <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
+        <span>
+          Page {page} of{" "}
+          {pageCount}
+        </span>
+
+        <div className="flex gap-2">
+          <button
+            type="button"
+            disabled={
+              page <= 1
             }
-            perPage={
-              perPage
+            onClick={() =>
+              setPage(
+                (current) =>
+                  Math.max(
+                    1,
+                    current - 1
+                  )
+              )
             }
-            onPageChange={
-              setPage
+            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium transition hover:bg-slate-50 disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700"
+          >
+            Previous
+          </button>
+
+          <button
+            type="button"
+            disabled={
+              page >=
+              pageCount
             }
-            onPerPageChange={
-              setPerPage
+            onClick={() =>
+              setPage(
+                (current) =>
+                  Math.min(
+                    pageCount,
+                    current + 1
+                  )
+              )
             }
-          />
+            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium transition hover:bg-slate-50 disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700"
+          >
+            Next
+          </button>
         </div>
       </div>
     </div>
