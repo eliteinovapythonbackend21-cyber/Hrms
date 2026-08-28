@@ -1523,8 +1523,33 @@ export default function TransferListPage() {
                 )
               : payload.employee_id,
 
+          /*
+           * CURRENT DEPARTMENT IS NOT EDITABLE.
+           *
+           * from_department_id represents the employee's
+           * department AT THE TIME the transfer record was
+           * created - it's historical context, not something
+           * the user should be able to change after the fact
+           * (that's what to_department_id / a brand new
+           * transfer record is for).
+           *
+           * When editing an existing transfer, force this back
+           * to the value it already had (captured in `editing`
+           * when the Edit modal was opened) regardless of
+           * whatever TransferForm actually submits for this
+           * field - this guarantees it can never change via
+           * Edit even if the form still renders it as an
+           * interactive field. When creating a brand new
+           * transfer, the submitted value is used normally.
+           */
           from_department_id:
-            payload.from_department_id
+            editing
+              ? editing.from_department_id
+                ? Number(
+                    editing.from_department_id
+                  )
+                : editing.from_department_id
+              : payload.from_department_id
               ? Number(
                   payload.from_department_id
                 )
@@ -3026,6 +3051,7 @@ export default function TransferListPage() {
             handleSubmit
           }
           loading={isSaving}
+          isEdit={!!editing}
         />
       </Modal>
 

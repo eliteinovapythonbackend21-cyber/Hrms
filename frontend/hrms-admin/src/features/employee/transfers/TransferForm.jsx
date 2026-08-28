@@ -197,6 +197,7 @@ export default function TransferForm({
   initialData = {},
   onSubmit,
   loading = false,
+  isEdit = false,
 }) {
   const [employees, setEmployees] =
     useState([]);
@@ -456,6 +457,31 @@ export default function TransferForm({
       [departments]
     );
 
+  /*
+   * Name of the locked-in Current Department while editing, shown
+   * as read-only context next to the disabled select (the select
+   * itself still shows the right option via its `value`, but a
+   * plain label reinforces that this can't be changed without
+   * relying on the user noticing the disabled state alone).
+   */
+  const currentDepartmentName =
+    useMemo(() => {
+      if (!form.from_department_id) {
+        return "";
+      }
+
+      const match = departmentOptions.find(
+        (department) =>
+          String(department.id) ===
+          String(form.from_department_id)
+      );
+
+      return match?.name || "";
+    }, [
+      departmentOptions,
+      form.from_department_id,
+    ]);
+
   /* =========================================================
      EMPLOYEE CHANGE
   ========================================================= */
@@ -479,9 +505,22 @@ export default function TransferForm({
 
         employee_id: value,
 
-        from_department_id:
-          currentDepartment ||
-          current.from_department_id,
+        /*
+         * CURRENT DEPARTMENT IS NOT EDITABLE.
+         *
+         * While editing an existing transfer, from_department_id
+         * represents the department the employee was in AT THE
+         * TIME the transfer was recorded - it must not silently
+         * change just because a different employee gets picked
+         * in the dropdown (which shouldn't normally happen during
+         * edit anyway, but this guards against it regardless).
+         * Only auto-fill it from the selected employee when
+         * creating a brand new transfer.
+         */
+        from_department_id: isEdit
+          ? current.from_department_id
+          : currentDepartment ||
+            current.from_department_id,
       }));
     };
 
@@ -809,6 +848,12 @@ export default function TransferForm({
             <span className="text-red-500">
               *
             </span>
+
+            {isEdit && (
+              <span className="ml-1.5 font-normal normal-case text-slate-400">
+                (locked - can't be changed once a transfer is created)
+              </span>
+            )}
           </label>
 
           <select
@@ -820,8 +865,14 @@ export default function TransferForm({
             onChange={
               handleChange
             }
-            disabled={loading}
-            className={inputClass}
+            disabled={
+              loading || isEdit
+            }
+            className={`${inputClass} ${
+              isEdit
+                ? "cursor-not-allowed bg-slate-100 text-slate-500 dark:bg-slate-800/60 dark:text-slate-400"
+                : ""
+            }`}
             required
           >
             <option value="">
@@ -845,6 +896,12 @@ export default function TransferForm({
               )
             )}
           </select>
+
+          {isEdit && currentDepartmentName && (
+            <p className="mt-1 text-[11px] text-slate-400">
+              Current department: {currentDepartmentName}
+            </p>
+          )}
         </div>
 
         <div>
