@@ -1,10 +1,15 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
 import { ROLE_OPTIONS } from "@/constants/roles";
 import { validateUser } from "../userValidation";
-import { useDepartmentOptions, useDesignationOptions } from "@/hooks/useLookupOptions";
+
+import { useCompanies } from "@/features/master/company/useCompanies";
+import { useCompanyBranches } from "@/features/master/branches/useBranches";
+import { masterApi } from "@/api/master.api";
 
 export default function UserForm({ initialData = {}, onSubmit, loading, isAdmin = false }) {
   const [form, setForm] = useState({
@@ -21,13 +26,143 @@ export default function UserForm({ initialData = {}, onSubmit, loading, isAdmin 
   });
   const [errors, setErrors] = useState({});
 
-  const departmentOptions = useDepartmentOptions();
-  const designationOptions = useDesignationOptions();
+  /* =========================================================
+     COMPANY / BRANCH FILTERS
+
+     These are UI-only cascading filters, not submitted to the
+     backend directly - create_user() only reads department_id /
+     designation_id off the Employee record (company/branch are
+     derived from Department on the backend, same as every other
+     module in this app). They exist purely to narrow the
+     Department dropdown down from "every department in the
+     company" to something findable.
+
+     Also intentionally NOT using the useDepartmentOptions() /
+     useDesignationOptions() lookup hooks here - switched to the
+     same directly-queried masterApi.listDepartments /
+     listDesignations pattern already proven to work on
+     DesignationListPage / PerformanceReviewListPage /
+     EmployeeListPage, since those flat unfiltered hooks were the
+     more likely place for the "Add User isn't saving properly"
+     symptom to actually originate (empty options silently
+     blocking the required-field validation before the request
+     is ever sent).
+  ========================================================= */
+
+  const [companyFilterId, setCompanyFilterId] = useState("");
+  const [branchFilterId, setBranchFilterId] = useState("");
+
+  const { data: companyData } = useCompanies({
+    page: 1,
+    per_page: 100,
+    is_active: true,
+  });
+
+  const { data: branchData } = useCompanyBranches(
+    companyFilterId,
+    {
+      page: 1,
+      per_page: 100,
+      is_active: true,
+    }
+  );
+
+  const { data: departmentData } = useQuery({
+    queryKey: [
+      "user-form",
+      "departments-filter",
+      branchFilterId,
+    ],
+
+    queryFn: async () =>
+      (
+        await masterApi.listDepartments({
+          branch_id: branchFilterId,
+          page: 1,
+          per_page: 100,
+          is_active: true,
+        })
+      ).data.data,
+
+    enabled: !!branchFilterId,
+  });
+
+  const { data: designationData } = useQuery({
+    queryKey: [
+      "user-form",
+      "designations-filter",
+      form.department_id,
+    ],
+
+    queryFn: async () =>
+      (
+        await masterApi.listDesignations({
+          department_id: form.department_id,
+          page: 1,
+          per_page: 100,
+          is_active: true,
+        })
+      ).data.data,
+
+    enabled: !!form.department_id,
+  });
+
+  const companies = companyData?.items || companyData?.data || [];
+  const branches = branchData?.items || branchData?.data || [];
+  const departments = departmentData?.items || [];
+  const designations = designationData?.items || [];
+
+  const companyOptions = companies.map((company) => ({
+    value: company.id,
+    label: company.name,
+  }));
+
+  const branchOptions = branches.map((branch) => ({
+    value: branch.id,
+    label: branch.name,
+  }));
+
+  const departmentOptions = departments.map((department) => ({
+    value: department.id,
+    label: department.department_name,
+  }));
+
+  const designationOptions = designations.map((designation) => ({
+    value: designation.id,
+    label: designation.designation_name,
+  }));
 
   const isNewEmployee = !initialData.id && isAdmin && form.role === "employee";
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleCompanyChange = (e) => {
+    setCompanyFilterId(e.target.value);
+    setBranchFilterId("");
+    setForm((current) => ({
+      ...current,
+      department_id: "",
+      designation_id: "",
+    }));
+  };
+
+  const handleBranchChange = (e) => {
+    setBranchFilterId(e.target.value);
+    setForm((current) => ({
+      ...current,
+      department_id: "",
+      designation_id: "",
+    }));
+  };
+
+  const handleDepartmentChange = (e) => {
+    setForm((current) => ({
+      ...current,
+      department_id: e.target.value,
+      designation_id: "",
+    }));
   };
 
   const handleSubmit = (e) => {
@@ -46,7 +181,19 @@ export default function UserForm({ initialData = {}, onSubmit, loading, isAdmin 
     if (!isAdmin) {
       onSubmit(rest);
     } else if (isNewEmployee) {
-      onSubmit({ ...form });
+      // department_id / designation_id come from <select> elements, whose
+      // values are always strings - coerce to Number so the backend's
+      // Employee(department_id=..., designation_id=...) receives real
+      // integers rather than "5"/"12" strings.
+      onSubmit({
+        ...form,
+        department_id: form.department_id
+          ? Number(form.department_id)
+          : null,
+        designation_id: form.designation_id
+          ? Number(form.designation_id)
+          : null,
+      });
     } else {
       onSubmit({ username: form.username, email: form.email, mobile: form.mobile, password: form.password, role: form.role, is_active: form.is_active });
     }
@@ -125,13 +272,43 @@ export default function UserForm({ initialData = {}, onSubmit, loading, isAdmin 
               onChange={handleChange}
               error={errors.last_name}
             />
+
+            <Select
+              label="Company"
+              name="company_filter"
+              options={companyOptions}
+              value={companyFilterId}
+              onChange={handleCompanyChange}
+              placeholder="Select company"
+            />
+
+            <Select
+              label="Branch"
+              name="branch_filter"
+              options={branchOptions}
+              value={branchFilterId}
+              onChange={handleBranchChange}
+              disabled={!companyFilterId}
+              placeholder={
+                companyFilterId
+                  ? "Select branch"
+                  : "Select a company first"
+              }
+            />
+
             <Select
               label="Department"
               name="department_id"
               options={departmentOptions}
               value={form.department_id}
-              onChange={handleChange}
+              onChange={handleDepartmentChange}
               error={errors.department_id}
+              disabled={!branchFilterId}
+              placeholder={
+                branchFilterId
+                  ? "Select department"
+                  : "Select a branch first"
+              }
               required
             />
             <Select
@@ -141,6 +318,12 @@ export default function UserForm({ initialData = {}, onSubmit, loading, isAdmin 
               value={form.designation_id}
               onChange={handleChange}
               error={errors.designation_id}
+              disabled={!form.department_id}
+              placeholder={
+                form.department_id
+                  ? "Select designation"
+                  : "Select a department first"
+              }
               required
             />
           </div>
