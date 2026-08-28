@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 
@@ -116,7 +117,15 @@ function getDesignationName(designation) {
 /* Organization Hover Card                                                   */
 /* -------------------------------------------------------------------------- */
 
-function OrganizationHoverCard({ resignation, employee }) {
+const HOVER_PANEL_WIDTH = 320;
+const HOVER_PANEL_GAP = 8;
+const HOVER_PANEL_VIEWPORT_MARGIN = 16;
+const HOVER_PANEL_MAX_HEIGHT = 420;
+
+function OrganizationHoverCard({
+  resignation,
+  employee,
+}) {
   const previous = resignation?.previous_organization;
 
   const company =
@@ -139,119 +148,429 @@ function OrganizationHoverCard({ resignation, employee }) {
     employee?.designation?.designation_name ||
     employee?.designation?.name;
 
+  const hasOrganization =
+    company || branch || department || designation;
+
+  /*
+   * Additional resignation record fields, shown below the organization
+   * breakdown so the popover reflects the whole record - not just the
+   * four organization fields.
+   */
+  const employeeName = getEmployeeName(
+    employee,
+    resignation?.employee_id
+  );
+
+  const status = resignation?.status || "Pending";
+
+  const reason = resignation?.reason;
+
+  const noticeDate = formatDate(
+    resignation?.notice_date
+  );
+
+  const lastWorkingDate = formatDate(
+    resignation?.last_working_date
+  );
+
+  const accomplishments =
+    resignation?.accomplishments;
+
+  /*
+   * The popover used to be an absolutely positioned child of the trigger,
+   * which sits inside the table's `overflow-x-auto` scroll wrapper. Per
+   * the CSS spec, once one axis has a non-"visible" overflow value the
+   * other axis is computed as "auto" too, so the wrapper was silently
+   * clipping the vertical popover as well - only the very top of it was
+   * ever visible.
+   *
+   * Fix: render the popover through a React portal straight onto
+   * document.body (outside the clipped scroll container entirely) and
+   * position it with `position: fixed` using coordinates measured from
+   * the trigger element itself. Nothing can clip it anymore.
+   */
+
+  const triggerRef = useRef(null);
+  const closeTimeoutRef = useRef(null);
+
+  const [open, setOpen] = useState(false);
+  const [coords, setCoords] = useState({
+    top: 0,
+    left: 0,
+    maxHeight: HOVER_PANEL_MAX_HEIGHT,
+  });
+
+  const positionPanel = () => {
+    const node = triggerRef.current;
+
+    if (!node) {
+      return;
+    }
+
+    const rect = node.getBoundingClientRect();
+
+    const maxLeft =
+      window.innerWidth -
+      HOVER_PANEL_WIDTH -
+      HOVER_PANEL_VIEWPORT_MARGIN;
+
+    const left = Math.max(
+      HOVER_PANEL_VIEWPORT_MARGIN,
+      Math.min(rect.left, maxLeft)
+    );
+
+    /*
+     * Always open BELOW the trigger - never above it. If there isn't
+     * enough room left in the viewport for the panel's full height,
+     * shrink it (down to a sensible minimum) instead of flipping it
+     * above the row, and let it scroll internally.
+     */
+    const top = rect.bottom + HOVER_PANEL_GAP;
+
+    const availableHeight =
+      window.innerHeight -
+      top -
+      HOVER_PANEL_VIEWPORT_MARGIN;
+
+    const maxHeight = Math.max(
+      160,
+      Math.min(
+        HOVER_PANEL_MAX_HEIGHT,
+        availableHeight
+      )
+    );
+
+    setCoords({ top, left, maxHeight });
+  };
+
+  const openPanel = () => {
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current);
+      closeTimeoutRef.current = null;
+    }
+
+    positionPanel();
+    setOpen(true);
+  };
+
+  const scheduleClosePanel = () => {
+    closeTimeoutRef.current = setTimeout(() => {
+      setOpen(false);
+    }, 100);
+  };
+
   return (
-    <div className="group relative inline-block max-w-full">
-      <div className="flex max-w-full flex-wrap items-center gap-1">
-        {company && (
-          <span className="max-w-[120px] truncate rounded-full bg-sky-50 px-2 py-0.5 text-[10px] font-medium text-sky-700 dark:bg-sky-500/10 dark:text-sky-400">
-            {company}
-          </span>
+    <>
+      <span
+        ref={triggerRef}
+        tabIndex={0}
+        onMouseEnter={openPanel}
+        onMouseLeave={scheduleClosePanel}
+        onFocus={openPanel}
+        onBlur={scheduleClosePanel}
+        className={`inline-flex max-w-full cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium outline-none ring-1 ring-inset ${
+          hasOrganization
+            ? "bg-sky-50 text-sky-700 ring-sky-600/20 dark:bg-sky-500/10 dark:text-sky-400 dark:ring-sky-400/30"
+            : "bg-slate-50 text-slate-400 ring-slate-500/10 dark:bg-slate-700/40 dark:text-slate-500 dark:ring-slate-400/10"
+        }`}
+      >
+        <span
+          className={`h-1.5 w-1.5 shrink-0 rounded-full ${
+            hasOrganization
+              ? "bg-sky-500"
+              : "bg-slate-400 dark:bg-slate-500"
+          }`}
+        />
+
+        <span className="max-w-[140px] truncate">
+          {company || "No organization"}
+        </span>
+      </span>
+
+      {open &&
+        createPortal(
+          <div
+            onMouseEnter={openPanel}
+            onMouseLeave={scheduleClosePanel}
+            style={{
+              position: "fixed",
+              top: coords.top,
+              left: coords.left,
+              width: HOVER_PANEL_WIDTH,
+              maxHeight: coords.maxHeight,
+              zIndex: 9999,
+            }}
+            className="overflow-y-auto rounded-xl border border-slate-200 bg-white p-4 shadow-xl dark:border-slate-700 dark:bg-slate-900"
+          >
+            <div className="mb-3 flex items-start justify-between gap-2">
+              <div>
+                <p className="text-xs font-semibold text-slate-900 dark:text-white">
+                  Previous Organization
+                </p>
+
+                <p className="mt-0.5 text-[10px] text-slate-400">
+                  {employeeName}
+                  {employee?.employee_code
+                    ? ` (${employee.employee_code})`
+                    : ""}
+                </p>
+              </div>
+
+              <span
+                className={`shrink-0 rounded-full px-2 py-1 text-[9px] font-semibold ${
+                  STATUS_STYLES[status] ||
+                  STATUS_STYLES.Pending
+                }`}
+              >
+                {status}
+              </span>
+            </div>
+
+            {/* ORGANIZATION */}
+            <div className="space-y-2.5">
+              <div>
+                <p className="text-[9px] font-medium uppercase tracking-wide text-slate-400">
+                  Company
+                </p>
+
+                <p
+                  className="mt-0.5 text-xs font-semibold text-slate-700 dark:text-slate-200"
+                  title={company || ""}
+                >
+                  {company || "—"}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-[9px] font-medium uppercase tracking-wide text-slate-400">
+                  Branch
+                </p>
+
+                <p
+                  className="mt-0.5 text-xs font-semibold text-slate-700 dark:text-slate-200"
+                  title={branch || ""}
+                >
+                  {branch || "—"}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-[9px] font-medium uppercase tracking-wide text-slate-400">
+                  Department
+                </p>
+
+                <p
+                  className="mt-0.5 text-xs font-semibold text-slate-700 dark:text-slate-200"
+                  title={department || ""}
+                >
+                  {department || "—"}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-[9px] font-medium uppercase tracking-wide text-slate-400">
+                  Designation
+                </p>
+
+                <p
+                  className="mt-0.5 text-xs font-semibold text-slate-700 dark:text-slate-200"
+                  title={designation || ""}
+                >
+                  {designation || "—"}
+                </p>
+              </div>
+            </div>
+
+            <div className="my-3 border-t border-slate-100 dark:border-slate-800" />
+
+            {/* RESIGNATION RECORD */}
+            <div className="space-y-2.5">
+              <div className="grid grid-cols-[100px_minmax(0,1fr)] gap-3">
+                <span className="text-[9px] font-medium uppercase tracking-wide text-slate-400">
+                  Reason
+                </span>
+
+                <span className="break-words text-right text-xs font-medium text-slate-700 dark:text-slate-200">
+                  {reason || "—"}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-[100px_minmax(0,1fr)] gap-3">
+                <span className="text-[9px] font-medium uppercase tracking-wide text-slate-400">
+                  Notice Date
+                </span>
+
+                <span className="text-right text-xs font-medium text-slate-700 dark:text-slate-200">
+                  {noticeDate}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-[100px_minmax(0,1fr)] gap-3">
+                <span className="text-[9px] font-medium uppercase tracking-wide text-slate-400">
+                  Last Working
+                </span>
+
+                <span className="text-right text-xs font-medium text-slate-700 dark:text-slate-200">
+                  {lastWorkingDate}
+                </span>
+              </div>
+            </div>
+
+            {accomplishments && (
+              <>
+                <div className="my-3 border-t border-slate-100 dark:border-slate-800" />
+
+                <div>
+                  <p className="mb-1 text-[9px] font-medium uppercase tracking-wide text-slate-400">
+                    Overall Records / Accomplishments
+                  </p>
+
+                  <p className="whitespace-pre-wrap text-xs leading-5 text-slate-600 dark:text-slate-300">
+                    {accomplishments}
+                  </p>
+                </div>
+              </>
+            )}
+          </div>,
+          document.body
         )}
+    </>
+  );
+}
 
-        {branch && (
-          <>
-            <span className="text-slate-300 dark:text-slate-600">›</span>
+/* -------------------------------------------------------------------------- */
+/* Text Hover Card (Reason / Overall Records)                                */
+/* -------------------------------------------------------------------------- */
 
-            <span className="max-w-[120px] truncate rounded-full bg-sky-50 px-2 py-0.5 text-[10px] font-medium text-sky-700 dark:bg-sky-500/10 dark:text-sky-400">
-              {branch}
-            </span>
-          </>
+const TEXT_PANEL_WIDTH = 280;
+const TEXT_PANEL_MAX_HEIGHT = 256;
+
+function TextHoverCard({
+  label,
+  text,
+  emptyText = "—",
+  lineClamp = "line-clamp-2",
+}) {
+  const triggerRef = useRef(null);
+  const closeTimeoutRef = useRef(null);
+
+  const [open, setOpen] = useState(false);
+  const [coords, setCoords] = useState({
+    top: 0,
+    left: 0,
+    maxHeight: TEXT_PANEL_MAX_HEIGHT,
+  });
+
+  const positionPanel = () => {
+    const node = triggerRef.current;
+
+    if (!node) {
+      return;
+    }
+
+    const rect = node.getBoundingClientRect();
+
+    const maxLeft =
+      window.innerWidth -
+      TEXT_PANEL_WIDTH -
+      HOVER_PANEL_VIEWPORT_MARGIN;
+
+    const left = Math.max(
+      HOVER_PANEL_VIEWPORT_MARGIN,
+      Math.min(rect.right - TEXT_PANEL_WIDTH, maxLeft)
+    );
+
+    /*
+     * Always open BELOW the trigger - never above it. If there isn't
+     * enough room left in the viewport, shrink the panel (down to a
+     * sensible minimum) instead of flipping it above the row, and let
+     * it scroll internally.
+     */
+    const top = rect.bottom + HOVER_PANEL_GAP;
+
+    const availableHeight =
+      window.innerHeight -
+      top -
+      HOVER_PANEL_VIEWPORT_MARGIN;
+
+    const maxHeight = Math.max(
+      120,
+      Math.min(
+        TEXT_PANEL_MAX_HEIGHT,
+        availableHeight
+      )
+    );
+
+    setCoords({ top, left, maxHeight });
+  };
+
+  const openPanel = () => {
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current);
+      closeTimeoutRef.current = null;
+    }
+
+    positionPanel();
+    setOpen(true);
+  };
+
+  const scheduleClosePanel = () => {
+    closeTimeoutRef.current = setTimeout(() => {
+      setOpen(false);
+    }, 100);
+  };
+
+  if (!text) {
+    return (
+      <p
+        className={`${lineClamp} text-xs leading-4 text-slate-600 dark:text-slate-300`}
+      >
+        {emptyText}
+      </p>
+    );
+  }
+
+  return (
+    <>
+      <p
+        ref={triggerRef}
+        tabIndex={0}
+        onMouseEnter={openPanel}
+        onMouseLeave={scheduleClosePanel}
+        onFocus={openPanel}
+        onBlur={scheduleClosePanel}
+        className={`${lineClamp} cursor-help text-xs leading-4 text-slate-600 outline-none dark:text-slate-300`}
+        title={text}
+      >
+        {text}
+      </p>
+
+      {open &&
+        createPortal(
+          <div
+            onMouseEnter={openPanel}
+            onMouseLeave={scheduleClosePanel}
+            style={{
+              position: "fixed",
+              top: coords.top,
+              left: coords.left,
+              width: TEXT_PANEL_WIDTH,
+              maxHeight: coords.maxHeight,
+              zIndex: 9999,
+            }}
+            className="overflow-y-auto rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-600 shadow-xl dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+          >
+            <p className="mb-1 text-[9px] font-semibold uppercase tracking-wide text-slate-400">
+              {label}
+            </p>
+
+            <p className="whitespace-pre-wrap leading-5">
+              {text}
+            </p>
+          </div>,
+          document.body
         )}
-
-        {department && (
-          <>
-            <span className="text-slate-300 dark:text-slate-600">›</span>
-
-            <span className="max-w-[120px] truncate rounded-full bg-sky-50 px-2 py-0.5 text-[10px] font-medium text-sky-700 dark:bg-sky-500/10 dark:text-sky-400">
-              {department}
-            </span>
-          </>
-        )}
-
-        {designation && (
-          <>
-            <span className="text-slate-300 dark:text-slate-600">›</span>
-
-            <span className="max-w-[120px] truncate rounded-full bg-sky-50 px-2 py-0.5 text-[10px] font-medium text-sky-700 dark:bg-sky-500/10 dark:text-sky-400">
-              {designation}
-            </span>
-          </>
-        )}
-
-        {!company && !branch && !department && !designation && (
-          <span className="text-xs text-slate-400">
-            No organization assigned
-          </span>
-        )}
-      </div>
-
-      {/* Hover Details */}
-      <div className="pointer-events-none absolute left-0 top-full z-50 mt-2 hidden w-[300px] rounded-xl border border-slate-200 bg-white p-4 opacity-0 shadow-xl transition-all duration-150 group-hover:pointer-events-auto group-hover:block group-hover:opacity-100 dark:border-slate-700 dark:bg-slate-900">
-        <div className="mb-3">
-          <p className="text-xs font-semibold text-slate-900 dark:text-white">
-            Previous Organization
-          </p>
-
-          <p className="mt-0.5 text-[10px] text-slate-400">
-            Organization at the time of resignation
-          </p>
-        </div>
-
-        <div className="space-y-2.5">
-          <div>
-            <p className="text-[9px] font-medium uppercase tracking-wide text-slate-400">
-              Company
-            </p>
-
-            <p
-              className="mt-0.5 text-xs font-semibold text-slate-700 dark:text-slate-200"
-              title={company || ""}
-            >
-              {company || "—"}
-            </p>
-          </div>
-
-          <div>
-            <p className="text-[9px] font-medium uppercase tracking-wide text-slate-400">
-              Branch
-            </p>
-
-            <p
-              className="mt-0.5 text-xs font-semibold text-slate-700 dark:text-slate-200"
-              title={branch || ""}
-            >
-              {branch || "—"}
-            </p>
-          </div>
-
-          <div>
-            <p className="text-[9px] font-medium uppercase tracking-wide text-slate-400">
-              Department
-            </p>
-
-            <p
-              className="mt-0.5 text-xs font-semibold text-slate-700 dark:text-slate-200"
-              title={department || ""}
-            >
-              {department || "—"}
-            </p>
-          </div>
-
-          <div>
-            <p className="text-[9px] font-medium uppercase tracking-wide text-slate-400">
-              Designation
-            </p>
-
-            <p
-              className="mt-0.5 text-xs font-semibold text-slate-700 dark:text-slate-200"
-              title={designation || ""}
-            >
-              {designation || "—"}
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
+    </>
   );
 }
 
@@ -1293,7 +1612,7 @@ export default function ResignationListPage() {
             </thead>
 
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {paged.map((resignation, rowIndex) => {
+              {paged.map((resignation) => {
                 const employee =
                   employeeMap[
                     resignation.employee_id
@@ -1320,11 +1639,6 @@ export default function ResignationListPage() {
                     resignation.notice_date,
                     resignation.last_working_date
                   );
-
-                // Rows near the top of the visible page don't have enough
-                // room to show the tooltip above the cell, so flip it to
-                // open downwards for the first couple of rows instead.
-                const openBelow = rowIndex < 2;
 
                 return (
                   <tr
@@ -1396,53 +1710,21 @@ export default function ResignationListPage() {
 
                     {/* Reason */}
                     <td className="px-3 py-3 align-top">
-                      <div
-                        className="max-w-full truncate text-xs text-slate-600 dark:text-slate-300"
-                        title={
-                          resignation.reason ||
-                          ""
-                        }
-                      >
-                        {resignation.reason ||
-                          "—"}
-                      </div>
+                      <TextHoverCard
+                        label="Resignation Reason"
+                        text={resignation.reason}
+                        lineClamp="line-clamp-1"
+                      />
                     </td>
 
                     {/* Accomplishments */}
                     <td className="px-3 py-3 align-top">
-                      <div className="group relative">
-                        <p
-                          className="line-clamp-2 cursor-help text-xs leading-4 text-slate-600 dark:text-slate-300"
-                          title={
-                            resignation.accomplishments ||
-                            ""
-                          }
-                        >
-                          {resignation.accomplishments ||
-                            "—"}
-                        </p>
-
-                        {resignation.accomplishments && (
-                          <div
-                            className={`pointer-events-none absolute right-0 z-50 hidden max-h-64 w-[280px] overflow-y-auto rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-600 opacity-0 shadow-xl transition-all group-hover:pointer-events-auto group-hover:block group-hover:opacity-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 ${
-                              openBelow
-                                ? "top-full mt-2"
-                                : "bottom-full mb-2"
-                            }`}
-                          >
-                            <p className="mb-1 text-[9px] font-semibold uppercase tracking-wide text-slate-400">
-                              Overall Records /
-                              Accomplishments
-                            </p>
-
-                            <p className="whitespace-pre-wrap leading-5">
-                              {
-                                resignation.accomplishments
-                              }
-                            </p>
-                          </div>
-                        )}
-                      </div>
+                      <TextHoverCard
+                        label="Overall Records / Accomplishments"
+                        text={
+                          resignation.accomplishments
+                        }
+                      />
                     </td>
 
                     {/* Status */}
