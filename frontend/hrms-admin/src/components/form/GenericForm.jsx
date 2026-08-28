@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import { isRequired } from "@/utils/validators";
@@ -28,6 +29,10 @@ function normalizeDate(value) {
    CUSTOM SELECT
 ========================================================= */
 
+const SELECT_PANEL_GAP = 4;
+const SELECT_PANEL_VIEWPORT_MARGIN = 8;
+const SELECT_PANEL_MAX_HEIGHT = 240;
+
 function CustomSelect({
   label,
   name,
@@ -42,8 +47,124 @@ function CustomSelect({
   const [open, setOpen] =
     useState(false);
 
+  /*
+   * The options list used to be an absolutely positioned child of this
+   * wrapper. When this form is used inside a scrollable container (e.g.
+   * the Add/Edit Modal's body), the browser clips a non-"visible"
+   * overflow ancestor's descendants on BOTH axes, not just the one that
+   * was set - so the dropdown got cut off partway down instead of
+   * showing its own scrollbar cleanly, exactly like the earlier
+   * "Previous Organization" hover popover bug.
+   *
+   * Fix: render the options panel through a React portal straight onto
+   * document.body (outside any clipped scroll container) and position
+   * it with `position: fixed` using coordinates measured live from the
+   * trigger button. Nothing can clip it anymore.
+   */
+
   const wrapperRef =
     useRef(null);
+
+  const triggerRef =
+    useRef(null);
+
+  const panelRef =
+    useRef(null);
+
+  const [coords, setCoords] =
+    useState({
+      top: 0,
+      left: 0,
+      width: 0,
+      maxHeight:
+        SELECT_PANEL_MAX_HEIGHT,
+    });
+
+  const positionPanel = () => {
+    const node =
+      triggerRef.current;
+
+    if (!node) {
+      return;
+    }
+
+    const rect =
+      node.getBoundingClientRect();
+
+    const maxLeft =
+      window.innerWidth -
+      rect.width -
+      SELECT_PANEL_VIEWPORT_MARGIN;
+
+    const left = Math.max(
+      SELECT_PANEL_VIEWPORT_MARGIN,
+      Math.min(rect.left, maxLeft)
+    );
+
+    /*
+     * Always open BELOW the trigger - never above it. If there isn't
+     * enough room left in the viewport, shrink the panel instead of
+     * flipping it above the field, and let it scroll internally.
+     */
+    const top =
+      rect.bottom +
+      SELECT_PANEL_GAP;
+
+    const availableHeight =
+      window.innerHeight -
+      top -
+      SELECT_PANEL_VIEWPORT_MARGIN;
+
+    const maxHeight = Math.max(
+      120,
+      Math.min(
+        SELECT_PANEL_MAX_HEIGHT,
+        availableHeight
+      )
+    );
+
+    setCoords({
+      top,
+      left,
+      width: rect.width,
+      maxHeight,
+    });
+  };
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    positionPanel();
+
+    const handleReposition =
+      () => positionPanel();
+
+    window.addEventListener(
+      "scroll",
+      handleReposition,
+      true
+    );
+
+    window.addEventListener(
+      "resize",
+      handleReposition
+    );
+
+    return () => {
+      window.removeEventListener(
+        "scroll",
+        handleReposition,
+        true
+      );
+
+      window.removeEventListener(
+        "resize",
+        handleReposition
+      );
+    };
+  }, [open]);
 
   useEffect(() => {
     const handleOutsideClick = (
@@ -51,12 +172,23 @@ function CustomSelect({
     ) => {
       if (
         wrapperRef.current &&
-        !wrapperRef.current.contains(
+        wrapperRef.current.contains(
           event.target
         )
       ) {
-        setOpen(false);
+        return;
       }
+
+      if (
+        panelRef.current &&
+        panelRef.current.contains(
+          event.target
+        )
+      ) {
+        return;
+      }
+
+      setOpen(false);
     };
 
     document.addEventListener(
@@ -109,6 +241,7 @@ function CustomSelect({
       </label>
 
       <button
+        ref={triggerRef}
         type="button"
         disabled={disabled}
         onClick={() => {
@@ -163,73 +296,88 @@ function CustomSelect({
         </svg>
       </button>
 
-      {open && !disabled && (
-        <div className="absolute left-0 z-[100] mt-1 max-h-60 w-full overflow-y-auto rounded-lg border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-700 dark:bg-slate-800">
-          {options.length === 0 ? (
-            <div className="px-3 py-2 text-sm text-slate-400">
-              No options available
-            </div>
-          ) : (
-            options.map(
-              (option) => {
-                const isSelected =
-                  String(
-                    option.value
-                  ) ===
-                  String(
-                    value
-                  );
-
-                return (
-                  <button
-                    key={
+      {open &&
+        !disabled &&
+        createPortal(
+          <div
+            ref={panelRef}
+            style={{
+              position: "fixed",
+              top: coords.top,
+              left: coords.left,
+              width: coords.width,
+              maxHeight:
+                coords.maxHeight,
+              zIndex: 9999,
+            }}
+            className="overflow-y-auto rounded-lg border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-700 dark:bg-slate-800"
+          >
+            {options.length === 0 ? (
+              <div className="px-3 py-2 text-sm text-slate-400">
+                No options available
+              </div>
+            ) : (
+              options.map(
+                (option) => {
+                  const isSelected =
+                    String(
                       option.value
-                    }
-                    type="button"
-                    onClick={() =>
-                      handleSelect(
-                        option
-                      )
-                    }
-                    className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm transition
-                      ${
-                        isSelected
-                          ? "bg-primary-50 text-primary-700 dark:bg-primary-500/10 dark:text-primary-400"
-                          : "text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-700"
-                      }
-                    `}
-                  >
-                    <span className="truncate">
-                      {
-                        option.label
-                      }
-                    </span>
+                    ) ===
+                    String(
+                      value
+                    );
 
-                    {isSelected && (
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="ml-2 h-4 w-4 shrink-0 text-primary-600"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        strokeWidth={
-                          2
+                  return (
+                    <button
+                      key={
+                        option.value
+                      }
+                      type="button"
+                      onClick={() =>
+                        handleSelect(
+                          option
+                        )
+                      }
+                      className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm transition
+                        ${
+                          isSelected
+                            ? "bg-primary-50 text-primary-700 dark:bg-primary-500/10 dark:text-primary-400"
+                            : "text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-700"
                         }
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M5 12l4 4L19 7"
-                        />
-                      </svg>
-                    )}
-                  </button>
-                );
-              }
-            )
-          )}
-        </div>
-      )}
+                      `}
+                    >
+                      <span className="truncate">
+                        {
+                          option.label
+                        }
+                      </span>
+
+                      {isSelected && (
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="ml-2 h-4 w-4 shrink-0 text-primary-600"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={
+                            2
+                          }
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M5 12l4 4L19 7"
+                          />
+                        </svg>
+                      )}
+                    </button>
+                  );
+                }
+              )
+            )}
+          </div>,
+          document.body
+        )}
 
       {error && (
         <p className="mt-1 text-xs text-red-500">
