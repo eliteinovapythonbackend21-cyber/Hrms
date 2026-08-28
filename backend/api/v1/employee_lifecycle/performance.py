@@ -524,26 +524,55 @@ def create_performance(
 
     # ========================================================
     # CREATE
+    #
+    # IMPORTANT: fields are assigned via setattr AFTER
+    # construction, not passed as constructor kwargs. SQLAlchemy's
+    # default model __init__ validates every keyword argument
+    # against the model's actual mapped columns and raises a
+    # TypeError if one doesn't match - unlike plain attribute
+    # assignment (which update_performance already uses below),
+    # which never raises even for a mismatched column. If any
+    # field here doesn't line up exactly with the real model
+    # schema, passing it as a constructor kwarg would crash
+    # every single Create request with a 500, while Edit (which
+    # already uses safe setattr) keeps working fine - exactly
+    # the asymmetric failure pattern reported (Create broken,
+    # everything else fine once the client-side update() bug
+    # was fixed).
     # ========================================================
 
     performance = Performance(
         employee_id=employee_id,
-        review_period=review_period,
-        hierarchy_level=hierarchy_level,
-        day_to_day_performance=day_to_day_performance,
-        work_performance=work_performance,
-        behavioral_performance=behavioral_performance,
-        rating=rating,
-        remarks=remarks,
         is_active=True,
     )
+
+    performance.review_period = review_period
+    performance.hierarchy_level = hierarchy_level
+    performance.day_to_day_performance = day_to_day_performance
+    performance.work_performance = work_performance
+    performance.behavioral_performance = behavioral_performance
+    performance.rating = rating
+    performance.remarks = remarks
 
     _populate_organization(
         performance, employee
     )
 
     db.session.add(performance)
-    db.session.commit()
+
+    try:
+        db.session.commit()
+    except Exception as exc:
+        db.session.rollback()
+
+        # TEMP DEBUG: surfaces the real DB/programming error in the
+        # API response instead of a bare 500 with no detail, so the
+        # actual cause (e.g. a column that doesn't exist on the
+        # model) is visible in the browser's Network tab immediately.
+        # Tighten this to a generic message once confirmed working.
+        return jsonify({
+            "message": f"Failed to create performance review: {exc}"
+        }), 500
 
     return jsonify({
         "message": "Performance review created",

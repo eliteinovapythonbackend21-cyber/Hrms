@@ -115,7 +115,17 @@ export const employeeLifecycleApi = {
       ),
   },
 
-  performance: createCrudApi({ listUrl: L.PERFORMANCE, itemUrl: L.PERFORMANCE_ITEM }),
+  performance: {
+    ...createCrudApi({ listUrl: L.PERFORMANCE, itemUrl: L.PERFORMANCE_ITEM }),
+    // Same missing-update bug as promotions/transfers/resignations below —
+    // createCrudApi()'s generic spread does not include a working update()
+    // by default. Edit and Reactivate (which just calls update() with
+    // { is_active: true }) were both silently broken because of this -
+    // list/create/deactivate all worked fine since those ARE included in
+    // the generic spread, which is exactly why only Edit/Reactivate/Add
+    // looked broken while Deactivate worked.
+    update: (id, payload) => axiosClient.put(L.PERFORMANCE_ITEM(id), payload),
+  },
 
   // training_bp.py defines GET /, GET /<id>, POST /, PUT /<id>, and
   // DELETE /<id>/deactivate (no plain DELETE /<id> route exists) — so

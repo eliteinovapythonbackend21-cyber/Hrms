@@ -152,52 +152,58 @@ export default function PerformanceReviewListPage() {
 
   // ============================================================
   // DEPARTMENT
+  //
+  // Matches EmployeeListPage's proven-working query exactly:
+  // filters by branch_id only, single .data.data unwrap, and
+  // only fires once a branch is actually selected.
   // ============================================================
 
   const { data: departmentData } = useQuery({
     queryKey: [
-      "performance-departments-filter",
-      companyFilterId,
+      "performance-page",
+      "departments-filter",
       branchFilterId,
     ],
 
-    queryFn: async () => {
-      const response = await masterApi.listDepartments({
-        company_id: companyFilterId || undefined,
-        branch_id: branchFilterId || undefined,
-        page: 1,
-        per_page: 100,
-        is_active: true,
-      });
+    queryFn: async () =>
+      (
+        await masterApi.listDepartments({
+          branch_id: branchFilterId,
+          page: 1,
+          per_page: 100,
+          is_active: true,
+        })
+      ).data.data,
 
-      return response.data?.data;
-    },
-
-    enabled: Boolean(companyFilterId || branchFilterId),
+    enabled: !!branchFilterId,
   });
 
   // ============================================================
   // DESIGNATION
+  //
+  // Matches EmployeeListPage's proven-working query exactly:
+  // filters by department_id only, single .data.data unwrap,
+  // and only fires once a department is actually selected.
   // ============================================================
 
   const { data: designationData } = useQuery({
     queryKey: [
-      "performance-designations-filter",
+      "performance-page",
+      "designations-filter",
       departmentFilterId,
     ],
 
-    queryFn: async () => {
-      const response = await masterApi.listDesignations({
-        department_id: departmentFilterId,
-        page: 1,
-        per_page: 100,
-        is_active: true,
-      });
+    queryFn: async () =>
+      (
+        await masterApi.listDesignations({
+          department_id: departmentFilterId,
+          page: 1,
+          per_page: 100,
+          is_active: true,
+        })
+      ).data.data,
 
-      return response.data?.data;
-    },
-
-    enabled: Boolean(departmentFilterId),
+    enabled: !!departmentFilterId,
   });
 
   // ============================================================
@@ -215,14 +221,10 @@ export default function PerformanceReviewListPage() {
     [];
 
   const filterDepartments =
-    departmentData?.items ||
-    departmentData?.data ||
-    [];
+    departmentData?.items || [];
 
   const filterDesignations =
-    designationData?.items ||
-    designationData?.data ||
-    [];
+    designationData?.items || [];
 
   // ============================================================
   // FILTER HANDLERS
