@@ -586,6 +586,19 @@ def create_training(
         }), 400
 
     # ========================================================
+    # STATUS DESCRIPTION
+    #
+    # Optional free-text elaboration on the status - no validation
+    # beyond stripping, same treatment as performance_description
+    # below.
+    # ========================================================
+
+    status_description = (
+        data.get("status_description")
+        or ""
+    ).strip() or None
+
+    # ========================================================
     # PERFORMANCE
     # ========================================================
 
@@ -604,6 +617,17 @@ def create_training(
         }), 400
 
     # ========================================================
+    # PERFORMANCE DESCRIPTION
+    #
+    # Optional free-text elaboration on the performance rating.
+    # ========================================================
+
+    performance_description = (
+        data.get("performance_description")
+        or ""
+    ).strip() or None
+
+    # ========================================================
     # CREATE
     # ========================================================
 
@@ -613,7 +637,9 @@ def create_training(
         start_date=start_date,
         end_date=end_date,
         status=status,
+        status_description=status_description,
         performance=performance,
+        performance_description=performance_description,
         is_active=True,
     )
 
@@ -732,6 +758,21 @@ def update_training(
         training.status = status
 
     # ========================================================
+    # STATUS DESCRIPTION
+    # ========================================================
+
+    if "status_description" in data:
+
+        status_description = (
+            data.get("status_description")
+            or ""
+        ).strip()
+
+        training.status_description = (
+            status_description or None
+        )
+
+    # ========================================================
     # PERFORMANCE
     #
     # THIS WAS MISSING BEFORE.
@@ -754,6 +795,21 @@ def update_training(
             }), 400
 
         training.performance = performance
+
+    # ========================================================
+    # PERFORMANCE DESCRIPTION
+    # ========================================================
+
+    if "performance_description" in data:
+
+        performance_description = (
+            data.get("performance_description")
+            or ""
+        ).strip()
+
+        training.performance_description = (
+            performance_description or None
+        )
 
     # ========================================================
     # ACTIVE STATUS

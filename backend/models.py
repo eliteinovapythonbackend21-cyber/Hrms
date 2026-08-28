@@ -1561,31 +1561,48 @@ class Performance(TimestampMixin, db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     employee_id = db.Column(db.Integer, db.ForeignKey("employees.id"), nullable=False)
-    review_period = db.Column(db.String(20), nullable=False)
-    rating = db.Column(db.Numeric(3, 1))
-    remarks = db.Column(db.Text)
-    is_active = db.Column(db.Boolean, default=True)
-    employee = db.relationship("Employee")
+    company_id = db.Column( db.Integer, db.ForeignKey("companies.id"), nullable=True, index=True, )
+    branch_id = db.Column( db.Integer, db.ForeignKey("branches.id"), nullable=True, index=True, )
+    department_id = db.Column( db.Integer, db.ForeignKey("departments.id"), nullable=True, index=True, )
+    designation_id = db.Column( db.Integer, db.ForeignKey("designations.id"), nullable=True, index=True, )
+    review_period = db.Column( db.String(20), nullable=False, index=True, )
+    day_to_day_performance = db.Column( db.Numeric(3, 1), nullable=True, )
+    work_performance = db.Column( db.Numeric(3, 1), nullable=True, )
+    behavioral_performance = db.Column( db.Numeric(3, 1), nullable=True, )
+    rating = db.Column( db.Numeric(3, 1), nullable=True, )
+    remarks = db.Column( db.Text, nullable=True, )
+    is_active = db.Column( db.Boolean, default=True, nullable=False, index=True, )
+    employee = db.relationship( "Employee", foreign_keys=[employee_id], )
+    company = db.relationship( "Company", foreign_keys=[company_id], )
+    branch = db.relationship( "Branch", foreign_keys=[branch_id], )
+    department = db.relationship( "Department", foreign_keys=[department_id], )
+    designation = db.relationship( "Designation", foreign_keys=[designation_id], )
 
-    def to_dict(self):
-        data = super().to_dict()
-        data["employee"] = _summary(self.employee, ["id", "employee_code", "first_name", "last_name"])
-        return data
+    def to_dict(self): 
+      data = super().to_dict()
+      data["employee"] = _summary( self.employee, [ "id", "employee_code", "first_name", "last_name", ], ) 
+      data["company"] = _summary( self.company, [ "id", "name", ], )
+      data["branch"] = _summary( self.branch, [ "id", "name", ], ) 
+      data["department"] = _summary( self.department, [ "id", "department_name", "department_code", ], ) 
+      data["designation"] = _summary( self.designation, [ "id", "designation_name", "designation_code", ], ) 
+      return data
 
 
 class Training(TimestampMixin, db.Model):
     __tablename__ = "trainings"
-
+ 
     id = db.Column(db.Integer, primary_key=True)
     employee_id = db.Column(db.Integer, db.ForeignKey("employees.id"), nullable=False)
     program_name = db.Column(db.String(150), nullable=False)
     start_date = db.Column(db.Date)
     end_date = db.Column(db.Date)
     status = db.Column(db.String(20), default="Scheduled")
+    status_description = db.Column(db.Text)
     performance = db.Column(db.String(20), default="Not Rated")
+    performance_description = db.Column(db.Text)
     is_active = db.Column(db.Boolean, default=True)
     employee = db.relationship("Employee")
-
+ 
     def to_dict(self):
         data = super().to_dict()
         data["employee"] = _summary(self.employee, ["id", "employee_code", "first_name", "last_name"])

@@ -64,12 +64,28 @@ export default function TrainingProgramForm({
     },
 
     {
+      name: "status_description",
+      label: "Status Description",
+      type: "textarea",
+      placeholder:
+        "Add any detail behind the status - e.g. what's causing a delay, what's left to complete, or the plan going forward...",
+    },
+
+    {
       name: "performance",
       label: "Performance",
       type: "select",
       options: PERFORMANCE_OPTIONS,
       defaultValue: "Not Rated",
       placeholder: "Select performance rating",
+    },
+
+    {
+      name: "performance_description",
+      label: "Performance Description",
+      type: "textarea",
+      placeholder:
+        "Add any detail behind the performance rating - e.g. specific strengths, areas to improve, or evaluator notes...",
     },
   ];
 

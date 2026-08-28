@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import GenericListPage from "@/components/table/GenericListPage";
@@ -204,6 +205,145 @@ const getPerformanceStyles = (performance) => {
     "bg-slate-100 text-slate-700 ring-1 ring-inset ring-slate-600/20 dark:bg-slate-800 dark:text-slate-300"
   );
 };
+
+
+/* ============================================================
+   DESCRIPTION HOVER BADGE
+
+   Wraps a status/performance badge with an optional hover popover
+   showing its free-text description. If there's no description,
+   it just renders the plain badge - no hover machinery attached.
+
+   Renders the popover through a React portal onto document.body,
+   positioned with `position: fixed` from the badge's live
+   getBoundingClientRect(), and always opens BELOW the badge with
+   a dynamically clamped height - the same approach used for the
+   Previous Organization / Reason / Accomplishments popovers on
+   the Resignations page, so this can't get clipped by whatever
+   scroll container GenericListPage's table sits inside.
+============================================================ */
+
+const DESCRIPTION_PANEL_WIDTH = 280;
+const DESCRIPTION_PANEL_GAP = 8;
+const DESCRIPTION_PANEL_VIEWPORT_MARGIN = 12;
+const DESCRIPTION_PANEL_MAX_HEIGHT = 220;
+
+function DescriptionHoverBadge({
+  label,
+  description,
+  children,
+}) {
+  const triggerRef = useRef(null);
+  const closeTimeoutRef = useRef(null);
+
+  const [open, setOpen] = useState(false);
+  const [coords, setCoords] = useState({
+    top: 0,
+    left: 0,
+    maxHeight: DESCRIPTION_PANEL_MAX_HEIGHT,
+  });
+
+  const positionPanel = () => {
+    const node = triggerRef.current;
+
+    if (!node) {
+      return;
+    }
+
+    const rect = node.getBoundingClientRect();
+
+    const maxLeft =
+      window.innerWidth -
+      DESCRIPTION_PANEL_WIDTH -
+      DESCRIPTION_PANEL_VIEWPORT_MARGIN;
+
+    const left = Math.max(
+      DESCRIPTION_PANEL_VIEWPORT_MARGIN,
+      Math.min(rect.left, maxLeft)
+    );
+
+    const top =
+      rect.bottom +
+      DESCRIPTION_PANEL_GAP;
+
+    const availableHeight =
+      window.innerHeight -
+      top -
+      DESCRIPTION_PANEL_VIEWPORT_MARGIN;
+
+    const maxHeight = Math.max(
+      100,
+      Math.min(
+        DESCRIPTION_PANEL_MAX_HEIGHT,
+        availableHeight
+      )
+    );
+
+    setCoords({ top, left, maxHeight });
+  };
+
+  const openPanel = () => {
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current);
+      closeTimeoutRef.current = null;
+    }
+
+    positionPanel();
+    setOpen(true);
+  };
+
+  const scheduleClosePanel = () => {
+    closeTimeoutRef.current = setTimeout(() => {
+      setOpen(false);
+    }, 100);
+  };
+
+  if (!description) {
+    return children;
+  }
+
+  return (
+    <>
+      <span
+        ref={triggerRef}
+        tabIndex={0}
+        onMouseEnter={openPanel}
+        onMouseLeave={scheduleClosePanel}
+        onFocus={openPanel}
+        onBlur={scheduleClosePanel}
+        className="inline-flex cursor-help outline-none"
+      >
+        {children}
+      </span>
+
+      {open &&
+        createPortal(
+          <div
+            onMouseEnter={openPanel}
+            onMouseLeave={scheduleClosePanel}
+            style={{
+              position: "fixed",
+              top: coords.top,
+              left: coords.left,
+              width: DESCRIPTION_PANEL_WIDTH,
+              maxHeight: coords.maxHeight,
+              zIndex: 9999,
+            }}
+            className="overflow-y-auto rounded-xl border border-slate-200 bg-white p-3 shadow-xl dark:border-slate-700 dark:bg-slate-900"
+          >
+            <p className="mb-1 text-[9px] font-semibold uppercase tracking-wide text-slate-400">
+              {label}
+            </p>
+
+            <p className="whitespace-pre-wrap text-xs leading-5 text-slate-600 dark:text-slate-300">
+              {description}
+            </p>
+          </div>,
+          document.body
+        )}
+    </>
+  );
+}
 
 
 /* ============================================================
@@ -866,15 +1006,35 @@ export default function TrainingProgramListPage() {
             row.status || "Scheduled";
 
           return (
-            <span
-              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${getStatusStyles(
-                status
-              )}`}
-            >
-              <span className="h-1.5 w-1.5 rounded-full bg-current" />
+            <div className="min-w-[160px] max-w-[220px] space-y-1">
+              <DescriptionHoverBadge
+                label="Status Description"
+                description={
+                  row.status_description
+                }
+              >
+                <span
+                  className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${getStatusStyles(
+                    status
+                  )}`}
+                >
+                  <span className="h-1.5 w-1.5 rounded-full bg-current" />
 
-              {status}
-            </span>
+                  {status}
+                </span>
+              </DescriptionHoverBadge>
+
+              {row.status_description && (
+                <p
+                  title={
+                    row.status_description
+                  }
+                  className="line-clamp-2 cursor-help text-[11px] leading-4 text-slate-500 dark:text-slate-400"
+                >
+                  {row.status_description}
+                </p>
+              )}
+            </div>
           );
         },
       },
@@ -890,15 +1050,35 @@ export default function TrainingProgramListPage() {
             "Not Rated";
 
           return (
-            <span
-              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${getPerformanceStyles(
-                performance
-              )}`}
-            >
-              <span className="h-1.5 w-1.5 rounded-full bg-current" />
+            <div className="min-w-[160px] max-w-[220px] space-y-1">
+              <DescriptionHoverBadge
+                label="Performance Description"
+                description={
+                  row.performance_description
+                }
+              >
+                <span
+                  className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${getPerformanceStyles(
+                    performance
+                  )}`}
+                >
+                  <span className="h-1.5 w-1.5 rounded-full bg-current" />
 
-              {performance}
-            </span>
+                  {performance}
+                </span>
+              </DescriptionHoverBadge>
+
+              {row.performance_description && (
+                <p
+                  title={
+                    row.performance_description
+                  }
+                  className="line-clamp-2 cursor-help text-[11px] leading-4 text-slate-500 dark:text-slate-400"
+                >
+                  {row.performance_description}
+                </p>
+              )}
+            </div>
           );
         },
       },
