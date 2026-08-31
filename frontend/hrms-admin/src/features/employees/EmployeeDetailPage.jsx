@@ -21,6 +21,7 @@ import TabbedDetailLayout from "@/components/TabbedDetailLayout";
 import EmployeeSubList from "@/components/EmployeeSubList";
 
 import { employeeLifecycleApi } from "@/api/employee.api";
+import { getUser } from "@/utils/tokenHelpers";
 
 const SKY = {
   text: "text-sky-600 dark:text-sky-400",
@@ -276,6 +277,21 @@ export default function EmployeeDetailPage() {
     ) === "crm";
 
   /*
+   * SELF VIEW
+   *
+   * A non-admin opening their own record via "My Profile" gets a
+   * trimmed, read-only view: no Edit, no Payslip, no compensation
+   * breakdown, and none of the Documents / Performance / Training
+   * lifecycle tabs (those are HR/admin surfaces).
+   */
+
+  const currentUser = getUser();
+
+  const isSelfView =
+    currentUser?.role !== "admin" &&
+    String(currentUser?.employee?.id ?? "") === String(id);
+
+  /*
    * CRM RESTRICTION
    *
    * Normal employee pages:
@@ -294,10 +310,14 @@ export default function EmployeeDetailPage() {
    */
 
   const canEdit =
-    !restricted || fromCrm;
+    (!restricted || fromCrm) && !isSelfView;
 
   const canViewPayslip =
-    !restricted;
+    !restricted && !isSelfView;
+
+  const showEmployment = !restricted && !isSelfView;
+
+  const showLifecycle = !restricted && !isSelfView;
 
   /*
    * ==========================================================
@@ -405,6 +425,12 @@ export default function EmployeeDetailPage() {
    */
 
   const handleBack = () => {
+    if (isSelfView) {
+      navigate("/dashboard");
+
+      return;
+    }
+
     if (fromCrm) {
       navigate(
         "/crm/employees"
@@ -477,11 +503,13 @@ export default function EmployeeDetailPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-            Employee Details
+            {isSelfView ? "My Profile" : "Employee Details"}
           </h1>
 
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            View employee personal, organization and employment information.
+            {isSelfView
+              ? "Your personal and organization information."
+              : "View employee personal, organization and employment information."}
           </p>
         </div>
 
@@ -742,7 +770,7 @@ export default function EmployeeDetailPage() {
 
           {/* EMPLOYMENT */}
 
-          {!restricted && (
+          {showEmployment && (
             <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900">
               <h3 className="mb-4 text-xs font-semibold uppercase tracking-wide text-slate-400">
                 Employment
@@ -851,7 +879,7 @@ export default function EmployeeDetailPage() {
 
           {/* LIFECYCLE */}
 
-          {!restricted && (
+          {showLifecycle && (
             <TabbedDetailLayout
               tabs={[
                 {

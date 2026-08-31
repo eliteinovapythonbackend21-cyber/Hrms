@@ -10,6 +10,7 @@ import { masterApi } from "@/api/master.api";
 import { employeesApi } from "@/api/employees.api";
 
 import { toDateInputValue } from "@/utils/formatDate";
+import { getUser } from "@/utils/tokenHelpers";
 import { validateLeave } from "../leaveValidation";
 
 function calculateDays(fromDate, toDate) {
@@ -84,8 +85,16 @@ export default function LeaveForm({
     enabled: isAdmin,
   });
 
+  // For a non-admin (employee) request, the employee is always the logged-in
+  // user — there is no picker, so seed it from the auth payload. Admins pick
+  // it in the "Employee" section below.
+  const currentEmployeeId = getUser()?.employee?.id ?? "";
+
   const [form, setForm] = useState({
-    employee_id: initialData.employee_id || "",
+    employee_id:
+      initialData.employee_id ||
+      (isAdmin ? "" : currentEmployeeId) ||
+      "",
     leave_type_id: initialData.leave_type_id || "",
     from_date: toDateInputValue(initialData.from_date),
     to_date: toDateInputValue(initialData.to_date),
@@ -123,6 +132,11 @@ export default function LeaveForm({
       isAdmin,
     });
 
+    if (!isAdmin && !currentEmployeeId) {
+      validationErrors.employee_id =
+        "No employee record is linked to your account. Please contact an admin.";
+    }
+
     setErrors(validationErrors);
 
     if (Object.keys(validationErrors).length > 0) {
@@ -131,7 +145,11 @@ export default function LeaveForm({
 
     const { status, ...employeePayload } = form;
 
-    onSubmit(isAdmin ? form : employeePayload);
+    onSubmit(
+      isAdmin
+        ? form
+        : { ...employeePayload, employee_id: currentEmployeeId }
+    );
   };
 
   const leaveTypeOptions = (leaveTypes?.items || []).map((item) => ({
@@ -148,6 +166,13 @@ export default function LeaveForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {/* NON-ADMIN: surface the "no linked employee" problem */}
+      {!isAdmin && errors.employee_id && (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-900/10 dark:text-red-400">
+          {errors.employee_id}
+        </div>
+      )}
+
       {/* EMPLOYEE */}
       {isAdmin && (
         <section className="rounded-2xl border border-slate-200 bg-slate-50/60 p-5 dark:border-slate-700 dark:bg-slate-800/50">

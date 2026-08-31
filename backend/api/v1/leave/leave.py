@@ -160,10 +160,27 @@ def create_leave(token_response):
     if to_date < from_date:
         return jsonify({"message": "to_date cannot be before from_date"}), 400
 
+    # Resolve the employee. Admins may pass any employee_id; for everyone
+    # else it is always their own linked Employee record, regardless of
+    # what the client sent.
+    current_user = _get_current_user()
+    employee_id = _parse_int(data.get("employee_id"))
+    if not _is_admin(current_user):
+        own = Employee.query.filter_by(user_id=current_user.id).first() if current_user else None
+        if not own:
+            return jsonify({"message": "No employee record is linked to your account."}), 400
+        employee_id = own.id
+
+    if not employee_id:
+        return jsonify({"message": "employee_id is required"}), 400
+
+    if not data.get("leave_type_id"):
+        return jsonify({"message": "leave_type_id is required"}), 400
+
     total_days = (to_date - from_date).days + 1
 
     leave = Leave(
-        employee_id=data.get("employee_id"),
+        employee_id=employee_id,
         leave_type_id=data.get("leave_type_id"),
         from_date=from_date,
         to_date=to_date,
