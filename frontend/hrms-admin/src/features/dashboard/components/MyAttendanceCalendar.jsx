@@ -166,8 +166,8 @@ export default function MyAttendanceCalendar() {
     year === today.getFullYear() && month === today.getMonth() && day === today.getDate();
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
-      <div className="flex flex-col gap-3 border-b border-slate-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-between dark:border-slate-700">
+    <div className="card-elevated overflow-hidden">
+      <div className="flex flex-col gap-3 border-b border-slate-200/80 px-4 py-3 sm:flex-row sm:items-center sm:justify-between dark:border-white/[0.08]">
         <div>
           <h3 className="text-sm font-semibold text-slate-800 dark:text-white">Your Calendar</h3>
           <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -179,7 +179,7 @@ export default function MyAttendanceCalendar() {
           <button
             type="button"
             onClick={goToPrevMonth}
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800"
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition-colors hover:bg-slate-50 dark:border-white/10 dark:text-slate-400 dark:hover:bg-white/5"
             aria-label="Previous month"
           >
             ‹
@@ -190,7 +190,7 @@ export default function MyAttendanceCalendar() {
           <button
             type="button"
             onClick={goToNextMonth}
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800"
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition-colors hover:bg-slate-50 dark:border-white/10 dark:text-slate-400 dark:hover:bg-white/5"
             aria-label="Next month"
           >
             ›
@@ -206,19 +206,19 @@ export default function MyAttendanceCalendar() {
 
       {/* SUMMARY */}
       <div className="grid grid-cols-3 gap-3 px-4 py-3">
-        <div className="rounded-xl border border-emerald-100 bg-emerald-50/60 p-2.5 text-center dark:border-emerald-900/30 dark:bg-emerald-500/5">
+        <div className="stat-tile stat-tile-success !p-2.5 text-center">
           <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
             {isLoading ? "-" : monthSummary.daysWorked}
           </p>
           <p className="text-[10px] text-slate-500 dark:text-slate-400">Days worked</p>
         </div>
-        <div className="rounded-xl border border-primary-100 bg-primary-50/60 p-2.5 text-center dark:border-primary-900/30 dark:bg-primary-500/5">
+        <div className="stat-tile stat-tile-primary !p-2.5 text-center">
           <p className="text-lg font-bold text-primary-600 dark:text-primary-400">
             {isLoading ? "-" : monthSummary.totalHours}
           </p>
           <p className="text-[10px] text-slate-500 dark:text-slate-400">Hours logged</p>
         </div>
-        <div className="rounded-xl border border-amber-100 bg-amber-50/60 p-2.5 text-center dark:border-amber-900/30 dark:bg-amber-500/5">
+        <div className="stat-tile stat-tile-warn !p-2.5 text-center">
           <p className="text-lg font-bold text-amber-600 dark:text-amber-400">
             {isLoading ? "-" : monthSummary.leaveDays}
           </p>
@@ -234,11 +234,11 @@ export default function MyAttendanceCalendar() {
       </div>
 
       {/* WEEKDAYS */}
-      <div className="grid grid-cols-7 bg-slate-100/80 dark:bg-slate-800/80">
+      <div className="grid grid-cols-7 bg-slate-100/80 dark:bg-white/[0.04]">
         {WEEKDAY_LABELS.map((label) => (
           <div
             key={label}
-            className="border-r border-slate-200 px-1 py-1.5 text-center text-[9px] font-bold uppercase text-slate-500 last:border-r-0 dark:border-slate-700 dark:text-slate-400"
+            className="border-r border-slate-200 px-1 py-1.5 text-center text-[9px] font-bold uppercase text-slate-500 last:border-r-0 dark:border-white/[0.06] dark:text-slate-400"
           >
             {label}
           </div>
@@ -246,10 +246,10 @@ export default function MyAttendanceCalendar() {
       </div>
 
       {/* GRID */}
-      <div className="grid grid-cols-7 gap-px bg-slate-200/70 pb-2 dark:bg-slate-700/70">
+      <div className="grid grid-cols-7 gap-px bg-slate-200/70 pb-2 dark:bg-white/[0.06]">
         {calendarCells.map((cell, index) => {
           if (!cell) {
-            return <div key={`empty-${index}`} className="min-h-[64px] bg-slate-50/60 dark:bg-slate-950/40" />;
+            return <div key={`empty-${index}`} className="min-h-[64px] bg-slate-50/60 dark:bg-white/[0.01]" />;
           }
 
           const isPresent = cell.attendance && (cell.attendance.attendance_status || "Present") === "Present";
@@ -257,7 +257,7 @@ export default function MyAttendanceCalendar() {
           return (
             <div
               key={cell.key}
-              className={`min-h-[64px] bg-white p-1.5 dark:bg-slate-900 ${isToday(cell.day) ? "ring-2 ring-inset ring-primary-400 dark:ring-primary-500" : ""}`}
+              className={`min-h-[64px] bg-white p-1.5 dark:bg-[#0f0f16] ${isToday(cell.day) ? "ring-2 ring-inset ring-primary-400 dark:ring-primary-500" : ""}`}
               title={cell.holiday ? cell.holiday.name : undefined}
             >
               <div className="flex items-center justify-between">

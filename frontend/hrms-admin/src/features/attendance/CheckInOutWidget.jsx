@@ -106,8 +106,8 @@ export default function CheckInOutWidget() {
   };
 
   return (
-    <div className="card p-6">
-      <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
+    <div className="card-elevated p-6">
+      <h2 className="mb-4 text-lg font-semibold text-slate-900 dark:text-white">
         Check In / Check Out
       </h2>
 

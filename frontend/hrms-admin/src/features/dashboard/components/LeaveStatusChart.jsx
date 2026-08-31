@@ -11,8 +11,8 @@ export default function LeaveStatusChart({ data, loading, title = "Leave request
   const total = rows.reduce((sum, d) => sum + (d.count || 0), 0);
 
   return (
-    <div className="card p-5">
-      <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-4">{title}</h3>
+    <div className="card-elevated p-5">
+      <h3 className="mb-4 text-sm font-semibold text-slate-800 dark:text-slate-100">{title}</h3>
       {loading ? (
         <div className="h-56 flex items-center justify-center text-sm text-slate-400">Loading…</div>
       ) : total === 0 ? (

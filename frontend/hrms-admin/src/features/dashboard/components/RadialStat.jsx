@@ -20,7 +20,7 @@ export default function RadialStat({ title, percent, caption, color = "accent", 
   const hex = COLOR_HEX[color] || COLOR_HEX.accent;
 
   return (
-    <div className="card p-5 flex items-center gap-5">
+    <div className="card-elevated flex items-center gap-5 p-5">
       <div className="relative shrink-0" style={{ width: size, height: size }}>
         <svg width={size} height={size} className="-rotate-90">
           <circle cx={size / 2} cy={size / 2} r={radius} stroke="currentColor" strokeWidth={stroke} fill="none" className="text-slate-100 dark:text-white/10" />

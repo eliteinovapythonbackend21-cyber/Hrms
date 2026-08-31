@@ -10,8 +10,8 @@ export default function AttendanceTrendChart({ data, loading, title = "Check-ins
   const today = chartData.length ? chartData[chartData.length - 1].date : null;
 
   return (
-    <div className="card p-5">
-      <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-4">{title}</h3>
+    <div className="card-elevated p-5">
+      <h3 className="mb-4 text-sm font-semibold text-slate-800 dark:text-slate-100">{title}</h3>
       {loading ? (
         <div className="h-56 flex items-center justify-center text-sm text-slate-400">Loading…</div>
       ) : (

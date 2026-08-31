@@ -112,7 +112,7 @@ export const navConfig = [
     // Plain "employee" logins get one consolidated section instead of the
     // separate "Holidays" and "HR" sections above — same 4 screens, just
     // not labeled "HR" for a non-HR user. Admin/HR/Finance nav is untouched.
-    label: "Attendance",
+    label: "My Attendance",
     path: "/attendance",
     icon: "attendance",
     roles: ["employee"],

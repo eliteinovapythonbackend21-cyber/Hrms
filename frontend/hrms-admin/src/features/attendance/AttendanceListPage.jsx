@@ -817,12 +817,13 @@ export default function AttendanceListPage() {
     return (
       <div className="min-h-full space-y-6">
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="card-elevated overflow-hidden p-6">
+          <div className="pointer-events-none absolute -right-16 -top-20 h-52 w-52 rounded-full bg-primary-500/10 blur-3xl" />
+          <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <div className="flex items-center gap-3">
 
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-primary-500/15 bg-primary-500/10 text-primary-600 dark:text-primary-300">
                   <svg
                     className="h-6 w-6"
                     viewBox="0 0 24 24"
@@ -906,7 +907,7 @@ export default function AttendanceListPage() {
 
         </div>
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <div className="card-elevated p-5">
 
           <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 
@@ -2004,24 +2005,33 @@ function AttendanceMetric({
   description,
   icon,
 }) {
+  const tileTints = {
+    users: "stat-tile-primary",
+    present: "stat-tile-success",
+    absent: "border-red-200/70 bg-gradient-to-br from-red-50 to-red-100/40 dark:border-red-500/20 dark:from-red-500/[0.12] dark:to-red-500/[0.02]",
+    leave: "stat-tile-warn",
+    late: "stat-tile-warn",
+    hours: "stat-tile-accent",
+  };
+
   const iconStyles = {
     users:
-      "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300",
+      "bg-primary-100 text-primary-600 dark:bg-primary-500/15 dark:text-primary-300",
 
     present:
-      "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400",
+      "bg-emerald-100 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300",
 
     absent:
-      "bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400",
+      "bg-red-100 text-red-600 dark:bg-red-500/15 dark:text-red-300",
 
     leave:
-      "bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400",
+      "bg-amber-100 text-amber-600 dark:bg-amber-500/15 dark:text-amber-300",
 
     late:
-      "bg-orange-50 text-orange-600 dark:bg-orange-500/10 dark:text-orange-400",
+      "bg-orange-100 text-orange-600 dark:bg-orange-500/15 dark:text-orange-300",
 
     hours:
-      "bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400",
+      "bg-accent-100 text-accent-700 dark:bg-accent-500/15 dark:text-accent-300",
   };
 
   const icons = {
@@ -2034,13 +2044,13 @@ function AttendanceMetric({
   };
 
   return (
-    <div className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md dark:border-slate-700 dark:bg-slate-900">
+    <div className={`stat-tile ${tileTints[icon] || "stat-tile-primary"} !p-5`}>
 
       <div className="flex items-start justify-between">
 
         <div className="min-w-0">
 
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
             {label}
           </p>
 

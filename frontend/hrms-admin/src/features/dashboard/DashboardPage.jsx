@@ -274,9 +274,7 @@ export default function DashboardPage() {
         <div className="space-y-6">
           <div>
             <div className="mb-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400 dark:text-slate-500">
-                Your workspace
-              </p>
+              <p className="section-label">Your workspace</p>
               <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
                 Your attendance, leave and recent HR activity
               </p>
@@ -287,9 +285,7 @@ export default function DashboardPage() {
 
           <div>
             <div className="mb-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400 dark:text-slate-500">
-                Calendar
-              </p>
+              <p className="section-label">Calendar</p>
             </div>
 
             <MyAttendanceCalendar />
@@ -297,9 +293,7 @@ export default function DashboardPage() {
 
           <div>
             <div className="mb-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400 dark:text-slate-500">
-                Personal analytics
-              </p>
+              <p className="section-label">Personal analytics</p>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -323,9 +317,7 @@ export default function DashboardPage() {
 
           <div>
             <div className="mb-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400 dark:text-slate-500">
-                Recent activity
-              </p>
+              <p className="section-label">Recent activity</p>
             </div>
 
             <div className="transition-transform duration-200 hover:-translate-y-0.5">

@@ -83,4 +83,62 @@
   .brand-watermark {
     @apply pointer-events-none select-none absolute opacity-[0.06] dark:opacity-[0.08];
   }
+
+  /* ============================================================
+     "Advanced" employee-experience design language.
+     A richer, more elevated variant of .card used across the
+     employee dashboard, calendar and Attendance section.
+     ============================================================ */
+
+  /* Elevated surface — deeper radius, layered shadow, hairline
+     ring that reads as a subtle gradient edge in both themes. */
+  .card-elevated {
+    @apply relative rounded-2xl border border-slate-200/80 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04),0_12px_32px_-12px_rgba(15,23,42,0.12)] transition-shadow duration-200
+      dark:border-white/[0.08] dark:bg-white/[0.03] dark:backdrop-blur-xl dark:shadow-[0_1px_0_rgba(255,255,255,0.04)_inset,0_24px_48px_-24px_rgba(0,0,0,0.7)]
+      hover:shadow-[0_1px_2px_rgba(15,23,42,0.05),0_20px_44px_-16px_rgba(15,23,42,0.18)] dark:hover:shadow-[0_1px_0_rgba(255,255,255,0.05)_inset,0_28px_60px_-24px_rgba(0,0,0,0.8)];
+  }
+
+  /* Small uppercase eyebrow label used above every section. */
+  .section-label {
+    @apply text-[11px] font-semibold uppercase tracking-[0.15em] text-slate-400 dark:text-slate-500;
+  }
+
+  /* Gradient KPI tile. Pair with a *-tint modifier for colour. */
+  .stat-tile {
+    @apply relative overflow-hidden rounded-xl border p-4 transition-transform duration-200 hover:-translate-y-0.5;
+  }
+  .stat-tile-primary {
+    @apply border-primary-200/70 bg-gradient-to-br from-primary-50 to-primary-100/40 dark:border-primary-500/20 dark:from-primary-500/[0.12] dark:to-primary-500/[0.02];
+  }
+  .stat-tile-accent {
+    @apply border-accent-200/70 bg-gradient-to-br from-accent-50 to-accent-100/40 dark:border-accent-500/20 dark:from-accent-500/[0.12] dark:to-accent-500/[0.02];
+  }
+  .stat-tile-success {
+    @apply border-emerald-200/70 bg-gradient-to-br from-emerald-50 to-emerald-100/40 dark:border-emerald-500/20 dark:from-emerald-500/[0.12] dark:to-emerald-500/[0.02];
+  }
+  .stat-tile-warn {
+    @apply border-amber-200/70 bg-gradient-to-br from-amber-50 to-amber-100/40 dark:border-amber-500/20 dark:from-amber-500/[0.12] dark:to-amber-500/[0.02];
+  }
+
+  /* Status pill. */
+  .pill {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold;
+  }
+  .pill-success {
+    @apply bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300;
+  }
+  .pill-warn {
+    @apply bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300;
+  }
+  .pill-danger {
+    @apply bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-300;
+  }
+  .pill-muted {
+    @apply bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-slate-300;
+  }
+
+  /* Rich list row (replaces plain table rows on the dashboard). */
+  .data-row {
+    @apply flex items-center gap-3 rounded-xl border border-transparent px-3 py-2.5 transition-colors hover:border-slate-200 hover:bg-slate-50/70 dark:hover:border-white/10 dark:hover:bg-white/[0.03];
+  }
 }
