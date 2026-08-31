@@ -16,6 +16,7 @@ import {
 
 import { useCRMEmployeeOptions } from "@/hooks/useLookupOptions";
 import { useIsCrmEmployee } from "@/hooks/useIsCrmEmployee";
+import { getUser } from "@/utils/tokenHelpers";
 
 /* =========================================================
    CONSTANTS
@@ -303,8 +304,10 @@ function TargetDetailsCard({ record }) {
 export default function EmployeeTargetPage() {
   const { showToast } = useToast();
 
-  // CRM-department employees: view-only screen.
+  // CRM-department employees: view-only screen, scoped to their own
+  // targets — not every CRM employee's.
   const { isCrmEmployee: readOnly } = useIsCrmEmployee();
+  const user = getUser();
 
   const {
     data: allData,
@@ -312,7 +315,11 @@ export default function EmployeeTargetPage() {
     isFetching,
     isError,
     refetch,
-  } = useEmployeeTargets({ page: 1, per_page: 1000 });
+  } = useEmployeeTargets({
+    page: 1,
+    per_page: 1000,
+    employee_id: readOnly ? user?.employee?.id : undefined,
+  });
 
   const allRecords = allData?.items || [];
 

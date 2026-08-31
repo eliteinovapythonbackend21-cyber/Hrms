@@ -2,7 +2,7 @@ from datetime import date
 from flask import Blueprint, request, jsonify, send_file
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from models import Attendance, Employee, BaseUser, Department, Designation, Branch, Company
-from utils import paginate_query
+from utils import is_hr_department_user, paginate_query
 
 attendance_bp = Blueprint("attendance_bp", __name__)
 
@@ -28,6 +28,13 @@ def _get_current_user():
 
 def _is_admin(user):
     return user and user.role == "admin"
+
+
+def _is_privileged_attendance_viewer(user):
+    """admin, or an HR-department "employee" login — both get the same
+    organization-wide, read-only attendance view (mirrors the HR
+    sidebar's Attendance entry / the admin Attendance screen)."""
+    return _is_admin(user) or is_hr_department_user(user)
 
 
 def _parse_date(value):
@@ -79,6 +86,9 @@ def list_attendance(token_response):
 
     applied_filters = {}  # temporary debug trace - see note near the bottom
 
+    current_user = _get_current_user()
+    is_privileged = _is_privileged_attendance_viewer(current_user)
+
     if request.args.get("employee_id"):
         employee, error_response = _fetch_employee(request.args.get("employee_id"))
         if error_response:
@@ -88,6 +98,19 @@ def list_attendance(token_response):
             return error_response
         query = query.filter_by(employee_id=request.args.get("employee_id"))
         applied_filters["employee_id"] = request.args.get("employee_id")
+    elif not is_privileged:
+        # No employee_id was sent and this login isn't allowed to browse
+        # everyone's attendance — scope to their own record server-side
+        # rather than trusting the client to always send employee_id
+        # (same fix as list_leaves).
+        own_employee = (
+            Employee.query.filter_by(user_id=current_user.id).first()
+            if current_user
+            else None
+        )
+
+        query = query.filter_by(employee_id=own_employee.id if own_employee else -1)
+        applied_filters["employee_id"] = own_employee.id if own_employee else None
 
     if request.args.get("attendance_date"):
         attendance_date = _parse_date(request.args.get("attendance_date"))

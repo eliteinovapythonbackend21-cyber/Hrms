@@ -12,6 +12,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 
 CRM_DEPARTMENT_NAME = "CRM"
+HR_DEPARTMENT_NAME = "HR"
 
 def serialize_model(item):
     if hasattr(item, "to_dict"):
@@ -382,6 +383,32 @@ def is_crm_employee(employee):
     return is_crm_department(getattr(employee, "department", None))
 
 
+def is_hr_department(department):
+    if not department:
+        return False
+    return (department.department_name or "").strip().lower() == HR_DEPARTMENT_NAME.lower()
+
+
+def is_hr_department_employee(employee):
+    if not employee:
+        return False
+    return is_hr_department(getattr(employee, "department", None))
+
+
+def is_hr_department_user(user):
+    """True for a plain "employee"-role login whose Employee record sits
+    in the HR department — the read-only HR sidebar (Attendance, Leaves,
+    Training, Leave Permissions, Overtime) is only ever shown to these
+    logins, so this is the server-side mirror of that gate."""
+    if not user:
+        return False
+
+    from models import Employee
+
+    employee = Employee.query.filter_by(user_id=user.id).first()
+    return is_hr_department_employee(employee)
+
+
 def ensure_crm_employee(employee_id):
     """Returns (employee, error_response). error_response is a
     (jsonify, status) tuple if employee_id doesn't resolve to an
@@ -431,6 +458,7 @@ def register_crud_blueprint(
     on_create=None,
     serialize=None,
     filter_fields=None,
+    own_employee_scope_field=None,
 ):
     """Factory that builds a Blueprint exposing GET (list) / GET (detail) /
     POST (create) / PUT (edit, only if `editable`) / DELETE (soft-delete
@@ -450,6 +478,14 @@ def register_crud_blueprint(
     keep read+write gated together; pass `False` for resources every
     authenticated user should be able to view (e.g. Holidays) while
     keeping mutations admin-only.
+
+    own_employee_scope_field: for a resource with `view_admin_only=False`
+    (open to any authenticated user) that also has a per-employee column
+    (e.g. "employee_id"), pass that column name here to force-scope the
+    list to the requesting user's own Employee record whenever they
+    aren't admin — regardless of what the client sends. Without this, an
+    "open" list endpoint would show every employee's records to any
+    logged-in employee.
     """
     from extensions import db
 
@@ -493,6 +529,20 @@ def register_crud_blueprint(
             return guard
 
         query = model.query
+
+        if own_employee_scope_field and not is_admin(get_current_user()):
+            from models import Employee
+
+            current_user = get_current_user()
+            own_employee = (
+                Employee.query.filter_by(user_id=current_user.id).first()
+                if current_user
+                else None
+            )
+            query = query.filter(
+                getattr(model, own_employee_scope_field)
+                == (own_employee.id if own_employee else -1)
+            )
 
         if search_fields:
             query = apply_search_filters(query, request.args, search_fields)

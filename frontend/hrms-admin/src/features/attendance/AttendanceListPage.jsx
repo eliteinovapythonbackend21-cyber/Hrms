@@ -14,6 +14,7 @@ import TableToolbar from "@/components/table/TableToolbar";
 import Button from "@/components/ui/Button";
 
 import { getUser } from "@/utils/tokenHelpers";
+import { useIsHrEmployee } from "@/hooks/useIsHrEmployee";
 import { attendanceApi } from "@/api/attendance.api";
 import { masterApi } from "@/api/master.api";
 import { useCompanies } from "@/features/master/company/useCompanies";
@@ -293,6 +294,13 @@ export default function AttendanceListPage() {
   const isAdmin =
     user?.role === "admin";
 
+  // HR-department employee logins get the same organization-wide,
+  // read-only attendance view as admin (mirrors the HR sidebar's
+  // Attendance entry) — but never the write-capable actions
+  // (Manual Entry / Reports), which stay isAdmin-only below.
+  const { isHrEmployee } = useIsHrEmployee();
+  const canViewAll = isAdmin || isHrEmployee;
+
   /*
    * ----------------------------------------------------------
    * ORGANIZATION FILTERS
@@ -410,7 +418,7 @@ export default function AttendanceListPage() {
     },
 
     enabled:
-      isAdmin &&
+      canViewAll &&
       !!branchFilterId,
   });
 
@@ -457,7 +465,7 @@ export default function AttendanceListPage() {
     },
 
     enabled:
-      isAdmin &&
+      canViewAll &&
       !!departmentFilterId,
   });
 
@@ -593,7 +601,7 @@ export default function AttendanceListPage() {
       per_page: perPage,
 
       employee_id:
-        !isAdmin &&
+        !canViewAll &&
         user?.employee?.id
           ? user.employee.id
           : undefined,
@@ -603,25 +611,25 @@ export default function AttendanceListPage() {
        */
 
       company_id:
-        isAdmin &&
+        canViewAll &&
         companyFilterId
           ? Number(companyFilterId)
           : undefined,
 
       branch_id:
-        isAdmin &&
+        canViewAll &&
         branchFilterId
           ? Number(branchFilterId)
           : undefined,
 
       department_id:
-        isAdmin &&
+        canViewAll &&
         departmentFilterId
           ? Number(departmentFilterId)
           : undefined,
 
       designation_id:
-        isAdmin &&
+        canViewAll &&
         designationFilterId
           ? Number(designationFilterId)
           : undefined,
@@ -650,7 +658,7 @@ export default function AttendanceListPage() {
       params,
       page,
       perPage,
-      isAdmin,
+      canViewAll,
       user?.employee?.id,
       companyFilterId,
       branchFilterId,
@@ -813,7 +821,7 @@ export default function AttendanceListPage() {
    * ==========================================================
    */
 
-  if (!isAdmin) {
+  if (!canViewAll) {
     return (
       <div className="min-h-full space-y-6">
 
@@ -1035,17 +1043,21 @@ export default function AttendanceListPage() {
               exporting={exporting}
             />
 
-            <Link to="/attendance/manual">
-              <Button variant="secondary">
-                Manual Entry
-              </Button>
-            </Link>
+            {isAdmin && (
+              <Link to="/attendance/manual">
+                <Button variant="secondary">
+                  Manual Entry
+                </Button>
+              </Link>
+            )}
 
-            <Link to="/attendance/reports">
-              <Button>
-                Reports
-              </Button>
-            </Link>
+            {isAdmin && (
+              <Link to="/attendance/reports">
+                <Button>
+                  Reports
+                </Button>
+              </Link>
+            )}
 
           </div>
 
@@ -1483,6 +1495,7 @@ export default function AttendanceListPage() {
 
         </div>
 
+        {isAdmin && (
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
 
           <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
@@ -1528,6 +1541,7 @@ export default function AttendanceListPage() {
           </div>
 
         </div>
+        )}
 
       </div>
 

@@ -17,6 +17,7 @@ import Select from "@/components/ui/Select";
 import Button from "@/components/ui/Button";
 
 import { getUser } from "@/utils/tokenHelpers";
+import { useIsHrEmployee } from "@/hooks/useIsHrEmployee";
 import { masterApi } from "@/api/master.api";
 import { leavesApi } from "@/api/leaves.api";
 import { formatDate } from "@/utils/formatDate";
@@ -295,6 +296,13 @@ export default function LeaveListPage() {
     String(user?.role || "").toLowerCase() ===
     "admin";
 
+  // HR-department employee logins get the same organization-wide,
+  // read-only leave view as admin (mirrors the HR sidebar's Leaves
+  // entry) — Approvals and row-level approve/reject actions stay
+  // isAdmin-only below.
+  const { isHrEmployee } = useIsHrEmployee();
+  const canViewAll = isAdmin || isHrEmployee;
+
   /* ----------------------------------------------------------
      FILTERS
   ---------------------------------------------------------- */
@@ -339,7 +347,7 @@ export default function LeaveListPage() {
           is_active: true,
         })
       ).data.data,
-    enabled: isAdmin && !!branchFilterId,
+    enabled: canViewAll && !!branchFilterId,
   });
 
   const { data: designationData, isLoading: designationsLoading } = useQuery({
@@ -353,7 +361,7 @@ export default function LeaveListPage() {
           is_active: true,
         })
       ).data.data,
-    enabled: isAdmin && !!departmentFilterId,
+    enabled: canViewAll && !!departmentFilterId,
   });
 
   const filterBranches = branchData?.items || branchData?.data || [];
@@ -498,7 +506,7 @@ export default function LeaveListPage() {
        */
 
       employee_id:
-        !isAdmin &&
+        !canViewAll &&
         user?.employee?.id
           ? Number(user.employee.id)
           : undefined,
@@ -528,19 +536,19 @@ export default function LeaveListPage() {
        * users, same as AttendanceListPage.
        */
 
-      company_id: isAdmin
+      company_id: canViewAll
         ? companyFilterId || undefined
         : undefined,
 
-      branch_id: isAdmin
+      branch_id: canViewAll
         ? branchFilterId || undefined
         : undefined,
 
-      department_id: isAdmin
+      department_id: canViewAll
         ? departmentFilterId || undefined
         : undefined,
 
-      designation_id: isAdmin
+      designation_id: canViewAll
         ? designationFilterId || undefined
         : undefined,
     };
@@ -564,7 +572,7 @@ export default function LeaveListPage() {
     debouncedSearch,
     leaveTypeFilter,
     statusFilter,
-    isAdmin,
+    canViewAll,
     user?.employee?.id,
     periodRange.from_date,
     periodRange.to_date,
@@ -917,7 +925,7 @@ export default function LeaveListPage() {
           AttendanceListPage.jsx exactly.
       ====================================================== */}
 
-      {isAdmin && (
+      {canViewAll && (
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.06]">
           <div className="mb-4">
             <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">

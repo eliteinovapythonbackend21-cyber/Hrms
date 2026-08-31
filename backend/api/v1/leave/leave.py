@@ -4,7 +4,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from functools import wraps
 
 from models import Leave, Employee, BaseUser, Department
-from utils import paginate_query
+from utils import is_hr_department_user, paginate_query
 
 leave_bp = Blueprint("leave_bp", __name__)
 
@@ -73,7 +73,14 @@ def list_leaves(token_response):
     applied_filters = {}  # temporary debug trace, same as attendance_bp.py
 
     current_user = _get_current_user()
-    is_privileged = bool(current_user) and current_user.role in PRIVILEGED_LEAVE_ROLES
+    is_privileged = bool(current_user) and (
+        current_user.role in PRIVILEGED_LEAVE_ROLES
+        # HR-department "employee" logins get the same read-only,
+        # organization-wide view as the admin's Leave Management screen
+        # (mirrors the HR sidebar's Attendance/Leaves entries); they still
+        # can't write anything the frontend doesn't already gate off.
+        or is_hr_department_user(current_user)
+    )
 
     if is_privileged:
         if request.args.get("employee_id"):
