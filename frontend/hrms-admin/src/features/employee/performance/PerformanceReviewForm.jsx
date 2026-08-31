@@ -124,13 +124,13 @@ function FieldError({ children }) {
 }
 
 const inputClassName =
-  "h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-slate-800 dark:text-white";
+  "h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white";
 
 const selectClassName =
-  "h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-slate-800 dark:text-white";
+  "h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white";
 
 const textareaClassName =
-  "min-h-[100px] w-full resize-y rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-slate-800 dark:text-white";
+  "min-h-[100px] w-full resize-y rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white";
 
 /* ============================================================
    FORM
@@ -530,7 +530,7 @@ export default function PerformanceReviewForm({
           EMPLOYEE / REVIEW INFORMATION
       ====================================================== */}
 
-      <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+      <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
         <div className="mb-4">
           <h3 className="text-sm font-bold text-slate-900 dark:text-white">
             Review Information
@@ -668,7 +668,7 @@ export default function PerformanceReviewForm({
               Employee Details
             </FieldLabel>
 
-            <div className="flex min-h-10 items-center rounded-lg border border-slate-200 bg-slate-50 px-3 dark:border-slate-700 dark:bg-slate-800">
+            <div className="flex min-h-10 items-center rounded-lg border border-slate-200 bg-slate-50 px-3 dark:border-white/10 dark:bg-white/[0.06]">
               {selectedEmployee ? (
                 <div className="min-w-0">
                   <p className="truncate text-sm font-semibold text-slate-800 dark:text-white">
@@ -696,7 +696,7 @@ export default function PerformanceReviewForm({
           PERFORMANCE SCORES
       ====================================================== */}
 
-      <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+      <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
         <div className="mb-4">
           <h3 className="text-sm font-bold text-slate-900 dark:text-white">
             Performance Evaluation
@@ -810,7 +810,7 @@ export default function PerformanceReviewForm({
         {/* SCORE GUIDE */}
 
         <div className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-5">
-          <div className="rounded-lg bg-slate-50 px-2 py-2 text-center dark:bg-slate-800">
+          <div className="rounded-lg bg-slate-50 px-2 py-2 text-center dark:bg-white/[0.06]">
             <p className="text-sm font-bold text-slate-800 dark:text-white">
               1
             </p>
@@ -819,7 +819,7 @@ export default function PerformanceReviewForm({
             </p>
           </div>
 
-          <div className="rounded-lg bg-slate-50 px-2 py-2 text-center dark:bg-slate-800">
+          <div className="rounded-lg bg-slate-50 px-2 py-2 text-center dark:bg-white/[0.06]">
             <p className="text-sm font-bold text-slate-800 dark:text-white">
               2
             </p>
@@ -828,7 +828,7 @@ export default function PerformanceReviewForm({
             </p>
           </div>
 
-          <div className="rounded-lg bg-slate-50 px-2 py-2 text-center dark:bg-slate-800">
+          <div className="rounded-lg bg-slate-50 px-2 py-2 text-center dark:bg-white/[0.06]">
             <p className="text-sm font-bold text-slate-800 dark:text-white">
               3
             </p>
@@ -837,7 +837,7 @@ export default function PerformanceReviewForm({
             </p>
           </div>
 
-          <div className="rounded-lg bg-slate-50 px-2 py-2 text-center dark:bg-slate-800">
+          <div className="rounded-lg bg-slate-50 px-2 py-2 text-center dark:bg-white/[0.06]">
             <p className="text-sm font-bold text-slate-800 dark:text-white">
               4
             </p>
@@ -846,7 +846,7 @@ export default function PerformanceReviewForm({
             </p>
           </div>
 
-          <div className="rounded-lg bg-slate-50 px-2 py-2 text-center dark:bg-slate-800">
+          <div className="rounded-lg bg-slate-50 px-2 py-2 text-center dark:bg-white/[0.06]">
             <p className="text-sm font-bold text-slate-800 dark:text-white">
               5
             </p>
@@ -878,7 +878,7 @@ export default function PerformanceReviewForm({
               max={SCORE_MAX}
               step="0.1"
               placeholder="Calculated from performance scores"
-              className={`${inputClassName} bg-white dark:bg-slate-900 ${
+              className={`${inputClassName} bg-white dark:bg-white/[0.04] ${
                 errors.rating
                   ? "border-red-400 focus:border-red-500 focus:ring-red-500/10"
                   : "border-primary-200 dark:border-primary-500/30"
@@ -896,7 +896,7 @@ export default function PerformanceReviewForm({
             </p>
           </div>
 
-          <div className="flex items-center justify-center rounded-lg border border-primary-200 bg-white px-4 py-4 text-center dark:border-primary-500/20 dark:bg-slate-900">
+          <div className="flex items-center justify-center rounded-lg border border-primary-200 bg-white px-4 py-4 text-center dark:border-primary-500/20 dark:bg-white/[0.04]">
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-wide text-primary-500">
                 Calculated Overall
@@ -923,7 +923,7 @@ export default function PerformanceReviewForm({
           REMARKS
       ====================================================== */}
 
-      <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+      <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
         <FieldLabel>
           Remarks
         </FieldLabel>
@@ -947,7 +947,7 @@ export default function PerformanceReviewForm({
       ====================================================== */}
 
       {isEdit && (
-        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
           <label className="flex cursor-pointer items-center justify-between gap-4">
             <div>
               <p className="text-sm font-semibold text-slate-800 dark:text-white">
@@ -977,12 +977,12 @@ export default function PerformanceReviewForm({
           ACTIONS
       ====================================================== */}
 
-      <div className="flex flex-col-reverse gap-2 border-t border-slate-200 pt-4 sm:flex-row sm:justify-end dark:border-slate-700">
+      <div className="flex flex-col-reverse gap-2 border-t border-slate-200 pt-4 sm:flex-row sm:justify-end dark:border-white/10">
         <button
           type="button"
           onClick={onCancel}
           disabled={loading}
-          className="h-10 rounded-lg border border-slate-300 bg-white px-5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+          className="h-10 rounded-lg border border-slate-300 bg-white px-5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-600 dark:bg-white/[0.06] dark:text-slate-200 dark:hover:bg-slate-700"
         >
           Cancel
         </button>

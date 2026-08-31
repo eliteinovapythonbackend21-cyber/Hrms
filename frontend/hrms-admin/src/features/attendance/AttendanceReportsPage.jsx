@@ -245,7 +245,7 @@ export default function AttendanceReportsPage() {
           HEADER
       ====================================================== */}
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <div className="flex items-center gap-3">
@@ -287,7 +287,7 @@ export default function AttendanceReportsPage() {
             ATTENDANCE REPORT
         ==================================================== */}
 
-        <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg dark:border-slate-700 dark:bg-slate-900">
+        <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg dark:border-white/10 dark:bg-white/[0.04]">
           <div className="absolute right-0 top-0 h-24 w-24 rounded-bl-full bg-primary-50 dark:bg-primary-500/10" />
 
           <div className="relative">
@@ -329,7 +329,7 @@ export default function AttendanceReportsPage() {
             MONTHLY PAYSLIP REPORT
         ==================================================== */}
 
-        <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg dark:border-slate-700 dark:bg-slate-900">
+        <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg dark:border-white/10 dark:bg-white/[0.04]">
           <div className="absolute right-0 top-0 h-24 w-24 rounded-bl-full bg-emerald-50 dark:bg-emerald-500/10" />
 
           <div className="relative">
@@ -372,7 +372,7 @@ export default function AttendanceReportsPage() {
           QUICK MONTH SELECTOR
       ====================================================== */}
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
@@ -395,7 +395,7 @@ export default function AttendanceReportsPage() {
               onClick={() =>
                 changeMonth(-1)
               }
-              className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-300 bg-white text-lg text-slate-600 transition hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+              className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-300 bg-white text-lg text-slate-600 transition hover:bg-slate-50 dark:border-slate-600 dark:bg-white/[0.06] dark:text-slate-300 dark:hover:bg-slate-700"
               title="Previous month"
             >
               ‹
@@ -409,7 +409,7 @@ export default function AttendanceReportsPage() {
               disabled={
                 isCurrentMonth
               }
-              className="h-10 rounded-lg border border-slate-300 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200"
+              className="h-10 rounded-lg border border-slate-300 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-600 dark:bg-white/[0.06] dark:text-slate-200"
             >
               Current Month
             </button>
@@ -419,7 +419,7 @@ export default function AttendanceReportsPage() {
               onClick={() =>
                 changeMonth(1)
               }
-              className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-300 bg-white text-lg text-slate-600 transition hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+              className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-300 bg-white text-lg text-slate-600 transition hover:bg-slate-50 dark:border-slate-600 dark:bg-white/[0.06] dark:text-slate-300 dark:hover:bg-slate-700"
               title="Next month"
             >
               ›
@@ -434,7 +434,7 @@ export default function AttendanceReportsPage() {
                   )
                 )
               }
-              className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+              className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
             >
               {MONTH_NAMES.map(
                 (
@@ -460,7 +460,7 @@ export default function AttendanceReportsPage() {
                   )
                 )
               }
-              className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+              className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
             >
               {Array.from(
                 {
@@ -527,7 +527,7 @@ export default function AttendanceReportsPage() {
         size="sm"
       >
         <div className="space-y-5">
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/60">
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-white/[0.06]/60">
             <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
               Reporting Month
             </p>
@@ -562,7 +562,7 @@ export default function AttendanceReportsPage() {
                     )
                   )
                 }
-                className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
               >
                 {MONTH_NAMES.map(
                   (
@@ -601,7 +601,7 @@ export default function AttendanceReportsPage() {
                     )
                   )
                 }
-                className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
               >
                 {Array.from(
                   {

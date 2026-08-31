@@ -297,18 +297,22 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 dark:bg-slate-950">
-      <div className="flex min-h-screen">
+    <div className="dark min-h-screen bg-[#070b16] text-slate-200">
+      <div className="flex min-h-screen bg-gradient-to-br from-[#0a0f1e] via-[#0b1120] to-[#0d1526]">
 
         {/* =====================================================
             LEFT BRANDING PANEL
         ====================================================== */}
         <div className="relative hidden overflow-hidden lg:flex lg:w-[52%] xl:w-[56%]">
-          <div className="absolute inset-0 bg-slate-950" />
+          <div className="absolute inset-0 bg-[#080d1a]" />
 
-          <div className="absolute -left-32 -top-32 h-[500px] w-[500px] rounded-full bg-primary-600/30 blur-3xl" />
+          <div className="absolute -left-32 -top-32 h-[520px] w-[520px] rounded-full bg-primary-500/25 blur-[130px]" />
 
-          <div className="absolute -bottom-40 -right-20 h-[550px] w-[550px] rounded-full bg-blue-500/20 blur-3xl" />
+          <div className="absolute left-1/3 top-1/4 h-[360px] w-[360px] rounded-full bg-violet-600/20 blur-[130px]" />
+
+          <div className="absolute -bottom-40 -right-20 h-[560px] w-[560px] rounded-full bg-accent-500/20 blur-[130px]" />
+
+          <div className="absolute bottom-10 left-10 h-[300px] w-[300px] rounded-full bg-blue-500/15 blur-[120px]" />
 
           <div className="absolute inset-0 opacity-[0.07]">
             <div
@@ -325,7 +329,7 @@ export default function LoginPage() {
 
             {/* Logo */}
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary-600 text-white shadow-lg shadow-primary-600/30">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-primary-400 to-primary-600 text-white shadow-lg shadow-primary-600/40 ring-1 ring-white/20">
                 <ShieldIcon />
               </div>
 
@@ -349,7 +353,7 @@ export default function LoginPage() {
 
               <h2 className="text-4xl font-bold leading-[1.12] tracking-tight text-white xl:text-5xl">
                 Everything your
-                <span className="block text-primary-400">
+                <span className="block bg-gradient-to-r from-primary-300 via-primary-400 to-accent-300 bg-clip-text text-transparent">
                   workforce needs.
                 </span>
               </h2>
@@ -361,16 +365,18 @@ export default function LoginPage() {
 
               <div className="mt-9 grid grid-cols-2 gap-3">
                 {[
-                  ["Employee Management", "Centralized workforce data"],
-                  ["Attendance & Leave", "Track time effortlessly"],
-                  ["Payroll Management", "Accurate payroll workflows"],
-                  ["Reports & Insights", "Actionable HR analytics"],
-                ].map(([title, description]) => (
+                  ["Employee Management", "Centralized workforce data", "from-primary-500/25 to-primary-500/5 text-primary-300 ring-primary-400/25"],
+                  ["Attendance & Leave", "Track time effortlessly", "from-accent-500/25 to-accent-500/5 text-accent-300 ring-accent-400/25"],
+                  ["Payroll Management", "Accurate payroll workflows", "from-violet-500/25 to-violet-500/5 text-violet-300 ring-violet-400/25"],
+                  ["Reports & Insights", "Actionable HR analytics", "from-blue-500/25 to-blue-500/5 text-blue-300 ring-blue-400/25"],
+                ].map(([title, description, accent]) => (
                   <div
                     key={title}
-                    className="rounded-xl border border-white/10 bg-white/[0.045] p-4 backdrop-blur-sm transition-all duration-200 hover:bg-white/[0.07]"
+                    className="group rounded-xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.07]"
                   >
-                    <div className="mb-2 flex h-7 w-7 items-center justify-center rounded-lg bg-primary-500/15 text-primary-400">
+                    <div
+                      className={`mb-2 flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br ring-1 ${accent}`}
+                    >
                       <CheckIcon />
                     </div>
 
@@ -403,12 +409,14 @@ export default function LoginPage() {
         {/* =====================================================
             RIGHT LOGIN PANEL
         ====================================================== */}
-        <div className="flex w-full items-center justify-center bg-slate-50 px-5 py-8 dark:bg-slate-950 sm:px-8 lg:w-[48%] xl:w-[44%]">
-          <div className="w-full max-w-[470px]">
+        <div className="relative flex w-full items-center justify-center px-5 py-8 sm:px-8 lg:w-[48%] xl:w-[44%]">
+          <div className="pointer-events-none absolute -right-24 top-1/4 h-72 w-72 rounded-full bg-primary-500/10 blur-[120px] lg:hidden" />
+
+          <div className="relative w-full max-w-[470px]">
 
             {/* Mobile Logo */}
             <div className="mb-8 flex items-center justify-center gap-3 lg:hidden">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-600 text-white">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary-400 to-primary-600 text-white ring-1 ring-white/20">
                 <ShieldIcon />
               </div>
 
@@ -424,11 +432,12 @@ export default function LoginPage() {
             </div>
 
             {/* Login Card */}
-            <div className="rounded-2xl border border-slate-200 bg-white p-7 shadow-xl shadow-slate-200/50 dark:border-white/10 dark:bg-slate-900 dark:shadow-black/20 sm:p-8">
+            <div className="rounded-2xl bg-gradient-to-b from-white/15 to-white/[0.03] p-px shadow-2xl shadow-black/40">
+              <div className="rounded-2xl border border-white/10 bg-[#0c1322]/80 p-7 backdrop-blur-2xl sm:p-8">
 
               {/* Header */}
               <div className="mb-7">
-                <p className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-primary-600 dark:text-primary-400">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-primary-400">
                   Welcome back
                 </p>
 
@@ -463,21 +472,21 @@ export default function LoginPage() {
                     onClick={() => handleLoginTypeChange("admin")}
                     className={`group relative overflow-hidden rounded-xl border p-3.5 text-left transition-all duration-200 ${
                       isAdminLogin
-                        ? "border-primary-500 bg-primary-50 shadow-sm shadow-primary-500/10 dark:border-primary-500/60 dark:bg-primary-500/10"
-                        : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 dark:border-white/10 dark:bg-white/[0.02] dark:hover:border-white/20 dark:hover:bg-white/[0.04]"
+                        ? "border-primary-500/60 bg-gradient-to-br from-primary-500/15 to-primary-500/[0.03] shadow-lg shadow-primary-500/10"
+                        : "border-white/10 bg-white/[0.02] hover:border-white/20 hover:bg-white/[0.05]"
                     }`}
                   >
                     {isAdminLogin && (
-                      <span className="absolute right-2.5 top-2.5 flex h-5 w-5 items-center justify-center rounded-full bg-primary-600 text-white">
+                      <span className="absolute right-2.5 top-2.5 flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-primary-400 to-primary-600 text-white shadow shadow-primary-600/40">
                         <CheckIcon />
                       </span>
                     )}
 
                     <div
-                      className={`mb-3 flex h-10 w-10 items-center justify-center rounded-lg ${
+                      className={`mb-3 flex h-10 w-10 items-center justify-center rounded-lg transition-colors ${
                         isAdminLogin
-                          ? "bg-primary-600 text-white"
-                          : "bg-slate-100 text-slate-500 dark:bg-white/10 dark:text-slate-400"
+                          ? "bg-gradient-to-br from-primary-400 to-primary-600 text-white shadow-md shadow-primary-600/30"
+                          : "bg-white/10 text-slate-400"
                       }`}
                     >
                       <AdminIcon />
@@ -486,14 +495,14 @@ export default function LoginPage() {
                     <p
                       className={`text-sm font-bold ${
                         isAdminLogin
-                          ? "text-primary-700 dark:text-primary-300"
-                          : "text-slate-700 dark:text-slate-200"
+                          ? "text-primary-300"
+                          : "text-slate-200"
                       }`}
                     >
                       Admin
                     </p>
 
-                    <p className="mt-1 text-[10px] leading-4 text-slate-400 dark:text-slate-500">
+                    <p className="mt-1 text-[10px] leading-4 text-slate-500">
                       Full HR management access
                     </p>
                   </button>
@@ -504,21 +513,21 @@ export default function LoginPage() {
                     onClick={() => handleLoginTypeChange("employee")}
                     className={`group relative overflow-hidden rounded-xl border p-3.5 text-left transition-all duration-200 ${
                       !isAdminLogin
-                        ? "border-primary-500 bg-primary-50 shadow-sm shadow-primary-500/10 dark:border-primary-500/60 dark:bg-primary-500/10"
-                        : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 dark:border-white/10 dark:bg-white/[0.02] dark:hover:border-white/20 dark:hover:bg-white/[0.04]"
+                        ? "border-accent-500/60 bg-gradient-to-br from-accent-500/15 to-accent-500/[0.03] shadow-lg shadow-accent-500/10"
+                        : "border-white/10 bg-white/[0.02] hover:border-white/20 hover:bg-white/[0.05]"
                     }`}
                   >
                     {!isAdminLogin && (
-                      <span className="absolute right-2.5 top-2.5 flex h-5 w-5 items-center justify-center rounded-full bg-primary-600 text-white">
+                      <span className="absolute right-2.5 top-2.5 flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-accent-400 to-accent-600 text-white shadow shadow-accent-600/40">
                         <CheckIcon />
                       </span>
                     )}
 
                     <div
-                      className={`mb-3 flex h-10 w-10 items-center justify-center rounded-lg ${
+                      className={`mb-3 flex h-10 w-10 items-center justify-center rounded-lg transition-colors ${
                         !isAdminLogin
-                          ? "bg-primary-600 text-white"
-                          : "bg-slate-100 text-slate-500 dark:bg-white/10 dark:text-slate-400"
+                          ? "bg-gradient-to-br from-accent-400 to-accent-600 text-white shadow-md shadow-accent-600/30"
+                          : "bg-white/10 text-slate-400"
                       }`}
                     >
                       <EmployeeIcon />
@@ -527,28 +536,34 @@ export default function LoginPage() {
                     <p
                       className={`text-sm font-bold ${
                         !isAdminLogin
-                          ? "text-primary-700 dark:text-primary-300"
-                          : "text-slate-700 dark:text-slate-200"
+                          ? "text-accent-300"
+                          : "text-slate-200"
                       }`}
                     >
                       Employee
                     </p>
 
-                    <p className="mt-1 text-[10px] leading-4 text-slate-400 dark:text-slate-500">
+                    <p className="mt-1 text-[10px] leading-4 text-slate-500">
                       Personal employee portal
                     </p>
                   </button>
                 </div>
 
                 {/* Current Login Type */}
-                <div className="mt-3 flex items-center gap-2 rounded-lg bg-slate-50 px-3 py-2.5 dark:bg-white/[0.03]">
-                  <div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400">
+                <div className="mt-3 flex items-center gap-2 rounded-lg border border-white/5 bg-white/[0.03] px-3 py-2.5">
+                  <div
+                    className={`flex h-5 w-5 items-center justify-center rounded-full text-white ${
+                      isAdminLogin
+                        ? "bg-gradient-to-br from-primary-400 to-primary-600"
+                        : "bg-gradient-to-br from-accent-400 to-accent-600"
+                    }`}
+                  >
                     <CheckIcon />
                   </div>
 
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  <p className="text-[11px] text-slate-400">
                     Signing in as{" "}
-                    <span className="font-semibold text-slate-700 dark:text-slate-200">
+                    <span className="font-semibold text-slate-200">
                       {isAdminLogin ? "Administrator" : "Employee"}
                     </span>
                   </p>
@@ -651,7 +666,7 @@ export default function LoginPage() {
                 {/* Submit */}
                 <Button
                   type="submit"
-                  className="group mt-6 h-12 w-full text-sm font-semibold"
+                  className="group mt-6 h-12 w-full rounded-xl border-0 bg-gradient-to-r from-primary-500 via-primary-500 to-primary-600 text-sm font-semibold text-white shadow-lg shadow-primary-600/30 transition-all hover:from-primary-400 hover:to-primary-500 hover:shadow-primary-600/40"
                   isLoading={login.isPending}
                 >
                   <span>
@@ -665,26 +680,27 @@ export default function LoginPage() {
               </form>
 
               {/* Security */}
-              <div className="mt-6 border-t border-slate-100 pt-5 dark:border-white/10">
+              <div className="mt-6 border-t border-white/10 pt-5">
                 <div className="flex items-center justify-center gap-2">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-accent-500/25 to-accent-500/5 text-accent-300 ring-1 ring-accent-400/25">
                     <ShieldIcon />
                   </div>
 
                   <div>
-                    <p className="text-[11px] font-semibold text-slate-600 dark:text-slate-300">
+                    <p className="text-[11px] font-semibold text-slate-300">
                       Secure authentication
                     </p>
 
-                    <p className="text-[10px] text-slate-400 dark:text-slate-500">
+                    <p className="text-[10px] text-slate-500">
                       Your credentials are protected
                     </p>
                   </div>
                 </div>
               </div>
+              </div>
             </div>
 
-            <p className="mt-5 text-center text-[10px] text-slate-400 dark:text-slate-600">
+            <p className="mt-5 text-center text-[10px] text-slate-500">
               By signing in, you agree to your organization's
               authentication and security policies.
             </p>

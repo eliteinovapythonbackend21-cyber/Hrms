@@ -321,7 +321,7 @@ export default function LeaveTypeListPage() {
             <button
               type="button"
               onClick={() => openEdit(r)}
-              className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-primary-600 transition hover:bg-primary-50 dark:border-slate-700 dark:bg-slate-800 dark:text-primary-400 dark:hover:bg-primary-500/10"
+              className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-primary-600 transition hover:bg-primary-50 dark:border-white/10 dark:bg-white/[0.06] dark:text-primary-400 dark:hover:bg-primary-500/10"
             >
               Edit
             </button>
@@ -331,7 +331,7 @@ export default function LeaveTypeListPage() {
             <button
               type="button"
               onClick={() => setConfirmRow(r)}
-              className="rounded-lg border border-red-200 bg-white px-2.5 py-1.5 text-xs font-medium text-red-600 transition hover:bg-red-50 dark:border-red-900/50 dark:bg-slate-800 dark:text-red-400 dark:hover:bg-red-500/10"
+              className="rounded-lg border border-red-200 bg-white px-2.5 py-1.5 text-xs font-medium text-red-600 transition hover:bg-red-50 dark:border-red-900/50 dark:bg-white/[0.06] dark:text-red-400 dark:hover:bg-red-500/10"
             >
               Deactivate
             </button>
@@ -417,7 +417,7 @@ export default function LeaveTypeListPage() {
 
         {/* TOTAL */}
 
-        <div className="h-[110px] rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition hover:shadow-md dark:border-slate-700 dark:bg-slate-900">
+        <div className="h-[110px] rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition hover:shadow-md dark:border-white/10 dark:bg-white/[0.04]">
 
           <div className="flex h-full items-center justify-between">
 
@@ -452,7 +452,7 @@ export default function LeaveTypeListPage() {
 
         {/* ACTIVE */}
 
-        <div className="h-[110px] rounded-xl border border-emerald-100 bg-white px-4 py-3 shadow-sm transition hover:shadow-md dark:border-emerald-900/30 dark:bg-slate-900">
+        <div className="h-[110px] rounded-xl border border-emerald-100 bg-white px-4 py-3 shadow-sm transition hover:shadow-md dark:border-emerald-900/30 dark:bg-white/[0.04]">
 
           <div className="flex h-full items-center justify-between">
 
@@ -485,7 +485,7 @@ export default function LeaveTypeListPage() {
 
         {/* INACTIVE */}
 
-        <div className="h-[110px] rounded-xl border border-red-100 bg-white px-4 py-3 shadow-sm transition hover:shadow-md dark:border-red-900/30 dark:bg-slate-900">
+        <div className="h-[110px] rounded-xl border border-red-100 bg-white px-4 py-3 shadow-sm transition hover:shadow-md dark:border-red-900/30 dark:bg-white/[0.04]">
 
           <div className="flex h-full items-center justify-between">
 
@@ -522,12 +522,12 @@ export default function LeaveTypeListPage() {
           TABLE CARD
       ====================================================== */}
 
-      <div className="w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+      <div className="w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
 
 
         {/* SEARCH + FILTER */}
 
-        <div className="border-b border-slate-200 px-4 py-3 dark:border-slate-700">
+        <div className="border-b border-slate-200 px-4 py-3 dark:border-white/10">
 
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
 
@@ -542,7 +542,7 @@ export default function LeaveTypeListPage() {
             </div>
 
 
-            <div className="flex w-fit items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
+            <div className="flex w-fit items-center rounded-lg bg-slate-100 p-1 dark:bg-white/[0.06]">
 
               <button
                 type="button"
@@ -627,7 +627,7 @@ export default function LeaveTypeListPage() {
 
             <div className="flex min-h-[260px] flex-col items-center justify-center px-6 py-10 text-center">
 
-              <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800">
+              <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-slate-100 dark:bg-white/[0.06]">
 
                 <span className="text-xl font-bold text-slate-400">
                   L
@@ -659,7 +659,7 @@ export default function LeaveTypeListPage() {
 
         {/* PAGINATION */}
 
-        <div className="border-t border-slate-200 px-2 dark:border-slate-700">
+        <div className="border-t border-slate-200 px-2 dark:border-white/10">
 
           <TablePagination
             page={page}

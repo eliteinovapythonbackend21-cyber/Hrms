@@ -313,7 +313,7 @@ export default function UserProfilePage() {
       {/* ======================================================
           PROFILE CARD
           ====================================================== */}
-      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
         <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:text-left">
           {/* Avatar */}
           <button
@@ -371,7 +371,7 @@ export default function UserProfilePage() {
       {/* ======================================================
           ACCOUNT INFORMATION
           ====================================================== */}
-      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
         <h3 className="mb-4 text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
           Account
         </h3>

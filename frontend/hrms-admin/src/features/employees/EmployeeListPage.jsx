@@ -808,14 +808,14 @@ export default function EmployeeListPage({
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div className="h-[110px] rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <div className="stat-tile stat-tile-primary h-[110px] px-4 py-3">
           <div className="flex h-full items-center justify-between">
             <div>
               <p className="truncate text-xs font-medium text-slate-500 dark:text-slate-400">
                 Total Employees
               </p>
 
-              <p className="mt-1 text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+              <p className="mt-1 bg-gradient-to-br from-slate-900 to-slate-600 bg-clip-text text-2xl font-bold tracking-tight text-transparent dark:from-white dark:to-slate-400">
                 {
                   allEmployees.length
                 }
@@ -826,9 +826,7 @@ export default function EmployeeListPage({
               </p>
             </div>
 
-            <div
-              className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${ACCENT.badge}`}
-            >
+            <div className="icon-tile icon-tile-primary h-9 w-9">
               <span className="text-sm font-bold">
                 E
               </span>
@@ -836,7 +834,7 @@ export default function EmployeeListPage({
           </div>
         </div>
 
-        <div className="h-[110px] rounded-xl border border-emerald-100 bg-white px-4 py-3 shadow-sm dark:border-emerald-900/30 dark:bg-slate-900">
+        <div className="stat-tile stat-tile-success h-[110px] px-4 py-3">
           <div className="flex h-full items-center justify-between">
             <div>
               <p className="truncate text-xs font-medium text-slate-500 dark:text-slate-400">
@@ -854,20 +852,20 @@ export default function EmployeeListPage({
               </p>
             </div>
 
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50 dark:bg-emerald-500/10">
+            <div className="icon-tile icon-tile-emerald h-9 w-9">
               <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
             </div>
           </div>
         </div>
 
-        <div className="h-[110px] rounded-xl border border-red-100 bg-white px-4 py-3 shadow-sm dark:border-red-900/30 dark:bg-slate-900">
+        <div className="stat-tile stat-tile-danger h-[110px] px-4 py-3">
           <div className="flex h-full items-center justify-between">
             <div>
               <p className="truncate text-xs font-medium text-slate-500 dark:text-slate-400">
                 Inactive Employees
               </p>
 
-              <p className="mt-1 text-2xl font-bold tracking-tight text-red-600 dark:text-red-400">
+              <p className="mt-1 text-2xl font-bold tracking-tight text-rose-600 dark:text-rose-400">
                 {
                   inactiveEmployees.length
                 }
@@ -878,15 +876,15 @@ export default function EmployeeListPage({
               </p>
             </div>
 
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-red-50 dark:bg-red-500/10">
-              <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
+            <div className="icon-tile icon-tile-rose h-9 w-9">
+              <span className="h-2.5 w-2.5 rounded-full bg-rose-500" />
             </div>
           </div>
         </div>
       </div>
 
       {/* SEARCH + COMPANY/BRANCH/DEPARTMENT/DESIGNATION FILTERS + VIEW TOGGLE + STATUS */}
-      <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+      <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
         <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-2.5 lg:flex-row lg:flex-wrap">
             <div className="relative w-full sm:max-w-xs">
@@ -1146,7 +1144,7 @@ export default function EmployeeListPage({
         </div>
       ) : viewMode ===
         "table" ? (
-        <div className="w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <div className="w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
           <EmployeeTable
             data={
               pagedEmployees
@@ -1170,7 +1168,7 @@ export default function EmployeeListPage({
         </div>
       ) : pagedEmployees.length ===
         0 ? (
-        <div className="flex min-h-[260px] flex-col items-center justify-center rounded-xl border border-slate-200 bg-white px-6 py-10 text-center shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <div className="flex min-h-[260px] flex-col items-center justify-center rounded-xl border border-slate-200 bg-white px-6 py-10 text-center shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
           <h3 className="text-sm font-semibold text-slate-800 dark:text-white">
             No employees found
           </h3>
@@ -1202,9 +1200,9 @@ export default function EmployeeListPage({
                   key={
                     employee.id
                   }
-                  className={`relative overflow-hidden rounded-2xl border bg-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg dark:bg-slate-900 ${
+                  className={`relative overflow-hidden rounded-2xl border bg-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg dark:bg-white/[0.04] ${
                     isActive
-                      ? "border-slate-200 dark:border-slate-700"
+                      ? "border-slate-200 dark:border-white/10"
                       : "border-red-100 bg-red-50/20 dark:border-red-900/30 dark:bg-red-950/10"
                   }`}
                 >
@@ -1369,7 +1367,7 @@ export default function EmployeeListPage({
                               ? "?restricted=1"
                               : ""
                           }`}
-                          className="rounded-lg border border-slate-200 px-3 py-2 text-center text-xs font-semibold text-slate-700 transition-all hover:border-primary-200 hover:bg-primary-50 hover:text-primary-600 dark:border-slate-700 dark:text-slate-200 dark:hover:border-primary-500/40 dark:hover:bg-primary-500/10 dark:hover:text-primary-400"
+                          className="rounded-lg border border-slate-200 px-3 py-2 text-center text-xs font-semibold text-slate-700 transition-all hover:border-primary-200 hover:bg-primary-50 hover:text-primary-600 dark:border-white/10 dark:text-slate-200 dark:hover:border-primary-500/40 dark:hover:bg-primary-500/10 dark:hover:text-primary-400"
                         >
                           View
                         </Link>
@@ -1377,7 +1375,7 @@ export default function EmployeeListPage({
                         {!restricted && (
                           <Link
                             to={`/employees/${employee.id}/edit`}
-                            className="rounded-lg border border-slate-200 px-3 py-2 text-center text-xs font-semibold text-slate-700 transition-all hover:border-primary-200 hover:bg-primary-50 hover:text-primary-600 dark:border-slate-700 dark:text-slate-200 dark:hover:border-primary-500/40 dark:hover:bg-primary-500/10 dark:hover:text-primary-400"
+                            className="rounded-lg border border-slate-200 px-3 py-2 text-center text-xs font-semibold text-slate-700 transition-all hover:border-primary-200 hover:bg-primary-50 hover:text-primary-600 dark:border-white/10 dark:text-slate-200 dark:hover:border-primary-500/40 dark:hover:bg-primary-500/10 dark:hover:text-primary-400"
                           >
                             Edit
                           </Link>
@@ -1423,7 +1421,7 @@ export default function EmployeeListPage({
         </div>
       )}
 
-      <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
+      <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500 shadow-sm dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-400">
         <span>
           Page {page} of{" "}
           {pageCount}
@@ -1444,7 +1442,7 @@ export default function EmployeeListPage({
                   )
               )
             }
-            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium transition hover:bg-slate-50 disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700"
+            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium transition hover:bg-slate-50 disabled:opacity-40 dark:border-white/10 dark:bg-slate-800 dark:hover:bg-slate-700"
           >
             Previous
           </button>
@@ -1464,7 +1462,7 @@ export default function EmployeeListPage({
                   )
               )
             }
-            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium transition hover:bg-slate-50 disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700"
+            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium transition hover:bg-slate-50 disabled:opacity-40 dark:border-white/10 dark:bg-slate-800 dark:hover:bg-slate-700"
           >
             Next
           </button>
@@ -2307,20 +2305,20 @@ function CrmEmployeeView() {
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-          <p className="text-xs text-slate-500">
+        <div className="stat-tile stat-tile-primary p-4">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
             Total CRM Employees
           </p>
 
-          <p className="mt-1 text-2xl font-bold text-slate-900 dark:text-white">
+          <p className="mt-1 bg-gradient-to-br from-slate-900 to-slate-600 bg-clip-text text-2xl font-bold text-transparent dark:from-white dark:to-slate-400">
             {
               crmEmployees.length
             }
           </p>
         </div>
 
-        <div className="rounded-xl border border-emerald-100 bg-white p-4 shadow-sm dark:border-emerald-900/30 dark:bg-slate-900">
-          <p className="text-xs text-slate-500">
+        <div className="stat-tile stat-tile-success p-4">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
             Active
           </p>
 
@@ -2331,12 +2329,12 @@ function CrmEmployeeView() {
           </p>
         </div>
 
-        <div className="rounded-xl border border-red-100 bg-white p-4 shadow-sm dark:border-red-900/30 dark:bg-slate-900">
-          <p className="text-xs text-slate-500">
+        <div className="stat-tile stat-tile-danger p-4">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
             Inactive
           </p>
 
-          <p className="mt-1 text-2xl font-bold text-red-600 dark:text-red-400">
+          <p className="mt-1 text-2xl font-bold text-rose-600 dark:text-rose-400">
             {
               inactiveCrmEmployees.length
             }
@@ -2344,7 +2342,7 @@ function CrmEmployeeView() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+      <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
         <div className="flex flex-wrap gap-2">
           <input
             value={search}
@@ -2566,13 +2564,13 @@ function CrmEmployeeView() {
         "table" ? (
         pagedEmployees.length ===
         0 ? (
-          <div className="rounded-xl border border-slate-200 bg-white p-10 text-center dark:border-slate-700 dark:bg-slate-900">
+          <div className="rounded-xl border border-slate-200 bg-white p-10 text-center dark:border-white/10 dark:bg-white/[0.04]">
             No CRM employees found.
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+          <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
             <table className="w-full text-left text-sm">
-              <thead className="tbl-head border-b border-slate-200 dark:border-slate-700">
+              <thead className="tbl-head border-b border-slate-200 dark:border-white/10">
                 <tr>
                   <th className="px-4 py-3">
                     Employee
@@ -2810,7 +2808,7 @@ function CrmEmployeeView() {
                   key={
                     employee.id
                   }
-                  className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900"
+                  className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-white/[0.04]"
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-2.5">
@@ -2891,14 +2889,14 @@ function CrmEmployeeView() {
                   <div className="mt-4 grid grid-cols-3 gap-2">
                     <Link
                       to={`/employees/${employee.id}?restricted=1&from=crm`}
-                      className="rounded-lg border border-slate-200 px-3 py-2 text-center text-xs font-semibold dark:border-slate-700"
+                      className="rounded-lg border border-slate-200 px-3 py-2 text-center text-xs font-semibold dark:border-white/10"
                     >
                       View
                     </Link>
 
                     <Link
                       to={`/employees/${employee.id}/edit?from=crm`}
-                      className="rounded-lg border border-slate-200 px-3 py-2 text-center text-xs font-semibold dark:border-slate-700"
+                      className="rounded-lg border border-slate-200 px-3 py-2 text-center text-xs font-semibold dark:border-white/10"
                     >
                       Edit
                     </Link>
@@ -2939,7 +2937,7 @@ function CrmEmployeeView() {
         </div>
       )}
 
-      <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 dark:border-slate-700 dark:bg-slate-900">
+      <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 dark:border-white/10 dark:bg-white/[0.04]">
         <span className="text-sm text-slate-500">
           Page {page} of{" "}
           {pageCount}
@@ -2960,7 +2958,7 @@ function CrmEmployeeView() {
                   )
               )
             }
-            className="rounded-lg border px-3 py-1.5 text-xs disabled:opacity-40 dark:border-slate-700"
+            className="rounded-lg border px-3 py-1.5 text-xs disabled:opacity-40 dark:border-white/10"
           >
             Previous
           </button>
@@ -2980,7 +2978,7 @@ function CrmEmployeeView() {
                   )
               )
             }
-            className="rounded-lg border px-3 py-1.5 text-xs disabled:opacity-40 dark:border-slate-700"
+            className="rounded-lg border px-3 py-1.5 text-xs disabled:opacity-40 dark:border-white/10"
           >
             Next
           </button>

@@ -455,7 +455,7 @@ function StatCard({
   };
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+    <div className="rounded-xl border border-slate-200 bg-gradient-to-br from-white to-slate-50/60 p-5 shadow-sm dark:border-white/10 dark:from-primary-500/[0.06] dark:to-white/[0.02]">
       <div className="flex items-center gap-3">
         <div
           className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${tones[tone]}`}
@@ -567,7 +567,7 @@ function FollowUpDetailsCard({
     );
 
   return (
-    <div className="w-[360px] max-w-[calc(100vw-32px)] rounded-xl border border-slate-200 border-t-2 border-t-primary-500 bg-white p-4 text-left shadow-xl dark:border-slate-700 dark:bg-slate-800">
+    <div className="w-[360px] max-w-[calc(100vw-32px)] rounded-xl border border-slate-200 border-t-2 border-t-primary-500 bg-white p-4 text-left shadow-xl dark:border-white/10 dark:bg-white/[0.06]">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
@@ -590,7 +590,7 @@ function FollowUpDetailsCard({
         </Badge>
       </div>
 
-      <div className="my-3 border-t border-slate-100 dark:border-slate-700" />
+      <div className="my-3 border-t border-slate-100 dark:border-white/10" />
 
       <div className="space-y-2.5">
         <div className="grid grid-cols-[100px_minmax(0,1fr)] gap-3">
@@ -647,7 +647,7 @@ function FollowUpDetailsCard({
         </div>
       </div>
 
-      <div className="my-3 border-t border-slate-100 dark:border-slate-700" />
+      <div className="my-3 border-t border-slate-100 dark:border-white/10" />
 
       <div>
         <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
@@ -660,7 +660,7 @@ function FollowUpDetailsCard({
         </p>
       </div>
 
-      <div className="my-3 border-t border-slate-100 dark:border-slate-700" />
+      <div className="my-3 border-t border-slate-100 dark:border-white/10" />
 
       <div className="grid grid-cols-2 gap-3">
         <div>
@@ -1319,7 +1319,7 @@ export default function FollowUpListPage() {
 
       {/* FILTERS */}
 
-      <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+      <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
         <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-2.5 lg:flex-row lg:flex-wrap">
             {/* SEARCH */}
@@ -1355,7 +1355,7 @@ export default function FollowUpListPage() {
                   setPage(1);
                 }}
                 placeholder="Search customer or notes..."
-                className="h-10 w-full rounded-lg border border-slate-300 bg-white pl-9 pr-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                className="h-10 w-full rounded-lg border border-slate-300 bg-white pl-9 pr-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
               />
             </div>
 
@@ -1374,7 +1374,7 @@ export default function FollowUpListPage() {
 
                 setPage(1);
               }}
-              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none sm:max-w-[230px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none sm:max-w-[230px] dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
             >
               <option value="">
                 All Customers
@@ -1413,7 +1413,7 @@ export default function FollowUpListPage() {
 
                 setPage(1);
               }}
-              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none sm:max-w-[180px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none sm:max-w-[180px] dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
             >
               <option value="">
                 All Follow-up Statuses
@@ -1442,7 +1442,7 @@ export default function FollowUpListPage() {
                 onClick={
                   clearFilters
                 }
-                className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-xs font-medium text-slate-600 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300"
+                className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-xs font-medium text-slate-600 dark:border-slate-600 dark:bg-white/[0.06] dark:text-slate-300"
               >
                 Clear Filters
               </button>
@@ -1452,7 +1452,7 @@ export default function FollowUpListPage() {
           <div className="flex flex-wrap items-center justify-between gap-2">
             {/* ACTIVE FILTER */}
 
-            <div className="flex items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
+            <div className="flex items-center rounded-lg bg-slate-100 p-1 dark:bg-white/[0.06]">
               {[
                 "active",
                 "inactive",
@@ -1488,7 +1488,7 @@ export default function FollowUpListPage() {
 
             {/* VIEW SWITCH */}
 
-            <div className="flex items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
+            <div className="flex items-center rounded-lg bg-slate-100 p-1 dark:bg-white/[0.06]">
               <button
                 type="button"
                 onClick={() => {
@@ -1539,7 +1539,7 @@ export default function FollowUpListPage() {
         </div>
       ) : paged.length ===
         0 ? (
-        <div className="flex min-h-[200px] flex-col items-center justify-center rounded-xl border border-slate-200 bg-white px-6 py-10 text-center shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <div className="flex min-h-[200px] flex-col items-center justify-center rounded-xl border border-slate-200 bg-white px-6 py-10 text-center shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
           <h3 className="text-sm font-semibold text-slate-800 dark:text-white">
             No follow-ups found
           </h3>
@@ -1571,9 +1571,9 @@ export default function FollowUpListPage() {
                   key={
                     followUp.id
                   }
-                  className={`relative ${CARD_HEIGHT} min-w-0 overflow-visible rounded-2xl border bg-white shadow-sm transition-shadow hover:shadow-lg dark:bg-slate-900 ${
+                  className={`relative ${CARD_HEIGHT} min-w-0 overflow-visible rounded-2xl border bg-white shadow-sm transition-shadow hover:shadow-lg dark:bg-white/[0.04] ${
                     isActive
-                      ? "border-slate-200 dark:border-slate-700"
+                      ? "border-slate-200 dark:border-white/10"
                       : "border-red-100 dark:border-red-900/30"
                   }`}
                 >
@@ -1656,7 +1656,7 @@ export default function FollowUpListPage() {
                     </div>
                   </div>
 
-                  <div className="absolute inset-x-0 bottom-0 z-30 grid h-11 grid-cols-3 gap-px border-t border-slate-100 bg-slate-100 dark:border-slate-700 dark:bg-slate-800">
+                  <div className="absolute inset-x-0 bottom-0 z-30 grid h-11 grid-cols-3 gap-px border-t border-slate-100 bg-slate-100 dark:border-white/10 dark:bg-white/[0.06]">
                     <button
                       type="button"
                       onClick={() =>
@@ -1664,7 +1664,7 @@ export default function FollowUpListPage() {
                           followUp
                         )
                       }
-                      className="bg-white text-xs font-semibold text-slate-600 hover:bg-slate-50 dark:bg-slate-900 dark:text-slate-300"
+                      className="bg-white text-xs font-semibold text-slate-600 hover:bg-slate-50 dark:bg-white/[0.04] dark:text-slate-300"
                     >
                       Edit
                     </button>
@@ -1681,7 +1681,7 @@ export default function FollowUpListPage() {
                             followUp
                           )
                         }
-                        className="bg-white text-xs font-semibold text-red-500 hover:bg-red-50 disabled:opacity-40 dark:bg-slate-900 dark:text-red-400"
+                        className="bg-white text-xs font-semibold text-red-500 hover:bg-red-50 disabled:opacity-40 dark:bg-white/[0.04] dark:text-red-400"
                       >
                         Deactivate
                       </button>
@@ -1697,7 +1697,7 @@ export default function FollowUpListPage() {
                             followUp
                           )
                         }
-                        className="bg-white text-xs font-semibold text-emerald-600 hover:bg-emerald-50 disabled:opacity-40 dark:bg-slate-900 dark:text-emerald-400"
+                        className="bg-white text-xs font-semibold text-emerald-600 hover:bg-emerald-50 disabled:opacity-40 dark:bg-white/[0.04] dark:text-emerald-400"
                       >
                         Reactivate
                       </button>
@@ -1710,7 +1710,7 @@ export default function FollowUpListPage() {
                           followUp
                         )
                       }
-                      className="bg-white text-xs font-semibold text-primary-600 hover:bg-primary-50 dark:bg-slate-900 dark:text-primary-400"
+                      className="bg-white text-xs font-semibold text-primary-600 hover:bg-primary-50 dark:bg-white/[0.04] dark:text-primary-400"
                     >
                       Details
                     </button>
@@ -1725,9 +1725,9 @@ export default function FollowUpListPage() {
            TABLE VIEW
         =================================================== */
 
-        <div className="w-full min-w-0 overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <div className="w-full min-w-0 overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
           <table className="w-full text-left text-sm">
-            <thead className="tbl-head border-b border-slate-200 dark:border-slate-700">
+            <thead className="tbl-head border-b border-slate-200 dark:border-white/10">
               <tr>
                 <th className="px-4 py-3 font-medium">
                   Customer
@@ -1944,7 +1944,7 @@ export default function FollowUpListPage() {
 
       {/* PAGINATION */}
 
-      <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
+      <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500 shadow-sm dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-400">
         <span>
           Page {page} of {pageCount}
         </span>
@@ -1961,7 +1961,7 @@ export default function FollowUpListPage() {
                 )
               )
             }
-            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800"
+            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium disabled:opacity-40 dark:border-white/10 dark:bg-white/[0.06]"
           >
             Previous
           </button>
@@ -1979,7 +1979,7 @@ export default function FollowUpListPage() {
                 )
               )
             }
-            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800"
+            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium disabled:opacity-40 dark:border-white/10 dark:bg-white/[0.06]"
           >
             Next
           </button>

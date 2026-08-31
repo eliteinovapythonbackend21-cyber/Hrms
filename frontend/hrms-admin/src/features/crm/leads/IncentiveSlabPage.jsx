@@ -90,7 +90,7 @@ function StatCard({ icon, value, label, tone = "sky" }) {
   };
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+    <div className="rounded-xl border border-slate-200 bg-gradient-to-br from-white to-slate-50/60 p-5 shadow-sm dark:border-white/10 dark:from-primary-500/[0.06] dark:to-white/[0.02]">
       <div className="flex items-center gap-3">
         <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${tones[tone]}`}>
           {icon}
@@ -136,7 +136,7 @@ function SlabDetailsCard({ slab }) {
   const isActive = slab?.is_active !== false;
 
   return (
-    <div className="w-[300px] max-w-[calc(100vw-32px)] rounded-xl border border-slate-200 border-t-2 border-t-primary-500 bg-white p-4 text-left shadow-xl dark:border-slate-700 dark:bg-slate-800">
+    <div className="w-[300px] max-w-[calc(100vw-32px)] rounded-xl border border-slate-200 border-t-2 border-t-primary-500 bg-white p-4 text-left shadow-xl dark:border-white/10 dark:bg-white/[0.06]">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
@@ -157,7 +157,7 @@ function SlabDetailsCard({ slab }) {
         </span>
       </div>
 
-      <div className="my-3 border-t border-slate-100 dark:border-slate-700" />
+      <div className="my-3 border-t border-slate-100 dark:border-white/10" />
 
       <div className="space-y-2.5">
         <div className="grid grid-cols-[100px_minmax(0,1fr)] gap-3">
@@ -182,7 +182,7 @@ function SlabDetailsCard({ slab }) {
         </div>
       </div>
 
-      <div className="my-3 border-t border-slate-100 dark:border-slate-700" />
+      <div className="my-3 border-t border-slate-100 dark:border-white/10" />
 
       <div className="grid grid-cols-2 gap-3">
         <div>
@@ -407,7 +407,7 @@ export default function IncentiveSlabPage() {
       </div>
 
       {/* FILTERS */}
-      <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+      <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
         <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-2.5 lg:flex-row lg:flex-wrap">
             <div className="relative w-full sm:max-w-xs">
@@ -424,7 +424,7 @@ export default function IncentiveSlabPage() {
                   setPage(1);
                 }}
                 placeholder="Search by range or amount..."
-                className="h-10 w-full rounded-lg border border-slate-300 bg-white pl-9 pr-3 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                className="h-10 w-full rounded-lg border border-slate-300 bg-white pl-9 pr-3 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
               />
             </div>
 
@@ -432,7 +432,7 @@ export default function IncentiveSlabPage() {
               <button
                 type="button"
                 onClick={clearFilters}
-                className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-xs font-medium text-slate-600 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300"
+                className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-xs font-medium text-slate-600 dark:border-slate-600 dark:bg-white/[0.06] dark:text-slate-300"
               >
                 Clear Filters
               </button>
@@ -440,7 +440,7 @@ export default function IncentiveSlabPage() {
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
+            <div className="flex items-center rounded-lg bg-slate-100 p-1 dark:bg-white/[0.06]">
               {["active", "inactive", "all"].map((status) => (
                 <button
                   key={status}
@@ -460,7 +460,7 @@ export default function IncentiveSlabPage() {
               ))}
             </div>
 
-            <div className="flex items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
+            <div className="flex items-center rounded-lg bg-slate-100 p-1 dark:bg-white/[0.06]">
               <button
                 type="button"
                 onClick={() => {
@@ -498,7 +498,7 @@ export default function IncentiveSlabPage() {
       {isLoading ? (
         <div className="py-10 text-center text-sm text-slate-400">Loading...</div>
       ) : paged.length === 0 ? (
-        <div className="flex min-h-[200px] flex-col items-center justify-center rounded-xl border border-slate-200 bg-white px-6 py-10 text-center shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <div className="flex min-h-[200px] flex-col items-center justify-center rounded-xl border border-slate-200 bg-white px-6 py-10 text-center shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
           <h3 className="text-sm font-semibold text-slate-800 dark:text-white">No incentive slabs found</h3>
           <p className="mt-1 max-w-sm text-xs text-slate-500 dark:text-slate-400">
             No records match your current search or filters. Add a slab to define incentive tiers.
@@ -513,8 +513,8 @@ export default function IncentiveSlabPage() {
             return (
               <div
                 key={slab.id}
-                className={`flex min-w-0 flex-col overflow-visible rounded-2xl border bg-white shadow-sm transition-shadow hover:shadow-lg dark:bg-slate-900 ${
-                  isActive ? "border-slate-200 dark:border-slate-700" : "border-red-100 dark:border-red-900/30"
+                className={`flex min-w-0 flex-col overflow-visible rounded-2xl border bg-white shadow-sm transition-shadow hover:shadow-lg dark:bg-white/[0.04] ${
+                  isActive ? "border-slate-200 dark:border-white/10" : "border-red-100 dark:border-red-900/30"
                 }`}
               >
                 <div className={`flex flex-1 flex-col p-4 ${!isActive ? "opacity-75" : ""}`}>
@@ -548,11 +548,11 @@ export default function IncentiveSlabPage() {
 
                   {/* Range visual */}
                   <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-                    <span className="shrink-0 rounded-md bg-slate-100 px-2 py-1 font-mono text-[11px] font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                    <span className="shrink-0 rounded-md bg-slate-100 px-2 py-1 font-mono text-[11px] font-semibold text-slate-700 dark:bg-white/[0.06] dark:text-slate-200">
                       {slab.min_customers}
                     </span>
                     <span className="h-px min-w-[16px] flex-1 bg-slate-200 dark:bg-slate-700" />
-                    <span className="shrink-0 rounded-md bg-slate-100 px-2 py-1 font-mono text-[11px] font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                    <span className="shrink-0 rounded-md bg-slate-100 px-2 py-1 font-mono text-[11px] font-semibold text-slate-700 dark:bg-white/[0.06] dark:text-slate-200">
                       {slab.max_customers === null || slab.max_customers === undefined ? "∞" : slab.max_customers}
                     </span>
                   </div>
@@ -568,11 +568,11 @@ export default function IncentiveSlabPage() {
                   </div>
                 </div>
 
-                <div className="grid h-11 shrink-0 grid-cols-2 gap-px border-t border-slate-100 bg-slate-100 dark:border-slate-700 dark:bg-slate-800">
+                <div className="grid h-11 shrink-0 grid-cols-2 gap-px border-t border-slate-100 bg-slate-100 dark:border-white/10 dark:bg-white/[0.06]">
                   <button
                     type="button"
                     onClick={() => openEditForm(slab)}
-                    className="bg-white text-xs font-semibold text-slate-600 hover:bg-slate-50 dark:bg-slate-900 dark:text-slate-300"
+                    className="bg-white text-xs font-semibold text-slate-600 hover:bg-slate-50 dark:bg-white/[0.04] dark:text-slate-300"
                   >
                     Edit
                   </button>
@@ -582,7 +582,7 @@ export default function IncentiveSlabPage() {
                       type="button"
                       disabled={mutatingId === slab.id}
                       onClick={() => setDeleteTarget(slab)}
-                      className="bg-white text-xs font-semibold text-red-500 hover:bg-red-50 disabled:opacity-40 dark:bg-slate-900 dark:text-red-400"
+                      className="bg-white text-xs font-semibold text-red-500 hover:bg-red-50 disabled:opacity-40 dark:bg-white/[0.04] dark:text-red-400"
                     >
                       Deactivate
                     </button>
@@ -591,7 +591,7 @@ export default function IncentiveSlabPage() {
                       type="button"
                       disabled={mutatingId === slab.id}
                       onClick={() => handleReactivate(slab)}
-                      className="bg-white text-xs font-semibold text-emerald-600 hover:bg-emerald-50 disabled:opacity-40 dark:bg-slate-900 dark:text-emerald-400"
+                      className="bg-white text-xs font-semibold text-emerald-600 hover:bg-emerald-50 disabled:opacity-40 dark:bg-white/[0.04] dark:text-emerald-400"
                     >
                       Reactivate
                     </button>
@@ -602,9 +602,9 @@ export default function IncentiveSlabPage() {
           })}
         </div>
       ) : (
-        <div className="w-full min-w-0 overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <div className="w-full min-w-0 overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
           <table className="w-full text-left text-sm">
-            <thead className="tbl-head border-b border-slate-200 dark:border-slate-700">
+            <thead className="tbl-head border-b border-slate-200 dark:border-white/10">
               <tr>
                 <th className="px-4 py-3 font-medium">Tier</th>
                 <th className="px-4 py-3 font-medium">Extra Customers (Min)</th>
@@ -704,7 +704,7 @@ export default function IncentiveSlabPage() {
       )}
 
       {/* PAGINATION */}
-      <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
+      <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500 shadow-sm dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-400">
         <span>
           Page {page} of {pageCount}
         </span>
@@ -713,7 +713,7 @@ export default function IncentiveSlabPage() {
             type="button"
             disabled={page <= 1}
             onClick={() => setPage((current) => Math.max(1, current - 1))}
-            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800"
+            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium disabled:opacity-40 dark:border-white/10 dark:bg-white/[0.06]"
           >
             Previous
           </button>
@@ -721,7 +721,7 @@ export default function IncentiveSlabPage() {
             type="button"
             disabled={page >= pageCount}
             onClick={() => setPage((current) => Math.min(pageCount, current + 1))}
-            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800"
+            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium disabled:opacity-40 dark:border-white/10 dark:bg-white/[0.06]"
           >
             Next
           </button>
@@ -731,7 +731,7 @@ export default function IncentiveSlabPage() {
       {/* ADD / EDIT FORM */}
       {formOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-md rounded-xl bg-white p-5 shadow-xl dark:bg-slate-900">
+          <div className="w-full max-w-md rounded-xl bg-white p-5 shadow-xl dark:bg-white/[0.04]">
             <div className="mb-4 flex items-center gap-2.5">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400">
                 <SlabIcon />
@@ -752,7 +752,7 @@ export default function IncentiveSlabPage() {
                   required
                   value={formState.min_customers}
                   onChange={(e) => setFormState((s) => ({ ...s, min_customers: e.target.value }))}
-                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
                 />
               </div>
 
@@ -765,7 +765,7 @@ export default function IncentiveSlabPage() {
                   min="0"
                   value={formState.max_customers}
                   onChange={(e) => setFormState((s) => ({ ...s, max_customers: e.target.value }))}
-                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
                 />
               </div>
 
@@ -780,7 +780,7 @@ export default function IncentiveSlabPage() {
                   required
                   value={formState.incentive_amount}
                   onChange={(e) => setFormState((s) => ({ ...s, incentive_amount: e.target.value }))}
-                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
                 />
               </div>
 
@@ -791,7 +791,7 @@ export default function IncentiveSlabPage() {
                     setFormOpen(false);
                     setEditingSlab(null);
                   }}
-                  className="h-10 rounded-lg border border-slate-300 bg-white px-4 text-sm font-medium text-slate-600 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300"
+                  className="h-10 rounded-lg border border-slate-300 bg-white px-4 text-sm font-medium text-slate-600 dark:border-slate-600 dark:bg-white/[0.06] dark:text-slate-300"
                 >
                   Cancel
                 </button>

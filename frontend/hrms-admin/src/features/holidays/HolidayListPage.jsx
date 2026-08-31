@@ -246,7 +246,7 @@ function HolidayDetailCard({
   value,
 }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
+    <div className="rounded-xl border border-slate-200 bg-white p-3 dark:border-white/10 dark:bg-white/[0.04]">
       <p className="text-[9px] font-semibold uppercase tracking-wider text-slate-400">
         {label}
       </p>
@@ -308,7 +308,7 @@ function SummaryCard({
   const styles = {
     primary: {
       border:
-        "border-slate-200 dark:border-slate-700",
+        "border-slate-200 dark:border-white/10",
       icon:
         "bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400",
       value:
@@ -349,7 +349,7 @@ function SummaryCard({
 
   return (
     <div
-      className={`h-[100px] rounded-xl border bg-white px-3 py-2.5 shadow-sm transition hover:shadow-md dark:bg-slate-900 ${current.border}`}
+      className={`h-[100px] rounded-xl border bg-white px-3 py-2.5 shadow-sm transition hover:shadow-md dark:bg-white/[0.04] ${current.border}`}
     >
       <div className="flex h-full items-center justify-between gap-2">
 
@@ -1894,9 +1894,9 @@ export default function HolidayListPage() {
 
               {/* TABLE HOVER DETAILS */}
 
-              <div className="pointer-events-none absolute bottom-full left-0 z-50 mb-2 hidden w-[280px] rounded-xl border border-slate-200 bg-white p-3 text-left shadow-2xl group-hover:block dark:border-slate-700 dark:bg-slate-900">
+              <div className="pointer-events-none absolute bottom-full left-0 z-50 mb-2 hidden w-[280px] rounded-xl border border-slate-200 bg-white p-3 text-left shadow-2xl group-hover:block dark:border-white/10 dark:bg-white/[0.04]">
 
-                <div className="absolute -bottom-1.5 left-8 h-3 w-3 rotate-45 border-b border-r border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900" />
+                <div className="absolute -bottom-1.5 left-8 h-3 w-3 rotate-45 border-b border-r border-slate-200 bg-white dark:border-white/10 dark:bg-white/[0.04]" />
 
 
                 <div className="relative">
@@ -2129,7 +2129,7 @@ export default function HolidayListPage() {
                     row
                   )
                 }
-                className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-primary-600 transition hover:bg-primary-50 dark:border-slate-700 dark:bg-slate-800 dark:text-primary-400 dark:hover:bg-primary-500/10"
+                className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-primary-600 transition hover:bg-primary-50 dark:border-white/10 dark:bg-white/[0.06] dark:text-primary-400 dark:hover:bg-primary-500/10"
               >
                 Edit
               </button>
@@ -2145,7 +2145,7 @@ export default function HolidayListPage() {
                       row
                     )
                   }
-                  className="rounded-lg border border-red-200 bg-white px-2.5 py-1.5 text-xs font-medium text-red-600 transition hover:bg-red-50 dark:border-red-900/50 dark:bg-slate-800 dark:text-red-400 dark:hover:bg-red-500/10"
+                  className="rounded-lg border border-red-200 bg-white px-2.5 py-1.5 text-xs font-medium text-red-600 transition hover:bg-red-50 dark:border-red-900/50 dark:bg-white/[0.06] dark:text-red-400 dark:hover:bg-red-500/10"
                 >
                   Deactivate
                 </button>
@@ -2290,7 +2290,7 @@ export default function HolidayListPage() {
                   )
                 )
               }
-              className="h-9 w-24 rounded-lg border border-slate-300 bg-white px-2 text-xs outline-none focus:border-violet-400 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+              className="h-9 w-24 rounded-lg border border-slate-300 bg-white px-2 text-xs outline-none focus:border-violet-400 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
             />
 
 
@@ -2303,7 +2303,7 @@ export default function HolidayListPage() {
                   event.target.value
                 )
               }
-              className="h-9 w-36 rounded-lg border border-slate-300 bg-white px-2 text-xs outline-none focus:border-violet-400 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+              className="h-9 w-36 rounded-lg border border-slate-300 bg-white px-2 text-xs outline-none focus:border-violet-400 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
             >
               {COUNTRY_OPTIONS.map(
                 (country) => (
@@ -2421,7 +2421,7 @@ export default function HolidayListPage() {
                     )
                   )
                 }
-                className="h-9 w-24 rounded-lg border border-slate-300 bg-white px-2 text-xs outline-none focus:border-sky-400 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                className="h-9 w-24 rounded-lg border border-slate-300 bg-white px-2 text-xs outline-none focus:border-sky-400 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
               />
 
 
@@ -2444,7 +2444,7 @@ export default function HolidayListPage() {
                     )
                   )
                 }
-                className="h-9 w-24 rounded-lg border border-slate-300 bg-white px-2 text-xs outline-none focus:border-sky-400 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                className="h-9 w-24 rounded-lg border border-slate-300 bg-white px-2 text-xs outline-none focus:border-sky-400 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
               />
 
 
@@ -2532,7 +2532,7 @@ export default function HolidayListPage() {
 
       <div className="flex justify-end">
 
-        <div className="flex items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
+        <div className="flex items-center rounded-lg bg-slate-100 p-1 dark:bg-white/[0.06]">
 
           <button
             type="button"
@@ -2581,11 +2581,11 @@ export default function HolidayListPage() {
       {listMode ===
         "calendar" && (
 
-        <div className="overflow-visible rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <div className="overflow-visible rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
 
           {/* CALENDAR HEADER */}
 
-          <div className="border-b border-slate-200 bg-gradient-to-r from-slate-50 via-white to-violet-50/60 px-4 py-3 dark:border-slate-700 dark:from-slate-800/80 dark:via-slate-900 dark:to-violet-950/20">
+          <div className="border-b border-slate-200 bg-gradient-to-r from-slate-50 via-white to-violet-50/60 px-4 py-3 dark:border-white/10 dark:from-slate-800/80 dark:via-slate-900 dark:to-violet-950/20">
 
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
 
@@ -2596,7 +2596,7 @@ export default function HolidayListPage() {
                   onClick={
                     goToPrevMonth
                   }
-                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-base font-semibold text-slate-500 transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400 dark:hover:bg-primary-500/10 dark:hover:text-primary-400"
+                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-base font-semibold text-slate-500 transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-600 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-400 dark:hover:bg-primary-500/10 dark:hover:text-primary-400"
                   aria-label="Previous month"
                 >
                   ‹
@@ -2610,7 +2610,7 @@ export default function HolidayListPage() {
                   onChange={
                     handleCalendarMonthChange
                   }
-                  className="h-8 rounded-lg border border-slate-200 bg-white px-2.5 text-xs font-bold text-slate-700 outline-none focus:border-primary-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+                  className="h-8 rounded-lg border border-slate-200 bg-white px-2.5 text-xs font-bold text-slate-700 outline-none focus:border-primary-400 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-200"
                 >
                   {MONTH_NAMES.map(
                     (
@@ -2639,7 +2639,7 @@ export default function HolidayListPage() {
                   onChange={
                     handleCalendarYearChange
                   }
-                  className="h-8 rounded-lg border border-slate-200 bg-white px-2.5 text-xs font-bold text-slate-700 outline-none focus:border-primary-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+                  className="h-8 rounded-lg border border-slate-200 bg-white px-2.5 text-xs font-bold text-slate-700 outline-none focus:border-primary-400 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-200"
                 >
                   {availableYears.map(
                     (year) => (
@@ -2665,7 +2665,7 @@ export default function HolidayListPage() {
                   onClick={
                     goToNextMonth
                   }
-                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-base font-semibold text-slate-500 transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400 dark:hover:bg-primary-500/10 dark:hover:text-primary-400"
+                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-base font-semibold text-slate-500 transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-600 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-400 dark:hover:bg-primary-500/10 dark:hover:text-primary-400"
                   aria-label="Next month"
                 >
                   ›
@@ -2697,7 +2697,7 @@ export default function HolidayListPage() {
                   tone="sky"
                 />
 
-                <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold text-slate-500 dark:bg-white/[0.06] dark:text-slate-400">
 
                   {
                     calendarHolidaysThisMonth.length
@@ -2721,7 +2721,7 @@ export default function HolidayListPage() {
 
           {/* WEEKDAYS */}
 
-          <div className="grid grid-cols-7 bg-slate-100/80 dark:bg-slate-800/80">
+          <div className="grid grid-cols-7 bg-slate-100/80 dark:bg-white/[0.06]/80">
 
             {WEEKDAY_LABELS.map(
               (
@@ -2732,7 +2732,7 @@ export default function HolidayListPage() {
                   key={
                     label
                   }
-                  className={`border-r border-slate-200 px-1 py-2 text-center text-[9px] font-bold uppercase tracking-wider last:border-r-0 dark:border-slate-700 ${
+                  className={`border-r border-slate-200 px-1 py-2 text-center text-[9px] font-bold uppercase tracking-wider last:border-r-0 dark:border-white/10 ${
                     index === 0 ||
                     index === 6
                       ? "text-primary-400 dark:text-primary-500"
@@ -2821,7 +2821,7 @@ export default function HolidayListPage() {
                     }
                     className={`group relative min-h-[118px] overflow-visible p-1.5 transition ${
                       cell.isCurrentMonth
-                        ? "bg-white dark:bg-slate-900"
+                        ? "bg-white dark:bg-white/[0.04]"
                         : "bg-slate-50/80 dark:bg-slate-950/50"
                     } ${
                       isSunday &&
@@ -2868,7 +2868,7 @@ export default function HolidayListPage() {
 
 
                       {hasHoliday && (
-                        <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[8px] font-bold text-slate-400 dark:bg-slate-800 dark:text-slate-500">
+                        <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[8px] font-bold text-slate-400 dark:bg-white/[0.06] dark:text-slate-500">
                           {
                             cell.holidays.length
                           }
@@ -2956,7 +2956,7 @@ export default function HolidayListPage() {
 
                       {cell.holidays.length >
                         2 && (
-                        <div className="rounded-md bg-slate-100 px-1.5 py-1 text-[8px] font-semibold text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                        <div className="rounded-md bg-slate-100 px-1.5 py-1 text-[8px] font-semibold text-slate-500 dark:bg-white/[0.06] dark:text-slate-400">
                           +
                           {
                             cell.holidays.length -
@@ -3108,7 +3108,7 @@ export default function HolidayListPage() {
 
           {/* FOOTER */}
 
-          <div className="flex flex-col gap-1.5 border-t border-slate-200 bg-gradient-to-r from-slate-50 to-violet-50/40 px-3 py-2 dark:border-slate-700 dark:from-slate-800 dark:to-violet-950/20 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-1.5 border-t border-slate-200 bg-gradient-to-r from-slate-50 to-violet-50/40 px-3 py-2 dark:border-white/10 dark:from-slate-800 dark:to-violet-950/20 sm:flex-row sm:items-center sm:justify-between">
 
             <span className="text-[9px] font-medium text-slate-500 dark:text-slate-400">
 
@@ -3141,9 +3141,9 @@ export default function HolidayListPage() {
       {listMode ===
         "grouped" && (
 
-        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
 
-          <div className="flex flex-col gap-3 border-b border-slate-200 px-4 py-3 dark:border-slate-700 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-3 border-b border-slate-200 px-4 py-3 dark:border-white/10 sm:flex-row sm:items-center sm:justify-between">
 
             <div>
 
@@ -3179,7 +3179,7 @@ export default function HolidayListPage() {
                   )
                 )
               }
-              className="h-8 w-full rounded-lg border border-slate-300 bg-white px-2 text-xs outline-none dark:border-slate-600 dark:bg-slate-800 dark:text-white sm:w-28"
+              className="h-8 w-full rounded-lg border border-slate-300 bg-white px-2 text-xs outline-none dark:border-slate-600 dark:bg-white/[0.06] dark:text-white sm:w-28"
             >
 
               {availableYears.map(
@@ -3236,7 +3236,7 @@ export default function HolidayListPage() {
                     key={
                       monthName
                     }
-                    className="rounded-xl border border-slate-100 bg-slate-50/70 p-2.5 dark:border-slate-800 dark:bg-slate-800/40"
+                    className="rounded-xl border border-slate-100 bg-slate-50/70 p-2.5 dark:border-slate-800 dark:bg-white/[0.06]/40"
                   >
 
                     <div className="mb-2 flex items-center justify-between">
@@ -3248,7 +3248,7 @@ export default function HolidayListPage() {
                       </h3>
 
 
-                      <span className="rounded-full bg-white px-1.5 py-0.5 text-[8px] font-semibold text-slate-400 dark:bg-slate-900">
+                      <span className="rounded-full bg-white px-1.5 py-0.5 text-[8px] font-semibold text-slate-400 dark:bg-white/[0.04]">
                         {
                           monthHolidays.length
                         }
@@ -3378,9 +3378,9 @@ export default function HolidayListPage() {
           TABLE
       ====================================================== */}
 
-      <div className="w-full overflow-visible rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+      <div className="w-full overflow-visible rounded-xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
 
-        <div className="border-b border-slate-200 px-4 py-3 dark:border-slate-700">
+        <div className="border-b border-slate-200 px-4 py-3 dark:border-white/10">
 
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
 
@@ -3411,7 +3411,7 @@ export default function HolidayListPage() {
 
               {/* TYPE */}
 
-              <div className="flex items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
+              <div className="flex items-center rounded-lg bg-slate-100 p-1 dark:bg-white/[0.06]">
 
                 {[
                   {
@@ -3469,7 +3469,7 @@ export default function HolidayListPage() {
 
               {/* STATUS */}
 
-              <div className="flex items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
+              <div className="flex items-center rounded-lg bg-slate-100 p-1 dark:bg-white/[0.06]">
 
                 {[
                   {
@@ -3576,7 +3576,7 @@ export default function HolidayListPage() {
 
           <div className="flex min-h-[220px] flex-col items-center justify-center px-6 py-8 text-center">
 
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 dark:bg-white/[0.06]">
 
               <span className="text-lg font-bold text-slate-400">
                 H
@@ -3612,7 +3612,7 @@ export default function HolidayListPage() {
 
         {/* PAGINATION */}
 
-        <div className="border-t border-slate-200 px-2 dark:border-slate-700">
+        <div className="border-t border-slate-200 px-2 dark:border-white/10">
 
           <TablePagination
             page={
@@ -3747,7 +3747,7 @@ export default function HolidayListPage() {
         {selectedHoliday && (
           <div className="space-y-5">
 
-            <div className="flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/60">
+            <div className="flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-white/[0.06]/60">
 
               <div
                 className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-base font-bold ${

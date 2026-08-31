@@ -277,19 +277,19 @@ export default function DepartmentHeadcountPage() {
 
       {/* STATS */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <div className="rounded-xl border border-slate-200 bg-gradient-to-br from-white to-slate-50/60 p-5 shadow-sm dark:border-white/10 dark:from-primary-500/[0.06] dark:to-white/[0.02]">
           <p className="text-xs text-slate-500 dark:text-slate-400">Departments Tracked</p>
           <p className="mt-1 text-2xl font-bold text-slate-900 dark:text-white">
             {latestPerDepartment.size}
           </p>
         </div>
-        <div className="rounded-xl border border-emerald-100 bg-white p-5 shadow-sm dark:border-emerald-900/30 dark:bg-slate-900">
+        <div className="rounded-xl border border-emerald-100 bg-white p-5 shadow-sm dark:border-emerald-900/30 dark:bg-white/[0.04]">
           <p className="text-xs text-slate-500 dark:text-slate-400">Current Total Headcount</p>
           <p className="mt-1 text-2xl font-bold text-emerald-600 dark:text-emerald-400">
             {totalCurrentHeadcount}
           </p>
         </div>
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <div className="rounded-xl border border-slate-200 bg-gradient-to-br from-white to-slate-50/60 p-5 shadow-sm dark:border-white/10 dark:from-primary-500/[0.06] dark:to-white/[0.02]">
           <p className="text-xs text-slate-500 dark:text-slate-400">Total Records</p>
           <p className="mt-1 text-2xl font-bold text-slate-900 dark:text-white">
             {allRecords.length}
@@ -298,12 +298,12 @@ export default function DepartmentHeadcountPage() {
       </div>
 
       {/* FILTERS */}
-      <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+      <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
         <div className="flex flex-wrap items-center gap-2.5">
           <select
             value={departmentFilter}
             onChange={(e) => setDepartmentFilter(e.target.value)}
-            className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm sm:max-w-[220px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+            className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm sm:max-w-[220px] dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
           >
             <option value="">All CRM Departments</option>
             {crmDepartments.map((department) => (
@@ -314,7 +314,7 @@ export default function DepartmentHeadcountPage() {
             ))}
           </select>
 
-          <div className="ml-auto flex items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
+          <div className="ml-auto flex items-center rounded-lg bg-slate-100 p-1 dark:bg-white/[0.06]">
             {["active", "inactive", "all"].map((status) => (
               <button
                 key={status}
@@ -334,9 +334,9 @@ export default function DepartmentHeadcountPage() {
       </div>
 
       {/* TABLE */}
-      <div className="w-full min-w-0 overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+      <div className="w-full min-w-0 overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
         <table className="w-full text-left text-sm">
-          <thead className="tbl-head border-b border-slate-200 dark:border-slate-700">
+          <thead className="tbl-head border-b border-slate-200 dark:border-white/10">
             <tr>
               <th className="px-4 py-3 font-medium">Department</th>
               <th className="px-4 py-3 font-medium">Week Starting</th>
@@ -439,7 +439,7 @@ export default function DepartmentHeadcountPage() {
       {/* ADD / EDIT FORM (inline modal-less panel, matches no shared Modal import assumption) */}
       {formOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-lg rounded-xl bg-white p-5 shadow-xl dark:bg-slate-900">
+          <div className="w-full max-w-lg rounded-xl bg-white p-5 shadow-xl dark:bg-white/[0.04]">
             <h2 className="mb-4 text-lg font-semibold text-slate-900 dark:text-white">
               {editingRecord ? "Edit Headcount Record" : "Record Weekly Headcount"}
             </h2>
@@ -453,7 +453,7 @@ export default function DepartmentHeadcountPage() {
                   required
                   value={formState.department_id}
                   onChange={(e) => setFormState((s) => ({ ...s, department_id: e.target.value }))}
-                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
                 >
                   <option value="">Select department</option>
                   {crmDepartments.map((department) => (
@@ -474,7 +474,7 @@ export default function DepartmentHeadcountPage() {
                   required
                   value={formState.week_start_date}
                   onChange={(e) => setFormState((s) => ({ ...s, week_start_date: e.target.value }))}
-                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
                 />
               </div>
 
@@ -488,7 +488,7 @@ export default function DepartmentHeadcountPage() {
                   required
                   value={formState.employee_count}
                   onChange={(e) => setFormState((s) => ({ ...s, employee_count: e.target.value }))}
-                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
                 />
               </div>
 
@@ -499,7 +499,7 @@ export default function DepartmentHeadcountPage() {
                 <select
                   value={formState.updated_by}
                   onChange={(e) => setFormState((s) => ({ ...s, updated_by: e.target.value }))}
-                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
                 >
                   <option value="">Not specified</option>
                   {employeeOptions.map((employee) => (
@@ -518,7 +518,7 @@ export default function DepartmentHeadcountPage() {
                   rows={2}
                   value={formState.notes}
                   onChange={(e) => setFormState((s) => ({ ...s, notes: e.target.value }))}
-                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
                 />
               </div>
 

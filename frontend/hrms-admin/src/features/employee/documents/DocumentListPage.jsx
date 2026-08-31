@@ -157,7 +157,7 @@ function StatCard({
   label,
 }) {
   return (
-    <div className="h-[76px] rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 shadow-sm transition hover:shadow-md dark:border-slate-700 dark:bg-slate-900">
+    <div className="h-[76px] rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 shadow-sm transition hover:shadow-md dark:border-white/10 dark:bg-white/[0.04]">
       <div className="flex h-full items-center justify-between">
         <div className="min-w-0">
           <p className="truncate text-[11px] font-medium text-slate-500 dark:text-slate-400">
@@ -260,7 +260,7 @@ function DocumentsOverview({ docs }) {
         )}
       </div>
 
-      <div className="pointer-events-none invisible absolute left-0 top-full z-20 mt-2 w-52 rounded-lg border border-slate-200 bg-white p-2 opacity-0 shadow-lg transition-opacity duration-150 group-hover/docs:visible group-hover/docs:opacity-100 dark:border-slate-700 dark:bg-slate-800">
+      <div className="pointer-events-none invisible absolute left-0 top-full z-20 mt-2 w-52 rounded-lg border border-slate-200 bg-white p-2 opacity-0 shadow-lg transition-opacity duration-150 group-hover/docs:visible group-hover/docs:opacity-100 dark:border-white/10 dark:bg-white/[0.06]">
         <p className="mb-1.5 px-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
           {docs.length} document
           {docs.length !== 1 ? "s" : ""}
@@ -1240,7 +1240,7 @@ export default function DocumentListPage() {
       {/* FILTERS                                                            */}
       {/* ================================================================== */}
 
-      <div className="rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+      <div className="rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
         <div className="flex flex-col gap-2.5">
 
           <div className="flex flex-col gap-2 lg:flex-row lg:flex-wrap">
@@ -1275,7 +1275,7 @@ export default function DocumentListPage() {
                   setPage(1);
                 }}
                 placeholder="Search by employee or document type..."
-                className="h-9 w-full rounded-lg border border-slate-300 bg-white pl-8 pr-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                className="h-9 w-full rounded-lg border border-slate-300 bg-white pl-8 pr-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
               />
             </div>
 
@@ -1291,7 +1291,7 @@ export default function DocumentListPage() {
                 setFilterBranchId("");
                 setPage(1);
               }}
-              className="h-9 w-full rounded-lg border border-slate-300 bg-white px-2.5 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 sm:max-w-[170px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+              className="h-9 w-full rounded-lg border border-slate-300 bg-white px-2.5 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 sm:max-w-[170px] dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
             >
               <option value="">
                 All Companies
@@ -1318,7 +1318,7 @@ export default function DocumentListPage() {
                 );
                 setPage(1);
               }}
-              className="h-9 w-full rounded-lg border border-slate-300 bg-white px-2.5 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 sm:max-w-[170px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+              className="h-9 w-full rounded-lg border border-slate-300 bg-white px-2.5 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 sm:max-w-[170px] dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
             >
               <option value="">
                 All Branches
@@ -1345,7 +1345,7 @@ export default function DocumentListPage() {
                 );
                 setPage(1);
               }}
-              className="h-9 w-full rounded-lg border border-slate-300 bg-white px-2.5 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 sm:max-w-[170px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+              className="h-9 w-full rounded-lg border border-slate-300 bg-white px-2.5 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 sm:max-w-[170px] dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
             >
               <option value="">
                 All Departments
@@ -1374,7 +1374,7 @@ export default function DocumentListPage() {
                 );
                 setPage(1);
               }}
-              className="h-9 w-full rounded-lg border border-slate-300 bg-white px-2.5 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 sm:max-w-[170px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+              className="h-9 w-full rounded-lg border border-slate-300 bg-white px-2.5 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 sm:max-w-[170px] dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
             >
               <option value="">
                 All Designations
@@ -1398,7 +1398,7 @@ export default function DocumentListPage() {
 
           <div className="flex flex-wrap items-center justify-between gap-2">
 
-            <div className="flex w-fit items-center rounded-lg bg-slate-100 p-0.5 dark:bg-slate-800">
+            <div className="flex w-fit items-center rounded-lg bg-slate-100 p-0.5 dark:bg-white/[0.06]">
               <button
                 type="button"
                 onClick={() => {
@@ -1435,7 +1435,7 @@ export default function DocumentListPage() {
             </div>
 
 
-            <div className="flex w-fit items-center rounded-lg bg-slate-100 p-0.5 dark:bg-slate-800">
+            <div className="flex w-fit items-center rounded-lg bg-slate-100 p-0.5 dark:bg-white/[0.06]">
               {[
                 "active",
                 "inactive",
@@ -1477,7 +1477,7 @@ export default function DocumentListPage() {
           }).map((_, i) => (
             <div
               key={i}
-              className="h-[190px] animate-pulse rounded-xl border border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-800"
+              className="h-[190px] animate-pulse rounded-xl border border-slate-200 bg-slate-100 dark:border-white/10 dark:bg-white/[0.06]"
             />
           ))}
         </div>
@@ -1491,9 +1491,9 @@ export default function DocumentListPage() {
       {!isLoading &&
         viewMode === "table" &&
         pagedGroups.length > 0 && (
-          <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+          <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
             <table className="w-full min-w-[720px] text-left text-sm lg:min-w-0">
-              <thead className="tbl-head border-b border-slate-200 dark:border-slate-700">
+              <thead className="tbl-head border-b border-slate-200 dark:border-white/10">
                 <tr>
                   <th className="px-3 py-2.5 font-semibold">
                     Employee
@@ -1545,7 +1545,7 @@ export default function DocumentListPage() {
                       groupIdx %
                         2 ===
                       1
-                        ? "bg-slate-50/60 dark:bg-slate-800/20"
+                        ? "bg-slate-50/60 dark:bg-white/[0.03]"
                         : "";
 
                     return group.docs.map(
@@ -1912,10 +1912,10 @@ export default function DocumentListPage() {
                     key={
                       group.employeeId
                     }
-                    className={`group relative overflow-hidden rounded-xl border bg-white shadow-sm transition-all duration-200 hover:shadow-md dark:bg-slate-900 ${
+                    className={`group relative overflow-hidden rounded-xl border bg-white shadow-sm transition-all duration-200 hover:shadow-md dark:bg-white/[0.04] ${
                       allInactive
                         ? "border-red-100 bg-red-50/20 dark:border-red-900/30 dark:bg-red-950/10"
-                        : "border-slate-200 hover:border-primary-200 dark:border-slate-700 dark:hover:border-primary-500/40"
+                        : "border-slate-200 hover:border-primary-200 dark:border-white/10 dark:hover:border-primary-500/40"
                     }`}
                   >
                     {/* TOP ACCENT */}
@@ -1967,7 +1967,7 @@ export default function DocumentListPage() {
                           </div>
                         </button>
 
-                        <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[9px] font-semibold text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                        <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[9px] font-semibold text-slate-500 dark:bg-white/[0.06] dark:text-slate-400">
                           {
                             group
                               .docs
@@ -2015,7 +2015,7 @@ export default function DocumentListPage() {
 
                       {/* DOCUMENT OVERVIEW */}
 
-                      <div className="mt-2 flex items-center gap-2 rounded-lg bg-slate-50 px-2 py-1 dark:bg-slate-800/60">
+                      <div className="mt-2 flex items-center gap-2 rounded-lg bg-slate-50 px-2 py-1 dark:bg-white/[0.03]">
                         <span className="text-[9px] font-semibold uppercase tracking-wide text-slate-400">
                           Documents
                         </span>
@@ -2029,7 +2029,7 @@ export default function DocumentListPage() {
                     </div>
 
 
-                    <div className="border-t border-slate-100 dark:border-slate-800" />
+                    <div className="border-t border-slate-100 dark:border-white/10" />
 
 
                     {/* ==================================================
@@ -2052,7 +2052,7 @@ export default function DocumentListPage() {
                               key={
                                 doc.id
                               }
-                              className="rounded-lg border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800/60"
+                              className="rounded-lg border border-slate-200 bg-white dark:border-white/10 dark:bg-white/[0.03]"
                             >
                               {/* DOCUMENT INFO */}
 
@@ -2102,7 +2102,7 @@ export default function DocumentListPage() {
 
                               {/* COMPACT ACTIONS */}
 
-                              <div className="flex items-center justify-end border-t border-slate-100 px-2 py-1 dark:border-slate-700">
+                              <div className="flex items-center justify-end border-t border-slate-100 px-2 py-1 dark:border-white/10">
                                 <div className="flex items-center gap-0.5">
 
                                   {/* PREVIEW */}
@@ -2283,8 +2283,8 @@ export default function DocumentListPage() {
       {!isLoading &&
         pagedGroups.length ===
           0 && (
-          <div className="flex min-h-[220px] flex-col items-center justify-center rounded-xl border border-slate-200 bg-white px-6 py-8 text-center shadow-sm dark:border-slate-700 dark:bg-slate-900">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800">
+          <div className="flex min-h-[220px] flex-col items-center justify-center rounded-xl border border-slate-200 bg-white px-6 py-8 text-center shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 dark:bg-white/[0.06]">
               <span className="text-lg font-bold text-slate-400">
                 D
               </span>
@@ -2313,7 +2313,7 @@ export default function DocumentListPage() {
       {/* PAGINATION                                                         */}
       {/* ================================================================== */}
 
-      <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs text-slate-500 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
+      <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs text-slate-500 shadow-sm dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-400">
         <span>
           Page {page} of {pageCount}
         </span>
@@ -2330,7 +2330,7 @@ export default function DocumentListPage() {
                 )
               )
             }
-            className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium transition hover:bg-slate-50 disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700"
+            className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium transition hover:bg-slate-50 disabled:opacity-40 dark:border-white/10 dark:bg-white/[0.06] dark:hover:bg-slate-700"
           >
             Previous
           </button>
@@ -2348,7 +2348,7 @@ export default function DocumentListPage() {
                 )
               )
             }
-            className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium transition hover:bg-slate-50 disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700"
+            className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium transition hover:bg-slate-50 disabled:opacity-40 dark:border-white/10 dark:bg-white/[0.06] dark:hover:bg-slate-700"
           >
             Next
           </button>
@@ -2454,7 +2454,7 @@ export default function DocumentListPage() {
                 previewUrl
               }
               title="Document preview"
-              className="h-[70vh] w-full rounded-lg border border-slate-200 dark:border-slate-700"
+              className="h-[70vh] w-full rounded-lg border border-slate-200 dark:border-white/10"
             />
           )}
 

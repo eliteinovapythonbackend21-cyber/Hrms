@@ -331,7 +331,7 @@ export default function GenericListPage({
           )}
         </div>
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center text-slate-500 shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">
+        <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center text-slate-500 shadow-sm dark:border-white/10 dark:bg-white/[0.06] dark:text-slate-400">
           You don't have permission to view this module.
         </div>
       </div>
@@ -349,9 +349,11 @@ export default function GenericListPage({
           PAGE HEADER
       ======================================================== */}
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-800 sm:p-6">
+      <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-primary-50/30 to-accent-50/20 p-5 shadow-sm dark:border-white/10 dark:from-primary-500/[0.07] dark:via-white/[0.02] dark:to-accent-500/[0.05] sm:p-6">
 
-        <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
+        <span className="pointer-events-none absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-primary-500 via-primary-400 to-transparent" />
+
+        <div className="relative flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
 
           {/* TITLE */}
 
@@ -411,13 +413,13 @@ export default function GenericListPage({
           TABLE CARD
       ======================================================== */}
 
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50/60 shadow-sm dark:border-white/10 dark:from-primary-500/[0.04] dark:to-white/[0.02]">
 
         {/* ======================================================
             SEARCH / FILTER BAR
         ====================================================== */}
 
-        <div className="border-b border-slate-200 bg-slate-50/70 px-5 py-4 dark:border-slate-700 dark:bg-slate-800/70 sm:px-6">
+        <div className="border-b border-slate-200 bg-slate-50/70 px-5 py-4 dark:border-white/10 dark:bg-white/[0.03] sm:px-6">
 
           <div className="flex flex-col gap-3">
 
@@ -497,7 +499,7 @@ export default function GenericListPage({
           {isFetching && !isLoading && (
             <div className="absolute right-5 top-4 z-10">
 
-              <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-500 shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">
+              <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-500 shadow-sm dark:border-white/10 dark:bg-white/[0.06] dark:text-slate-400">
 
                 <span className="h-2 w-2 animate-pulse rounded-full bg-primary-500" />
 
@@ -519,7 +521,7 @@ export default function GenericListPage({
             PAGINATION
         ====================================================== */}
 
-        <div className="border-t border-slate-200 bg-slate-50/50 px-5 py-3 dark:border-slate-700 dark:bg-slate-800/50 sm:px-6">
+        <div className="border-t border-slate-200 bg-slate-50/50 px-5 py-3 dark:border-white/10 dark:bg-white/[0.02] sm:px-6">
 
           <TablePagination
             page={page}

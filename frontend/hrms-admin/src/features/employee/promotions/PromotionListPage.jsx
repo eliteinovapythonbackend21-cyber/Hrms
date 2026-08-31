@@ -284,7 +284,7 @@ function StatCard({
   label,
 }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+    <div className="rounded-xl border border-slate-200 bg-gradient-to-br from-white to-slate-50/60 p-5 shadow-sm dark:border-white/10 dark:from-primary-500/[0.06] dark:to-white/[0.02]">
       <div className="flex items-center gap-3">
         <div
           className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${SKY_BADGE}`}
@@ -371,7 +371,7 @@ function DesignationDetailsCard({
 
   return (
     <div
-      className={`w-[300px] max-w-[calc(100vw-32px)] rounded-xl border border-slate-200 border-t-2 bg-white p-4 text-left shadow-xl dark:border-slate-700 dark:bg-slate-800 ${accentTones[tone]}`}
+      className={`w-[300px] max-w-[calc(100vw-32px)] rounded-xl border border-slate-200 border-t-2 bg-white p-4 text-left shadow-xl dark:border-white/10 dark:bg-white/[0.06] ${accentTones[tone]}`}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1 space-y-2.5">
@@ -422,7 +422,7 @@ function DesignationDetailsCard({
       {(fromDesignation?.description ||
         toDesignation?.description) && (
         <>
-          <div className="my-3 border-t border-slate-100 dark:border-slate-700" />
+          <div className="my-3 border-t border-slate-100 dark:border-white/10" />
 
           <div className="space-y-2">
             {fromDesignation?.description && (
@@ -452,7 +452,7 @@ function DesignationDetailsCard({
         </>
       )}
 
-      <div className="my-3 border-t border-slate-100 dark:border-slate-700" />
+      <div className="my-3 border-t border-slate-100 dark:border-white/10" />
 
       <div className="space-y-2.5">
         <div className="grid grid-cols-[90px_minmax(0,1fr)] gap-3">
@@ -501,7 +501,7 @@ function DesignationDetailsCard({
 
       {accomplishments && (
         <>
-          <div className="my-3 border-t border-slate-100 dark:border-slate-700" />
+          <div className="my-3 border-t border-slate-100 dark:border-white/10" />
 
           <div>
             <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
@@ -1997,7 +1997,7 @@ export default function PromotionListPage() {
           FILTERS
       ===================================================== */}
 
-      <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+      <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
         <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-2.5 lg:flex-row lg:flex-wrap">
             {/* SEARCH */}
@@ -2030,7 +2030,7 @@ export default function PromotionListPage() {
                   setPage(1);
                 }}
                 placeholder="Search employee, reason or accomplishments..."
-                className="h-10 w-full rounded-lg border border-slate-300 bg-white pl-9 pr-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                className="h-10 w-full rounded-lg border border-slate-300 bg-white pl-9 pr-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
               />
             </div>
 
@@ -2045,7 +2045,7 @@ export default function PromotionListPage() {
                 setFilterBranchId("");
                 setPage(1);
               }}
-              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 sm:max-w-[180px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 sm:max-w-[180px] dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
             >
               <option value="">
                 All Companies
@@ -2075,7 +2075,7 @@ export default function PromotionListPage() {
                 );
                 setPage(1);
               }}
-              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 sm:max-w-[180px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 sm:max-w-[180px] dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
             >
               <option value="">
                 All Branches
@@ -2105,7 +2105,7 @@ export default function PromotionListPage() {
                 );
                 setPage(1);
               }}
-              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 sm:max-w-[180px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 sm:max-w-[180px] dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
             >
               <option value="">
                 All Departments
@@ -2139,7 +2139,7 @@ export default function PromotionListPage() {
                 );
                 setPage(1);
               }}
-              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 sm:max-w-[180px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 sm:max-w-[180px] dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
             >
               <option value="">
                 All Designations
@@ -2173,7 +2173,7 @@ export default function PromotionListPage() {
                 );
                 setPage(1);
               }}
-              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 sm:max-w-[240px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 sm:max-w-[240px] dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
             >
               <option value="">
                 All Promotion Reasons
@@ -2206,7 +2206,7 @@ export default function PromotionListPage() {
                 onClick={
                   clearFilters
                 }
-                className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-xs font-medium text-slate-600 transition hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-xs font-medium text-slate-600 transition hover:bg-slate-50 dark:border-slate-600 dark:bg-white/[0.06] dark:text-slate-300 dark:hover:bg-slate-700"
               >
                 Clear Filters
               </button>
@@ -2216,7 +2216,7 @@ export default function PromotionListPage() {
           {/* VIEW / STATUS */}
 
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex w-fit items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
+            <div className="flex w-fit items-center rounded-lg bg-slate-100 p-1 dark:bg-white/[0.06]">
               <button
                 type="button"
                 onClick={() => {
@@ -2252,7 +2252,7 @@ export default function PromotionListPage() {
               </button>
             </div>
 
-            <div className="flex w-fit items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
+            <div className="flex w-fit items-center rounded-lg bg-slate-100 p-1 dark:bg-white/[0.06]">
               {[
                 "active",
                 "inactive",
@@ -2294,7 +2294,7 @@ export default function PromotionListPage() {
         </div>
       ) : viewMode === "table" ? (
         paged.length === 0 ? (
-          <div className="flex min-h-[200px] flex-col items-center justify-center rounded-xl border border-slate-200 bg-white px-6 py-10 text-center shadow-sm dark:border-slate-700 dark:bg-slate-900">
+          <div className="flex min-h-[200px] flex-col items-center justify-center rounded-xl border border-slate-200 bg-white px-6 py-10 text-center shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
             <h3 className="text-sm font-semibold text-slate-800 dark:text-white">
               No promotions found
             </h3>
@@ -2304,7 +2304,7 @@ export default function PromotionListPage() {
             </p>
           </div>
         ) : (
-          <div className="w-full min-w-0 max-lg:overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+          <div className="w-full min-w-0 max-lg:overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
             <table className="w-full min-w-[900px] table-fixed border-collapse text-left text-sm lg:min-w-0">
               <colgroup>
                 <col className="w-[20%]" />
@@ -2316,7 +2316,7 @@ export default function PromotionListPage() {
                 <col className="w-[9%]" />
               </colgroup>
 
-              <thead className="tbl-head border-b border-slate-200 dark:border-slate-700">
+              <thead className="tbl-head border-b border-slate-200 dark:border-white/10">
                 <tr>
                   <th className="whitespace-nowrap px-4 py-3 font-medium">
                     Employee
@@ -2695,7 +2695,7 @@ export default function PromotionListPage() {
           </div>
         )
       ) : pagedGroups.length === 0 ? (
-        <div className="flex min-h-[200px] flex-col items-center justify-center rounded-xl border border-slate-200 bg-white px-6 py-10 text-center shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <div className="flex min-h-[200px] flex-col items-center justify-center rounded-xl border border-slate-200 bg-white px-6 py-10 text-center shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
           <h3 className="text-sm font-semibold text-slate-800 dark:text-white">
             No promotions found
           </h3>
@@ -2733,7 +2733,7 @@ export default function PromotionListPage() {
                   key={
                     group.employeeId
                   }
-                  className="relative overflow-visible rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900"
+                  className="relative overflow-visible rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-white/[0.04]"
                 >
                   <div className="absolute inset-x-0 top-0 h-0.5 rounded-t-2xl bg-primary-600" />
 
@@ -2761,7 +2761,7 @@ export default function PromotionListPage() {
                         </div>
                       </div>
 
-                      <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                      <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-500 dark:bg-white/[0.06] dark:text-slate-400">
                         {
                           group
                             .promotions
@@ -2775,7 +2775,7 @@ export default function PromotionListPage() {
                       </span>
                     </div>
 
-                    <div className="my-3 border-t border-slate-100 dark:border-slate-800" />
+                    <div className="my-3 border-t border-slate-100 dark:border-white/10" />
 
                     <div className="space-y-2.5">
                       {sortedPromotions.map(
@@ -2800,7 +2800,7 @@ export default function PromotionListPage() {
                               key={
                                 promotion.id
                               }
-                              className="relative overflow-visible rounded-lg border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800/60"
+                              className="relative overflow-visible rounded-lg border border-slate-200 bg-white dark:border-white/10 dark:bg-white/[0.03]"
                             >
                               <div className="px-2.5 py-2.5">
                                 <div className="flex min-w-0 items-start justify-between gap-2">
@@ -2971,7 +2971,7 @@ export default function PromotionListPage() {
                                 </div>
                               </div>
 
-                              <div className="grid grid-cols-2 divide-x divide-slate-100 border-t border-slate-100 dark:divide-slate-700 dark:border-slate-700">
+                              <div className="grid grid-cols-2 divide-x divide-slate-100 border-t border-slate-100 dark:divide-slate-700 dark:border-white/10">
                                 <div className="flex items-center justify-center py-1.5">
                                   <TableIconButton
                                     title="Edit"
@@ -3073,7 +3073,7 @@ export default function PromotionListPage() {
           PAGINATION
       ===================================================== */}
 
-      <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
+      <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500 shadow-sm dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-400">
         <span>
           Page {page} of{" "}
           {pageCount}
@@ -3096,7 +3096,7 @@ export default function PromotionListPage() {
                   )
               )
             }
-            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium transition hover:bg-slate-50 disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700"
+            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium transition hover:bg-slate-50 disabled:opacity-40 dark:border-white/10 dark:bg-white/[0.06] dark:hover:bg-slate-700"
           >
             Previous
           </button>
@@ -3118,7 +3118,7 @@ export default function PromotionListPage() {
                   )
               )
             }
-            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium transition hover:bg-slate-50 disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700"
+            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium transition hover:bg-slate-50 disabled:opacity-40 dark:border-white/10 dark:bg-white/[0.06] dark:hover:bg-slate-700"
           >
             Next
           </button>

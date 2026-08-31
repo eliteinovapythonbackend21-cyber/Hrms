@@ -46,7 +46,7 @@ export default function RoleForm({ initialData = {}, onSubmit, loading, lockedCa
       {lockedCategory ? (
         <div className="mb-4">
           <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Category</label>
-          <div className="input flex items-center bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
+          <div className="input flex items-center bg-slate-50 dark:bg-white/[0.06] text-slate-500 dark:text-slate-400">
             {lockedCategory}
           </div>
           <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">

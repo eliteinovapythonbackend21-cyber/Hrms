@@ -355,7 +355,7 @@ export default function LeaveApprovalsPage() {
 
       {/* SUMMARY */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="rounded-2xl border border-amber-200 bg-white p-5 shadow-sm dark:border-amber-900/40 dark:bg-slate-800">
+        <div className="rounded-2xl border border-amber-200 bg-white p-5 shadow-sm dark:border-amber-900/40 dark:bg-white/[0.06]">
           <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
             Pending Requests
           </p>
@@ -369,7 +369,7 @@ export default function LeaveApprovalsPage() {
           </p>
         </div>
 
-        <div className="rounded-2xl border border-primary-200 bg-white p-5 shadow-sm dark:border-primary-900/40 dark:bg-slate-800">
+        <div className="rounded-2xl border border-primary-200 bg-white p-5 shadow-sm dark:border-primary-900/40 dark:bg-white/[0.06]">
           <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
             Pending Leave Days
           </p>
@@ -385,8 +385,8 @@ export default function LeaveApprovalsPage() {
       </div>
 
       {/* TABLE */}
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
-        <div className="border-b border-slate-200 bg-slate-50/70 px-5 py-5 dark:border-slate-700 dark:bg-slate-800/70 sm:px-6">
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-white/[0.06]">
+        <div className="border-b border-slate-200 bg-slate-50/70 px-5 py-5 dark:border-white/10 dark:bg-white/[0.06]/70 sm:px-6">
           <h2 className="text-base font-semibold text-slate-900 dark:text-white">
             Requests Awaiting Approval
           </h2>
@@ -402,7 +402,7 @@ export default function LeaveApprovalsPage() {
           loading={leaves.isLoading}
         />
 
-        <div className="border-t border-slate-200 bg-slate-50/50 px-5 py-3 dark:border-slate-700 dark:bg-slate-800/50 sm:px-6">
+        <div className="border-t border-slate-200 bg-slate-50/50 px-5 py-3 dark:border-white/10 dark:bg-white/[0.06]/50 sm:px-6">
           <TablePagination
             page={page}
             pages={leaves.data?.pages || 1}

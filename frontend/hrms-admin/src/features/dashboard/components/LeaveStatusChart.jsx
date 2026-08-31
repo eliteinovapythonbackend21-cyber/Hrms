@@ -2,8 +2,8 @@ import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend } from "recha
 
 const COLORS = {
   Pending: "#f59e0b",
-  Approved: "#22c55e",
-  Rejected: "#ef4444",
+  Approved: "#10b981",
+  Rejected: "#f43f5e",
 };
 
 export default function LeaveStatusChart({ data, loading, title = "Leave requests by status" }) {
@@ -20,7 +20,7 @@ export default function LeaveStatusChart({ data, loading, title = "Leave request
       ) : (
         <ResponsiveContainer width="100%" height={224}>
           <PieChart>
-            <Pie data={rows} dataKey="count" nameKey="status" innerRadius={55} outerRadius={80} paddingAngle={3}>
+            <Pie data={rows} dataKey="count" nameKey="status" innerRadius={55} outerRadius={80} paddingAngle={3} stroke="var(--color-surface)" strokeWidth={2}>
               {rows.map((entry) => (
                 <Cell key={entry.status} fill={COLORS[entry.status] || "#94a3b8"} />
               ))}

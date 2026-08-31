@@ -709,7 +709,7 @@ function SalaryBox({
 }) {
   const classes = {
     slate:
-      "bg-slate-50 text-slate-700 dark:bg-slate-900 dark:text-slate-200",
+      "bg-slate-50 text-slate-700 dark:bg-white/[0.04] dark:text-slate-200",
 
     red:
       "bg-red-50/70 text-red-600 dark:bg-red-500/5 dark:text-red-300",
@@ -766,7 +766,7 @@ function PayrollDetailsCard({
     );
 
   return (
-    <div className="relative z-[999999] w-[430px] max-w-[calc(100vw-24px)] rounded-xl border border-slate-200 border-t-2 border-t-primary-500 bg-white p-4 text-left shadow-2xl dark:border-slate-700 dark:bg-slate-800">
+    <div className="relative z-[999999] w-[430px] max-w-[calc(100vw-24px)] rounded-xl border border-slate-200 border-t-2 border-t-primary-500 bg-white p-4 text-left shadow-2xl dark:border-white/10 dark:bg-white/[0.06]">
       {/* HEADER */}
 
       <div className="flex items-start justify-between gap-3">
@@ -791,7 +791,7 @@ function PayrollDetailsCard({
         {statusBadge(payroll)}
       </div>
 
-      <div className="my-3 border-t border-slate-100 dark:border-slate-700" />
+      <div className="my-3 border-t border-slate-100 dark:border-white/10" />
 
       {/* ORGANIZATION */}
 
@@ -854,7 +854,7 @@ function PayrollDetailsCard({
         />
       </div>
 
-      <div className="my-3 border-t border-slate-100 dark:border-slate-700" />
+      <div className="my-3 border-t border-slate-100 dark:border-white/10" />
 
       {/* SALARY */}
 
@@ -877,7 +877,7 @@ function PayrollDetailsCard({
         />
       </div>
 
-      <div className="my-3 border-t border-slate-100 dark:border-slate-700" />
+      <div className="my-3 border-t border-slate-100 dark:border-white/10" />
 
       <div className="grid grid-cols-2 gap-3">
         <div>
@@ -922,7 +922,7 @@ function HierarchyRow({
       "bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400",
 
     slate:
-      "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400",
+      "bg-slate-100 text-slate-500 dark:bg-white/[0.06] dark:text-slate-400",
 
     violet:
       "bg-violet-50 text-violet-600 dark:bg-violet-500/10 dark:text-violet-400",
@@ -965,7 +965,7 @@ function HierarchyRow({
               className={`shrink-0 rounded px-1.5 py-0.5 font-mono text-[8px] ${
                 tone === "violet"
                   ? "bg-violet-50 text-violet-600 dark:bg-violet-500/10 dark:text-violet-400"
-                  : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
+                  : "bg-slate-100 text-slate-500 dark:bg-white/[0.06] dark:text-slate-400"
               }`}
             >
               {code}
@@ -1000,7 +1000,7 @@ function StatCard({
   };
 
   return (
-    <div className="h-[112px] rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-slate-700 dark:bg-slate-900">
+    <div className="h-[112px] rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-white/10 dark:bg-white/[0.04]">
       <div className="flex h-full items-center justify-between">
         <div className="min-w-0">
           <p className="truncate text-xs font-medium text-slate-500 dark:text-slate-400">
@@ -2118,7 +2118,7 @@ export default function PayrollRecordListPage() {
 
       {/* FILTER BAR */}
 
-      <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+      <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
         <div className="flex flex-col gap-3">
 
           <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2 xl:grid-cols-6">
@@ -2159,7 +2159,7 @@ export default function PayrollRecordListPage() {
                   setPage(1);
                 }}
                 placeholder="Search employee, company, branch..."
-                className="h-10 w-full rounded-lg border border-slate-300 bg-white pl-9 pr-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                className="h-10 w-full rounded-lg border border-slate-300 bg-white pl-9 pr-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
               />
             </div>
 
@@ -2172,7 +2172,7 @@ export default function PayrollRecordListPage() {
               onChange={
                 handleCompanyFilterChange
               }
-              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-primary-500 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-primary-500 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
             >
               <option value="">
                 All Companies
@@ -2207,7 +2207,7 @@ export default function PayrollRecordListPage() {
               disabled={
                 !companyFilterId
               }
-              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
             >
               <option value="">
                 {companyFilterId
@@ -2244,7 +2244,7 @@ export default function PayrollRecordListPage() {
               disabled={
                 !branchFilterId
               }
-              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
             >
               <option value="">
                 {branchFilterId
@@ -2279,7 +2279,7 @@ export default function PayrollRecordListPage() {
               onChange={
                 handleDesignationFilterChange
               }
-              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
             >
               <option value="">
                 All Designations
@@ -2312,7 +2312,7 @@ export default function PayrollRecordListPage() {
               onChange={
                 handleEmployeeFilterChange
               }
-              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
             >
               <option value="">
                 All Employees
@@ -2337,12 +2337,12 @@ export default function PayrollRecordListPage() {
             </select>
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3 dark:border-slate-800">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3 dark:border-white/10">
             <div className="flex flex-wrap items-center gap-2">
 
               {/* VIEW */}
 
-              <div className="flex items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
+              <div className="flex items-center rounded-lg bg-slate-100 p-1 dark:bg-white/[0.06]">
                 <button
                   type="button"
                   onClick={() => {
@@ -2384,7 +2384,7 @@ export default function PayrollRecordListPage() {
 
               {/* STATUS */}
 
-              <div className="flex items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
+              <div className="flex items-center rounded-lg bg-slate-100 p-1 dark:bg-white/[0.06]">
                 {[
                   "active",
                   "inactive",
@@ -2432,7 +2432,7 @@ export default function PayrollRecordListPage() {
                 onClick={
                   clearFilters
                 }
-                className="h-9 rounded-lg border border-slate-300 bg-white px-3 text-xs font-medium text-slate-600 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300"
+                className="h-9 rounded-lg border border-slate-300 bg-white px-3 text-xs font-medium text-slate-600 hover:bg-slate-50 dark:border-slate-600 dark:bg-white/[0.06] dark:text-slate-300"
               >
                 Clear Filters
               </button>
@@ -2453,7 +2453,7 @@ export default function PayrollRecordListPage() {
                 key={
                   index
                 }
-                className="h-[390px] animate-pulse rounded-2xl border border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-800"
+                className="h-[390px] animate-pulse rounded-2xl border border-slate-200 bg-slate-100 dark:border-white/10 dark:bg-white/[0.06]"
               />
             )
           )}
@@ -2469,10 +2469,10 @@ export default function PayrollRecordListPage() {
           "table" &&
         pagedPayroll.length >
           0 && (
-          <div className="w-full min-w-0 overflow-visible rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+          <div className="w-full min-w-0 overflow-visible rounded-xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
             <div className="w-full overflow-x-auto">
               <table className="w-full min-w-[1450px] text-left text-sm">
-                <thead className="tbl-head border-b border-slate-200 dark:border-slate-700">
+                <thead className="tbl-head border-b border-slate-200 dark:border-white/10">
                   <tr>
                     <th className="px-4 py-3 font-medium">
                       Employee
@@ -2624,7 +2624,7 @@ export default function PayrollRecordListPage() {
                         </td>
 
                         <td className="px-4 py-3">
-                          <span className="rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                          <span className="rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700 dark:bg-white/[0.06] dark:text-slate-200">
                             {formatPayMonth(
                               payroll?.pay_month
                             )}
@@ -2827,10 +2827,10 @@ export default function PayrollRecordListPage() {
                       focus-within:z-50
                       hover:-translate-y-0.5
                       hover:shadow-xl
-                      dark:bg-slate-900
+                      dark:bg-white/[0.04]
                       ${
                         isActive
-                          ? "border-slate-200 hover:border-primary-200 dark:border-slate-700 dark:hover:border-primary-500/40"
+                          ? "border-slate-200 hover:border-primary-200 dark:border-white/10 dark:hover:border-primary-500/40"
                           : "border-red-100 bg-red-50/20 dark:border-red-900/30 dark:bg-red-950/10"
                       }`}
                   >
@@ -2899,7 +2899,7 @@ export default function PayrollRecordListPage() {
                         </div>
                       </div>
 
-                      <div className="my-3 border-t border-slate-100 dark:border-slate-800" />
+                      <div className="my-3 border-t border-slate-100 dark:border-white/10" />
 
                       {/* HIERARCHY */}
 
@@ -2916,7 +2916,7 @@ export default function PayrollRecordListPage() {
                           tone="primary"
                         />
 
-                        <div className="ml-3.5 border-l border-dashed border-slate-200 pl-4 dark:border-slate-700">
+                        <div className="ml-3.5 border-l border-dashed border-slate-200 pl-4 dark:border-white/10">
 
                           <HierarchyRow
                             icon={
@@ -2929,7 +2929,7 @@ export default function PayrollRecordListPage() {
                             tone="slate"
                           />
 
-                          <div className="mt-2 ml-3.5 border-l border-dashed border-slate-200 pl-4 dark:border-slate-700">
+                          <div className="mt-2 ml-3.5 border-l border-dashed border-slate-200 pl-4 dark:border-white/10">
 
                             <HierarchyRow
                               icon={
@@ -2988,7 +2988,7 @@ export default function PayrollRecordListPage() {
 
                       {/* PAYROLL SUMMARY */}
 
-                      <div className="mt-3 rounded-xl border border-slate-100 bg-slate-50/80 p-3 dark:border-slate-800 dark:bg-slate-800/50">
+                      <div className="mt-3 rounded-xl border border-slate-100 bg-slate-50/80 p-3 dark:border-white/10 dark:bg-white/[0.03]">
                         <div className="flex items-center justify-between">
                           <div>
                             <p className="text-[9px] font-medium uppercase tracking-wide text-slate-400">
@@ -3002,7 +3002,7 @@ export default function PayrollRecordListPage() {
                             </p>
                           </div>
 
-                          <div className="rounded-lg bg-white px-2.5 py-1.5 shadow-sm dark:bg-slate-900">
+                          <div className="rounded-lg bg-white px-2.5 py-1.5 shadow-sm dark:bg-white/[0.04]">
                             <p className="text-[9px] font-medium uppercase tracking-wide text-slate-400">
                               Payroll ID
                             </p>
@@ -3052,7 +3052,7 @@ export default function PayrollRecordListPage() {
                               payroll
                             )
                           }
-                          className="flex flex-1 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] font-semibold text-slate-700 transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-primary-500/40 dark:hover:bg-primary-500/10 dark:hover:text-primary-400"
+                          className="flex flex-1 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] font-semibold text-slate-700 transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-600 dark:border-white/10 dark:bg-white/[0.06] dark:text-slate-200 dark:hover:border-primary-500/40 dark:hover:bg-primary-500/10 dark:hover:text-primary-400"
                         >
                           Edit
                         </button>
@@ -3068,7 +3068,7 @@ export default function PayrollRecordListPage() {
                             disabled={
                               deactivatePayroll.isPending
                             }
-                            className="flex flex-1 items-center justify-center rounded-lg border border-red-200 bg-white px-3 py-2 text-[11px] font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-50 dark:border-red-900/40 dark:bg-slate-800 dark:text-red-400 dark:hover:bg-red-500/10"
+                            className="flex flex-1 items-center justify-center rounded-lg border border-red-200 bg-white px-3 py-2 text-[11px] font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-50 dark:border-red-900/40 dark:bg-white/[0.06] dark:text-red-400 dark:hover:bg-red-500/10"
                           >
                             Deactivate
                           </button>
@@ -3083,7 +3083,7 @@ export default function PayrollRecordListPage() {
                             disabled={
                               updatePayroll.isPending
                             }
-                            className="flex flex-1 items-center justify-center rounded-lg border border-emerald-200 bg-white px-3 py-2 text-[11px] font-semibold text-emerald-600 transition hover:bg-emerald-50 disabled:opacity-50 dark:border-emerald-900/40 dark:bg-slate-800 dark:text-emerald-400 dark:hover:bg-emerald-500/10"
+                            className="flex flex-1 items-center justify-center rounded-lg border border-emerald-200 bg-white px-3 py-2 text-[11px] font-semibold text-emerald-600 transition hover:bg-emerald-50 disabled:opacity-50 dark:border-emerald-900/40 dark:bg-white/[0.06] dark:text-emerald-400 dark:hover:bg-emerald-500/10"
                           >
                             Reactivate
                           </button>
@@ -3096,7 +3096,7 @@ export default function PayrollRecordListPage() {
                     <div
                       className={`relative z-20 border-t px-4 py-2 ${
                         isActive
-                          ? "border-slate-100 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-800/30"
+                          ? "border-slate-100 bg-slate-50/50 dark:border-white/10 dark:bg-white/[0.03]"
                           : "border-red-100 bg-red-50/50 dark:border-red-900/20 dark:bg-red-950/20"
                       }`}
                     >
@@ -3138,8 +3138,8 @@ export default function PayrollRecordListPage() {
       {!isLoading &&
         filteredPayroll.length ===
           0 && (
-          <div className="flex min-h-[280px] flex-col items-center justify-center rounded-xl border border-slate-200 bg-white px-6 py-10 text-center shadow-sm dark:border-slate-700 dark:bg-slate-900">
-            <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800">
+          <div className="flex min-h-[280px] flex-col items-center justify-center rounded-xl border border-slate-200 bg-white px-6 py-10 text-center shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
+            <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-slate-100 dark:bg-white/[0.06]">
               <PayrollIcon />
             </div>
 
@@ -3165,7 +3165,7 @@ export default function PayrollRecordListPage() {
 
       {/* PAGINATION */}
 
-      <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
+      <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500 shadow-sm dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-400">
         <span>
           Page {page} of{" "}
           {pageCount}
@@ -3186,7 +3186,7 @@ export default function PayrollRecordListPage() {
                   )
               )
             }
-            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium hover:bg-slate-50 disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700"
+            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium hover:bg-slate-50 disabled:opacity-40 dark:border-white/10 dark:bg-white/[0.06] dark:hover:bg-slate-700"
           >
             Previous
           </button>
@@ -3206,7 +3206,7 @@ export default function PayrollRecordListPage() {
                   )
               )
             }
-            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium hover:bg-slate-50 disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700"
+            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium hover:bg-slate-50 disabled:opacity-40 dark:border-white/10 dark:bg-white/[0.06] dark:hover:bg-slate-700"
           >
             Next
           </button>

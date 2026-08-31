@@ -929,7 +929,7 @@ export default function AttendanceListPage() {
 
             </div>
 
-            <span className="w-fit rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+            <span className="w-fit rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-500 dark:bg-white/[0.06] dark:text-slate-400">
               {totalRecords} Records
             </span>
 
@@ -965,7 +965,7 @@ export default function AttendanceListPage() {
 
       {/* PAGE HEADER */}
 
-      <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+      <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
 
         <div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-primary-500/5 blur-3xl" />
 
@@ -1072,7 +1072,7 @@ export default function AttendanceListPage() {
           ORGANIZATION FILTERS
       ======================================================= */}
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
 
         <div className="mb-4">
 
@@ -1098,7 +1098,7 @@ export default function AttendanceListPage() {
             value={companyFilterId}
             onChange={handleCompanyFilterChange}
             disabled={filtersLoading}
-            className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+            className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-200"
           >
 
             <option value="">
@@ -1127,7 +1127,7 @@ export default function AttendanceListPage() {
               !companyFilterId ||
               branchesLoading
             }
-            className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+            className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-200"
           >
 
             <option value="">
@@ -1160,7 +1160,7 @@ export default function AttendanceListPage() {
               !branchFilterId ||
               departmentsLoading
             }
-            className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+            className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-200"
           >
 
             <option value="">
@@ -1193,7 +1193,7 @@ export default function AttendanceListPage() {
               !departmentFilterId ||
               designationsLoading
             }
-            className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+            className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-200"
           >
 
             <option value="">
@@ -1275,7 +1275,7 @@ export default function AttendanceListPage() {
           PERIOD SUMMARY
       ======================================================= */}
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
 
         <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
 
@@ -1357,7 +1357,7 @@ export default function AttendanceListPage() {
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
 
           <div className="flex items-start justify-between">
 
@@ -1383,7 +1383,7 @@ export default function AttendanceListPage() {
 
           </div>
 
-          <div className="mt-5 h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+          <div className="mt-5 h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-white/[0.06]">
 
             <div
               className="h-full rounded-full bg-primary-500 transition-all duration-500"
@@ -1411,7 +1411,7 @@ export default function AttendanceListPage() {
 
         </div>
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
 
           <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
             Status Breakdown
@@ -1483,7 +1483,7 @@ export default function AttendanceListPage() {
 
         </div>
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
 
           <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
             Attendance Tools
@@ -1493,9 +1493,9 @@ export default function AttendanceListPage() {
 
             <Link
               to="/attendance/manual"
-              className="group rounded-xl border border-slate-200 p-3 transition hover:border-primary-300 hover:bg-primary-50 dark:border-slate-700 dark:hover:border-primary-700 dark:hover:bg-primary-500/5"
+              className="group rounded-xl border border-slate-200 p-3 transition hover:border-primary-300 hover:bg-primary-50 dark:border-white/10 dark:hover:border-primary-700 dark:hover:bg-primary-500/5"
             >
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 text-slate-600 group-hover:bg-primary-100 group-hover:text-primary-600 dark:bg-slate-800 dark:text-slate-300 dark:group-hover:bg-primary-500/10 dark:group-hover:text-primary-400">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 text-slate-600 group-hover:bg-primary-100 group-hover:text-primary-600 dark:bg-white/[0.06] dark:text-slate-300 dark:group-hover:bg-primary-500/10 dark:group-hover:text-primary-400">
                 +
               </div>
 
@@ -1510,9 +1510,9 @@ export default function AttendanceListPage() {
 
             <Link
               to="/attendance/reports"
-              className="group rounded-xl border border-slate-200 p-3 transition hover:border-primary-300 hover:bg-primary-50 dark:border-slate-700 dark:hover:border-primary-700 dark:hover:bg-primary-500/5"
+              className="group rounded-xl border border-slate-200 p-3 transition hover:border-primary-300 hover:bg-primary-50 dark:border-white/10 dark:hover:border-primary-700 dark:hover:bg-primary-500/5"
             >
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 text-slate-600 group-hover:bg-primary-100 group-hover:text-primary-600 dark:bg-slate-800 dark:text-slate-300 dark:group-hover:bg-primary-500/10 dark:group-hover:text-primary-400">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 text-slate-600 group-hover:bg-primary-100 group-hover:text-primary-600 dark:bg-white/[0.06] dark:text-slate-300 dark:group-hover:bg-primary-500/10 dark:group-hover:text-primary-400">
                 ↗
               </div>
 
@@ -1535,9 +1535,9 @@ export default function AttendanceListPage() {
           ATTENDANCE TABLE
       ======================================================= */}
 
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
 
-        <div className="border-b border-slate-200 px-5 py-5 dark:border-slate-700">
+        <div className="border-b border-slate-200 px-5 py-5 dark:border-white/10">
 
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
 
@@ -1555,7 +1555,7 @@ export default function AttendanceListPage() {
                     : "Quarterly Attendance Records"}
                 </h2>
 
-                <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-500 dark:bg-white/[0.06] dark:text-slate-400">
                   {totalRecords}
                 </span>
 
@@ -1605,7 +1605,7 @@ export default function AttendanceListPage() {
 
         </div>
 
-        <div className="border-t border-slate-200 dark:border-slate-700">
+        <div className="border-t border-slate-200 dark:border-white/10">
 
           <TablePagination
             page={page}
@@ -1693,7 +1693,7 @@ function AttendancePeriodSelector({
   ];
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
 
       <div className="flex flex-wrap gap-2">
 
@@ -1757,7 +1757,7 @@ function AttendancePeriodSelector({
                 event.target.value
               )
             }
-            className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 sm:w-64"
+            className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-200 sm:w-64"
           />
 
         </div>
@@ -1782,7 +1782,7 @@ function AttendancePeriodSelector({
                   )
                 )
               }
-              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-200"
             >
               {months.map(
                 (month) => (
@@ -1813,7 +1813,7 @@ function AttendancePeriodSelector({
                   )
                 )
               }
-              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-200"
             >
               {years.map(
                 (year) => (
@@ -1851,7 +1851,7 @@ function AttendancePeriodSelector({
                   )
                 )
               }
-              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-200"
             >
               {quarters.map(
                 (quarter) => (
@@ -1886,7 +1886,7 @@ function AttendancePeriodSelector({
                   )
                 )
               }
-              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-200"
             >
               {years.map(
                 (year) => (
@@ -1927,7 +1927,7 @@ function PeriodTab({
       className={`rounded-xl px-4 py-2.5 text-sm font-semibold transition ${
         active
           ? "bg-primary-600 text-white shadow-sm"
-          : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+          : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-white/[0.06] dark:text-slate-300 dark:hover:bg-slate-700"
       }`}
     >
       {children}
@@ -2008,9 +2008,9 @@ function AttendanceMetric({
   const tileTints = {
     users: "stat-tile-primary",
     present: "stat-tile-success",
-    absent: "border-red-200/70 bg-gradient-to-br from-red-50 to-red-100/40 dark:border-red-500/20 dark:from-red-500/[0.12] dark:to-red-500/[0.02]",
+    absent: "stat-tile-danger",
     leave: "stat-tile-warn",
-    late: "stat-tile-warn",
+    late: "stat-tile-violet",
     hours: "stat-tile-accent",
   };
 
@@ -2114,7 +2114,7 @@ function StatusRow({
 
       </div>
 
-      <div className="h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+      <div className="h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-white/[0.06]">
 
         <div
           className={`h-full rounded-full transition-all duration-500 ${barStyles[type]}`}

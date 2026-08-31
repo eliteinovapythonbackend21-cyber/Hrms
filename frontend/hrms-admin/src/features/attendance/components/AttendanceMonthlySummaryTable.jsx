@@ -116,7 +116,7 @@ export default function AttendanceMonthlySummaryTable({
 
   if (loading) {
     return (
-      <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
+      <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-white/10">
         <div className="overflow-x-auto">
           <table className="min-w-[1100px] w-full">
             <thead className="tbl-head">
@@ -160,7 +160,7 @@ export default function AttendanceMonthlySummaryTable({
                         key={cellIndex}
                         className="px-4 py-4"
                       >
-                        <div className="h-4 w-full animate-pulse rounded bg-slate-100 dark:bg-slate-800" />
+                        <div className="h-4 w-full animate-pulse rounded bg-slate-100 dark:bg-white/[0.06]" />
                       </td>
                     )
                   )}
@@ -181,8 +181,8 @@ export default function AttendanceMonthlySummaryTable({
 
   if (!sortedData.length) {
     return (
-      <div className="rounded-xl border border-dashed border-slate-300 px-6 py-12 text-center dark:border-slate-700">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-xl dark:bg-slate-800">
+      <div className="rounded-xl border border-dashed border-slate-300 px-6 py-12 text-center dark:border-white/10">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-xl dark:bg-white/[0.06]">
           📊
         </div>
 
@@ -198,7 +198,7 @@ export default function AttendanceMonthlySummaryTable({
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
+    <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-white/10">
       <div className="overflow-x-auto">
         <table className="min-w-[1200px] w-full border-collapse">
           <thead className="tbl-head">
@@ -446,7 +446,7 @@ export default function AttendanceMonthlySummaryTable({
 
           {/* TABLE TOTAL */}
 
-          <tfoot className="border-t-2 border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800">
+          <tfoot className="border-t-2 border-slate-200 bg-slate-50 dark:border-white/10 dark:bg-white/[0.06]">
             <tr>
               <td
                 colSpan={2}

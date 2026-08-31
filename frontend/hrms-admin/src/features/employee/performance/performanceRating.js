@@ -55,18 +55,19 @@ export function averagePerformanceBand(row = {}) {
 
 /** Tailwind classes for a coloured pill, keyed by band label. */
 export function performanceBandClass(label) {
+  const ring = "ring-1 ring-inset";
   switch (label) {
     case "Outstanding":
-      return "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300";
+      return `bg-emerald-50 text-emerald-700 ${ring} ring-emerald-500/20 dark:bg-emerald-500/15 dark:text-emerald-300 dark:ring-emerald-400/25`;
     case "Exceeds Expectations":
-      return "bg-teal-100 text-teal-700 dark:bg-teal-500/15 dark:text-teal-300";
+      return `bg-teal-50 text-teal-700 ${ring} ring-teal-500/20 dark:bg-teal-500/15 dark:text-teal-300 dark:ring-teal-400/25`;
     case "Meets Expectations":
-      return "bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300";
+      return `bg-blue-50 text-blue-700 ${ring} ring-blue-500/20 dark:bg-blue-500/15 dark:text-blue-300 dark:ring-blue-400/25`;
     case "Needs Improvement":
-      return "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300";
+      return `bg-amber-50 text-amber-700 ${ring} ring-amber-500/20 dark:bg-amber-500/15 dark:text-amber-300 dark:ring-amber-400/25`;
     case "Poor":
-      return "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-300";
+      return `bg-rose-50 text-rose-700 ${ring} ring-rose-500/20 dark:bg-rose-500/15 dark:text-rose-300 dark:ring-rose-400/25`;
     default:
-      return "bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-slate-300";
+      return `bg-slate-100 text-slate-600 ${ring} ring-slate-500/15 dark:bg-white/10 dark:text-slate-300 dark:ring-white/10`;
   }
 }

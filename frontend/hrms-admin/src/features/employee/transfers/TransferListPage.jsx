@@ -383,7 +383,7 @@ function StatCard({
   label,
 }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+    <div className="rounded-xl border border-slate-200 bg-gradient-to-br from-white to-slate-50/60 p-5 shadow-sm dark:border-white/10 dark:from-primary-500/[0.06] dark:to-white/[0.02]">
       <div className="flex items-center gap-3">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-sky-50 text-sky-600 dark:bg-sky-500/10 dark:text-sky-400">
           {icon}
@@ -551,7 +551,7 @@ function DepartmentDetailsCard({
 
   return (
     <div
-      className={`w-[360px] max-w-[calc(100vw-32px)] rounded-xl border border-slate-200 border-t-2 bg-white p-4 text-left shadow-xl dark:border-slate-700 dark:bg-slate-800 ${accentTones[focusTone]}`}
+      className={`w-[360px] max-w-[calc(100vw-32px)] rounded-xl border border-slate-200 border-t-2 bg-white p-4 text-left shadow-xl dark:border-white/10 dark:bg-white/[0.06] ${accentTones[focusTone]}`}
     >
       <div className="flex items-start justify-between gap-3">
         <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
@@ -571,7 +571,7 @@ function DepartmentDetailsCard({
         </span>
       </div>
 
-      <div className="my-3 border-t border-slate-100 dark:border-slate-700" />
+      <div className="my-3 border-t border-slate-100 dark:border-white/10" />
 
       <div className="space-y-2.5">
         <div className="grid grid-cols-[105px_minmax(0,1fr)] gap-3">
@@ -680,7 +680,7 @@ function DepartmentDetailsCard({
         </div>
       </div>
 
-      <div className="my-3 border-t border-slate-100 dark:border-slate-700" />
+      <div className="my-3 border-t border-slate-100 dark:border-white/10" />
 
       <div>
         <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
@@ -704,7 +704,7 @@ function AccomplishmentsHoverCard({
   accomplishments,
 }) {
   return (
-    <div className="w-[340px] max-w-[calc(100vw-32px)] rounded-xl border border-slate-200 border-t-2 border-t-primary-500 bg-white p-4 text-left shadow-xl dark:border-slate-700 dark:bg-slate-800">
+    <div className="w-[340px] max-w-[calc(100vw-32px)] rounded-xl border border-slate-200 border-t-2 border-t-primary-500 bg-white p-4 text-left shadow-xl dark:border-white/10 dark:bg-white/[0.06]">
       <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
         Overall Records / Accomplishments
       </p>
@@ -1813,7 +1813,7 @@ export default function TransferListPage() {
           FILTERS
       =================================================== */}
 
-      <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+      <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
         <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-2.5 lg:flex-row lg:flex-wrap">
             {/* SEARCH */}
@@ -1847,7 +1847,7 @@ export default function TransferListPage() {
                   setPage(1);
                 }}
                 placeholder="Search employee, location, department..."
-                className="h-10 w-full rounded-lg border border-slate-300 bg-white pl-9 pr-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                className="h-10 w-full rounded-lg border border-slate-300 bg-white pl-9 pr-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
               />
             </div>
 
@@ -1866,7 +1866,7 @@ export default function TransferListPage() {
 
                 setPage(1);
               }}
-              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none sm:max-w-[180px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none sm:max-w-[180px] dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
             >
               <option value="">
                 All Companies
@@ -1899,7 +1899,7 @@ export default function TransferListPage() {
 
                 setPage(1);
               }}
-              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none sm:max-w-[180px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none sm:max-w-[180px] dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
             >
               <option value="">
                 All Branches
@@ -1932,7 +1932,7 @@ export default function TransferListPage() {
 
                 setPage(1);
               }}
-              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none sm:max-w-[180px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none sm:max-w-[180px] dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
             >
               <option value="">
                 All Departments
@@ -1969,7 +1969,7 @@ export default function TransferListPage() {
 
                 setPage(1);
               }}
-              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none sm:max-w-[180px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none sm:max-w-[180px] dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
             >
               <option value="">
                 All Designations
@@ -2004,7 +2004,7 @@ export default function TransferListPage() {
 
                 setPage(1);
               }}
-              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none sm:max-w-[240px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none sm:max-w-[240px] dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
             >
               <option value="">
                 All Transfer Reasons
@@ -2035,7 +2035,7 @@ export default function TransferListPage() {
                 onClick={
                   clearFilters
                 }
-                className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-xs font-medium text-slate-600 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300"
+                className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-xs font-medium text-slate-600 dark:border-slate-600 dark:bg-white/[0.06] dark:text-slate-300"
               >
                 Clear Filters
               </button>
@@ -2045,7 +2045,7 @@ export default function TransferListPage() {
           {/* VIEW / STATUS */}
 
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex w-fit items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
+            <div className="flex w-fit items-center rounded-lg bg-slate-100 p-1 dark:bg-white/[0.06]">
               <button
                 type="button"
                 onClick={() => {
@@ -2083,7 +2083,7 @@ export default function TransferListPage() {
               </button>
             </div>
 
-            <div className="flex w-fit items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
+            <div className="flex w-fit items-center rounded-lg bg-slate-100 p-1 dark:bg-white/[0.06]">
               {[
                 "active",
                 "inactive",
@@ -2125,7 +2125,7 @@ export default function TransferListPage() {
         </div>
       ) : paged.length ===
         0 ? (
-        <div className="flex min-h-[200px] flex-col items-center justify-center rounded-xl border border-slate-200 bg-white px-6 py-10 text-center shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <div className="flex min-h-[200px] flex-col items-center justify-center rounded-xl border border-slate-200 bg-white px-6 py-10 text-center shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
           <h3 className="text-sm font-semibold text-slate-800 dark:text-white">
             No transfers found
           </h3>
@@ -2140,7 +2140,7 @@ export default function TransferListPage() {
            TABLE VIEW
         =================================================== */
 
-        <div className="w-full min-w-0 max-lg:overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <div className="w-full min-w-0 max-lg:overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
           <table className="w-full min-w-[900px] table-fixed border-collapse text-left text-sm lg:min-w-0">
             <colgroup>
               <col className="w-[17%]" />
@@ -2153,7 +2153,7 @@ export default function TransferListPage() {
               <col className="w-[7%]" />
             </colgroup>
 
-            <thead className="tbl-head border-b border-slate-200 dark:border-slate-700">
+            <thead className="tbl-head border-b border-slate-200 dark:border-white/10">
               <tr>
                 <th className="px-4 py-3 font-medium">
                   Employee
@@ -2624,7 +2624,7 @@ export default function TransferListPage() {
               return (
                 <div
                   key={transfer.id}
-                  className="overflow-visible rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg dark:border-slate-700 dark:bg-slate-900"
+                  className="overflow-visible rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg dark:border-white/10 dark:bg-white/[0.04]"
                 >
                   <div className="h-0.5 bg-primary-600" />
 
@@ -2667,7 +2667,7 @@ export default function TransferListPage() {
                       </span>
                     </div>
 
-                    <div className="my-3 border-t border-slate-100 dark:border-slate-800" />
+                    <div className="my-3 border-t border-slate-100 dark:border-white/10" />
 
                     {/* DEPARTMENTS */}
 
@@ -2889,7 +2889,7 @@ export default function TransferListPage() {
 
                   {/* ACTIONS */}
 
-                  <div className="grid grid-cols-2 divide-x divide-slate-100 border-t border-slate-100 dark:divide-slate-700 dark:border-slate-700">
+                  <div className="grid grid-cols-2 divide-x divide-slate-100 border-t border-slate-100 dark:divide-slate-700 dark:border-white/10">
                     <div className="flex items-center justify-center py-1.5">
                       <TableIconButton
                         title="Edit"
@@ -2985,7 +2985,7 @@ export default function TransferListPage() {
           PAGINATION
       =================================================== */}
 
-      <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
+      <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500 shadow-sm dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-400">
         <span>
           Page {page} of {pageCount}
         </span>
@@ -3003,7 +3003,7 @@ export default function TransferListPage() {
                   )
               )
             }
-            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800"
+            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium disabled:opacity-40 dark:border-white/10 dark:bg-white/[0.06]"
           >
             Previous
           </button>
@@ -3022,7 +3022,7 @@ export default function TransferListPage() {
                   )
               )
             }
-            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800"
+            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium disabled:opacity-40 dark:border-white/10 dark:bg-white/[0.06]"
           >
             Next
           </button>

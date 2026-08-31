@@ -131,7 +131,7 @@ function StatCard({ icon, value, label, tone = "sky" }) {
   };
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+    <div className="rounded-xl border border-slate-200 bg-gradient-to-br from-white to-slate-50/60 p-5 shadow-sm dark:border-white/10 dark:from-primary-500/[0.06] dark:to-white/[0.02]">
       <div className="flex items-center gap-3">
         <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${tones[tone]}`}>
           {icon}
@@ -177,7 +177,7 @@ function PayoutDetailsCard({ record }) {
   const employeeName = getEmployeeName(record);
 
   return (
-    <div className="w-[320px] max-w-[calc(100vw-32px)] rounded-xl border border-slate-200 border-t-2 border-t-primary-500 bg-white p-4 text-left shadow-xl dark:border-slate-700 dark:bg-slate-800">
+    <div className="w-[320px] max-w-[calc(100vw-32px)] rounded-xl border border-slate-200 border-t-2 border-t-primary-500 bg-white p-4 text-left shadow-xl dark:border-white/10 dark:bg-white/[0.06]">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
@@ -190,7 +190,7 @@ function PayoutDetailsCard({ record }) {
         <Badge className={getStatusBadgeClass(record?.status)}>{record?.status}</Badge>
       </div>
 
-      <div className="my-3 border-t border-slate-100 dark:border-slate-700" />
+      <div className="my-3 border-t border-slate-100 dark:border-white/10" />
 
       <div className="space-y-2.5">
         <div className="grid grid-cols-[100px_minmax(0,1fr)] gap-3">
@@ -231,7 +231,7 @@ function PayoutDetailsCard({ record }) {
         </div>
       </div>
 
-      <div className="my-3 border-t border-slate-100 dark:border-slate-700" />
+      <div className="my-3 border-t border-slate-100 dark:border-white/10" />
 
       <div className="grid grid-cols-2 gap-3">
         <div>
@@ -262,7 +262,7 @@ function TargetProgressBar({ target, actual }) {
 
   return (
     <div className="space-y-1">
-      <div className="relative h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+      <div className="relative h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-white/[0.06]">
         <div className="absolute inset-y-0 left-0 rounded-full bg-slate-300 dark:bg-slate-600" style={{ width: `${targetPct}%` }} />
         <div className="absolute inset-y-0 left-0 rounded-full bg-emerald-500" style={{ width: `${actualPct}%` }} />
       </div>
@@ -432,7 +432,7 @@ export default function IncentivePayoutPage() {
       </div>
 
       {/* CALCULATE */}
-      <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+      <div className="rounded-xl border border-slate-200 bg-gradient-to-br from-white to-slate-50/60 p-5 shadow-sm dark:border-white/10 dark:from-primary-500/[0.06] dark:to-white/[0.02]">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
           <div>
             <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">
@@ -441,7 +441,7 @@ export default function IncentivePayoutPage() {
             <select
               value={calcMonth}
               onChange={(e) => setCalcMonth(Number(e.target.value))}
-              className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+              className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
             >
               {MONTH_OPTIONS.map((m) => (
                 <option key={m.value} value={m.value}>
@@ -459,7 +459,7 @@ export default function IncentivePayoutPage() {
               type="number"
               value={calcYear}
               onChange={(e) => setCalcYear(Number(e.target.value))}
-              className="h-10 w-28 rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+              className="h-10 w-28 rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
             />
           </div>
 
@@ -481,7 +481,7 @@ export default function IncentivePayoutPage() {
       </div>
 
       {/* FILTERS */}
-      <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+      <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
         <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-2.5 lg:flex-row lg:flex-wrap">
             <div className="relative w-full sm:max-w-xs">
@@ -498,7 +498,7 @@ export default function IncentivePayoutPage() {
                   setPage(1);
                 }}
                 placeholder="Search by employee name or code..."
-                className="h-10 w-full rounded-lg border border-slate-300 bg-white pl-9 pr-3 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                className="h-10 w-full rounded-lg border border-slate-300 bg-white pl-9 pr-3 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
               />
             </div>
 
@@ -508,7 +508,7 @@ export default function IncentivePayoutPage() {
                 setMonthFilter(e.target.value);
                 setPage(1);
               }}
-              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm sm:max-w-[160px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm sm:max-w-[160px] dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
             >
               <option value="">All Months</option>
               {MONTH_OPTIONS.map((m) => (
@@ -524,7 +524,7 @@ export default function IncentivePayoutPage() {
                 setYearFilter(e.target.value);
                 setPage(1);
               }}
-              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm sm:max-w-[120px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm sm:max-w-[120px] dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
             >
               <option value="">All Years</option>
               {yearOptions.map((y) => (
@@ -540,7 +540,7 @@ export default function IncentivePayoutPage() {
                 setStatusFilter(e.target.value);
                 setPage(1);
               }}
-              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm sm:max-w-[160px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm sm:max-w-[160px] dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
             >
               <option value="">All Statuses</option>
               <option value="Pending">Pending</option>
@@ -553,7 +553,7 @@ export default function IncentivePayoutPage() {
               <button
                 type="button"
                 onClick={clearFilters}
-                className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-xs font-medium text-slate-600 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300"
+                className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-xs font-medium text-slate-600 dark:border-slate-600 dark:bg-white/[0.06] dark:text-slate-300"
               >
                 Clear Filters
               </button>
@@ -561,7 +561,7 @@ export default function IncentivePayoutPage() {
           </div>
 
           <div className="flex flex-wrap items-center justify-end gap-2">
-            <div className="flex items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
+            <div className="flex items-center rounded-lg bg-slate-100 p-1 dark:bg-white/[0.06]">
               <button
                 type="button"
                 onClick={() => {
@@ -599,16 +599,16 @@ export default function IncentivePayoutPage() {
       {isLoading ? (
         <div className="py-10 text-center text-sm text-slate-400">Loading...</div>
       ) : paged.length === 0 ? (
-        <div className="flex min-h-[200px] flex-col items-center justify-center rounded-xl border border-slate-200 bg-white px-6 py-10 text-center shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <div className="flex min-h-[200px] flex-col items-center justify-center rounded-xl border border-slate-200 bg-white px-6 py-10 text-center shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
           <h3 className="text-sm font-semibold text-slate-800 dark:text-white">No incentive records found</h3>
           <p className="mt-1 max-w-sm text-xs text-slate-500 dark:text-slate-400">
             No records match your current search or filters. Run a calculation above for a specific period.
           </p>
         </div>
       ) : viewMode === "table" ? (
-        <div className="w-full min-w-0 overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <div className="w-full min-w-0 overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
           <table className="w-full text-left text-sm">
-            <thead className="tbl-head border-b border-slate-200 dark:border-slate-700">
+            <thead className="tbl-head border-b border-slate-200 dark:border-white/10">
               <tr>
                 <th className="px-4 py-3 font-medium">Employee</th>
                 <th className="px-4 py-3 font-medium">Period</th>
@@ -696,7 +696,7 @@ export default function IncentivePayoutPage() {
             return (
               <div
                 key={record.id}
-                className="flex min-w-0 flex-col overflow-visible rounded-2xl border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-lg dark:border-slate-700 dark:bg-slate-900"
+                className="flex min-w-0 flex-col overflow-visible rounded-2xl border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-lg dark:border-white/10 dark:bg-white/[0.04]"
               >
                 <div className="flex flex-1 flex-col p-4">
                   <div className="flex items-start justify-between gap-2">
@@ -767,7 +767,7 @@ export default function IncentivePayoutPage() {
       )}
 
       {/* PAGINATION */}
-      <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
+      <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500 shadow-sm dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-400">
         <span>
           Page {page} of {pageCount}
         </span>
@@ -776,7 +776,7 @@ export default function IncentivePayoutPage() {
             type="button"
             disabled={page <= 1}
             onClick={() => setPage((current) => Math.max(1, current - 1))}
-            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800"
+            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium disabled:opacity-40 dark:border-white/10 dark:bg-white/[0.06]"
           >
             Previous
           </button>
@@ -784,7 +784,7 @@ export default function IncentivePayoutPage() {
             type="button"
             disabled={page >= pageCount}
             onClick={() => setPage((current) => Math.min(pageCount, current + 1))}
-            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800"
+            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium disabled:opacity-40 dark:border-white/10 dark:bg-white/[0.06]"
           >
             Next
           </button>

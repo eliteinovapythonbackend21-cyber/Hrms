@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 
 import DataTable from "@/components/table/DataTable";
-import Badge from "@/components/ui/Badge";
 import Modal from "@/components/ui/Modal";
 import { formatCurrency } from "@/utils/formatCurrency";
 
@@ -104,14 +103,25 @@ const LeaveIcon = () => (
    ICON ACTION
 ========================================================= */
 
+const ICON_ACTION_TONES = {
+  primary:
+    "text-primary-600 hover:bg-primary-50 hover:text-primary-700 dark:text-primary-400 dark:hover:bg-primary-500/10",
+  blue:
+    "text-blue-600 hover:bg-blue-50 hover:text-blue-700 dark:text-blue-400 dark:hover:bg-blue-500/10",
+  violet:
+    "text-violet-600 hover:bg-violet-50 hover:text-violet-700 dark:text-violet-400 dark:hover:bg-violet-500/10",
+};
+
 function IconAction({
   icon,
   label,
   onClick,
   to,
+  tone = "primary",
 }) {
-  const className =
-    "inline-flex h-7 w-7 items-center justify-center rounded-md text-slate-500 transition hover:bg-primary-50 hover:text-primary-600 dark:text-slate-400 dark:hover:bg-primary-500/10 dark:hover:text-primary-400";
+  const className = `inline-flex h-7 w-7 items-center justify-center rounded-md ring-1 ring-inset ring-transparent transition ${
+    ICON_ACTION_TONES[tone] || ICON_ACTION_TONES.primary
+  }`;
 
   if (to) {
     return (
@@ -354,18 +364,21 @@ export default function EmployeeTable({
         "Company / Branch",
 
       render: (employee) => (
-        <div className="min-w-0 text-xs leading-tight">
-          <p className="truncate font-medium text-slate-700 dark:text-slate-200">
-            {employee.department
-              ?.company?.name ||
-              "-"}
-          </p>
+        <div className="flex min-w-0 items-start gap-2 text-xs leading-tight">
+          <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-500" />
+          <div className="min-w-0">
+            <p className="truncate font-medium text-slate-700 dark:text-slate-200">
+              {employee.department
+                ?.company?.name ||
+                "-"}
+            </p>
 
-          <p className="truncate text-slate-400">
-            {employee.department
-              ?.branch?.name ||
-              "-"}
-          </p>
+            <p className="truncate text-slate-400 dark:text-slate-500">
+              {employee.department
+                ?.branch?.name ||
+                "-"}
+            </p>
+          </div>
         </div>
       ),
     },
@@ -380,18 +393,21 @@ export default function EmployeeTable({
         "Department / Designation",
 
       render: (employee) => (
-        <div className="min-w-0 text-xs leading-tight">
-          <p className="truncate font-medium text-slate-700 dark:text-slate-200">
-            {employee.department
-              ?.department_name ||
-              "-"}
-          </p>
+        <div className="flex min-w-0 items-start gap-2 text-xs leading-tight">
+          <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-violet-500" />
+          <div className="min-w-0">
+            <p className="truncate font-medium text-slate-700 dark:text-slate-200">
+              {employee.department
+                ?.department_name ||
+                "-"}
+            </p>
 
-          <p className="truncate text-slate-400">
-            {employee.designation
-              ?.designation_name ||
-              "-"}
-          </p>
+            <p className="truncate text-slate-400 dark:text-slate-500">
+              {employee.designation
+                ?.designation_name ||
+                "-"}
+            </p>
+          </div>
         </div>
       ),
     },
@@ -429,17 +445,24 @@ export default function EmployeeTable({
       sortable: true,
 
       render: (employee) => (
-        <Badge
-          className={`text-xs ${
+        <span
+          className={`pill ${
             employee.is_active
-              ? "bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300"
-              : "bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300"
+              ? "pill-success"
+              : "pill-danger"
           }`}
         >
+          <span
+            className={`h-1.5 w-1.5 rounded-full ${
+              employee.is_active
+                ? "bg-emerald-500"
+                : "bg-rose-500"
+            }`}
+          />
           {employee.is_active
             ? "Active"
             : "Inactive"}
-        </Badge>
+        </span>
       ),
     },
 
@@ -460,6 +483,7 @@ export default function EmployeeTable({
                   <AttendanceIcon />
                 }
                 label="View attendance"
+                tone="blue"
                 onClick={() =>
                   setModalState({
                     type: "attendance",
@@ -480,6 +504,7 @@ export default function EmployeeTable({
                   <LeaveIcon />
                 }
                 label="View leaves"
+                tone="violet"
                 onClick={() =>
                   setModalState({
                     type: "leave",
@@ -501,7 +526,7 @@ export default function EmployeeTable({
       label: "Actions",
 
       render: (employee) => (
-        <div className="flex items-center gap-2 whitespace-nowrap">
+        <div className="flex items-center gap-1.5 whitespace-nowrap">
           {/* =================================================
              VIEW
           ================================================= */}
@@ -515,7 +540,7 @@ export default function EmployeeTable({
           ) : (
             <Link
               to={`/employees/${employee.id}`}
-              className="text-xs text-primary-600 hover:underline"
+              className="rounded-md bg-primary-50 px-2 py-1 text-xs font-semibold text-primary-700 ring-1 ring-inset ring-primary-500/15 transition hover:bg-primary-100 dark:bg-primary-500/10 dark:text-primary-300 dark:ring-primary-400/20 dark:hover:bg-primary-500/20"
             >
               View
             </Link>
@@ -532,7 +557,7 @@ export default function EmployeeTable({
                 to={getSalaryPath(
                   employee.id
                 )}
-                className="text-xs text-primary-600 hover:underline"
+                className="rounded-md bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-500/15 transition hover:bg-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-300 dark:ring-emerald-400/20 dark:hover:bg-emerald-500/20"
               >
                 Salary
               </Link>
@@ -541,7 +566,7 @@ export default function EmployeeTable({
                 to={getPayslipPath(
                   employee.id
                 )}
-                className="text-xs text-primary-600 hover:underline"
+                className="rounded-md bg-violet-50 px-2 py-1 text-xs font-semibold text-violet-700 ring-1 ring-inset ring-violet-500/15 transition hover:bg-violet-100 dark:bg-violet-500/10 dark:text-violet-300 dark:ring-violet-400/20 dark:hover:bg-violet-500/20"
               >
                 Payslip
               </Link>

@@ -214,12 +214,12 @@ function CustomerDetailCard({
 }) {
   return (
     <div
-      className={`rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900 ${
+      className={`rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-white/[0.04] ${
         wide ? "sm:col-span-2" : ""
       }`}
     >
       <div className="flex items-start gap-3">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600 dark:bg-white/[0.06] dark:text-slate-300">
           {icon}
         </div>
 
@@ -248,11 +248,11 @@ function CustomerHeaderCard({
     customer?.is_active !== false;
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
       <div className="p-5 sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 items-center gap-4">
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-600 dark:bg-white/[0.06] dark:text-slate-300">
               <UserIcon />
             </div>
 
@@ -286,7 +286,7 @@ function CustomerHeaderCard({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 border-t border-slate-100 bg-slate-50/70 sm:grid-cols-3 dark:border-slate-800 dark:bg-slate-800/40">
+      <div className="grid grid-cols-1 border-t border-slate-100 bg-slate-50/70 sm:grid-cols-3 dark:border-slate-800 dark:bg-white/[0.06]/40">
         <div className="border-b border-slate-100 px-5 py-3 sm:border-b-0 sm:border-r dark:border-slate-800">
           <p className="text-[9px] font-semibold uppercase tracking-wide text-slate-400">
             Contact
@@ -474,7 +474,7 @@ export default function CustomerDetailPage() {
   ) {
     return (
       <div className="flex min-h-[300px] items-center justify-center">
-        <div className="rounded-xl border border-slate-200 bg-white px-8 py-10 text-center shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <div className="rounded-xl border border-slate-200 bg-white px-8 py-10 text-center shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-50 text-red-500 dark:bg-red-500/10 dark:text-red-400">
             !
           </div>
@@ -659,9 +659,9 @@ export default function CustomerDetailPage() {
 
       {/* RECORD INFORMATION */}
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
         <div className="mb-4 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 text-slate-600 dark:bg-white/[0.06] dark:text-slate-300">
             <CalendarIcon />
           </div>
 
@@ -762,7 +762,7 @@ export default function CustomerDetailPage() {
           </p>
         </div>
 
-        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
           <TabbedDetailLayout
             tabs={[
               {

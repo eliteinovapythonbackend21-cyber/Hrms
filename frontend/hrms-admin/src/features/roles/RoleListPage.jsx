@@ -164,7 +164,7 @@ export default function RoleListPage() {
         </div>
       ) : (
         <div className="card">
-          <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+          <div className="px-6 py-4 border-b border-slate-200 dark:border-white/10">
             <TableSearchBar value={value} onChange={setValue} placeholder={`Search ${category.label.toLowerCase()} roles...`} />
           </div>
           <DataTable columns={columns} data={scopedRoles} loading={isLoading} />

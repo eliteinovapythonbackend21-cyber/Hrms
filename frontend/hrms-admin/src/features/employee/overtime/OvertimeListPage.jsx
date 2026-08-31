@@ -210,12 +210,12 @@ const getStatusStyles = (status) => {
       "bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/20 dark:bg-blue-500/10 dark:text-blue-300",
 
     cancelled:
-      "bg-slate-100 text-slate-700 ring-1 ring-inset ring-slate-600/20 dark:bg-slate-800 dark:text-slate-300",
+      "bg-slate-100 text-slate-700 ring-1 ring-inset ring-slate-600/20 dark:bg-white/[0.06] dark:text-slate-300",
   };
 
   return (
     styles[normalized] ||
-    "bg-slate-100 text-slate-700 ring-1 ring-inset ring-slate-600/20 dark:bg-slate-800 dark:text-slate-300"
+    "bg-slate-100 text-slate-700 ring-1 ring-inset ring-slate-600/20 dark:bg-white/[0.06] dark:text-slate-300"
   );
 };
 
@@ -1087,7 +1087,7 @@ export default function OvertimeListPage() {
           HEADER
       ====================================================== */}
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
 
         <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
 
@@ -1199,7 +1199,7 @@ export default function OvertimeListPage() {
 
       <div className="flex justify-end">
 
-        <div className="inline-flex rounded-lg border border-slate-200 bg-slate-50 p-1 dark:border-slate-700 dark:bg-slate-800">
+        <div className="inline-flex rounded-lg border border-slate-200 bg-slate-50 p-1 dark:border-white/10 dark:bg-white/[0.06]">
 
           <StatusTab
             active={
@@ -1253,7 +1253,7 @@ export default function OvertimeListPage() {
       ====================================================== */}
 
       {isAdmin && (
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
 
           <div className="mb-4">
 
@@ -1284,7 +1284,7 @@ export default function OvertimeListPage() {
               disabled={
                 companiesLoading
               }
-              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-primary-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-primary-500 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-200"
             >
               <option value="">
                 {companiesLoading
@@ -1316,7 +1316,7 @@ export default function OvertimeListPage() {
                 !companyFilterId ||
                 branchesLoading
               }
-              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-primary-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-primary-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-200"
             >
               <option value="">
                 {!companyFilterId
@@ -1352,7 +1352,7 @@ export default function OvertimeListPage() {
                 !branchFilterId ||
                 departmentsLoading
               }
-              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-primary-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-primary-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-200"
             >
               <option value="">
                 {!branchFilterId
@@ -1388,7 +1388,7 @@ export default function OvertimeListPage() {
                 !departmentFilterId ||
                 designationsLoading
               }
-              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-primary-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-primary-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-200"
             >
               <option value="">
                 {!departmentFilterId
@@ -1469,7 +1469,7 @@ export default function OvertimeListPage() {
           MAIN LIST
       ====================================================== */}
 
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
 
         <GenericListPage
           module="Overtime"
@@ -1565,7 +1565,7 @@ function CountCard({
   const tones = {
     neutral: {
       wrapper:
-        "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900",
+        "border-slate-200 bg-white dark:border-white/10 dark:bg-white/[0.04]",
 
       dot: "bg-slate-400",
 
@@ -1575,7 +1575,7 @@ function CountCard({
 
     active: {
       wrapper:
-        "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900",
+        "border-slate-200 bg-white dark:border-white/10 dark:bg-white/[0.04]",
 
       dot: "bg-emerald-500",
 
@@ -1585,7 +1585,7 @@ function CountCard({
 
     inactive: {
       wrapper:
-        "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900",
+        "border-slate-200 bg-white dark:border-white/10 dark:bg-white/[0.04]",
 
       dot: "bg-red-500",
 
@@ -1647,7 +1647,7 @@ function StatusTab({
       onClick={onClick}
       className={`rounded-md px-3.5 py-1.5 text-xs font-semibold transition ${
         active
-          ? "bg-white text-slate-900 shadow-sm dark:bg-slate-900 dark:text-white"
+          ? "bg-white text-slate-900 shadow-sm dark:bg-white/[0.04] dark:text-white"
           : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
       }`}
     >
@@ -1718,7 +1718,7 @@ function OvertimePeriodSelector({
   ];
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
 
       <div className="flex flex-wrap gap-2">
 
@@ -1785,7 +1785,7 @@ function OvertimePeriodSelector({
                 event.target.value
               )
             }
-            className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 sm:w-64"
+            className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-200 sm:w-64"
           />
 
           <p className="mt-2 text-xs text-slate-400">
@@ -1817,7 +1817,7 @@ function OvertimePeriodSelector({
                   )
                 )
               }
-              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-200"
             >
               {months.map(
                 ([value, label]) => (
@@ -1849,7 +1849,7 @@ function OvertimePeriodSelector({
                   )
                 )
               }
-              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-200"
             >
               {years.map(
                 (year) => (
@@ -1892,7 +1892,7 @@ function OvertimePeriodSelector({
                   )
                 )
               }
-              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-200"
             >
               {quarters.map(
                 ([
@@ -1928,7 +1928,7 @@ function OvertimePeriodSelector({
                   )
                 )
               }
-              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-200"
             >
               {years.map(
                 (year) => (

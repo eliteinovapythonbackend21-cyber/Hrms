@@ -287,7 +287,7 @@ export default function ResignationForm({
     <div className="space-y-4">
       {/* Previous Organization Preview */}
       {selectedEmployee && (
-        <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4 dark:border-slate-700 dark:bg-slate-800/50">
+        <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4 dark:border-white/10 dark:bg-white/[0.03]">
           <div className="mb-3 flex items-center justify-between gap-2">
             <div>
               <h3 className="text-sm font-semibold text-slate-800 dark:text-white">

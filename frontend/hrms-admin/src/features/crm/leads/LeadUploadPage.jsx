@@ -118,7 +118,7 @@ function StatCard({ icon, value, label, tone = "sky" }) {
   };
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+    <div className="rounded-xl border border-slate-200 bg-gradient-to-br from-white to-slate-50/60 p-5 shadow-sm dark:border-white/10 dark:from-primary-500/[0.06] dark:to-white/[0.02]">
       <div className="flex items-center gap-3">
         <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${tones[tone]}`}>
           {icon}
@@ -162,7 +162,7 @@ function HoverDetailsTrigger({ children, panel, align = "left" }) {
 
 function BatchDetailsCard({ batch }) {
   return (
-    <div className="w-[300px] max-w-[calc(100vw-32px)] rounded-xl border border-slate-200 border-t-2 border-t-primary-500 bg-white p-4 text-left shadow-xl dark:border-slate-700 dark:bg-slate-800">
+    <div className="w-[300px] max-w-[calc(100vw-32px)] rounded-xl border border-slate-200 border-t-2 border-t-primary-500 bg-white p-4 text-left shadow-xl dark:border-white/10 dark:bg-white/[0.06]">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
@@ -175,7 +175,7 @@ function BatchDetailsCard({ batch }) {
         <Badge className={getStatusBadgeClass(batch?.status)}>{batch?.status}</Badge>
       </div>
 
-      <div className="my-3 border-t border-slate-100 dark:border-slate-700" />
+      <div className="my-3 border-t border-slate-100 dark:border-white/10" />
 
       <div className="space-y-2.5">
         <div className="grid grid-cols-[100px_minmax(0,1fr)] gap-3">
@@ -206,7 +206,7 @@ function BatchDetailsCard({ batch }) {
 
       {batch?.error_summary && (
         <>
-          <div className="my-3 border-t border-slate-100 dark:border-slate-700" />
+          <div className="my-3 border-t border-slate-100 dark:border-white/10" />
           <div>
             <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
               Error Summary
@@ -218,7 +218,7 @@ function BatchDetailsCard({ batch }) {
         </>
       )}
 
-      <div className="my-3 border-t border-slate-100 dark:border-slate-700" />
+      <div className="my-3 border-t border-slate-100 dark:border-white/10" />
 
       <div>
         <p className="text-[10px] text-slate-400">Uploaded At</p>
@@ -386,7 +386,7 @@ export default function LeadUploadPage() {
       </div>
 
       {/* UPLOAD PANEL */}
-      <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+      <div className="rounded-xl border border-slate-200 bg-gradient-to-br from-white to-slate-50/60 p-5 shadow-sm dark:border-white/10 dark:from-primary-500/[0.06] dark:to-white/[0.02]">
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_260px]">
           {/* Dropzone */}
           <div>
@@ -396,7 +396,7 @@ export default function LeadUploadPage() {
 
             {selectedFile ? (
               <div className="flex items-center gap-3 rounded-lg border border-primary-200 bg-primary-50 p-3 dark:border-primary-500/30 dark:bg-primary-500/10">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white text-primary-600 dark:bg-slate-800 dark:text-primary-400">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white text-primary-600 dark:bg-white/[0.06] dark:text-primary-400">
                   <FileIcon />
                 </div>
                 <div className="min-w-0 flex-1">
@@ -424,7 +424,7 @@ export default function LeadUploadPage() {
                 className={`flex h-24 cursor-pointer flex-col items-center justify-center gap-1.5 rounded-lg border-2 border-dashed text-center transition-colors ${
                   isDragging
                     ? "border-primary-400 bg-primary-50 dark:border-primary-500 dark:bg-primary-500/10"
-                    : "border-slate-300 bg-slate-50 hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-800/60 dark:hover:bg-slate-800"
+                    : "border-slate-300 bg-slate-50 hover:bg-slate-100 dark:border-slate-600 dark:bg-white/[0.06]/60 dark:hover:bg-slate-800"
                 }`}
               >
                 <UploadIcon />
@@ -451,7 +451,7 @@ export default function LeadUploadPage() {
               <select
                 value={assignedTo}
                 onChange={(event) => setAssignedTo(event.target.value)}
-                className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
               >
                 <option value="">No default assignee</option>
                 {employeeOptions.map((employee) => (
@@ -479,7 +479,7 @@ export default function LeadUploadPage() {
       </div>
 
       {/* FILTERS */}
-      <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+      <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
         <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-2.5 lg:flex-row lg:flex-wrap">
             <div className="relative w-full sm:max-w-xs">
@@ -496,7 +496,7 @@ export default function LeadUploadPage() {
                   setPage(1);
                 }}
                 placeholder="Search by file name or uploader..."
-                className="h-10 w-full rounded-lg border border-slate-300 bg-white pl-9 pr-3 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                className="h-10 w-full rounded-lg border border-slate-300 bg-white pl-9 pr-3 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
               />
             </div>
 
@@ -506,7 +506,7 @@ export default function LeadUploadPage() {
                 setStatusFilter(e.target.value);
                 setPage(1);
               }}
-              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm sm:max-w-[200px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm sm:max-w-[200px] dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
             >
               <option value="">All Statuses</option>
               <option value="Processing">Processing</option>
@@ -518,7 +518,7 @@ export default function LeadUploadPage() {
               <button
                 type="button"
                 onClick={clearFilters}
-                className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-xs font-medium text-slate-600 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300"
+                className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-xs font-medium text-slate-600 dark:border-slate-600 dark:bg-white/[0.06] dark:text-slate-300"
               >
                 Clear Filters
               </button>
@@ -526,7 +526,7 @@ export default function LeadUploadPage() {
           </div>
 
           <div className="flex flex-wrap items-center justify-end gap-2">
-            <div className="flex items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
+            <div className="flex items-center rounded-lg bg-slate-100 p-1 dark:bg-white/[0.06]">
               <button
                 type="button"
                 onClick={() => {
@@ -564,16 +564,16 @@ export default function LeadUploadPage() {
       {isLoading ? (
         <div className="py-10 text-center text-sm text-slate-400">Loading...</div>
       ) : paged.length === 0 ? (
-        <div className="flex min-h-[200px] flex-col items-center justify-center rounded-xl border border-slate-200 bg-white px-6 py-10 text-center shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <div className="flex min-h-[200px] flex-col items-center justify-center rounded-xl border border-slate-200 bg-white px-6 py-10 text-center shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
           <h3 className="text-sm font-semibold text-slate-800 dark:text-white">No upload batches found</h3>
           <p className="mt-1 max-w-sm text-xs text-slate-500 dark:text-slate-400">
             No records match your current search or filters. Upload a file above to get started.
           </p>
         </div>
       ) : viewMode === "table" ? (
-        <div className="w-full min-w-0 overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <div className="w-full min-w-0 overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
           <table className="w-full text-left text-sm">
-            <thead className="tbl-head border-b border-slate-200 dark:border-slate-700">
+            <thead className="tbl-head border-b border-slate-200 dark:border-white/10">
               <tr>
                 <th className="px-4 py-3 font-medium">File</th>
                 <th className="px-4 py-3 font-medium">Uploaded By</th>
@@ -621,7 +621,7 @@ export default function LeadUploadPage() {
           {paged.map((batch) => (
             <div
               key={batch.id}
-              className="flex min-w-0 flex-col overflow-visible rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-lg dark:border-slate-700 dark:bg-slate-900"
+              className="flex min-w-0 flex-col overflow-visible rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-lg dark:border-white/10 dark:bg-white/[0.04]"
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="flex min-w-0 items-center gap-2.5">
@@ -647,7 +647,7 @@ export default function LeadUploadPage() {
               <div className="my-3 border-t border-slate-100 dark:border-slate-800" />
 
               <div className="grid grid-cols-3 gap-2 text-center">
-                <div className="rounded-lg bg-slate-50 py-2 dark:bg-slate-800/60">
+                <div className="rounded-lg bg-slate-50 py-2 dark:bg-white/[0.06]/60">
                   <p className="text-sm font-bold text-slate-700 dark:text-slate-200">{batch.total_rows}</p>
                   <p className="text-[9px] text-slate-400">Total</p>
                 </div>
@@ -671,7 +671,7 @@ export default function LeadUploadPage() {
       )}
 
       {/* PAGINATION */}
-      <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
+      <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500 shadow-sm dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-400">
         <span>
           Page {page} of {pageCount}
         </span>
@@ -680,7 +680,7 @@ export default function LeadUploadPage() {
             type="button"
             disabled={page <= 1}
             onClick={() => setPage((current) => Math.max(1, current - 1))}
-            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800"
+            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium disabled:opacity-40 dark:border-white/10 dark:bg-white/[0.06]"
           >
             Previous
           </button>
@@ -688,7 +688,7 @@ export default function LeadUploadPage() {
             type="button"
             disabled={page >= pageCount}
             onClick={() => setPage((current) => Math.min(pageCount, current + 1))}
-            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800"
+            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium disabled:opacity-40 dark:border-white/10 dark:bg-white/[0.06]"
           >
             Next
           </button>

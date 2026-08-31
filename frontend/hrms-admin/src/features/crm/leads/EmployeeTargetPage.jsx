@@ -178,7 +178,7 @@ function StatCard({ icon, value, label, tone = "sky" }) {
   };
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+    <div className="rounded-xl border border-slate-200 bg-gradient-to-br from-white to-slate-50/60 p-5 shadow-sm dark:border-white/10 dark:from-primary-500/[0.06] dark:to-white/[0.02]">
       <div className="flex items-center gap-3">
         <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${tones[tone]}`}>
           {icon}
@@ -225,7 +225,7 @@ function TargetDetailsCard({ record }) {
   const employeeName = getEmployeeName(record);
 
   return (
-    <div className="w-[320px] max-w-[calc(100vw-32px)] rounded-xl border border-slate-200 border-t-2 border-t-primary-500 bg-white p-4 text-left shadow-xl dark:border-slate-700 dark:bg-slate-800">
+    <div className="w-[320px] max-w-[calc(100vw-32px)] rounded-xl border border-slate-200 border-t-2 border-t-primary-500 bg-white p-4 text-left shadow-xl dark:border-white/10 dark:bg-white/[0.06]">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
@@ -246,7 +246,7 @@ function TargetDetailsCard({ record }) {
         </span>
       </div>
 
-      <div className="my-3 border-t border-slate-100 dark:border-slate-700" />
+      <div className="my-3 border-t border-slate-100 dark:border-white/10" />
 
       <div className="space-y-2.5">
         <div className="grid grid-cols-[100px_minmax(0,1fr)] gap-3">
@@ -275,7 +275,7 @@ function TargetDetailsCard({ record }) {
         </div>
       </div>
 
-      <div className="my-3 border-t border-slate-100 dark:border-slate-700" />
+      <div className="my-3 border-t border-slate-100 dark:border-white/10" />
 
       <div className="grid grid-cols-2 gap-3">
         <div>
@@ -573,7 +573,7 @@ export default function EmployeeTargetPage() {
       </div>
 
       {/* FILTERS */}
-      <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+      <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
         <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-2.5 lg:flex-row lg:flex-wrap">
             <div className="relative w-full sm:max-w-xs">
@@ -590,7 +590,7 @@ export default function EmployeeTargetPage() {
                   setPage(1);
                 }}
                 placeholder="Search by employee name or code..."
-                className="h-10 w-full rounded-lg border border-slate-300 bg-white pl-9 pr-3 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                className="h-10 w-full rounded-lg border border-slate-300 bg-white pl-9 pr-3 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
               />
             </div>
 
@@ -600,7 +600,7 @@ export default function EmployeeTargetPage() {
                 setPeriodTypeFilter(e.target.value);
                 setPage(1);
               }}
-              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm sm:max-w-[160px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm sm:max-w-[160px] dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
             >
               <option value="">All Frequencies</option>
               {PERIOD_TYPES.map((type) => (
@@ -616,7 +616,7 @@ export default function EmployeeTargetPage() {
                 setYearFilter(e.target.value);
                 setPage(1);
               }}
-              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm sm:max-w-[120px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm sm:max-w-[120px] dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
             >
               <option value="">All Years</option>
               {yearOptions.map((y) => (
@@ -630,7 +630,7 @@ export default function EmployeeTargetPage() {
               <button
                 type="button"
                 onClick={clearFilters}
-                className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-xs font-medium text-slate-600 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300"
+                className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-xs font-medium text-slate-600 dark:border-slate-600 dark:bg-white/[0.06] dark:text-slate-300"
               >
                 Clear Filters
               </button>
@@ -638,7 +638,7 @@ export default function EmployeeTargetPage() {
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
+            <div className="flex items-center rounded-lg bg-slate-100 p-1 dark:bg-white/[0.06]">
               {["active", "inactive", "all"].map((status) => (
                 <button
                   key={status}
@@ -658,7 +658,7 @@ export default function EmployeeTargetPage() {
               ))}
             </div>
 
-            <div className="flex items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
+            <div className="flex items-center rounded-lg bg-slate-100 p-1 dark:bg-white/[0.06]">
               <button
                 type="button"
                 onClick={() => {
@@ -696,7 +696,7 @@ export default function EmployeeTargetPage() {
       {isLoading ? (
         <div className="py-10 text-center text-sm text-slate-400">Loading...</div>
       ) : paged.length === 0 ? (
-        <div className="flex min-h-[200px] flex-col items-center justify-center rounded-xl border border-slate-200 bg-white px-6 py-10 text-center shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <div className="flex min-h-[200px] flex-col items-center justify-center rounded-xl border border-slate-200 bg-white px-6 py-10 text-center shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
           <h3 className="text-sm font-semibold text-slate-800 dark:text-white">No targets found</h3>
           <p className="mt-1 max-w-sm text-xs text-slate-500 dark:text-slate-400">
             No records match your current search or filters.
@@ -711,8 +711,8 @@ export default function EmployeeTargetPage() {
             return (
               <div
                 key={record.id}
-                className={`relative ${CARD_HEIGHT} min-w-0 overflow-visible rounded-2xl border bg-white shadow-sm transition-shadow hover:shadow-lg dark:bg-slate-900 ${
-                  isActive ? "border-slate-200 dark:border-slate-700" : "border-red-100 dark:border-red-900/30"
+                className={`relative ${CARD_HEIGHT} min-w-0 overflow-visible rounded-2xl border bg-white shadow-sm transition-shadow hover:shadow-lg dark:bg-white/[0.04] ${
+                  isActive ? "border-slate-200 dark:border-white/10" : "border-red-100 dark:border-red-900/30"
                 }`}
               >
                 <div className={`h-full p-4 pb-12 ${!isActive ? "opacity-75" : ""}`}>
@@ -753,7 +753,7 @@ export default function EmployeeTargetPage() {
                     <span>{getPeriodLabel(record)}</span>
                   </div>
 
-                  <div className="mt-3 rounded-lg bg-slate-50 p-3 text-center dark:bg-slate-800/60">
+                  <div className="mt-3 rounded-lg bg-slate-50 p-3 text-center dark:bg-white/[0.06]/60">
                     <p className="text-[9px] font-semibold uppercase tracking-wide text-slate-400">
                       Target
                     </p>
@@ -764,11 +764,11 @@ export default function EmployeeTargetPage() {
                   </div>
                 </div>
 
-                <div className="absolute inset-x-0 bottom-0 z-30 grid h-11 grid-cols-2 gap-px border-t border-slate-100 bg-slate-100 dark:border-slate-700 dark:bg-slate-800">
+                <div className="absolute inset-x-0 bottom-0 z-30 grid h-11 grid-cols-2 gap-px border-t border-slate-100 bg-slate-100 dark:border-white/10 dark:bg-white/[0.06]">
                   <button
                     type="button"
                     onClick={() => openEditForm(record)}
-                    className="bg-white text-xs font-semibold text-slate-600 hover:bg-slate-50 dark:bg-slate-900 dark:text-slate-300"
+                    className="bg-white text-xs font-semibold text-slate-600 hover:bg-slate-50 dark:bg-white/[0.04] dark:text-slate-300"
                   >
                     Edit
                   </button>
@@ -778,7 +778,7 @@ export default function EmployeeTargetPage() {
                       type="button"
                       disabled={mutatingId === record.id}
                       onClick={() => setDeleteTarget(record)}
-                      className="bg-white text-xs font-semibold text-red-500 hover:bg-red-50 disabled:opacity-40 dark:bg-slate-900 dark:text-red-400"
+                      className="bg-white text-xs font-semibold text-red-500 hover:bg-red-50 disabled:opacity-40 dark:bg-white/[0.04] dark:text-red-400"
                     >
                       Deactivate
                     </button>
@@ -787,7 +787,7 @@ export default function EmployeeTargetPage() {
                       type="button"
                       disabled={mutatingId === record.id}
                       onClick={() => handleReactivate(record)}
-                      className="bg-white text-xs font-semibold text-emerald-600 hover:bg-emerald-50 disabled:opacity-40 dark:bg-slate-900 dark:text-emerald-400"
+                      className="bg-white text-xs font-semibold text-emerald-600 hover:bg-emerald-50 disabled:opacity-40 dark:bg-white/[0.04] dark:text-emerald-400"
                     >
                       Reactivate
                     </button>
@@ -798,9 +798,9 @@ export default function EmployeeTargetPage() {
           })}
         </div>
       ) : (
-        <div className="w-full min-w-0 overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <div className="w-full min-w-0 overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
           <table className="w-full text-left text-sm">
-            <thead className="tbl-head border-b border-slate-200 dark:border-slate-700">
+            <thead className="tbl-head border-b border-slate-200 dark:border-white/10">
               <tr>
                 <th className="px-4 py-3 font-medium">Employee</th>
                 <th className="px-4 py-3 font-medium">Cadence</th>
@@ -909,7 +909,7 @@ export default function EmployeeTargetPage() {
       )}
 
       {/* PAGINATION */}
-      <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
+      <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500 shadow-sm dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-400">
         <span>
           Page {page} of {pageCount}
         </span>
@@ -918,7 +918,7 @@ export default function EmployeeTargetPage() {
             type="button"
             disabled={page <= 1}
             onClick={() => setPage((current) => Math.max(1, current - 1))}
-            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800"
+            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium disabled:opacity-40 dark:border-white/10 dark:bg-white/[0.06]"
           >
             Previous
           </button>
@@ -926,7 +926,7 @@ export default function EmployeeTargetPage() {
             type="button"
             disabled={page >= pageCount}
             onClick={() => setPage((current) => Math.min(pageCount, current + 1))}
-            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800"
+            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium disabled:opacity-40 dark:border-white/10 dark:bg-white/[0.06]"
           >
             Next
           </button>
@@ -936,7 +936,7 @@ export default function EmployeeTargetPage() {
       {/* ADD / EDIT FORM */}
       {formOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-md rounded-xl bg-white p-5 shadow-xl dark:bg-slate-900">
+          <div className="w-full max-w-md rounded-xl bg-white p-5 shadow-xl dark:bg-white/[0.04]">
             <div className="mb-4 flex items-center gap-2.5">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
                 <TargetIcon />
@@ -955,7 +955,7 @@ export default function EmployeeTargetPage() {
                   required
                   value={formState.employee_id}
                   onChange={(e) => setFormState((s) => ({ ...s, employee_id: e.target.value }))}
-                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
                 >
                   <option value="">Select employee</option>
                   {employeeOptions.map((employee) => (
@@ -979,7 +979,7 @@ export default function EmployeeTargetPage() {
                       className={`h-10 rounded-lg border text-sm font-medium transition-colors ${
                         formState.period_type === type
                           ? "border-primary-500 bg-primary-50 text-primary-700 dark:border-primary-500 dark:bg-primary-500/10 dark:text-primary-400"
-                          : "border-slate-300 bg-white text-slate-600 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300"
+                          : "border-slate-300 bg-white text-slate-600 dark:border-slate-600 dark:bg-white/[0.06] dark:text-slate-300"
                       }`}
                     >
                       {type}
@@ -999,7 +999,7 @@ export default function EmployeeTargetPage() {
                     required
                     value={formState.week_start_date}
                     onChange={(e) => setFormState((s) => ({ ...s, week_start_date: e.target.value }))}
-                    className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                    className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
                   />
                 </div>
               )}
@@ -1014,7 +1014,7 @@ export default function EmployeeTargetPage() {
                       required
                       value={formState.month}
                       onChange={(e) => setFormState((s) => ({ ...s, month: e.target.value }))}
-                      className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                      className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
                     >
                       {MONTH_OPTIONS.map((m) => (
                         <option key={m.value} value={m.value}>
@@ -1033,7 +1033,7 @@ export default function EmployeeTargetPage() {
                       required
                       value={formState.year}
                       onChange={(e) => setFormState((s) => ({ ...s, year: e.target.value }))}
-                      className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                      className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
                     />
                   </div>
                 </div>
@@ -1049,7 +1049,7 @@ export default function EmployeeTargetPage() {
                       required
                       value={formState.quarter}
                       onChange={(e) => setFormState((s) => ({ ...s, quarter: e.target.value }))}
-                      className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                      className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
                     >
                       {QUARTER_OPTIONS.map((q) => (
                         <option key={q.value} value={q.value}>
@@ -1068,7 +1068,7 @@ export default function EmployeeTargetPage() {
                       required
                       value={formState.year}
                       onChange={(e) => setFormState((s) => ({ ...s, year: e.target.value }))}
-                      className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                      className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
                     />
                   </div>
                 </div>
@@ -1084,7 +1084,7 @@ export default function EmployeeTargetPage() {
                   required
                   value={formState.target_customer_count}
                   onChange={(e) => setFormState((s) => ({ ...s, target_customer_count: e.target.value }))}
-                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
                 />
                 <p className="mt-1 text-[11px] text-slate-400">
                   Registrations above this number for the period are eligible for incentive calculation.
@@ -1101,7 +1101,7 @@ export default function EmployeeTargetPage() {
                     setFormOpen(false);
                     setEditingRecord(null);
                   }}
-                  className="h-10 rounded-lg border border-slate-300 bg-white px-4 text-sm font-medium text-slate-600 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300"
+                  className="h-10 rounded-lg border border-slate-300 bg-white px-4 text-sm font-medium text-slate-600 dark:border-slate-600 dark:bg-white/[0.06] dark:text-slate-300"
                 >
                   Cancel
                 </button>

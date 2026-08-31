@@ -785,7 +785,7 @@ export default function LeaveListPage() {
           PAGE HEADER
       ====================================================== */}
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-800 sm:p-6">
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.06] sm:p-6">
         <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
 
           <div className="flex items-start gap-4">
@@ -918,7 +918,7 @@ export default function LeaveListPage() {
       ====================================================== */}
 
       {isAdmin && (
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.06]">
           <div className="mb-4">
             <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
               Organization Filters
@@ -936,7 +936,7 @@ export default function LeaveListPage() {
               value={companyFilterId}
               onChange={handleCompanyFilterChange}
               disabled={companiesLoading}
-              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-200"
             >
               <option value="">
                 {companiesLoading ? "Loading Companies..." : "All Companies"}
@@ -952,7 +952,7 @@ export default function LeaveListPage() {
               value={branchFilterId}
               onChange={handleBranchFilterChange}
               disabled={!companyFilterId || branchesLoading}
-              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-200"
             >
               <option value="">
                 {!companyFilterId
@@ -972,7 +972,7 @@ export default function LeaveListPage() {
               value={departmentFilterId}
               onChange={handleDepartmentFilterChange}
               disabled={!branchFilterId || departmentsLoading}
-              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-200"
             >
               <option value="">
                 {!branchFilterId
@@ -992,7 +992,7 @@ export default function LeaveListPage() {
               value={designationFilterId}
               onChange={handleDesignationFilterChange}
               disabled={!departmentFilterId || designationsLoading}
-              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-200"
             >
               <option value="">
                 {!departmentFilterId
@@ -1091,13 +1091,13 @@ export default function LeaveListPage() {
           TABLE
       ====================================================== */}
 
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-white/[0.06]">
 
         {/* ====================================================
             FILTER HEADER
         ==================================================== */}
 
-        <div className="border-b border-slate-200 bg-slate-50/70 px-5 py-5 dark:border-slate-700 dark:bg-slate-800/70 sm:px-6">
+        <div className="border-b border-slate-200 bg-slate-50/70 px-5 py-5 dark:border-white/10 dark:bg-white/[0.06]/70 sm:px-6">
 
           <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
 
@@ -1271,7 +1271,7 @@ export default function LeaveListPage() {
             !isLoading && (
               <div className="absolute right-5 top-4 z-10">
 
-                <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-500 shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">
+                <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-500 shadow-sm dark:border-white/10 dark:bg-white/[0.06] dark:text-slate-400">
 
                   <span className="h-2 w-2 animate-pulse rounded-full bg-primary-500" />
 
@@ -1296,7 +1296,7 @@ export default function LeaveListPage() {
             PAGINATION
         ==================================================== */}
 
-        <div className="border-t border-slate-200 bg-slate-50/50 px-5 py-3 dark:border-slate-700 dark:bg-slate-800/50 sm:px-6">
+        <div className="border-t border-slate-200 bg-slate-50/50 px-5 py-3 dark:border-white/10 dark:bg-white/[0.06]/50 sm:px-6">
 
           <TablePagination
             page={page}
@@ -1365,7 +1365,7 @@ function LeavePeriodSelector({
   ];
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.06]">
 
       {/* PERIOD TABS */}
 
@@ -1431,7 +1431,7 @@ function LeavePeriodSelector({
             type="date"
             value={selectedDate}
             onChange={setSelectedDate}
-            className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 sm:w-64"
+            className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-200 sm:w-64"
           />
 
           <p className="mt-2 text-xs text-slate-400">
@@ -1458,7 +1458,7 @@ function LeavePeriodSelector({
             <select
               value={selectedMonth}
               onChange={setSelectedMonth}
-              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-200"
             >
 
               {months.map(
@@ -1485,7 +1485,7 @@ function LeavePeriodSelector({
             <select
               value={selectedYear}
               onChange={setSelectedYear}
-              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-200"
             >
 
               {years.map((year) => (
@@ -1521,7 +1521,7 @@ function LeavePeriodSelector({
             <select
               value={selectedQuarter}
               onChange={setSelectedQuarter}
-              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-200"
             >
 
               {quarters.map(
@@ -1552,7 +1552,7 @@ function LeavePeriodSelector({
             <select
               value={selectedYear}
               onChange={setSelectedYear}
-              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-200"
             >
 
               {years.map((year) => (
@@ -1737,43 +1737,28 @@ function StatCard({
 }) {
   const styles = {
     total: {
-      wrapper:
-        "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800",
-
-      icon:
-        "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300",
+      wrapper: "stat-tile stat-tile-info",
+      icon: "icon-tile icon-tile-blue",
     },
 
     pending: {
-      wrapper:
-        "border-amber-200 bg-amber-50/40 dark:border-amber-900/50 dark:bg-amber-900/10",
-
-      icon:
-        "bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400",
+      wrapper: "stat-tile stat-tile-warn",
+      icon: "icon-tile icon-tile-primary",
     },
 
     approved: {
-      wrapper:
-        "border-emerald-200 bg-emerald-50/40 dark:border-emerald-900/50 dark:bg-emerald-900/10",
-
-      icon:
-        "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400",
+      wrapper: "stat-tile stat-tile-success",
+      icon: "icon-tile icon-tile-emerald",
     },
 
     rejected: {
-      wrapper:
-        "border-red-200 bg-red-50/40 dark:border-red-900/50 dark:bg-red-900/10",
-
-      icon:
-        "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400",
+      wrapper: "stat-tile stat-tile-danger",
+      icon: "icon-tile icon-tile-rose",
     },
 
     days: {
-      wrapper:
-        "border-primary-200 bg-primary-50/40 dark:border-primary-900/50 dark:bg-primary-900/10",
-
-      icon:
-        "bg-primary-100 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400",
+      wrapper: "stat-tile stat-tile-primary",
+      icon: "icon-tile icon-tile-primary",
     },
   };
 

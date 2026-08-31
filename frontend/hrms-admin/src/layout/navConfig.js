@@ -141,7 +141,7 @@ export const navConfig = [
       { label: "Leads", path: "/crm/leads", icon: "crm" },
       { label: "Weekly Lead Report", path: "/crm/leads/weekly", icon: "crm" },
       { label: "Customers", path: "/crm/customers", icon: "crm" },
-      { label: "Registertion", path: "/crm/meetings", icon: "crm" },
+      { label: "Registeration", path: "/crm/meetings", icon: "crm" },
       { label: "Targets", path: "/crm/leads/employees/targets", icon: "employees" },
       // { label: "Headcount", path: "/crm/leads/employees/headcount", icon: "employees" },
       { label: "Incentive", path: "/crm/quotations", icon: "crm" },

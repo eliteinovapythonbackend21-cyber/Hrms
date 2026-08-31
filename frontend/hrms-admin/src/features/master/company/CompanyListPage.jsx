@@ -225,7 +225,7 @@ export default function CompanyListPage() {
 
       {/* STAT CARDS */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div className="h-[110px] rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition hover:shadow-md dark:border-slate-700 dark:bg-slate-900">
+        <div className="h-[110px] rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition hover:shadow-md dark:border-white/10 dark:bg-white/[0.04]">
           <div className="flex h-full items-center justify-between">
             <div className="min-w-0">
               <p className="truncate text-xs font-medium text-slate-500 dark:text-slate-400">Total Companies</p>
@@ -238,7 +238,7 @@ export default function CompanyListPage() {
           </div>
         </div>
 
-        <div className="h-[110px] rounded-xl border border-emerald-100 bg-white px-4 py-3 shadow-sm transition hover:shadow-md dark:border-emerald-900/30 dark:bg-slate-900">
+        <div className="h-[110px] rounded-xl border border-emerald-100 bg-white px-4 py-3 shadow-sm transition hover:shadow-md dark:border-emerald-900/30 dark:bg-white/[0.04]">
           <div className="flex h-full items-center justify-between">
             <div className="min-w-0">
               <p className="truncate text-xs font-medium text-slate-500 dark:text-slate-400">Active Companies</p>
@@ -251,7 +251,7 @@ export default function CompanyListPage() {
           </div>
         </div>
 
-        <div className="h-[110px] rounded-xl border border-red-100 bg-white px-4 py-3 shadow-sm transition hover:shadow-md dark:border-red-900/30 dark:bg-slate-900">
+        <div className="h-[110px] rounded-xl border border-red-100 bg-white px-4 py-3 shadow-sm transition hover:shadow-md dark:border-red-900/30 dark:bg-white/[0.04]">
           <div className="flex h-full items-center justify-between">
             <div className="min-w-0">
               <p className="truncate text-xs font-medium text-slate-500 dark:text-slate-400">Inactive Companies</p>
@@ -266,7 +266,7 @@ export default function CompanyListPage() {
       </div>
 
       {/* SEARCH + VIEW TOGGLE + STATUS */}
-      <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+      <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="relative w-full lg:max-w-sm">
             <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
@@ -279,12 +279,12 @@ export default function CompanyListPage() {
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1); }}
               placeholder="Search companies..."
-              className="h-10 w-full rounded-lg border border-slate-300 bg-white pl-9 pr-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+              className="h-10 w-full rounded-lg border border-slate-300 bg-white pl-9 pr-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
             />
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <div className="flex w-fit items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
+            <div className="flex w-fit items-center rounded-lg bg-slate-100 p-1 dark:bg-white/[0.06]">
               <button
                 type="button"
                 onClick={() => setViewMode("table")}
@@ -308,7 +308,7 @@ export default function CompanyListPage() {
               </button>
             </div>
 
-            <div className="flex w-fit items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
+            <div className="flex w-fit items-center rounded-lg bg-slate-100 p-1 dark:bg-white/[0.06]">
               <button type="button" onClick={() => setStatusFilter("active")} className={`rounded-md px-3 py-1.5 text-xs font-medium transition ${statusFilter === "active" ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white" : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"}`}>Active</button>
               <button type="button" onClick={() => setStatusFilter("inactive")} className={`rounded-md px-3 py-1.5 text-xs font-medium transition ${statusFilter === "inactive" ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white" : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"}`}>Inactive</button>
               <button type="button" onClick={() => setStatusFilter("all")} className={`rounded-md px-3 py-1.5 text-xs font-medium transition ${statusFilter === "all" ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white" : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"}`}>All</button>
@@ -321,16 +321,16 @@ export default function CompanyListPage() {
       {isLoading && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-[245px] animate-pulse rounded-2xl border border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-800" />
+            <div key={i} className="h-[245px] animate-pulse rounded-2xl border border-slate-200 bg-slate-100 dark:border-white/10 dark:bg-white/[0.06]" />
           ))}
         </div>
       )}
 
       {/* TABLE VIEW */}
       {!isLoading && viewMode === "table" && filteredCompanies.length > 0 && (
-        <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
           <table className="w-full text-left text-sm">
-            <thead className="tbl-head border-b border-slate-200 dark:border-slate-700">
+            <thead className="tbl-head border-b border-slate-200 dark:border-white/10">
               <tr>
                 <th className="px-4 py-3 font-medium">Company</th>
                 <th className="px-4 py-3 font-medium">Email</th>
@@ -401,7 +401,7 @@ export default function CompanyListPage() {
             return (
               <div
                 key={company.id}
-                className={`group relative overflow-hidden rounded-2xl border bg-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg dark:bg-slate-900 ${company.is_active ? "border-slate-200 hover:border-primary-200 dark:border-slate-700 dark:hover:border-primary-500/40" : "border-red-100 bg-red-50/20 dark:border-red-900/30 dark:bg-red-950/10"}`}
+                className={`group relative overflow-hidden rounded-2xl border bg-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg dark:bg-white/[0.04] ${company.is_active ? "border-slate-200 hover:border-primary-200 dark:border-white/10 dark:hover:border-primary-500/40" : "border-red-100 bg-red-50/20 dark:border-red-900/30 dark:bg-red-950/10"}`}
               >
                 <div className={`absolute inset-x-0 top-0 h-0.5 ${company.is_active ? "bg-primary-600" : "bg-red-500"}`} />
                 <div className="p-4">
@@ -422,11 +422,11 @@ export default function CompanyListPage() {
                     <div className="shrink-0">{statusBadge(company.is_active)}</div>
                   </div>
 
-                  <div className="my-3 border-t border-slate-100 dark:border-slate-800" />
+                  <div className="my-3 border-t border-slate-100 dark:border-white/10" />
 
                   <div className="space-y-2">
                     <div className="flex items-center gap-2.5">
-                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500 dark:bg-white/[0.06] dark:text-slate-400">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l9 6 9-6M5 5h14a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2z" />
                         </svg>
@@ -437,7 +437,7 @@ export default function CompanyListPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2.5">
-                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500 dark:bg-white/[0.06] dark:text-slate-400">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h2.28a2 2 0 011.9 1.37l1.1 3.29a2 2 0 01-.45 2.05l-1.38 1.38a16 16 0 006.46 6.46l1.38-1.38a2 2 0 012.05-.45l3.29 1.1A2 2 0 0121 18.72V21a2 2 0 01-2 2h-1C9.72 23 1 14.28 1 4V3a2 2 0 012-2z" />
                         </svg>
@@ -449,7 +449,7 @@ export default function CompanyListPage() {
                     </div>
                   </div>
 
-                  <div className="mt-3 rounded-lg border border-slate-100 bg-slate-50/70 px-3 py-2 dark:border-slate-800 dark:bg-slate-800/50">
+                  <div className="mt-3 rounded-lg border border-slate-100 bg-slate-50/70 px-3 py-2 dark:border-white/10 dark:bg-white/[0.03]">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
@@ -462,12 +462,12 @@ export default function CompanyListPage() {
                           <p className="text-xs font-semibold text-slate-800 dark:text-white">{branchCount} <span className="font-normal text-slate-400">{branchCount === 1 ? "Branch" : "Branches"}</span></p>
                         </div>
                       </div>
-                      <div className="flex h-7 min-w-7 items-center justify-center rounded-md bg-white px-2 text-[11px] font-bold text-primary-600 shadow-sm dark:bg-slate-900 dark:text-primary-400">{branchCount}</div>
+                      <div className="flex h-7 min-w-7 items-center justify-center rounded-md bg-white px-2 text-[11px] font-bold text-primary-600 shadow-sm dark:bg-white/[0.04] dark:text-primary-400">{branchCount}</div>
                     </div>
                   </div>
 
                   <div className="mt-3 flex items-center gap-2">
-                    <button type="button" onClick={() => handleEdit(company)} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] font-semibold text-slate-700 transition-all hover:border-primary-200 hover:bg-primary-50 hover:text-primary-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-primary-500/40 dark:hover:bg-primary-500/10 dark:hover:text-primary-400">
+                    <button type="button" onClick={() => handleEdit(company)} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] font-semibold text-slate-700 transition-all hover:border-primary-200 hover:bg-primary-50 hover:text-primary-600 dark:border-white/10 dark:bg-white/[0.06] dark:text-slate-200 dark:hover:border-primary-500/40 dark:hover:bg-primary-500/10 dark:hover:text-primary-400">
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a2.121 2.121 0 013 3l-9.9 9.9-4.137 1.034 1.034-4.137 9.9-9.9z" />
                         <path strokeLinecap="round" strokeLinejoin="round" d="M19 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6" />
@@ -475,14 +475,14 @@ export default function CompanyListPage() {
                       Edit
                     </button>
                     {company.is_active ? (
-                      <button type="button" onClick={() => handleDelete(company)} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-2 text-[11px] font-semibold text-red-600 transition-all hover:bg-red-50 dark:border-red-900/40 dark:bg-slate-800 dark:text-red-400 dark:hover:bg-red-500/10">
+                      <button type="button" onClick={() => handleDelete(company)} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-2 text-[11px] font-semibold text-red-600 transition-all hover:bg-red-50 dark:border-red-900/40 dark:bg-white/[0.06] dark:text-red-400 dark:hover:bg-red-500/10">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M18 6L6 18M6 6l12 12" />
                         </svg>
                         Deactivate
                       </button>
                     ) : (
-                      <button type="button" onClick={() => handleReactivate(company)} disabled={updateCompany.isPending} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-emerald-200 bg-white px-3 py-2 text-[11px] font-semibold text-emerald-600 transition-all hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-emerald-900/40 dark:bg-slate-800 dark:text-emerald-400 dark:hover:bg-emerald-500/10">
+                      <button type="button" onClick={() => handleReactivate(company)} disabled={updateCompany.isPending} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-emerald-200 bg-white px-3 py-2 text-[11px] font-semibold text-emerald-600 transition-all hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-emerald-900/40 dark:bg-white/[0.06] dark:text-emerald-400 dark:hover:bg-emerald-500/10">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M4 12a8 8 0 018-8 8.5 8.5 0 017 4" />
                           <path strokeLinecap="round" strokeLinejoin="round" d="M20 4v5h-5" />
@@ -495,7 +495,7 @@ export default function CompanyListPage() {
                   </div>
                 </div>
 
-                <div className={`border-t px-4 py-2 ${company.is_active ? "border-slate-100 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-800/30" : "border-red-100 bg-red-50/50 dark:border-red-900/20 dark:bg-red-950/20"}`}>
+                <div className={`border-t px-4 py-2 ${company.is_active ? "border-slate-100 bg-slate-50/50 dark:border-white/10 dark:bg-white/[0.03]" : "border-red-100 bg-red-50/50 dark:border-red-900/20 dark:bg-red-950/20"}`}>
                   <div className="flex items-center justify-between">
                     <span className="text-[9px] font-medium uppercase tracking-wider text-slate-400">Company Status</span>
                     <span className={`flex items-center gap-1.5 text-[10px] font-semibold ${company.is_active ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
@@ -512,8 +512,8 @@ export default function CompanyListPage() {
 
       {/* EMPTY STATE */}
       {!isLoading && filteredCompanies.length === 0 && (
-        <div className="flex min-h-[260px] flex-col items-center justify-center rounded-xl border border-slate-200 bg-white px-6 py-10 text-center shadow-sm dark:border-slate-700 dark:bg-slate-900">
-          <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800">
+        <div className="flex min-h-[260px] flex-col items-center justify-center rounded-xl border border-slate-200 bg-white px-6 py-10 text-center shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
+          <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-slate-100 dark:bg-white/[0.06]">
             <span className="text-xl font-bold text-slate-400">C</span>
           </div>
           <h3 className="mt-4 text-sm font-semibold text-slate-800 dark:text-white">No companies found</h3>
@@ -523,11 +523,11 @@ export default function CompanyListPage() {
       )}
 
       {/* PAGINATION */}
-      <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
+      <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500 shadow-sm dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-400">
         <span>Page {page}</span>
         <div className="flex gap-2">
-          <button type="button" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))} className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium transition hover:bg-slate-50 disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700">Previous</button>
-          <button type="button" disabled={data?.pages ? page >= data.pages : false} onClick={() => setPage((p) => p + 1)} className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium transition hover:bg-slate-50 disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700">Next</button>
+          <button type="button" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))} className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium transition hover:bg-slate-50 disabled:opacity-40 dark:border-white/10 dark:bg-white/[0.06] dark:hover:bg-slate-700">Previous</button>
+          <button type="button" disabled={data?.pages ? page >= data.pages : false} onClick={() => setPage((p) => p + 1)} className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium transition hover:bg-slate-50 disabled:opacity-40 dark:border-white/10 dark:bg-white/[0.06] dark:hover:bg-slate-700">Next</button>
         </div>
       </div>
 

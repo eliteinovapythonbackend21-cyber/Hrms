@@ -40,16 +40,21 @@
     --color-text: #f1f5f9;
     --color-muted: #94a3b8;
     --color-border: rgba(255, 255, 255, 0.1);
-    /* Same recipe as the login panel: a warm gold glow top-left and a
-       cool blue glow bottom-right, over the navy base. */
+    /* Same recipe as the login panel: a warm gold glow top-left, a violet
+       glow mid-right and a cool blue glow bottom-right, over the navy base. */
     --wash: radial-gradient(
         620px 620px at -6% -10%,
         rgba(212, 148, 31, 0.16),
         transparent 60%
       ),
       radial-gradient(
+        520px 520px at 78% 40%,
+        rgba(139, 92, 246, 0.12),
+        transparent 60%
+      ),
+      radial-gradient(
         680px 680px at 108% 115%,
-        rgba(59, 130, 246, 0.14),
+        rgba(45, 212, 191, 0.13),
         transparent 60%
       );
     /* Faint graph-paper grid, dark theme only (see .dark body::after). */
@@ -159,7 +164,7 @@
      dark-first brand reference — translucent surface, blurred backdrop,
      hairline border instead of a solid one). */
   .card {
-    @apply bg-white dark:bg-white/[0.04] dark:backdrop-blur-xl rounded-xl border border-slate-200/80 dark:border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.65),0_1px_2px_rgba(15,23,42,0.04),0_8px_24px_-14px_rgba(15,23,42,0.12)] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_24px_48px_-24px_rgba(0,0,0,0.7)] transition-shadow duration-150 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.65),0_1px_2px_rgba(15,23,42,0.05),0_14px_32px_-16px_rgba(15,23,42,0.18)] dark:hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_28px_60px_-24px_rgba(0,0,0,0.8)];
+    @apply bg-gradient-to-br from-white to-slate-50/60 dark:from-primary-500/[0.04] dark:to-white/[0.02] dark:backdrop-blur-xl rounded-xl border border-slate-200/80 dark:border-white/10 dark:ring-1 dark:ring-inset dark:ring-white/[0.04] shadow-[inset_0_1px_0_rgba(255,255,255,0.65),0_1px_2px_rgba(15,23,42,0.04),0_8px_24px_-14px_rgba(15,23,42,0.12)] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_24px_48px_-24px_rgba(0,0,0,0.7)] transition-shadow duration-150 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.65),0_1px_2px_rgba(15,23,42,0.05),0_14px_32px_-16px_rgba(15,23,42,0.18)] dark:hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_28px_60px_-24px_rgba(0,0,0,0.8)];
   }
 
   .input {
@@ -223,6 +228,15 @@
   .stat-tile-warn {
     @apply border-amber-200/70 bg-gradient-to-br from-amber-50 to-amber-100/40 dark:border-amber-500/20 dark:from-amber-500/[0.12] dark:to-amber-500/[0.02];
   }
+  .stat-tile-info {
+    @apply border-blue-200/70 bg-gradient-to-br from-blue-50 to-blue-100/40 dark:border-blue-500/20 dark:from-blue-500/[0.12] dark:to-blue-500/[0.02];
+  }
+  .stat-tile-violet {
+    @apply border-violet-200/70 bg-gradient-to-br from-violet-50 to-violet-100/40 dark:border-violet-500/20 dark:from-violet-500/[0.12] dark:to-violet-500/[0.02];
+  }
+  .stat-tile-danger {
+    @apply border-rose-200/70 bg-gradient-to-br from-rose-50 to-rose-100/40 dark:border-rose-500/20 dark:from-rose-500/[0.12] dark:to-rose-500/[0.02];
+  }
 
   /* Status pill. */
   .pill {
@@ -254,8 +268,8 @@
      ============================================================ */
 
   .tbl-head {
-    @apply bg-slate-100/80 text-[11px] font-bold uppercase tracking-wider text-slate-500
-      dark:bg-white/[0.04] dark:text-slate-400;
+    @apply bg-gradient-to-b from-slate-50 to-slate-100/80 text-[11px] font-bold uppercase tracking-wider text-slate-600 border-b border-slate-200
+      dark:from-primary-500/[0.08] dark:to-transparent dark:text-primary-200/80 dark:border-primary-400/10;
   }
 
   .tbl-row {
@@ -268,8 +282,62 @@
 
   /* Mono identifier chip (employee code, invoice no, etc.). */
   .tbl-code {
-    @apply inline-flex items-center rounded-md bg-slate-100 px-1.5 py-0.5 font-mono text-xs font-medium text-slate-600
-      dark:bg-white/[0.06] dark:text-slate-300;
+    @apply inline-flex items-center rounded-md bg-primary-50 px-1.5 py-0.5 font-mono text-xs font-medium text-primary-700 ring-1 ring-inset ring-primary-500/15
+      dark:bg-primary-500/10 dark:text-primary-200 dark:ring-primary-400/20;
+  }
+
+  /* ============================================================
+     Colour helpers — reusable across every feature page so
+     tables / cards read as a vivid, multi-hue system instead of
+     grey-on-grey. Pair .chip with a colour modifier; likewise
+     .icon-tile for the small gradient icon squares.
+     ============================================================ */
+
+  .chip {
+    @apply inline-flex max-w-full items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset;
+  }
+  .chip-primary {
+    @apply bg-primary-50 text-primary-700 ring-primary-500/20 dark:bg-primary-500/10 dark:text-primary-300 dark:ring-primary-400/25;
+  }
+  .chip-accent {
+    @apply bg-accent-50 text-accent-700 ring-accent-500/20 dark:bg-accent-500/10 dark:text-accent-300 dark:ring-accent-400/25;
+  }
+  .chip-violet {
+    @apply bg-violet-50 text-violet-700 ring-violet-500/20 dark:bg-violet-500/10 dark:text-violet-300 dark:ring-violet-400/25;
+  }
+  .chip-blue {
+    @apply bg-blue-50 text-blue-700 ring-blue-500/20 dark:bg-blue-500/10 dark:text-blue-300 dark:ring-blue-400/25;
+  }
+  .chip-emerald {
+    @apply bg-emerald-50 text-emerald-700 ring-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300 dark:ring-emerald-400/25;
+  }
+  .chip-rose {
+    @apply bg-rose-50 text-rose-700 ring-rose-500/20 dark:bg-rose-500/10 dark:text-rose-300 dark:ring-rose-400/25;
+  }
+  .chip-amber {
+    @apply bg-amber-50 text-amber-700 ring-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300 dark:ring-amber-400/25;
+  }
+
+  .icon-tile {
+    @apply flex shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ring-1 ring-inset;
+  }
+  .icon-tile-primary {
+    @apply from-primary-500/20 to-primary-500/5 text-primary-600 ring-primary-400/20 dark:text-primary-300;
+  }
+  .icon-tile-accent {
+    @apply from-accent-500/20 to-accent-500/5 text-accent-600 ring-accent-400/20 dark:text-accent-300;
+  }
+  .icon-tile-violet {
+    @apply from-violet-500/20 to-violet-500/5 text-violet-600 ring-violet-400/20 dark:text-violet-300;
+  }
+  .icon-tile-blue {
+    @apply from-blue-500/20 to-blue-500/5 text-blue-600 ring-blue-400/20 dark:text-blue-300;
+  }
+  .icon-tile-emerald {
+    @apply from-emerald-500/20 to-emerald-500/5 text-emerald-600 ring-emerald-400/20 dark:text-emerald-300;
+  }
+  .icon-tile-rose {
+    @apply from-rose-500/20 to-rose-500/5 text-rose-600 ring-rose-400/20 dark:text-rose-300;
   }
 }
 

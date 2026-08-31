@@ -94,10 +94,11 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6 pb-8">
       {/* PAGE HEADER */}
-      <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 dark:border-white/[0.08] bg-white/90 dark:bg-white/[0.025] shadow-sm">
+      <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 dark:border-white/[0.08] bg-gradient-to-br from-white via-primary-50/40 to-accent-50/30 dark:from-primary-500/[0.07] dark:via-white/[0.02] dark:to-accent-500/[0.06] shadow-sm">
         {/* ambient glow */}
-        <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-primary-500/10 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-28 left-1/3 h-52 w-52 rounded-full bg-accent-500/10 blur-3xl" />
+        <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-primary-500/20 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-28 left-1/3 h-52 w-52 rounded-full bg-violet-500/15 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-20 right-1/4 h-48 w-48 rounded-full bg-accent-500/15 blur-3xl" />
 
         <div className="relative px-5 py-5 lg:px-6 lg:py-6">
           <div className="flex items-center justify-between gap-4">

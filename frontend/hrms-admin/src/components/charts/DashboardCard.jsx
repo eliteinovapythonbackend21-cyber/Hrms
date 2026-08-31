@@ -4,40 +4,53 @@ import { Link } from "react-router-dom";
    `bar` = progress fill, `ring` = donut stroke hex. */
 const THEME = {
   primary: {
-    tile: "bg-primary-100 text-primary-700 dark:bg-primary-500/15 dark:text-primary-300",
-    glow: "bg-primary-500/10",
-    bar: "bg-primary-500",
-    ring: "#d4941f",
+    tile: "bg-gradient-to-br from-primary-400/25 to-primary-500/5 text-primary-600 ring-1 ring-inset ring-primary-400/25 dark:text-primary-300",
+    glow: "bg-primary-500/20",
+    bar: "bg-gradient-to-r from-primary-500 to-primary-400",
+    strip: "bg-gradient-to-r from-primary-500 via-primary-400 to-transparent",
+    ring: "#e2a938",
   },
   accent: {
-    tile: "bg-accent-100 text-accent-700 dark:bg-accent-500/15 dark:text-accent-300",
-    glow: "bg-accent-500/10",
-    bar: "bg-accent-500",
-    ring: "#14b8a6",
+    tile: "bg-gradient-to-br from-accent-400/25 to-accent-500/5 text-accent-600 ring-1 ring-inset ring-accent-400/25 dark:text-accent-300",
+    glow: "bg-accent-500/20",
+    bar: "bg-gradient-to-r from-accent-500 to-accent-400",
+    strip: "bg-gradient-to-r from-accent-500 via-accent-400 to-transparent",
+    ring: "#2dd4bf",
   },
   success: {
-    tile: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
-    glow: "bg-emerald-500/10",
-    bar: "bg-emerald-500",
+    tile: "bg-gradient-to-br from-emerald-400/25 to-emerald-500/5 text-emerald-600 ring-1 ring-inset ring-emerald-400/25 dark:text-emerald-300",
+    glow: "bg-emerald-500/20",
+    bar: "bg-gradient-to-r from-emerald-500 to-emerald-400",
+    strip: "bg-gradient-to-r from-emerald-500 via-emerald-400 to-transparent",
     ring: "#22c55e",
   },
   warning: {
-    tile: "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
-    glow: "bg-amber-500/10",
-    bar: "bg-amber-500",
+    tile: "bg-gradient-to-br from-amber-400/25 to-amber-500/5 text-amber-600 ring-1 ring-inset ring-amber-400/25 dark:text-amber-300",
+    glow: "bg-amber-500/20",
+    bar: "bg-gradient-to-r from-amber-500 to-amber-400",
+    strip: "bg-gradient-to-r from-amber-500 via-amber-400 to-transparent",
     ring: "#f59e0b",
   },
   danger: {
-    tile: "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-300",
-    glow: "bg-red-500/10",
-    bar: "bg-red-500",
-    ring: "#ef4444",
+    tile: "bg-gradient-to-br from-rose-400/25 to-rose-500/5 text-rose-600 ring-1 ring-inset ring-rose-400/25 dark:text-rose-300",
+    glow: "bg-rose-500/20",
+    bar: "bg-gradient-to-r from-rose-500 to-rose-400",
+    strip: "bg-gradient-to-r from-rose-500 via-rose-400 to-transparent",
+    ring: "#f43f5e",
   },
   info: {
-    tile: "bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300",
-    glow: "bg-blue-500/10",
-    bar: "bg-blue-500",
+    tile: "bg-gradient-to-br from-blue-400/25 to-blue-500/5 text-blue-600 ring-1 ring-inset ring-blue-400/25 dark:text-blue-300",
+    glow: "bg-blue-500/20",
+    bar: "bg-gradient-to-r from-blue-500 to-blue-400",
+    strip: "bg-gradient-to-r from-blue-500 via-blue-400 to-transparent",
     ring: "#3b82f6",
+  },
+  violet: {
+    tile: "bg-gradient-to-br from-violet-400/25 to-violet-500/5 text-violet-600 ring-1 ring-inset ring-violet-400/25 dark:text-violet-300",
+    glow: "bg-violet-500/20",
+    bar: "bg-gradient-to-r from-violet-500 to-violet-400",
+    strip: "bg-gradient-to-r from-violet-500 via-violet-400 to-transparent",
+    ring: "#8b5cf6",
   },
 };
 
@@ -100,9 +113,15 @@ export default function DashboardCard({
 
   const body = (
     <>
+      {/* top accent strip */}
+      <span
+        className={`pointer-events-none absolute inset-x-0 top-0 h-0.5 ${t.strip}`}
+        aria-hidden="true"
+      />
+
       {/* ambient glow */}
       <div
-        className={`pointer-events-none absolute -right-10 -top-12 h-32 w-32 rounded-full blur-2xl ${t.glow}`}
+        className={`pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full blur-2xl ${t.glow}`}
         aria-hidden="true"
       />
 
@@ -117,7 +136,7 @@ export default function DashboardCard({
           <p className="truncate text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400 dark:text-slate-500">
             {title}
           </p>
-          <p className="mt-1 text-[28px] font-bold leading-none tabular-nums text-slate-900 dark:text-white">
+          <p className="mt-1 bg-gradient-to-br from-slate-900 to-slate-600 bg-clip-text text-[28px] font-bold leading-none tabular-nums text-transparent dark:from-white dark:to-slate-400">
             {loading ? "…" : value ?? 0}
           </p>
           {hint && (

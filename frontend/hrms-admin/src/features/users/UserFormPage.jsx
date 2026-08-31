@@ -344,7 +344,7 @@ export default function UserFormPage() {
       {/* =========================
           FORM CARD
           ========================= */}
-      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
         <UserForm
           initialData={initialData}
           onSubmit={handleSubmit}

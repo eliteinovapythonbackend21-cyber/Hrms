@@ -175,7 +175,7 @@ export default function LeaveForm({
 
       {/* EMPLOYEE */}
       {isAdmin && (
-        <section className="rounded-2xl border border-slate-200 bg-slate-50/60 p-5 dark:border-slate-700 dark:bg-slate-800/50">
+        <section className="rounded-2xl border border-slate-200 bg-slate-50/60 p-5 dark:border-white/10 dark:bg-slate-800/50">
           <SectionHeader
             number="01"
             title="Employee"
@@ -196,7 +196,7 @@ export default function LeaveForm({
       )}
 
       {/* LEAVE DETAILS */}
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800">
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-white/10 dark:bg-slate-800">
         <SectionHeader
           number={isAdmin ? "02" : "01"}
           title="Leave Details"
@@ -262,7 +262,7 @@ export default function LeaveForm({
       </section>
 
       {/* REASON */}
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800">
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-white/10 dark:bg-slate-800">
         <SectionHeader
           number={isAdmin ? "03" : "02"}
           title="Reason"
@@ -280,7 +280,7 @@ export default function LeaveForm({
 
       {/* ADMIN STATUS */}
       {isAdmin && (
-        <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800">
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-white/10 dark:bg-slate-800">
           <SectionHeader
             number="04"
             title="Request Status"
@@ -311,7 +311,7 @@ export default function LeaveForm({
       )}
 
       {/* ACTIONS */}
-      <div className="flex flex-col-reverse gap-3 border-t border-slate-200 pt-5 dark:border-slate-700 sm:flex-row sm:justify-end">
+      <div className="flex flex-col-reverse gap-3 border-t border-slate-200 pt-5 dark:border-white/10 sm:flex-row sm:justify-end">
         <Button
           type="submit"
           isLoading={loading}

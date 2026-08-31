@@ -137,7 +137,7 @@ export default function BranchForm({
             name="company_id"
             value={form.company_id}
             onChange={handleChange}
-            className={`w-full rounded-lg border px-3 py-2 dark:bg-slate-800 ${
+            className={`w-full rounded-lg border px-3 py-2 dark:bg-white/[0.06] ${
               errors.company_id
                 ? "border-red-400"
                 : "border-slate-300 dark:border-slate-600"
@@ -169,7 +169,7 @@ export default function BranchForm({
             name="name"
             value={form.name}
             onChange={handleChange}
-            className={`w-full rounded-lg border px-3 py-2 dark:bg-slate-800 ${
+            className={`w-full rounded-lg border px-3 py-2 dark:bg-white/[0.06] ${
               errors.name
                 ? "border-red-400"
                 : "border-slate-300 dark:border-slate-600"
@@ -192,7 +192,7 @@ export default function BranchForm({
             name="code"
             value={form.code}
             onChange={handleChange}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 dark:bg-slate-800 dark:border-slate-600"
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 dark:bg-white/[0.06] dark:border-slate-600"
             placeholder="Auto generated if empty"
           />
         </div>
@@ -207,7 +207,7 @@ export default function BranchForm({
             name="email"
             value={form.email}
             onChange={handleChange}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 dark:bg-slate-800 dark:border-slate-600"
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 dark:bg-white/[0.06] dark:border-slate-600"
           />
         </div>
 
@@ -221,7 +221,7 @@ export default function BranchForm({
             name="phone"
             value={form.phone}
             onChange={handleChange}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 dark:bg-slate-800 dark:border-slate-600"
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 dark:bg-white/[0.06] dark:border-slate-600"
           />
         </div>
 
@@ -235,7 +235,7 @@ export default function BranchForm({
             value={form.address}
             onChange={handleChange}
             rows={3}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 dark:bg-slate-800 dark:border-slate-600"
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 dark:bg-white/[0.06] dark:border-slate-600"
           />
         </div>
 
@@ -249,7 +249,7 @@ export default function BranchForm({
             name="city"
             value={form.city}
             onChange={handleChange}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 dark:bg-slate-800 dark:border-slate-600"
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 dark:bg-white/[0.06] dark:border-slate-600"
           />
         </div>
 
@@ -263,7 +263,7 @@ export default function BranchForm({
             name="state"
             value={form.state}
             onChange={handleChange}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 dark:bg-slate-800 dark:border-slate-600"
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 dark:bg-white/[0.06] dark:border-slate-600"
           />
         </div>
 
@@ -277,7 +277,7 @@ export default function BranchForm({
             name="country"
             value={form.country}
             onChange={handleChange}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 dark:bg-slate-800 dark:border-slate-600"
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 dark:bg-white/[0.06] dark:border-slate-600"
           />
         </div>
 
@@ -291,7 +291,7 @@ export default function BranchForm({
             name="pincode"
             value={form.pincode}
             onChange={handleChange}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 dark:bg-slate-800 dark:border-slate-600"
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 dark:bg-white/[0.06] dark:border-slate-600"
           />
         </div>
       </div>

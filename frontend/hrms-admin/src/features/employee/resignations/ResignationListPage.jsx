@@ -302,7 +302,7 @@ function OrganizationHoverCard({
               maxHeight: coords.maxHeight,
               zIndex: 9999,
             }}
-            className="overflow-y-auto rounded-xl border border-slate-200 bg-white p-4 shadow-xl dark:border-slate-700 dark:bg-slate-900"
+            className="overflow-y-auto rounded-xl border border-slate-200 bg-white p-4 shadow-xl dark:border-white/10 dark:bg-white/[0.04]"
           >
             <div className="mb-3 flex items-start justify-between gap-2">
               <div>
@@ -383,7 +383,7 @@ function OrganizationHoverCard({
               </div>
             </div>
 
-            <div className="my-3 border-t border-slate-100 dark:border-slate-800" />
+            <div className="my-3 border-t border-slate-100 dark:border-white/10" />
 
             {/* RESIGNATION RECORD */}
             <div className="space-y-2.5">
@@ -420,7 +420,7 @@ function OrganizationHoverCard({
 
             {description && (
               <>
-                <div className="my-3 border-t border-slate-100 dark:border-slate-800" />
+                <div className="my-3 border-t border-slate-100 dark:border-white/10" />
 
                 <div>
                   <p className="mb-1 text-[9px] font-medium uppercase tracking-wide text-slate-400">
@@ -436,7 +436,7 @@ function OrganizationHoverCard({
 
             {accomplishments && (
               <>
-                <div className="my-3 border-t border-slate-100 dark:border-slate-800" />
+                <div className="my-3 border-t border-slate-100 dark:border-white/10" />
 
                 <div>
                   <p className="mb-1 text-[9px] font-medium uppercase tracking-wide text-slate-400">
@@ -576,7 +576,7 @@ function TextHoverCard({
               maxHeight: coords.maxHeight,
               zIndex: 9999,
             }}
-            className="overflow-y-auto rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-600 shadow-xl dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+            className="overflow-y-auto rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-600 shadow-xl dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-300"
           >
             <p className="mb-1 text-[9px] font-semibold uppercase tracking-wide text-slate-400">
               {label}
@@ -598,13 +598,13 @@ function TextHoverCard({
 
 const STATUS_STYLES = {
   Approved:
-    "bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300",
+    "bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-500/20 dark:bg-emerald-500/15 dark:text-emerald-300 dark:ring-emerald-400/25",
 
   Rejected:
-    "bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300",
+    "bg-rose-50 text-rose-700 ring-1 ring-inset ring-rose-500/20 dark:bg-rose-500/15 dark:text-rose-300 dark:ring-rose-400/25",
 
   Pending:
-    "bg-slate-100 text-slate-700 dark:bg-white/10 dark:text-slate-300",
+    "bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-500/20 dark:bg-amber-500/15 dark:text-amber-300 dark:ring-amber-400/25",
 };
 
 /* -------------------------------------------------------------------------- */
@@ -623,7 +623,7 @@ function StatCard({ icon, value, label, tone = "sky" }) {
   };
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+    <div className="rounded-xl border border-slate-200 bg-gradient-to-br from-white to-slate-50/60 p-5 shadow-sm dark:border-white/10 dark:from-primary-500/[0.06] dark:to-white/[0.02]">
       <div className="flex items-center gap-3">
         <div
           className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${tones[tone]}`}
@@ -1343,7 +1343,7 @@ export default function ResignationListPage() {
       </div>
 
       {/* FILTERS */}
-      <div className="min-w-0 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+      <div className="min-w-0 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
         <div className="flex min-w-0 flex-col gap-3">
           <div className="flex min-w-0 flex-col gap-2.5 lg:flex-row lg:flex-wrap">
             {/* Search */}
@@ -1375,7 +1375,7 @@ export default function ResignationListPage() {
                   setPage(1);
                 }}
                 placeholder="Search employee, reason, accomplishments..."
-                className="h-10 w-full rounded-lg border border-slate-300 bg-white pl-9 pr-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                className="h-10 w-full rounded-lg border border-slate-300 bg-white pl-9 pr-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
               />
             </div>
 
@@ -1390,7 +1390,7 @@ export default function ResignationListPage() {
                 setFilterBranchId("");
                 setPage(1);
               }}
-              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 sm:max-w-[160px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 sm:max-w-[160px] dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
             >
               <option value="">
                 All Companies
@@ -1415,7 +1415,7 @@ export default function ResignationListPage() {
                 );
                 setPage(1);
               }}
-              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 sm:max-w-[160px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 sm:max-w-[160px] dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
             >
               <option value="">
                 All Branches
@@ -1440,7 +1440,7 @@ export default function ResignationListPage() {
                 );
                 setPage(1);
               }}
-              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 sm:max-w-[160px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 sm:max-w-[160px] dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
             >
               <option value="">
                 All Departments
@@ -1467,7 +1467,7 @@ export default function ResignationListPage() {
                 );
                 setPage(1);
               }}
-              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 sm:max-w-[160px] dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 sm:max-w-[160px] dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
             >
               <option value="">
                 All Designations
@@ -1488,7 +1488,7 @@ export default function ResignationListPage() {
 
           {/* View + Status */}
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex w-fit items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
+            <div className="flex w-fit items-center rounded-lg bg-slate-100 p-1 dark:bg-white/[0.06]">
               <button
                 type="button"
                 onClick={() => {
@@ -1520,7 +1520,7 @@ export default function ResignationListPage() {
               </button>
             </div>
 
-            <div className="flex w-fit items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
+            <div className="flex w-fit items-center rounded-lg bg-slate-100 p-1 dark:bg-white/[0.06]">
               {[
                 "all",
                 "Pending",
@@ -1550,7 +1550,7 @@ export default function ResignationListPage() {
 
           {/* Active Filter */}
           <div className="flex justify-end">
-            <div className="flex w-fit items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
+            <div className="flex w-fit items-center rounded-lg bg-slate-100 p-1 dark:bg-white/[0.06]">
               {[
                 "active",
                 "inactive",
@@ -1583,7 +1583,7 @@ export default function ResignationListPage() {
           Loading...
         </div>
       ) : paged.length === 0 ? (
-        <div className="flex min-h-[200px] flex-col items-center justify-center rounded-xl border border-slate-200 bg-white px-6 py-10 text-center shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <div className="flex min-h-[200px] flex-col items-center justify-center rounded-xl border border-slate-200 bg-white px-6 py-10 text-center shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
           <h3 className="text-sm font-semibold text-slate-800 dark:text-white">
             No resignations found
           </h3>
@@ -1597,9 +1597,9 @@ export default function ResignationListPage() {
         /* ---------------------------------------------------------------- */
         /* TABLE                                                             */
         /* ---------------------------------------------------------------- */
-        <div className="min-w-0 overflow-x-auto overflow-y-visible rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <div className="min-w-0 overflow-x-auto overflow-y-visible rounded-xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
           <table className="w-full min-w-[1040px] table-fixed text-left text-sm lg:min-w-0">
-            <thead className="tbl-head border-b border-slate-200 dark:border-slate-700">
+            <thead className="tbl-head border-b border-slate-200 dark:border-white/10">
               <tr>
                 <th className="w-[16%] px-3 py-3 font-medium">
                   Employee
@@ -1904,7 +1904,7 @@ export default function ResignationListPage() {
             return (
               <div
                 key={resignation.id}
-                className="relative min-w-0 overflow-visible rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg dark:border-slate-700 dark:bg-slate-900"
+                className="relative min-w-0 overflow-visible rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg dark:border-white/10 dark:bg-white/[0.04]"
               >
                 <div className="absolute inset-x-0 top-0 h-0.5 rounded-t-2xl bg-primary-600" />
 
@@ -1947,11 +1947,11 @@ export default function ResignationListPage() {
                     />
                   </div>
 
-                  <div className="my-3 border-t border-slate-100 dark:border-slate-800" />
+                  <div className="my-3 border-t border-slate-100 dark:border-white/10" />
 
                   {/* Experience / Notice */}
                   <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div className="rounded-lg border border-slate-100 bg-slate-50/70 px-3 py-2 dark:border-slate-800 dark:bg-slate-800/50">
+                    <div className="rounded-lg border border-slate-100 bg-slate-50/70 px-3 py-2 dark:border-white/10 dark:bg-white/[0.03]">
                       <p className="text-[9px] font-medium uppercase tracking-wide text-slate-400">
                         Experience
                       </p>
@@ -1961,7 +1961,7 @@ export default function ResignationListPage() {
                       </p>
                     </div>
 
-                    <div className="rounded-lg border border-slate-100 bg-slate-50/70 px-3 py-2 dark:border-slate-800 dark:bg-slate-800/50">
+                    <div className="rounded-lg border border-slate-100 bg-slate-50/70 px-3 py-2 dark:border-white/10 dark:bg-white/[0.03]">
                       <p className="text-[9px] font-medium uppercase tracking-wide text-slate-400">
                         Notice Period
                       </p>
@@ -1993,7 +1993,7 @@ export default function ResignationListPage() {
 
                   {/* Reason */}
                   {resignation.reason && (
-                    <div className="mt-2 rounded-lg border border-slate-100 bg-white px-3 py-2 dark:border-slate-800 dark:bg-slate-900">
+                    <div className="mt-2 rounded-lg border border-slate-100 bg-white px-3 py-2 dark:border-white/10 dark:bg-white/[0.04]">
                       <p className="text-[9px] font-medium uppercase tracking-wide text-slate-400">
                         Resignation Reason
                       </p>
@@ -2011,7 +2011,7 @@ export default function ResignationListPage() {
 
                   {/* Description */}
                   {resignation.description && (
-                    <div className="mt-2 rounded-lg border border-slate-100 bg-white px-3 py-2 dark:border-slate-800 dark:bg-slate-900">
+                    <div className="mt-2 rounded-lg border border-slate-100 bg-white px-3 py-2 dark:border-white/10 dark:bg-white/[0.04]">
                       <p className="text-[9px] font-medium uppercase tracking-wide text-slate-400">
                         Resignation Description
                       </p>
@@ -2031,7 +2031,7 @@ export default function ResignationListPage() {
 
                   {/* Overall Records */}
                   {resignation.accomplishments && (
-                    <div className="mt-2 rounded-lg border border-slate-100 bg-white px-3 py-2 dark:border-slate-800 dark:bg-slate-900">
+                    <div className="mt-2 rounded-lg border border-slate-100 bg-white px-3 py-2 dark:border-white/10 dark:bg-white/[0.04]">
                       <p className="text-[9px] font-medium uppercase tracking-wide text-slate-400">
                         Overall Records /
                         Accomplishments
@@ -2059,7 +2059,7 @@ export default function ResignationListPage() {
                           resignation
                         )
                       }
-                      className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] font-semibold text-slate-700 transition-all hover:border-primary-200 hover:bg-primary-50 hover:text-primary-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-primary-500/40 dark:hover:bg-primary-500/10 dark:hover:text-primary-400"
+                      className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] font-semibold text-slate-700 transition-all hover:border-primary-200 hover:bg-primary-50 hover:text-primary-600 dark:border-white/10 dark:bg-white/[0.06] dark:text-slate-200 dark:hover:border-primary-500/40 dark:hover:bg-primary-500/10 dark:hover:text-primary-400"
                     >
                       Edit
                     </button>
@@ -2073,7 +2073,7 @@ export default function ResignationListPage() {
                             resignation
                           )
                         }
-                        className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-2 text-[11px] font-semibold text-red-600 transition-all hover:bg-red-50 dark:border-red-900/40 dark:bg-slate-800 dark:text-red-400 dark:hover:bg-red-500/10"
+                        className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-2 text-[11px] font-semibold text-red-600 transition-all hover:bg-red-50 dark:border-red-900/40 dark:bg-white/[0.06] dark:text-red-400 dark:hover:bg-red-500/10"
                       >
                         Deactivate
                       </button>
@@ -2088,7 +2088,7 @@ export default function ResignationListPage() {
                         disabled={
                           updateMutation.isPending
                         }
-                        className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-emerald-200 bg-white px-3 py-2 text-[11px] font-semibold text-emerald-600 transition-all hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-emerald-900/40 dark:bg-slate-800 dark:text-emerald-400 dark:hover:bg-emerald-500/10"
+                        className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-emerald-200 bg-white px-3 py-2 text-[11px] font-semibold text-emerald-600 transition-all hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-emerald-900/40 dark:bg-white/[0.06] dark:text-emerald-400 dark:hover:bg-emerald-500/10"
                       >
                         Reactivate
                       </button>
@@ -2117,7 +2117,7 @@ export default function ResignationListPage() {
       )}
 
       {/* PAGINATION */}
-      <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
+      <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500 shadow-sm dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-400">
         <span>
           Page {page} of {pageCount}
         </span>
@@ -2131,7 +2131,7 @@ export default function ResignationListPage() {
                 Math.max(1, current - 1)
               )
             }
-            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium transition hover:bg-slate-50 disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700"
+            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium transition hover:bg-slate-50 disabled:opacity-40 dark:border-white/10 dark:bg-white/[0.06] dark:hover:bg-slate-700"
           >
             Previous
           </button>
@@ -2147,7 +2147,7 @@ export default function ResignationListPage() {
                 )
               )
             }
-            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium transition hover:bg-slate-50 disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700"
+            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium transition hover:bg-slate-50 disabled:opacity-40 dark:border-white/10 dark:bg-white/[0.06] dark:hover:bg-slate-700"
           >
             Next
           </button>

@@ -249,7 +249,7 @@ export default function UserForm({ initialData = {}, onSubmit, loading, isAdmin 
       </div>
 
       {isNewEmployee && (
-        <div className="mb-4 border-t border-slate-200 dark:border-slate-700 pt-4">
+        <div className="mb-4 border-t border-slate-200 dark:border-white/10 pt-4">
           <p className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
             Employee record (this account will also appear in the Employees master)
           </p>

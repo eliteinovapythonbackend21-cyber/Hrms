@@ -172,7 +172,7 @@ const getStatusStyles = (status) => {
 
   return (
     styles[normalizedStatus] ||
-    "bg-slate-100 text-slate-700 ring-1 ring-inset ring-slate-600/20 dark:bg-slate-800 dark:text-slate-300"
+    "bg-slate-100 text-slate-700 ring-1 ring-inset ring-slate-600/20 dark:bg-white/[0.06] dark:text-slate-300"
   );
 };
 
@@ -202,7 +202,7 @@ const getPerformanceStyles = (performance) => {
 
   return (
     styles[normalized] ||
-    "bg-slate-100 text-slate-700 ring-1 ring-inset ring-slate-600/20 dark:bg-slate-800 dark:text-slate-300"
+    "bg-slate-100 text-slate-700 ring-1 ring-inset ring-slate-600/20 dark:bg-white/[0.06] dark:text-slate-300"
   );
 };
 
@@ -329,7 +329,7 @@ function DescriptionHoverBadge({
               maxHeight: coords.maxHeight,
               zIndex: 9999,
             }}
-            className="overflow-y-auto rounded-xl border border-slate-200 bg-white p-3 shadow-xl dark:border-slate-700 dark:bg-slate-900"
+            className="overflow-y-auto rounded-xl border border-slate-200 bg-white p-3 shadow-xl dark:border-white/10 dark:bg-white/[0.04]"
           >
             <p className="mb-1 text-[9px] font-semibold uppercase tracking-wide text-slate-400">
               {label}
@@ -1230,7 +1230,7 @@ export default function TrainingProgramListPage() {
 
       {/* PAGE HEADER */}
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
 
         <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
 
@@ -1360,7 +1360,7 @@ export default function TrainingProgramListPage() {
 
       <div className="flex justify-end">
 
-        <div className="inline-flex rounded-lg border border-slate-200 bg-slate-50 p-1 dark:border-slate-700 dark:bg-slate-800">
+        <div className="inline-flex rounded-lg border border-slate-200 bg-slate-50 p-1 dark:border-white/10 dark:bg-white/[0.06]">
 
           <StatusTab
             active={
@@ -1412,7 +1412,7 @@ export default function TrainingProgramListPage() {
       {/* ORGANIZATION FILTERS */}
 
       {isAdmin && (
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
 
           <div className="mb-4">
 
@@ -1443,7 +1443,7 @@ export default function TrainingProgramListPage() {
               disabled={
                 companiesLoading
               }
-              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-primary-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-primary-500 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-200"
             >
 
               <option value="">
@@ -1477,7 +1477,7 @@ export default function TrainingProgramListPage() {
                 !companyFilterId ||
                 branchesLoading
               }
-              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-primary-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-primary-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-200"
             >
 
               <option value="">
@@ -1515,7 +1515,7 @@ export default function TrainingProgramListPage() {
                 !branchFilterId ||
                 departmentsLoading
               }
-              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-primary-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-primary-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-200"
             >
 
               <option value="">
@@ -1555,7 +1555,7 @@ export default function TrainingProgramListPage() {
                 !departmentFilterId ||
                 designationsLoading
               }
-              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-primary-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-primary-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-200"
             >
 
               <option value="">
@@ -1636,7 +1636,7 @@ export default function TrainingProgramListPage() {
 
       {/* MAIN LIST */}
 
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
 
         <GenericListPage
           module="Training"
@@ -1730,7 +1730,7 @@ function CountCard({
   const tones = {
     neutral: {
       wrapper:
-        "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900",
+        "border-slate-200 bg-white dark:border-white/10 dark:bg-white/[0.04]",
       dot: "bg-slate-400",
       value:
         "text-slate-900 dark:text-white",
@@ -1738,7 +1738,7 @@ function CountCard({
 
     active: {
       wrapper:
-        "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900",
+        "border-slate-200 bg-white dark:border-white/10 dark:bg-white/[0.04]",
       dot: "bg-emerald-500",
       value:
         "text-emerald-600 dark:text-emerald-400",
@@ -1746,7 +1746,7 @@ function CountCard({
 
     inactive: {
       wrapper:
-        "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900",
+        "border-slate-200 bg-white dark:border-white/10 dark:bg-white/[0.04]",
       dot: "bg-red-500",
       value:
         "text-red-600 dark:text-red-400",
@@ -1808,7 +1808,7 @@ function StatusTab({
       onClick={onClick}
       className={`rounded-md px-3.5 py-1.5 text-xs font-semibold transition ${
         active
-          ? "bg-white text-slate-900 shadow-sm dark:bg-slate-900 dark:text-white"
+          ? "bg-white text-slate-900 shadow-sm dark:bg-white/[0.04] dark:text-white"
           : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
       }`}
     >
@@ -1866,7 +1866,7 @@ function TrainingPeriodSelector({
   ];
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
 
       <div className="flex flex-wrap gap-2">
 
@@ -1931,7 +1931,7 @@ function TrainingPeriodSelector({
             onChange={
               setSelectedDate
             }
-            className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 sm:w-64"
+            className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-200 sm:w-64"
           />
 
           <p className="mt-2 text-xs text-slate-400">
@@ -1959,7 +1959,7 @@ function TrainingPeriodSelector({
               onChange={
                 setSelectedMonth
               }
-              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-200"
             >
               {months.map(
                 ([value, label]) => (
@@ -1986,7 +1986,7 @@ function TrainingPeriodSelector({
               onChange={
                 setSelectedYear
               }
-              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-200"
             >
               {years.map(
                 (year) => (
@@ -2025,7 +2025,7 @@ function TrainingPeriodSelector({
               onChange={
                 setSelectedQuarter
               }
-              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-200"
             >
               {quarters.map(
                 ([
@@ -2056,7 +2056,7 @@ function TrainingPeriodSelector({
               onChange={
                 setSelectedYear
               }
-              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-200"
             >
               {years.map(
                 (year) => (
@@ -2153,7 +2153,7 @@ function TrainingMetric({
   };
 
   return (
-    <div className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md dark:border-slate-700 dark:bg-slate-900">
+    <div className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md dark:border-white/10 dark:bg-white/[0.04]">
 
       <div className="flex items-start justify-between">
 

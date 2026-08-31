@@ -644,7 +644,7 @@ export default function FinanceAttendanceMonthlyPage() {
     <div className="min-h-full space-y-6">
       {/* HEADER */}
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
         <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
           <div>
             <div className="flex flex-wrap items-center gap-3">
@@ -670,7 +670,7 @@ export default function FinanceAttendanceMonthlyPage() {
               type="button"
               onClick={() => changeMonth(-1)}
               disabled={monthlyFetching}
-              className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-300 bg-white text-xl text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300"
+              className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-300 bg-white text-xl text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-600 dark:bg-white/[0.06] dark:text-slate-300"
               title="Previous month"
             >
               ‹
@@ -683,7 +683,7 @@ export default function FinanceAttendanceMonthlyPage() {
                 isCurrentMonth ||
                 monthlyFetching
               }
-              className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200"
+              className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-600 dark:bg-white/[0.06] dark:text-slate-200"
             >
               Current Month
             </button>
@@ -692,7 +692,7 @@ export default function FinanceAttendanceMonthlyPage() {
               type="button"
               onClick={() => changeMonth(1)}
               disabled={monthlyFetching}
-              className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-300 bg-white text-xl text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300"
+              className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-300 bg-white text-xl text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-600 dark:bg-white/[0.06] dark:text-slate-300"
               title="Next month"
             >
               ›
@@ -705,7 +705,7 @@ export default function FinanceAttendanceMonthlyPage() {
                 month
               )}
               onChange={handleMonthChange}
-              className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+              className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
             />
 
             <TableToolbar
@@ -718,7 +718,7 @@ export default function FinanceAttendanceMonthlyPage() {
 
       {/* REPORT ACTIONS */}
 
-      <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+      <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h2 className="font-semibold text-slate-900 dark:text-white">
@@ -740,7 +740,7 @@ export default function FinanceAttendanceMonthlyPage() {
                 monthlyFetching ||
                 !items.length
               }
-              className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200"
+              className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-600 dark:bg-white/[0.06] dark:text-slate-200"
             >
               <span>↓</span>
               Download Report
@@ -778,7 +778,7 @@ export default function FinanceAttendanceMonthlyPage() {
           description="Employees included"
         />
 
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
           <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
             Attendance Rate
           </p>
@@ -875,7 +875,7 @@ export default function FinanceAttendanceMonthlyPage() {
 
       {/* TABLE */}
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
         <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
@@ -895,7 +895,7 @@ export default function FinanceAttendanceMonthlyPage() {
                 setSearch(event.target.value)
               }
               placeholder="Search employee or code..."
-              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-4 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:border-slate-600 dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-500"
+              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-4 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white dark:placeholder:text-slate-500"
             />
 
             {search && (
@@ -926,7 +926,7 @@ function InfoCard({
   description,
 }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
       <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
         {title}
       </p>
@@ -948,7 +948,7 @@ function SummaryCard({
   description,
 }) {
   return (
-    <div className="group rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md dark:border-slate-700 dark:bg-slate-900">
+    <div className="group rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md dark:border-white/10 dark:bg-white/[0.04]">
       <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
         {title}
       </p>

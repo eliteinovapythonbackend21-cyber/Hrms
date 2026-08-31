@@ -648,7 +648,7 @@ export default function PerformanceReviewListPage() {
       ====================================================== */}
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div className="h-[110px] rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <div className="h-[110px] rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
           <div className="flex h-full items-center justify-between">
             <div>
               <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
@@ -670,7 +670,7 @@ export default function PerformanceReviewListPage() {
           </div>
         </div>
 
-        <div className="h-[110px] rounded-xl border border-emerald-100 bg-white px-4 py-3 shadow-sm dark:border-emerald-900/30 dark:bg-slate-900">
+        <div className="h-[110px] rounded-xl border border-emerald-200/70 bg-gradient-to-br from-emerald-50 to-emerald-100/40 px-4 py-3 shadow-sm dark:border-emerald-500/20 dark:from-emerald-500/[0.12] dark:to-emerald-500/[0.02]">
           <div className="flex h-full items-center justify-between">
             <div>
               <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
@@ -692,7 +692,7 @@ export default function PerformanceReviewListPage() {
           </div>
         </div>
 
-        <div className="h-[110px] rounded-xl border border-red-100 bg-white px-4 py-3 shadow-sm dark:border-red-900/30 dark:bg-slate-900">
+        <div className="h-[110px] rounded-xl border border-rose-200/70 bg-gradient-to-br from-rose-50 to-rose-100/40 px-4 py-3 shadow-sm dark:border-rose-500/20 dark:from-rose-500/[0.12] dark:to-rose-500/[0.02]">
           <div className="flex h-full items-center justify-between">
             <div>
               <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
@@ -719,7 +719,7 @@ export default function PerformanceReviewListPage() {
           SEARCH + ORGANIZATION FILTERS
       ====================================================== */}
 
-      <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+      <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-6">
 
           {/* SEARCH */}
@@ -731,14 +731,14 @@ export default function PerformanceReviewListPage() {
               setPage(1);
             }}
             placeholder="Search review period..."
-            className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+            className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
           />
 
           {/* COMPANY */}
           <select
             value={companyFilterId}
             onChange={handleCompanyFilterChange}
-            className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-primary-500 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+            className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-primary-500 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
           >
             <option value="">All Companies</option>
 
@@ -757,7 +757,7 @@ export default function PerformanceReviewListPage() {
             value={branchFilterId}
             onChange={handleBranchFilterChange}
             disabled={!companyFilterId}
-            className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-primary-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+            className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-primary-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
           >
             <option value="">
               {companyFilterId
@@ -780,7 +780,7 @@ export default function PerformanceReviewListPage() {
             value={departmentFilterId}
             onChange={handleDepartmentFilterChange}
             disabled={!branchFilterId}
-            className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-primary-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+            className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-primary-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
           >
             <option value="">
               {branchFilterId
@@ -803,7 +803,7 @@ export default function PerformanceReviewListPage() {
             value={designationFilterId}
             onChange={handleDesignationFilterChange}
             disabled={!departmentFilterId}
-            className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-primary-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+            className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-primary-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
           >
             <option value="">
               {departmentFilterId
@@ -825,7 +825,7 @@ export default function PerformanceReviewListPage() {
           <select
             value={hierarchyLevelFilter}
             onChange={handleHierarchyLevelFilterChange}
-            className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-primary-500 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+            className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-primary-500 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
           >
             <option value="">All Hierarchy Levels</option>
 
@@ -843,7 +843,7 @@ export default function PerformanceReviewListPage() {
         {/* STATUS + VIEW */}
         <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
 
-          <div className="flex items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
+          <div className="flex items-center rounded-lg bg-slate-100 p-1 dark:bg-white/[0.06]">
             <button
               type="button"
               onClick={() => setStatusFilter("active")}
@@ -881,7 +881,7 @@ export default function PerformanceReviewListPage() {
             </button>
           </div>
 
-          <div className="flex items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
+          <div className="flex items-center rounded-lg bg-slate-100 p-1 dark:bg-white/[0.06]">
             <button
               type="button"
               onClick={() => setViewMode("table")}
@@ -914,7 +914,7 @@ export default function PerformanceReviewListPage() {
       ====================================================== */}
 
       {isLoading && (
-        <div className="rounded-xl border border-slate-200 bg-white p-10 text-center shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <div className="rounded-xl border border-slate-200 bg-white p-10 text-center shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
           <p className="text-sm text-slate-500 dark:text-slate-400">
             Loading performance reviews...
           </p>
@@ -933,9 +933,9 @@ export default function PerformanceReviewListPage() {
       {!isLoading &&
         viewMode === "table" &&
         filteredReviews.length > 0 && (
-          <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+          <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
             <table className="w-full min-w-[820px] text-left text-sm">
-              <thead className="tbl-head border-b border-slate-200 dark:border-slate-700">
+              <thead className="tbl-head border-b border-slate-200 dark:border-white/10">
                 <tr>
                   <th className="px-4 py-3">Employee</th>
                   <th className="px-4 py-3">Review Period</th>
@@ -1099,9 +1099,9 @@ export default function PerformanceReviewListPage() {
             {filteredReviews.map((review) => (
               <div
                 key={review.id}
-                className={`rounded-2xl border bg-white p-4 shadow-sm dark:bg-slate-900 ${
+                className={`rounded-2xl border bg-white p-4 shadow-sm dark:bg-white/[0.04] ${
                   review.is_active
-                    ? "border-slate-200 dark:border-slate-700"
+                    ? "border-slate-200 dark:border-white/10"
                     : "border-red-100 dark:border-red-900/30"
                 }`}
               >
@@ -1119,7 +1119,7 @@ export default function PerformanceReviewListPage() {
                   {statusBadge(review.is_active)}
                 </div>
 
-                <div className="my-3 border-t border-slate-100 dark:border-slate-800" />
+                <div className="my-3 border-t border-slate-100 dark:border-white/10" />
 
                 <div className="grid grid-cols-2 gap-3 text-xs">
                   <div>
@@ -1166,7 +1166,7 @@ export default function PerformanceReviewListPage() {
                 </div>
 
                 <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-                  <div className="rounded-lg bg-slate-50 p-2 text-center dark:bg-slate-800">
+                  <div className="rounded-lg bg-slate-50 p-2 text-center dark:bg-white/[0.06]">
                     <p className="text-[9px] text-slate-400">
                       Day-to-Day
                     </p>
@@ -1175,7 +1175,7 @@ export default function PerformanceReviewListPage() {
                     </p>
                   </div>
 
-                  <div className="rounded-lg bg-slate-50 p-2 text-center dark:bg-slate-800">
+                  <div className="rounded-lg bg-slate-50 p-2 text-center dark:bg-white/[0.06]">
                     <p className="text-[9px] text-slate-400">
                       Work
                     </p>
@@ -1184,7 +1184,7 @@ export default function PerformanceReviewListPage() {
                     </p>
                   </div>
 
-                  <div className="rounded-lg bg-slate-50 p-2 text-center dark:bg-slate-800">
+                  <div className="rounded-lg bg-slate-50 p-2 text-center dark:bg-white/[0.06]">
                     <p className="text-[9px] text-slate-400">
                       Behavior
                     </p>
@@ -1213,7 +1213,7 @@ export default function PerformanceReviewListPage() {
                   <button
                     type="button"
                     onClick={() => handleEdit(review)}
-                    className="flex flex-1 items-center justify-center rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+                    className="flex flex-1 items-center justify-center rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-white/10 dark:text-slate-200 dark:hover:bg-slate-800"
                   >
                     Edit
                   </button>
@@ -1250,8 +1250,8 @@ export default function PerformanceReviewListPage() {
 
       {!isLoading &&
         filteredReviews.length === 0 && (
-          <div className="flex min-h-[260px] flex-col items-center justify-center rounded-xl border border-slate-200 bg-white px-6 py-10 text-center shadow-sm dark:border-slate-700 dark:bg-slate-900">
-            <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800">
+          <div className="flex min-h-[260px] flex-col items-center justify-center rounded-xl border border-slate-200 bg-white px-6 py-10 text-center shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
+            <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-slate-100 dark:bg-white/[0.06]">
               <span className="text-xl font-bold text-slate-400">
                 P
               </span>
@@ -1278,7 +1278,7 @@ export default function PerformanceReviewListPage() {
           PAGINATION
       ====================================================== */}
 
-      <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
+      <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500 shadow-sm dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-400">
         <span>Page {page}</span>
 
         <div className="flex gap-2">
@@ -1290,7 +1290,7 @@ export default function PerformanceReviewListPage() {
                 Math.max(1, current - 1)
               )
             }
-            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium hover:bg-slate-50 disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800"
+            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium hover:bg-slate-50 disabled:opacity-40 dark:border-white/10 dark:bg-white/[0.06]"
           >
             Previous
           </button>
@@ -1305,7 +1305,7 @@ export default function PerformanceReviewListPage() {
             onClick={() =>
               setPage((current) => current + 1)
             }
-            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium hover:bg-slate-50 disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800"
+            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium hover:bg-slate-50 disabled:opacity-40 dark:border-white/10 dark:bg-white/[0.06]"
           >
             Next
           </button>

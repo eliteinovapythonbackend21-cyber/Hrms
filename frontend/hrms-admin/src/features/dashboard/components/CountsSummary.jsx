@@ -85,7 +85,7 @@ export default function CountsSummary({ stats, loading }) {
       <DashboardCard
         title="Total Roles"
         value={stats?.total_roles}
-        color="info"
+        color="violet"
         loading={loading}
         hint="Configured access roles"
         to="/roles"

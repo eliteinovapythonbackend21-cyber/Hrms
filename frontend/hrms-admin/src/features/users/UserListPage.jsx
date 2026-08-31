@@ -225,7 +225,7 @@ export default function UserListPage({ role }) {
       headerClassName:
         "w-[70px] min-w-[70px] text-center",
       render: (row) => (
-        <span className="inline-flex h-7 min-w-7 items-center justify-center rounded-md bg-slate-100 px-2 text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+        <span className="inline-flex h-7 min-w-7 items-center justify-center rounded-md bg-slate-100 px-2 text-xs font-semibold text-slate-600 dark:bg-white/[0.06] dark:text-slate-300">
           {row.id}
         </span>
       ),
@@ -295,7 +295,7 @@ export default function UserListPage({ role }) {
       headerClassName:
         "w-[130px] min-w-[130px]",
       render: (row) => (
-        <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold capitalize text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+        <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold capitalize text-slate-700 dark:bg-white/[0.06] dark:text-slate-200">
           {row.role || "-"}
         </span>
       ),
@@ -361,8 +361,8 @@ export default function UserListPage({ role }) {
                 hover:border-primary-200
                 hover:bg-primary-50
                 hover:text-primary-700
-                dark:border-slate-700
-                dark:bg-slate-900
+                dark:border-white/10
+                dark:bg-white/[0.04]
                 dark:text-slate-200
                 dark:hover:border-primary-500/30
                 dark:hover:bg-primary-500/10
@@ -520,7 +520,7 @@ export default function UserListPage({ role }) {
 
         {/* Total */}
 
-        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">
@@ -536,7 +536,7 @@ export default function UserListPage({ role }) {
               </p>
             </div>
 
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 text-slate-600 dark:bg-white/[0.06] dark:text-slate-300">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
@@ -613,13 +613,13 @@ export default function UserListPage({ role }) {
           TABLE CARD
       ====================================================== */}
 
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
 
         {/* ====================================================
             TOOLBAR
         ==================================================== */}
 
-        <div className="border-b border-slate-200 bg-slate-50/70 px-4 py-4 dark:border-slate-700 dark:bg-slate-900/60 sm:px-5">
+        <div className="border-b border-slate-200 bg-slate-50/70 px-4 py-4 dark:border-white/10 dark:bg-white/[0.04]/60 sm:px-5">
 
           <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
 
@@ -663,8 +663,8 @@ export default function UserListPage({ role }) {
                   hover:bg-slate-50
                   disabled:cursor-not-allowed
                   disabled:opacity-50
-                  dark:border-slate-700
-                  dark:bg-slate-800
+                  dark:border-white/10
+                  dark:bg-white/[0.06]
                   dark:text-slate-200
                   dark:hover:bg-slate-700
                 "
@@ -710,8 +710,8 @@ export default function UserListPage({ role }) {
                   hover:bg-slate-50
                   disabled:cursor-not-allowed
                   disabled:opacity-50
-                  dark:border-slate-700
-                  dark:bg-slate-800
+                  dark:border-white/10
+                  dark:bg-white/[0.06]
                   dark:text-slate-200
                   dark:hover:bg-slate-700
                 "
@@ -777,7 +777,7 @@ export default function UserListPage({ role }) {
             PAGINATION
         ==================================================== */}
 
-        <div className="border-t border-slate-200 bg-slate-50/50 dark:border-slate-700 dark:bg-slate-900/50">
+        <div className="border-t border-slate-200 bg-slate-50/50 dark:border-white/10 dark:bg-white/[0.04]/50">
           <TablePagination
             page={page}
             pages={data?.pages || 1}

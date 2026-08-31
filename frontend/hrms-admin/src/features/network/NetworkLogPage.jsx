@@ -362,7 +362,7 @@ export default function NetworkLogPage() {
       label: "IP Address",
       className: "min-w-[125px]",
       render: (r) => (
-        <span className="inline-flex rounded-md bg-slate-100 px-2 py-1 font-mono text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+        <span className="inline-flex rounded-md bg-slate-100 px-2 py-1 font-mono text-xs text-slate-600 dark:bg-white/[0.06] dark:text-slate-300">
           {r.ip_address || "-"}
         </span>
       ),
@@ -442,7 +442,7 @@ export default function NetworkLogPage() {
         if (!hasLocation) {
           return (
             <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 dark:bg-white/[0.06]">
                 <svg
                   className="h-4 w-4 text-slate-400"
                   viewBox="0 0 24 24"
@@ -514,7 +514,7 @@ export default function NetworkLogPage() {
           HEADER
       ====================================================== */}
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
         <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
           <div className="flex items-start gap-4">
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-blue-50 dark:bg-blue-500/10">
@@ -582,7 +582,7 @@ export default function NetworkLogPage() {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {/* Total */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md dark:border-slate-800 dark:bg-slate-900">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md dark:border-white/10 dark:bg-white/[0.04]">
           <div className="flex items-start justify-between">
             <div>
               <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
@@ -613,13 +613,13 @@ export default function NetworkLogPage() {
             </div>
           </div>
 
-          <div className="mt-4 h-1 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+          <div className="mt-4 h-1 overflow-hidden rounded-full bg-slate-100 dark:bg-white/[0.06]">
             <div className="h-full w-full rounded-full bg-blue-500" />
           </div>
         </div>
 
         {/* Online */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md dark:border-slate-800 dark:bg-slate-900">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md dark:border-white/10 dark:bg-white/[0.04]">
           <div className="flex items-start justify-between">
             <div>
               <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
@@ -640,7 +640,7 @@ export default function NetworkLogPage() {
             </div>
           </div>
 
-          <div className="mt-4 h-1 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+          <div className="mt-4 h-1 overflow-hidden rounded-full bg-slate-100 dark:bg-white/[0.06]">
             <div
               className="h-full rounded-full bg-green-500"
               style={{
@@ -651,7 +651,7 @@ export default function NetworkLogPage() {
         </div>
 
         {/* Offline */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md dark:border-slate-800 dark:bg-slate-900">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md dark:border-white/10 dark:bg-white/[0.04]">
           <div className="flex items-start justify-between">
             <div>
               <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
@@ -672,7 +672,7 @@ export default function NetworkLogPage() {
             </div>
           </div>
 
-          <div className="mt-4 h-1 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+          <div className="mt-4 h-1 overflow-hidden rounded-full bg-slate-100 dark:bg-white/[0.06]">
             <div
               className="h-full rounded-full bg-red-500"
               style={{
@@ -683,7 +683,7 @@ export default function NetworkLogPage() {
         </div>
 
         {/* Battery */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md dark:border-slate-800 dark:bg-slate-900">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md dark:border-white/10 dark:bg-white/[0.04]">
           <div className="flex items-start justify-between">
             <div>
               <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
@@ -720,7 +720,7 @@ export default function NetworkLogPage() {
             </div>
           </div>
 
-          <div className="mt-4 h-1 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+          <div className="mt-4 h-1 overflow-hidden rounded-full bg-slate-100 dark:bg-white/[0.06]">
             <div
               className="h-full rounded-full bg-amber-500"
               style={{
@@ -737,7 +737,7 @@ export default function NetworkLogPage() {
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         {/* Connection Health */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
           <div className="flex items-start justify-between">
             <div>
               <p className="text-sm font-semibold text-slate-900 dark:text-white">
@@ -772,7 +772,7 @@ export default function NetworkLogPage() {
                 )`,
               }}
             >
-              <div className="flex h-[76px] w-[76px] items-center justify-center rounded-full bg-white dark:bg-slate-900">
+              <div className="flex h-[76px] w-[76px] items-center justify-center rounded-full bg-white dark:bg-white/[0.04]">
                 <span className="text-xl font-bold text-slate-900 dark:text-white">
                   {statistics.onlinePercentage}%
                 </span>
@@ -804,7 +804,7 @@ export default function NetworkLogPage() {
         </div>
 
         {/* Network Distribution */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
           <div>
             <p className="text-sm font-semibold text-slate-900 dark:text-white">
               Network Distribution
@@ -828,7 +828,7 @@ export default function NetworkLogPage() {
                 </span>
               </div>
 
-              <div className="h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+              <div className="h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-white/[0.06]">
                 <div
                   className="h-full rounded-full bg-blue-500"
                   style={{
@@ -857,7 +857,7 @@ export default function NetworkLogPage() {
                 </span>
               </div>
 
-              <div className="h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+              <div className="h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-white/[0.06]">
                 <div
                   className="h-full rounded-full bg-indigo-500"
                   style={{
@@ -877,7 +877,7 @@ export default function NetworkLogPage() {
         </div>
 
         {/* Location Coverage */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
           <div className="flex items-start justify-between">
             <div>
               <p className="text-sm font-semibold text-slate-900 dark:text-white">
@@ -914,7 +914,7 @@ export default function NetworkLogPage() {
               </span>
             </div>
 
-            <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+            <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-white/[0.06]">
               <div
                 className="h-full rounded-full bg-indigo-500"
                 style={{
@@ -934,8 +934,8 @@ export default function NetworkLogPage() {
           NETWORK ACTIVITY TABLE
       ====================================================== */}
 
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        <div className="flex flex-col gap-3 border-b border-slate-200 px-5 py-4 sm:flex-row sm:items-center sm:justify-between dark:border-slate-800">
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
+        <div className="flex flex-col gap-3 border-b border-slate-200 px-5 py-4 sm:flex-row sm:items-center sm:justify-between dark:border-white/10">
           <div>
             <div className="flex items-center gap-2">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-500/10">
@@ -970,7 +970,7 @@ export default function NetworkLogPage() {
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="rounded-lg bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+            <span className="rounded-lg bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-500 dark:bg-white/[0.06] dark:text-slate-400">
               {data?.total || 0} Records
             </span>
           </div>
@@ -1021,7 +1021,7 @@ export default function NetworkLogPage() {
         </div>
 
         {/* Pagination */}
-        <div className="border-t border-slate-200 dark:border-slate-800">
+        <div className="border-t border-slate-200 dark:border-white/10">
           <TablePagination
             page={page}
             pages={data?.pages || 1}
