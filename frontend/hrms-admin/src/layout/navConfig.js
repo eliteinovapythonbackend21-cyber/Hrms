@@ -87,23 +87,40 @@ export const navConfig = [
   // },
 
   {
+    // Non-employee roles (admin, HR sub-roles, finance) keep the original
+    // "Holidays" section with its own Leave Types child, unchanged.
     label: "Holidays",
     path: "/holidays",
     icon: "holiday",
-    roles: ["admin", ...EMPLOYEE_LIKE_ROLES],
+    roles: ["admin", "finance", ...HR_SUB_ROLES],
     children: [
       {
         label: "Holidays",
         path: "/holidays",
         icon: "holiday",
-        roles: ["admin", ...EMPLOYEE_LIKE_ROLES],
+        roles: ["admin", "finance", ...HR_SUB_ROLES],
       },
       {
-        label: "Leave Types", 
+        label: "Leave Types",
         path: "/leave-types",
         icon: "leaveType",
-        roles: ["admin", ...EMPLOYEE_LIKE_ROLES],
+        roles: ["admin", "finance", ...HR_SUB_ROLES],
       },
+    ],
+  },
+  {
+    // Plain "employee" logins get one consolidated section instead of the
+    // separate "Holidays" and "HR" sections above — same 4 screens, just
+    // not labeled "HR" for a non-HR user. Admin/HR/Finance nav is untouched.
+    label: "Attendance",
+    path: "/attendance",
+    icon: "attendance",
+    roles: ["employee"],
+    children: [
+      { label: "Holidays", path: "/holidays", icon: "holiday", roles: ["employee"] },
+      { label: "Leave Types", path: "/leave-types", icon: "leaveType", roles: ["employee"] },
+      { label: "Attendance", path: "/attendance", icon: "attendance", roles: ["employee"] },
+      { label: "Leaves", path: "/leaves", icon: "leaves", roles: ["employee"] },
     ],
   },
 
@@ -152,10 +169,13 @@ export const navConfig = [
     ],
   },
   {
+    // Plain "employee" logins never see this — they get the consolidated
+    // "Attendance" section above instead (same Attendance/Leaves screens,
+    // without the HR label or the HR-only children below).
     label: "HR",
     path: "/users/hr",
     icon: "employeeLifecycle",
-    // roles: ["admin", ...HR_SUB_ROLES],
+    roles: ["admin", "finance", ...HR_SUB_ROLES],
     children: [
       { label: "Attendance", path: "/attendance", icon: "attendance", roles: ["admin", ...EMPLOYEE_LIKE_ROLES] },
       { label: "Leaves", path: "/leaves", icon: "leaves", roles: ["admin", ...EMPLOYEE_LIKE_ROLES] },

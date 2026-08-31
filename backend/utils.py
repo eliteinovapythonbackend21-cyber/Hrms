@@ -425,6 +425,7 @@ def register_crud_blueprint(
     editable=True,
     deletable=True,
     admin_only=True,
+    view_admin_only=None,
     allowed_roles=None,
     url_prefix_singular=None,
     on_create=None,
@@ -443,6 +444,12 @@ def register_crud_blueprint(
     filter_fields: optional list of column names that should support
     exact-match filtering via query params (e.g. ?holiday_type=Office),
     independent of the fuzzy `search` param built from `search_fields`.
+
+    view_admin_only: gates GET (list/detail) separately from write
+    (create/update/delete). Defaults to `admin_only` so existing callers
+    keep read+write gated together; pass `False` for resources every
+    authenticated user should be able to view (e.g. Holidays) while
+    keeping mutations admin-only.
     """
     from extensions import db
 
@@ -452,6 +459,7 @@ def register_crud_blueprint(
     filter_fields = filter_fields or []
     update_fields = update_fields if update_fields is not None else create_fields
     serialize = serialize or (lambda item: item.to_dict())
+    resolved_view_admin_only = admin_only if view_admin_only is None else view_admin_only
 
     def _guard():
         user = get_current_user()
@@ -465,10 +473,22 @@ def register_crud_blueprint(
             return jsonify({"message": "Admin privileges required"}), 403
         return None
 
+    def _view_guard():
+        user = get_current_user()
+        if allowed_roles is not None:
+            if not user or user.role not in allowed_roles:
+                return jsonify({"message": "You do not have permission to access this resource"}), 403
+            return None
+        if not resolved_view_admin_only:
+            return None
+        if not is_admin(user):
+            return jsonify({"message": "Admin privileges required"}), 403
+        return None
+
     @jwt_required()
     @with_token
     def list_items(token_response):
-        guard = _guard()
+        guard = _view_guard()
         if guard:
             return guard
 

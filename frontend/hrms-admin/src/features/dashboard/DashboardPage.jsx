@@ -5,6 +5,7 @@ import CountsSummary from "./components/CountsSummary";
 import AttendanceTrendChart from "./components/AttendanceTrendChart";
 import LeaveStatusChart from "./components/LeaveStatusChart";
 import MyStatusSummary from "./components/MyStatusSummary";
+import MyAttendanceCalendar from "./components/MyAttendanceCalendar";
 import RadialStat from "./components/RadialStat";
 import RecentLeaves from "./components/RecentLeaves";
 import FinanceMtdCard from "./components/FinanceMtdCard";
@@ -281,6 +282,16 @@ export default function DashboardPage() {
             </div>
 
             <MyStatusSummary />
+          </div>
+
+          <div>
+            <div className="mb-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400 dark:text-slate-500">
+                Calendar
+              </p>
+            </div>
+
+            <MyAttendanceCalendar />
           </div>
 
           <div>

@@ -34,6 +34,9 @@ organization_bp = register_crud_blueprint(
     editable=True,
     deletable=True,
     admin_only=True,
+    # Every authenticated user (including plain "employee") can view the
+    # holiday calendar — only add/edit/deactivate stay admin-only.
+    view_admin_only=False,
 )
 
 
