@@ -2304,7 +2304,7 @@ export default function PromotionListPage() {
             </p>
           </div>
         ) : (
-          <div className="w-full min-w-0 overflow-x-auto overflow-y-visible rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+          <div className="w-full min-w-0 max-lg:overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
             <table className="w-full min-w-[900px] table-fixed border-collapse text-left text-sm lg:min-w-0">
               <colgroup>
                 <col className="w-[20%]" />
