@@ -13,6 +13,7 @@ import {
 import { useGenerateIncentiveInvoice } from "../invoices/useInvoices";
 
 import { formatCurrency } from "@/utils/formatCurrency";
+import { useIsCrmEmployee } from "@/hooks/useIsCrmEmployee";
 
 /* =========================================================
    CONSTANTS
@@ -281,6 +282,9 @@ function TargetProgressBar({ target, actual }) {
 export default function IncentivePayoutPage() {
   const { showToast } = useToast();
 
+  // CRM-department employees: view-only screen.
+  const { isCrmEmployee: readOnly } = useIsCrmEmployee();
+
   const [calcMonth, setCalcMonth] = useState(now.getMonth() + 1);
   const [calcYear, setCalcYear] = useState(now.getFullYear());
 
@@ -357,6 +361,7 @@ export default function IncentivePayoutPage() {
   ------------------------------------------------------- */
 
   const handleCalculate = async () => {
+    if (readOnly) return;
     try {
       const result = await calculateIncentives.mutateAsync({ month: calcMonth, year: calcYear });
       const count = result?.data?.data?.length ?? 0;
@@ -371,6 +376,7 @@ export default function IncentivePayoutPage() {
   };
 
   const handleGenerateInvoice = async (record) => {
+    if (readOnly) return;
     try {
       setGeneratingId(record.id);
       await generateInvoice.mutateAsync(record.id);
@@ -432,6 +438,7 @@ export default function IncentivePayoutPage() {
       </div>
 
       {/* CALCULATE */}
+      {!readOnly && (
       <div className="rounded-xl border border-slate-200 bg-gradient-to-br from-white to-slate-50/60 p-5 shadow-sm dark:border-white/10 dark:from-primary-500/[0.06] dark:to-white/[0.02]">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
           <div>
@@ -479,6 +486,7 @@ export default function IncentivePayoutPage() {
           existing records for the period are refreshed, not duplicated.
         </p>
       </div>
+      )}
 
       {/* FILTERS */}
       <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
@@ -623,7 +631,7 @@ export default function IncentivePayoutPage() {
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {paged.map((record) => {
                 const employeeName = getEmployeeName(record);
-                const canGenerateInvoice = record.status === "Approved";
+                const canGenerateInvoice = record.status === "Approved" && !readOnly;
 
                 return (
                   <tr key={record.id} className="tbl-row">
@@ -691,7 +699,7 @@ export default function IncentivePayoutPage() {
         <div className="grid grid-cols-1 items-stretch gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {paged.map((record) => {
             const employeeName = getEmployeeName(record);
-            const canGenerateInvoice = record.status === "Approved";
+            const canGenerateInvoice = record.status === "Approved" && !readOnly;
 
             return (
               <div

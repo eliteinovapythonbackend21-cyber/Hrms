@@ -8,6 +8,7 @@ import ConfirmDialog from "@/components/feedback/ConfirmDialog";
 import TableToolbar from "@/components/table/TableToolbar";
 
 import { useToast } from "@/components/feedback/Toast";
+import { useIsHrEmployee } from "@/hooks/useIsHrEmployee";
 import { useTableExport } from "@/hooks/useTableExport";
 
 import { employeeLifecycleApi } from "@/api/employee.api";
@@ -822,6 +823,9 @@ export default function TransferListPage() {
   const { showToast } =
     useToast();
 
+  // HR-department employees: this screen is view-only.
+  const { isHrEmployee: readOnly } = useIsHrEmployee();
+
   /* =======================================================
      TRANSFERS
   ======================================================= */
@@ -1427,6 +1431,7 @@ export default function TransferListPage() {
   ======================================================= */
 
   const handleAdd = () => {
+    if (readOnly) return;
     setEditing(null);
     setModalOpen(true);
   };
@@ -1438,6 +1443,7 @@ export default function TransferListPage() {
   const handleEdit = (
     transfer
   ) => {
+    if (readOnly) return;
     const normalizedTransfer = {
       ...transfer,
 
@@ -1512,6 +1518,7 @@ export default function TransferListPage() {
 
   const handleSubmit =
     async (payload) => {
+    if (readOnly) return;
       try {
         const normalizedPayload = {
           ...payload,
@@ -1642,6 +1649,7 @@ export default function TransferListPage() {
 
   const confirmDelete =
     async () => {
+    if (readOnly) return;
       if (!deleteTarget) {
         return;
       }
@@ -1677,6 +1685,7 @@ export default function TransferListPage() {
 
   const handleReactivate =
     async (transfer) => {
+    if (readOnly) return;
       try {
         await updateMutation.mutateAsync(
           {
@@ -1765,6 +1774,12 @@ export default function TransferListPage() {
             onExportPDF={() => {}}
           />
 
+{readOnly ? (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-500 ring-1 ring-inset ring-slate-500/15 dark:bg-white/10 dark:text-slate-300 dark:ring-white/10">
+              <span className="h-1.5 w-1.5 rounded-full bg-slate-400" />
+              View only
+            </span>
+          ) : (
           <Button
             type="button"
             onClick={handleAdd}
@@ -1776,6 +1791,7 @@ export default function TransferListPage() {
 
             Add Transfer
           </Button>
+          )}
         </div>
       </div>
 

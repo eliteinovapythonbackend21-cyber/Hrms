@@ -17,6 +17,7 @@ import {
 } from "./useQuotations";
 
 import { useCustomerOptions } from "@/hooks/useLookupOptions";
+import { useIsCrmEmployee } from "@/hooks/useIsCrmEmployee";
 
 import { useTableExport } from "@/hooks/useTableExport";
 
@@ -780,6 +781,11 @@ export default function QuotationListPage() {
     showToast,
   } = useToast();
 
+  // CRM-department employees get this screen read-only: no add / edit /
+  // deactivate. Every mutation entry point below short-circuits on this.
+  const { isCrmEmployee: readOnly } =
+    useIsCrmEmployee();
+
   const {
     data: allData,
     isLoading,
@@ -1044,6 +1050,7 @@ export default function QuotationListPage() {
   ======================================================= */
 
   const handleAdd = () => {
+    if (readOnly) return;
     setEditingQuotation(null);
     setModalOpen(true);
   };
@@ -1051,6 +1058,7 @@ export default function QuotationListPage() {
   const handleEdit = (
     quotation
   ) => {
+    if (readOnly) return;
     setEditingQuotation({
       ...quotation,
 
@@ -1074,31 +1082,70 @@ export default function QuotationListPage() {
 
   const handleSubmit =
     async (payload) => {
+      if (readOnly) return;
+
+      const normalizedPayload = {
+        ...payload,
+
+        customer_id:
+          payload?.customer_id
+            ? Number(
+                payload.customer_id
+              )
+            : null,
+
+        amount:
+          payload?.amount !==
+            "" &&
+          payload?.amount !==
+            null &&
+          payload?.amount !==
+            undefined
+            ? Number(
+                payload.amount
+              )
+            : null,
+      };
+
+      /*
+       * Guard the two NOT NULL columns up front. Sending customer_id:null
+       * or a non-numeric amount used to reach the API and come back as an
+       * opaque "Database integrity error" - surface a clear message
+       * instead and never fire the request.
+       */
+      if (!normalizedPayload.customer_id) {
+        showToast(
+          "Please select a customer",
+          "error"
+        );
+        return;
+      }
+
+      if (
+        normalizedPayload.amount === null ||
+        Number.isNaN(normalizedPayload.amount)
+      ) {
+        showToast(
+          "Please enter a valid incentive amount",
+          "error"
+        );
+        return;
+      }
+
+      /*
+       * An empty incentive number must not be sent as "" - let the
+       * backend generate the next QT##### instead.
+       */
+      if (
+        !String(
+          normalizedPayload.quotation_number || ""
+        ).trim()
+      ) {
+        delete normalizedPayload.quotation_number;
+      }
+
       try {
         setSaving(true);
-
-        const normalizedPayload = {
-          ...payload,
-
-          customer_id:
-            payload?.customer_id
-              ? Number(
-                  payload.customer_id
-                )
-              : null,
-
-          amount:
-            payload?.amount !==
-              "" &&
-            payload?.amount !==
-              null &&
-            payload?.amount !==
-              undefined
-              ? Number(
-                  payload.amount
-                )
-              : null,
-        };
 
         if (
           editingQuotation
@@ -1149,6 +1196,7 @@ export default function QuotationListPage() {
 
   const confirmDeactivate =
     async () => {
+      if (readOnly) return;
       if (
         !deleteTarget?.id
       ) {
@@ -1196,6 +1244,7 @@ export default function QuotationListPage() {
 
   const handleReactivate =
     async (quotation) => {
+      if (readOnly) return;
       if (!quotation?.id) {
         return;
       }
@@ -1294,17 +1343,24 @@ export default function QuotationListPage() {
             }
           />
 
-          <Button
-            type="button"
-            onClick={handleAdd}
-            className="h-10 w-full px-4 sm:w-auto"
-          >
-            <span className="mr-1.5 text-lg">
-              +
+          {readOnly ? (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-500 ring-1 ring-inset ring-slate-500/15 dark:bg-white/10 dark:text-slate-300 dark:ring-white/10">
+              <span className="h-1.5 w-1.5 rounded-full bg-slate-400" />
+              View only
             </span>
+          ) : (
+            <Button
+              type="button"
+              onClick={handleAdd}
+              className="h-10 w-full px-4 sm:w-auto"
+            >
+              <span className="mr-1.5 text-lg">
+                +
+              </span>
 
-            Add Incentive
-          </Button>
+              Add Incentive
+            </Button>
+          )}
         </div>
       </div>
 
@@ -1702,6 +1758,7 @@ export default function QuotationListPage() {
                     </div>
                   </div>
 
+                  {!readOnly && (
                   <div className="absolute inset-x-0 bottom-0 z-30 grid h-11 grid-cols-3 gap-px border-t border-slate-100 bg-slate-100 dark:border-white/10 dark:bg-white/[0.06]">
                     <button
                       type="button"
@@ -1761,6 +1818,7 @@ export default function QuotationListPage() {
                       Details
                     </button>
                   </div>
+                  )}
                 </div>
               );
             }
@@ -1899,6 +1957,11 @@ export default function QuotationListPage() {
                       </td>
 
                       <td className="px-2 py-3">
+                        {readOnly ? (
+                          <span className="block text-right text-xs text-slate-400">
+                            —
+                          </span>
+                        ) : (
                         <div className="flex items-center justify-end gap-0.5">
                           <IconButton
                             title="Edit Incentive"
@@ -1984,6 +2047,7 @@ export default function QuotationListPage() {
                             </IconButton>
                           )}
                         </div>
+                        )}
                       </td>
                     </tr>
                   );

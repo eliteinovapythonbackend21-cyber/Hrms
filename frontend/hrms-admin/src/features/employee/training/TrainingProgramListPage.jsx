@@ -26,6 +26,7 @@ import { useCompanyBranches } from "@/features/master/branches/useBranches";
 import { masterApi } from "@/api/master.api";
 
 import { useToast } from "@/components/feedback/Toast";
+import { useIsHrEmployee } from "@/hooks/useIsHrEmployee";
 
 
 /* ============================================================
@@ -421,6 +422,9 @@ export default function TrainingProgramListPage() {
   const { showToast } = useToast();
   const queryClient = useQueryClient();
 
+  // HR-department employees get this screen read-only.
+  const { isHrEmployee: readOnly } = useIsHrEmployee();
+
   const isAdmin =
     String(user?.role || "").toLowerCase() === "admin";
 
@@ -435,6 +439,7 @@ export default function TrainingProgramListPage() {
   const updateMutation = useUpdateTrainingProgram();
 
   const openEdit = (row) => {
+    if (readOnly) return;
     setEditingRow(row);
     setEditFormOpen(true);
   };
@@ -462,6 +467,7 @@ export default function TrainingProgramListPage() {
   ========================================================== */
 
   const handleEditSubmit = async (payload) => {
+    if (readOnly) return;
     if (!editingRow) return;
 
     try {
@@ -510,6 +516,7 @@ export default function TrainingProgramListPage() {
   ========================================================== */
 
   const handleDeactivate = async (row) => {
+    if (readOnly) return;
     try {
       setMutatingId(row.id);
 
@@ -540,6 +547,7 @@ export default function TrainingProgramListPage() {
   ========================================================== */
 
   const handleReactivate = async (row) => {
+    if (readOnly) return;
     try {
       setMutatingId(row.id);
 
@@ -1120,6 +1128,8 @@ export default function TrainingProgramListPage() {
                   : "Inactive"}
               </span>
 
+              {!readOnly && (
+              <>
 
               {/* EDIT */}
 
@@ -1166,6 +1176,8 @@ export default function TrainingProgramListPage() {
                     : "Reactivate"}
                 </button>
               )}
+              </>
+              )}
             </div>
           );
         },
@@ -1174,6 +1186,7 @@ export default function TrainingProgramListPage() {
     [
       mutatingId,
       updateMutation.isPending,
+      readOnly,
     ]
   );
 
@@ -1651,6 +1664,7 @@ export default function TrainingProgramListPage() {
           FormComponent={TrainingProgramForm}
           formTitle="Training Program"
           addLabel="Add Training"
+          hideAdd={readOnly}
           actionsMode="none"
           entityLabel="Training record"
           queryParams={queryParams}

@@ -10,6 +10,7 @@ import Badge from "@/components/ui/Badge";
 import ConfirmDialog from "@/components/feedback/ConfirmDialog";
 import TableToolbar from "@/components/table/TableToolbar";
 import { useToast } from "@/components/feedback/Toast";
+import { useIsHrEmployee } from "@/hooks/useIsHrEmployee";
 import { useTableExport } from "@/hooks/useTableExport";
 
 import { employeeLifecycleApi } from "@/api/employee.api";
@@ -827,6 +828,9 @@ export default function ResignationListPage() {
   const navigate = useNavigate();
   const { showToast } = useToast();
 
+  // HR-department employees: this screen is view-only.
+  const { isHrEmployee: readOnly } = useIsHrEmployee();
+
   const {
     data: allData,
     isLoading,
@@ -1157,11 +1161,13 @@ export default function ResignationListPage() {
   /* ---------------------------------------------------------------------- */
 
   const handleAdd = () => {
+    if (readOnly) return;
     setEditing(null);
     setModalOpen(true);
   };
 
   const handleEdit = (resignation) => {
+    if (readOnly) return;
     setEditing(resignation);
     setModalOpen(true);
   };
@@ -1172,6 +1178,7 @@ export default function ResignationListPage() {
   };
 
   const handleSubmit = async (payload) => {
+    if (readOnly) return;
     try {
       if (editing) {
         await updateMutation.mutateAsync({
@@ -1206,6 +1213,7 @@ export default function ResignationListPage() {
   };
 
   const confirmDelete = async () => {
+    if (readOnly) return;
     if (!deleteTarget) return;
 
     try {
@@ -1232,6 +1240,7 @@ export default function ResignationListPage() {
   const handleReactivate = async (
     resignation
   ) => {
+    if (readOnly) return;
     try {
       await updateMutation.mutateAsync({
         id: resignation.id,
@@ -1299,6 +1308,12 @@ export default function ResignationListPage() {
             exporting={exporting}
           />
 
+{readOnly ? (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-500 ring-1 ring-inset ring-slate-500/15 dark:bg-white/10 dark:text-slate-300 dark:ring-white/10">
+              <span className="h-1.5 w-1.5 rounded-full bg-slate-400" />
+              View only
+            </span>
+          ) : (
           <Button
             type="button"
             onClick={handleAdd}
@@ -1310,6 +1325,7 @@ export default function ResignationListPage() {
 
             Add Resignation
           </Button>
+          )}
         </div>
       </div>
 

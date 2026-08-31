@@ -24,6 +24,7 @@ import { useCompanyBranches } from "@/features/master/branches/useBranches";
 import { masterApi } from "@/api/master.api";
 
 import { useToast } from "@/components/feedback/Toast";
+import { useIsHrEmployee } from "@/hooks/useIsHrEmployee";
 
 /* ============================================================
    PERIOD TYPES
@@ -327,6 +328,9 @@ export default function PermissionRequestListPage() {
 
   const queryClient = useQueryClient();
 
+  // HR-department employees get this screen read-only.
+  const { isHrEmployee: readOnly } = useIsHrEmployee();
+
   const isAdmin =
     String(user?.role || "").toLowerCase() ===
     "admin";
@@ -345,6 +349,7 @@ export default function PermissionRequestListPage() {
     useUpdatePermissionRequest();
 
   const openEdit = (row) => {
+    if (readOnly) return;
     setEditingRow(row);
     setEditFormOpen(true);
   };
@@ -363,6 +368,7 @@ export default function PermissionRequestListPage() {
   };
 
   const handleEditSubmit = async (payload) => {
+    if (readOnly) return;
     if (!editingRow) return;
 
     try {
@@ -409,6 +415,7 @@ export default function PermissionRequestListPage() {
   ========================================================== */
 
   const handleDeactivate = async (row) => {
+    if (readOnly) return;
     try {
       setMutatingId(row.id);
 
@@ -438,6 +445,7 @@ export default function PermissionRequestListPage() {
   ========================================================== */
 
   const handleReactivate = async (row) => {
+    if (readOnly) return;
     try {
       setMutatingId(row.id);
 
@@ -896,6 +904,8 @@ export default function PermissionRequestListPage() {
                   : "Inactive"}
               </span>
 
+              {!readOnly && (
+              <>
               <button
                 type="button"
                 onClick={() =>
@@ -933,12 +943,14 @@ export default function PermissionRequestListPage() {
                     : "Reactivate"}
                 </button>
               )}
+              </>
+              )}
             </div>
           );
         },
       },
     ],
-    [mutatingId]
+    [mutatingId, readOnly]
   );
 
   /* ==========================================================
@@ -1300,6 +1312,7 @@ export default function PermissionRequestListPage() {
           useCreate={useCreatePermissionRequest}
           filename="employee-permissions"
           searchPlaceholder="Search employee, reason or status..."
+          hideAdd={readOnly}
           FormComponent={PermissionRequestForm}
           formTitle="Permission Request"
           addLabel="Add Request"

@@ -25,6 +25,7 @@ import { useCompanyBranches } from "@/features/master/branches/useBranches";
 import { masterApi } from "@/api/master.api";
 
 import { useToast } from "@/components/feedback/Toast";
+import { useIsHrEmployee } from "@/hooks/useIsHrEmployee";
 
 
 /* ============================================================
@@ -383,6 +384,9 @@ export default function OvertimeListPage() {
   const queryClient =
     useQueryClient();
 
+  // HR-department employees get this screen read-only.
+  const { isHrEmployee: readOnly } = useIsHrEmployee();
+
   const isAdmin =
     String(user?.role || "").toLowerCase() ===
     "admin";
@@ -403,6 +407,7 @@ export default function OvertimeListPage() {
 
 
   const openEdit = (row) => {
+    if (readOnly) return;
     setEditingRow(row);
     setEditFormOpen(true);
   };
@@ -435,6 +440,7 @@ export default function OvertimeListPage() {
   const handleEditSubmit = async (
     payload
   ) => {
+    if (readOnly) return;
     if (!editingRow) return;
 
     try {
@@ -485,6 +491,7 @@ export default function OvertimeListPage() {
   const handleDeactivate = async (
     row
   ) => {
+    if (readOnly) return;
     try {
       setMutatingId(row.id);
 
@@ -517,6 +524,7 @@ export default function OvertimeListPage() {
   const handleReactivate = async (
     row
   ) => {
+    if (readOnly) return;
     try {
       setMutatingId(row.id);
 
@@ -1025,6 +1033,8 @@ export default function OvertimeListPage() {
                   : "Inactive"}
               </span>
 
+              {!readOnly && (
+              <>
               <button
                 type="button"
                 onClick={() =>
@@ -1066,13 +1076,15 @@ export default function OvertimeListPage() {
                     : "Reactivate"}
                 </button>
               )}
+              </>
+              )}
 
             </div>
           );
         },
       },
     ],
-    [mutatingId]
+    [mutatingId, readOnly]
   );
 
 
@@ -1481,6 +1493,7 @@ export default function OvertimeListPage() {
           useCreate={useCreateOvertime}
           filename="overtime"
           searchPlaceholder="Search employee, description or status..."
+          hideAdd={readOnly}
           FormComponent={OvertimeForm}
           formTitle="Overtime Record"
           addLabel="Add Overtime"

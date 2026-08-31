@@ -21,6 +21,7 @@ import Button from "@/components/ui/Button";
 import ConfirmDialog from "@/components/feedback/ConfirmDialog";
 import TableToolbar from "@/components/table/TableToolbar";
 import { useToast } from "@/components/feedback/Toast";
+import { useIsHrEmployee } from "@/hooks/useIsHrEmployee";
 import { useTableExport } from "@/hooks/useTableExport";
 
 import {
@@ -110,6 +111,9 @@ const EXPORT_COLUMNS = [
 
 export default function PerformanceReviewListPage() {
   const { showToast } = useToast();
+
+  // HR-department employees: this screen is view-only.
+  const { isHrEmployee: readOnly } = useIsHrEmployee();
 
   // ============================================================
   // PAGE / SEARCH
@@ -425,11 +429,13 @@ export default function PerformanceReviewListPage() {
   // ============================================================
 
   const handleAdd = () => {
+    if (readOnly) return;
     setSelectedReview(null);
     setModalOpen(true);
   };
 
   const handleEdit = (review) => {
+    if (readOnly) return;
     setSelectedReview(review);
     setModalOpen(true);
   };
@@ -440,6 +446,7 @@ export default function PerformanceReviewListPage() {
   };
 
   const handleSubmit = async (payload) => {
+    if (readOnly) return;
     try {
       if (selectedReview) {
         await updatePerformanceReview.mutateAsync({
@@ -483,6 +490,7 @@ export default function PerformanceReviewListPage() {
   };
 
   const confirmDelete = async () => {
+    if (readOnly) return;
     if (!reviewToDelete) return;
 
     try {
@@ -526,6 +534,7 @@ export default function PerformanceReviewListPage() {
   // ============================================================
 
   const handleReactivate = async (review) => {
+    if (readOnly) return;
     try {
       await updatePerformanceReview.mutateAsync({
         id: review.id,
@@ -632,6 +641,12 @@ export default function PerformanceReviewListPage() {
             exporting={exporting}
           />
 
+          {readOnly ? (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-500 ring-1 ring-inset ring-slate-500/15 dark:bg-white/10 dark:text-slate-300 dark:ring-white/10">
+              <span className="h-1.5 w-1.5 rounded-full bg-slate-400" />
+              View only
+            </span>
+          ) : (
           <Button
             type="button"
             onClick={handleAdd}
@@ -640,6 +655,7 @@ export default function PerformanceReviewListPage() {
             <span className="mr-1.5 text-lg">+</span>
             Add Review
           </Button>
+          )}
         </div>
       </div>
 

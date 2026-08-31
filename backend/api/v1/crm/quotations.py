@@ -20,9 +20,44 @@ from utils import (
 
 
 def _generate_quotation_number(item, data):
-    if not item.quotation_number:
-        next_id = Quotation.get_next_id()
-        item.quotation_number = f"QT{next_id:05d}"
+    """Assign a unique QT##### number when the caller didn't supply one.
+
+    The old implementation derived the sequence from gaps in the `id`
+    column, which could hand back a number that an existing row already
+    owns (rows are soft-deleted, never removed, and a manually-entered
+    number can shift things out of sync) - the insert then failed with a
+    UNIQUE violation surfaced to the UI as "Database integrity error".
+
+    Derive the next value from the existing QT##### numbers themselves and
+    skip anything already taken.
+    """
+    supplied = (item.quotation_number or "").strip()
+    if supplied:
+        item.quotation_number = supplied
+        return None
+
+    taken = {
+        number
+        for (number,) in db.session.query(Quotation.quotation_number)
+        .filter(Quotation.quotation_number.isnot(None))
+        .all()
+        if number
+    }
+
+    seq = 1
+    for number in taken:
+        if number.upper().startswith("QT"):
+            try:
+                seq = max(seq, int(number[2:]) + 1)
+            except (ValueError, TypeError):
+                continue
+
+    candidate = f"QT{seq:05d}"
+    while candidate in taken:
+        seq += 1
+        candidate = f"QT{seq:05d}"
+
+    item.quotation_number = candidate
     return None
 
 

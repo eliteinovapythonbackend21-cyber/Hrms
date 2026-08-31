@@ -18,6 +18,7 @@ import {
 } from "./useInvoices";
 
 import { useCustomerOptions } from "@/hooks/useLookupOptions";
+import { useIsCrmEmployee } from "@/hooks/useIsCrmEmployee";
 
 import { useTableExport } from "@/hooks/useTableExport";
 
@@ -956,6 +957,9 @@ export default function InvoiceListPage() {
     showToast,
   } = useToast();
 
+  // CRM-department employees: this screen is view-only.
+  const { isCrmEmployee: readOnly } = useIsCrmEmployee();
+
   const {
     data: allData,
     isLoading,
@@ -1227,6 +1231,7 @@ export default function InvoiceListPage() {
   ======================================================= */
 
   const handleAdd = () => {
+    if (readOnly) return;
     setEditingInvoice(null);
     setModalOpen(true);
   };
@@ -1234,6 +1239,7 @@ export default function InvoiceListPage() {
   const handleEdit = (
     invoice
   ) => {
+    if (readOnly) return;
     setEditingInvoice({
       ...invoice,
 
@@ -1262,6 +1268,7 @@ export default function InvoiceListPage() {
 
   const handleSubmit =
     async (payload) => {
+      if (readOnly) return;
       try {
         setSaving(true);
 
@@ -1346,6 +1353,7 @@ export default function InvoiceListPage() {
 
   const confirmDeactivate =
     async () => {
+      if (readOnly) return;
       if (
         !deleteTarget?.id
       ) {
@@ -1391,6 +1399,7 @@ export default function InvoiceListPage() {
 
   const handleReactivate =
     async (invoice) => {
+      if (readOnly) return;
       if (!invoice?.id) {
         return;
       }
@@ -1523,17 +1532,24 @@ export default function InvoiceListPage() {
             }
           />
 
-          <Button
-            type="button"
-            onClick={handleAdd}
-            className="h-10 w-full px-4 sm:w-auto"
-          >
-            <span className="mr-1.5 text-lg">
-              +
+          {readOnly ? (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-500 ring-1 ring-inset ring-slate-500/15 dark:bg-white/10 dark:text-slate-300 dark:ring-white/10">
+              <span className="h-1.5 w-1.5 rounded-full bg-slate-400" />
+              View only
             </span>
+          ) : (
+            <Button
+              type="button"
+              onClick={handleAdd}
+              className="h-10 w-full px-4 sm:w-auto"
+            >
+              <span className="mr-1.5 text-lg">
+                +
+              </span>
 
-            Add Invoice
-          </Button>
+              Add Invoice
+            </Button>
+          )}
         </div>
       </div>
 
@@ -1937,6 +1953,7 @@ export default function InvoiceListPage() {
                     </div>
                   </div>
 
+                  {!readOnly && (
                   <div className="absolute inset-x-0 bottom-0 z-30 grid h-11 grid-cols-4 gap-px border-t border-slate-100 bg-slate-100 dark:border-white/10 dark:bg-white/[0.06]">
                     <button
                       type="button"
@@ -2012,6 +2029,7 @@ export default function InvoiceListPage() {
                       Details
                     </button>
                   </div>
+                  )}
                 </div>
               );
             }
@@ -2180,6 +2198,9 @@ export default function InvoiceListPage() {
                       </td>
 
                       <td className="px-2 py-3">
+                        {readOnly ? (
+                          <span className="block text-right text-xs text-slate-400">—</span>
+                        ) : (
                         <div className="flex items-center justify-end gap-0.5">
                           <IconButton
                             title="Edit"
@@ -2280,6 +2301,7 @@ export default function InvoiceListPage() {
                             </IconButton>
                           )}
                         </div>
+                        )}
                       </td>
                     </tr>
                   );

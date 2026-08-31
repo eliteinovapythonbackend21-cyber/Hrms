@@ -22,11 +22,16 @@ export const routePermissions = {
   "/employees/:id/payslip": ["admin", ...EMPLOYEE_LIKE_ROLES],
   "/employees/:id": ["admin", ...EMPLOYEE_LIKE_ROLES],
   "/employee/documents": HR_ADMIN_ROLES,
-  "/employee/permissions": HR_ADMIN_ROLES,
-  "/employee/overtime": HR_ADMIN_ROLES,
+  // "employee" here covers HR-department employees reaching their
+  // read-only Leave Permissions / Overtime / Training screens (mirrors
+  // the CRM-employee entries below); the sidebar only surfaces these
+  // for them, and each page hides every add/edit/deactivate control
+  // for an HR employee.
+  "/employee/permissions": [...HR_ADMIN_ROLES, "employee"],
+  "/employee/overtime": [...HR_ADMIN_ROLES, "employee"],
   "/employee/payroll": PAYROLL_ROLES,
   "/employee/performance": HR_ADMIN_ROLES,
-  "/employee/training": TRAINING_ROLES,
+  "/employee/training": [...TRAINING_ROLES, "employee"],
   "/employee/promotions": HR_ADMIN_ROLES,
   "/employee/transfers": HR_ADMIN_ROLES,
   "/employee/resignations": HR_ADMIN_ROLES,
@@ -52,8 +57,12 @@ export const routePermissions = {
   "/crm/customers": ["admin"],
   "/crm/follow-ups": ["admin"],
   "/crm/meetings": ["admin"],
-  "/crm/quotations": ["admin"],
-  "/crm/invoices": ["admin"],
+  // "employee" here covers CRM-department employees reaching their
+  // read-only Incentive / Incentive Invoice screens; the sidebar only
+  // surfaces these for them, and the pages themselves hide every
+  // add/edit/deactivate control for a CRM employee.
+  "/crm/quotations": ["admin", "employee"],
+  "/crm/invoices": ["admin", "employee"],
   "/crm/payments": ["admin"],
   "/crm/support-tickets": ["admin"],
   "/finance/accounts": ["admin", "finance"],
