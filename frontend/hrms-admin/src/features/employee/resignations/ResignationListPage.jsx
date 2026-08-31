@@ -1598,7 +1598,7 @@ export default function ResignationListPage() {
         /* TABLE                                                             */
         /* ---------------------------------------------------------------- */
         <div className="min-w-0 overflow-x-auto overflow-y-visible rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
-          <table className="w-full table-fixed text-left text-sm">
+          <table className="w-full min-w-[1040px] table-fixed text-left text-sm lg:min-w-0">
             <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-400">
               <tr>
                 <th className="w-[16%] px-3 py-3 font-medium">
