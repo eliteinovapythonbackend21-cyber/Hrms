@@ -8,6 +8,7 @@ import MyStatusSummary from "./components/MyStatusSummary";
 import MyAttendanceCalendar from "./components/MyAttendanceCalendar";
 import RadialStat from "./components/RadialStat";
 import RecentLeaves from "./components/RecentLeaves";
+import MyRecentAttendance from "./components/MyRecentAttendance";
 import FinanceMtdCard from "./components/FinanceMtdCard";
 import { getUser } from "@/utils/tokenHelpers";
 
@@ -328,7 +329,7 @@ export default function DashboardPage() {
             </div>
 
             <div className="transition-transform duration-200 hover:-translate-y-0.5">
-              <RecentLeaves title="Your recent leave requests" />
+              <MyRecentAttendance title="Your recent check-in / check-out" />
             </div>
           </div>
         </div>
