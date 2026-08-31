@@ -935,7 +935,7 @@ export default function PerformanceReviewListPage() {
         filteredReviews.length > 0 && (
           <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
             <table className="w-full min-w-[820px] text-left text-sm">
-              <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-400">
+              <thead className="tbl-head border-b border-slate-200 dark:border-slate-700">
                 <tr>
                   <th className="px-4 py-3">Employee</th>
                   <th className="px-4 py-3">Review Period</th>
@@ -954,7 +954,7 @@ export default function PerformanceReviewListPage() {
                 {filteredReviews.map((review) => (
                   <tr
                     key={review.id}
-                    className="hover:bg-slate-50 dark:hover:bg-slate-800/40"
+                    className="tbl-row"
                   >
                     <td className="px-4 py-3">
                       <div>

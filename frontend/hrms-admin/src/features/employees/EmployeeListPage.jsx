@@ -2572,7 +2572,7 @@ function CrmEmployeeView() {
         ) : (
           <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
             <table className="w-full text-left text-sm">
-              <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500 dark:border-slate-700 dark:bg-slate-800/60">
+              <thead className="tbl-head border-b border-slate-200 dark:border-slate-700">
                 <tr>
                   <th className="px-4 py-3">
                     Employee
@@ -2622,7 +2622,7 @@ function CrmEmployeeView() {
                         key={
                           employee.id
                         }
-                        className="hover:bg-slate-50 dark:hover:bg-slate-800/40"
+                        className="tbl-row"
                       >
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2.5">

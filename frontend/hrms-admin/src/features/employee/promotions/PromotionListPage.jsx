@@ -2304,7 +2304,7 @@ export default function PromotionListPage() {
             </p>
           </div>
         ) : (
-          <div className="w-full min-w-0 overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+          <div className="w-full min-w-0 overflow-x-auto overflow-y-visible rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
             <table className="w-full min-w-[900px] table-fixed border-collapse text-left text-sm lg:min-w-0">
               <colgroup>
                 <col className="w-[20%]" />
@@ -2316,7 +2316,7 @@ export default function PromotionListPage() {
                 <col className="w-[9%]" />
               </colgroup>
 
-              <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-400">
+              <thead className="tbl-head border-b border-slate-200 dark:border-slate-700">
                 <tr>
                   <th className="whitespace-nowrap px-4 py-3 font-medium">
                     Employee
@@ -2438,7 +2438,7 @@ export default function PromotionListPage() {
                         key={
                           promotion.id
                         }
-                        className="group hover:bg-slate-50 dark:hover:bg-slate-800/40"
+                        className="group tbl-row"
                       >
                         <td className="min-w-0 px-4 py-3">
                           <div className="flex min-w-0 items-center gap-2.5">

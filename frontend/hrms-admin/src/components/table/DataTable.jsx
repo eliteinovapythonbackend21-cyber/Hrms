@@ -72,12 +72,12 @@ export default function DataTable({
   return (
     <div className="w-full overflow-x-auto">
       <table className="w-full min-w-[680px] table-fixed divide-y divide-slate-200 dark:divide-white/10 sm:min-w-0">
-        <thead className="bg-slate-50 dark:bg-white/[0.03]">
+        <thead className="tbl-head">
           <tr>
             {columns.map((col) => (
               <th
                 key={col.key}
-                className={`px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-200 ${
+                className={`px-4 py-3 text-left ${
                   col.headerClassName ||
                   col.className ||
                   ""
@@ -107,11 +107,14 @@ export default function DataTable({
           </tr>
         </thead>
 
-        <tbody className="divide-y divide-slate-200 dark:divide-white/10">
-          {data.map((row) => (
+        <tbody className="divide-y divide-slate-100 dark:divide-white/[0.06]">
+          {data.map((row, rowIndex) => (
             <tr
               key={row[rowKey]}
-              className="transition-colors hover:bg-slate-50 dark:hover:bg-white/[0.03]"
+              className="tbl-row tbl-row-in"
+              style={{
+                animationDelay: `${Math.min(rowIndex, 12) * 28}ms`,
+              }}
             >
               {columns.map((col) => (
                 <td

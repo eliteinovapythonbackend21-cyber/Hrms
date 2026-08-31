@@ -318,6 +318,12 @@ export default function EmployeeTable({
       key: "employee_code",
       label: "Code",
       sortable: true,
+
+      render: (employee) => (
+        <span className="tbl-code">
+          {employee.employee_code || "—"}
+        </span>
+      ),
     },
 
     /* -------------------------------------------------------
@@ -330,7 +336,7 @@ export default function EmployeeTable({
       sortable: true,
 
       render: (employee) => (
-        <span className="text-sm">
+        <span className="text-sm font-medium text-slate-800 dark:text-slate-100">
           {getEmployeeName(
             employee
           )}

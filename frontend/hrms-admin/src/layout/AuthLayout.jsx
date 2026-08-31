@@ -5,7 +5,7 @@ import ThemeToggle from "@/theme/ThemeToggle";
 // so this matches the rest of the dark-first app rather than a one-off palette.
 export default function AuthLayout({ title, subtitle, children, topRight }) {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 relative overflow-hidden bg-slate-50 dark:bg-[#05050a]">
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 relative overflow-hidden bg-slate-50 dark:bg-[#0b1120]">
       {/* Decorative glow blobs — brand gold + teal, dark mode only */}
       <div
         className="hidden dark:block pointer-events-none absolute -top-32 -left-24 h-96 w-96 rounded-full bg-primary-500/20 blur-[110px]"

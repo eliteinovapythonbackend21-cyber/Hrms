@@ -210,7 +210,7 @@ export default function Sidebar() {
           "fixed lg:static inset-y-0 left-0 z-40",
           "w-64",
           sidebarCollapsed ? "lg:w-[4.75rem]" : "lg:w-64",
-          "bg-white/95 dark:bg-[#08090d]/95",
+          "bg-white/95 dark:bg-[#080c17]/95",
           "backdrop-blur-2xl",
           "border-r border-slate-200/80 dark:border-white/[0.08]",
           "transform transition-all duration-300 ease-out",

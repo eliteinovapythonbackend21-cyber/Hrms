@@ -604,7 +604,7 @@ export default function IncentiveSlabPage() {
       ) : (
         <div className="w-full min-w-0 overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
           <table className="w-full text-left text-sm">
-            <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-400">
+            <thead className="tbl-head border-b border-slate-200 dark:border-slate-700">
               <tr>
                 <th className="px-4 py-3 font-medium">Tier</th>
                 <th className="px-4 py-3 font-medium">Extra Customers (Min)</th>
@@ -620,7 +620,7 @@ export default function IncentiveSlabPage() {
                 const tierNumber = sorted.findIndex((s) => s.id === slab.id) + 1;
 
                 return (
-                  <tr key={slab.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                  <tr key={slab.id} className="tbl-row">
                     <td className="px-4 py-3">
                       <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-amber-50 text-[10px] font-bold text-amber-600 dark:bg-amber-500/10 dark:text-amber-400">
                         {tierNumber}

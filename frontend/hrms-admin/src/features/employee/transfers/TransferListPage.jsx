@@ -2140,7 +2140,7 @@ export default function TransferListPage() {
            TABLE VIEW
         =================================================== */
 
-        <div className="w-full min-w-0 overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <div className="w-full min-w-0 overflow-x-auto overflow-y-visible rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
           <table className="w-full min-w-[900px] table-fixed border-collapse text-left text-sm lg:min-w-0">
             <colgroup>
               <col className="w-[17%]" />
@@ -2153,7 +2153,7 @@ export default function TransferListPage() {
               <col className="w-[7%]" />
             </colgroup>
 
-            <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-400">
+            <thead className="tbl-head border-b border-slate-200 dark:border-slate-700">
               <tr>
                 <th className="px-4 py-3 font-medium">
                   Employee
@@ -2240,7 +2240,7 @@ export default function TransferListPage() {
                   return (
                     <tr
                       key={transfer.id}
-                      className="relative hover:bg-slate-50 dark:hover:bg-slate-800/40"
+                      className="relative tbl-row"
                     >
                       {/* EMPLOYEE */}
 

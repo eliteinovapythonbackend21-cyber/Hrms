@@ -119,7 +119,7 @@ export default function Topbar() {
   };
 
   return (
-    <header className="relative z-20 h-16 shrink-0 bg-white/90 dark:bg-[#08090d]/90 backdrop-blur-xl border-b border-slate-200/80 dark:border-white/[0.08] flex items-center justify-between px-4 lg:px-6">
+    <header className="relative z-20 h-16 shrink-0 bg-white/90 dark:bg-[#080c17]/90 backdrop-blur-xl border-b border-slate-200/80 dark:border-white/[0.08] flex items-center justify-between px-4 lg:px-6">
       {/* LEFT */}
       <div className="flex items-center gap-3 min-w-0">
         <button
@@ -180,7 +180,7 @@ export default function Topbar() {
         >
           <BellIcon />
 
-          <span className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-primary-500 ring-2 ring-white dark:ring-[#08090d]" />
+          <span className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-primary-500 ring-2 ring-white dark:ring-[#080c17]" />
         </button>
 
         <div className="h-7 w-px bg-slate-200 dark:bg-white/10 mx-1" />
@@ -198,7 +198,7 @@ export default function Topbar() {
                   className="ring-2 ring-primary-500/20 dark:ring-primary-400/20"
                 />
 
-                <span className="absolute -right-0.5 -bottom-0.5 h-2 w-2 rounded-full bg-emerald-500 border-2 border-white dark:border-[#08090d]" />
+                <span className="absolute -right-0.5 -bottom-0.5 h-2 w-2 rounded-full bg-emerald-500 border-2 border-white dark:border-[#080c17]" />
               </div>
 
               <span className="hidden sm:block text-left max-w-[130px]">

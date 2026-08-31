@@ -2472,7 +2472,7 @@ export default function PayrollRecordListPage() {
           <div className="w-full min-w-0 overflow-visible rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
             <div className="w-full overflow-x-auto">
               <table className="w-full min-w-[1450px] text-left text-sm">
-                <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-400">
+                <thead className="tbl-head border-b border-slate-200 dark:border-slate-700">
                   <tr>
                     <th className="px-4 py-3 font-medium">
                       Employee
@@ -2527,7 +2527,7 @@ export default function PayrollRecordListPage() {
                         key={
                           payroll.id
                         }
-                        className="relative hover:bg-slate-50 dark:hover:bg-slate-800/40"
+                        className="relative tbl-row"
                       >
                         <td className="relative px-4 py-3">
                           <HoverDetailsTrigger

@@ -8,11 +8,24 @@
     --color-primary-hover: #b47417;
     --color-accent: #0f766e;
     --color-accent-hover: #115e59;
-    --color-bg: #f8fafc;
+    /* Soft slate wash for the app content area so white cards/panels
+       visibly lift off the page instead of reading as flat white-on-white. */
+    --color-bg: #eceff4;
     --color-surface: #ffffff;
     --color-text: #0f172a;
     --color-muted: #64748b;
     --color-border: #e2e8f0;
+    /* Ambient brand tint painted behind the content area (see body::before). */
+    --wash: radial-gradient(
+        900px 520px at 12% -8%,
+        rgba(212, 148, 31, 0.06),
+        transparent 60%
+      ),
+      radial-gradient(
+        820px 480px at 100% 0%,
+        rgba(15, 118, 110, 0.05),
+        transparent 55%
+      );
   }
 
   .dark {
@@ -20,11 +33,27 @@
     --color-primary-hover: #ecc356;
     --color-accent: #2dd4bf;
     --color-accent-hover: #5eead4;
-    --color-bg: #05050a;
-    --color-surface: #0f0f16;
+    /* Navy base matching the login branding panel — a deep blue field
+       for the gold + blue ambient glows to sit on. */
+    --color-bg: #0b1120;
+    --color-surface: #121a2b;
     --color-text: #f1f5f9;
     --color-muted: #94a3b8;
     --color-border: rgba(255, 255, 255, 0.1);
+    /* Same recipe as the login panel: a warm gold glow top-left and a
+       cool blue glow bottom-right, over the navy base. */
+    --wash: radial-gradient(
+        620px 620px at -6% -10%,
+        rgba(212, 148, 31, 0.16),
+        transparent 60%
+      ),
+      radial-gradient(
+        680px 680px at 108% 115%,
+        rgba(59, 130, 246, 0.14),
+        transparent 60%
+      );
+    /* Faint graph-paper grid, dark theme only (see .dark body::after). */
+    --grid-line: rgba(255, 255, 255, 0.8);
   }
 
   html,
@@ -47,6 +76,81 @@
     color: var(--color-text);
     font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
       Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Fixed ambient brand wash behind everything — gives every page a
+     subtle sense of depth and colour instead of a flat grey field.
+     Purely decorative and non-interactive. */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background-image: var(--wash);
+  }
+
+  /* Faint graph-paper grid — dark theme only, matching the login panel.
+     48px cells, barely-there so it reads as texture, not lines. */
+  .dark body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.05;
+    background-image: linear-gradient(
+        var(--grid-line) 1px,
+        transparent 1px
+      ),
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+    background-size: 48px 48px;
+    -webkit-mask-image: radial-gradient(
+      120% 120% at 30% 0%,
+      #000 35%,
+      transparent 78%
+    );
+    mask-image: radial-gradient(
+      120% 120% at 30% 0%,
+      #000 35%,
+      transparent 78%
+    );
+  }
+
+  #root {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Consistent, low-cost motion on interactive chrome across every page —
+     buttons, links, form controls and summary cards ease their colour,
+     border, shadow and transform changes instead of snapping. */
+  button,
+  a,
+  [role="button"],
+  input,
+  select,
+  textarea,
+  .card,
+  .card-elevated,
+  .stat-tile {
+    transition-property: color, background-color, border-color,
+      text-decoration-color, fill, stroke, box-shadow, transform, opacity;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }
 
@@ -55,7 +159,7 @@
      dark-first brand reference — translucent surface, blurred backdrop,
      hairline border instead of a solid one). */
   .card {
-    @apply bg-white dark:bg-white/[0.04] dark:backdrop-blur-xl rounded-lg border border-slate-200 dark:border-white/10 shadow-sm dark:shadow-2xl dark:shadow-black/40 transition-shadow duration-150 hover:shadow-md dark:hover:shadow-black/60;
+    @apply bg-white dark:bg-white/[0.04] dark:backdrop-blur-xl rounded-xl border border-slate-200/80 dark:border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.65),0_1px_2px_rgba(15,23,42,0.04),0_8px_24px_-14px_rgba(15,23,42,0.12)] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_24px_48px_-24px_rgba(0,0,0,0.7)] transition-shadow duration-150 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.65),0_1px_2px_rgba(15,23,42,0.05),0_14px_32px_-16px_rgba(15,23,42,0.18)] dark:hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_28px_60px_-24px_rgba(0,0,0,0.8)];
   }
 
   .input {
@@ -140,5 +244,73 @@
   /* Rich list row (replaces plain table rows on the dashboard). */
   .data-row {
     @apply flex items-center gap-3 rounded-xl border border-transparent px-3 py-2.5 transition-colors hover:border-slate-200 hover:bg-slate-50/70 dark:hover:border-white/10 dark:hover:bg-white/[0.03];
+  }
+
+  /* ============================================================
+     "Advanced" data-table treatment — tinted sticky header,
+     zebra rows, hover highlight with a primary left accent, and
+     a staggered fade-in on load. Used by the shared DataTable
+     and the bespoke admin list tables.
+     ============================================================ */
+
+  .tbl-head {
+    @apply bg-slate-100/80 text-[11px] font-bold uppercase tracking-wider text-slate-500
+      dark:bg-white/[0.04] dark:text-slate-400;
+  }
+
+  .tbl-row {
+    @apply transition-[background-color,box-shadow] duration-150
+      odd:bg-white even:bg-slate-50/50
+      hover:bg-primary-50/50 hover:shadow-[inset_3px_0_0_0_#d4941f]
+      dark:odd:bg-transparent dark:even:bg-white/[0.015]
+      dark:hover:bg-primary-500/[0.06] dark:hover:shadow-[inset_3px_0_0_0_#e2a938];
+  }
+
+  /* Mono identifier chip (employee code, invoice no, etc.). */
+  .tbl-code {
+    @apply inline-flex items-center rounded-md bg-slate-100 px-1.5 py-0.5 font-mono text-xs font-medium text-slate-600
+      dark:bg-white/[0.06] dark:text-slate-300;
+  }
+}
+
+@layer utilities {
+  @keyframes tblRowIn {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .tbl-row-in {
+    animation: tblRowIn 0.28s ease-out both;
+  }
+
+  /* Route-level "page in" motion — a short fade + rise applied to the
+     content wrapper in AdminLayout, replayed on every navigation. */
+  @keyframes pageIn {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* No fill-mode: once the 0.32s run completes the element carries no
+     lingering transform, so it never becomes a containing block for
+     fixed-position modals / dropdowns rendered inside a page. */
+  .page-in {
+    animation: pageIn 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Generic entrance helper for cards/sections that want to rise in. */
+  .rise-in {
+    animation: pageIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   }
 }

@@ -1,67 +1,91 @@
 import { Link } from "react-router-dom";
 
-const colorMap = {
-  primary: "bg-primary-100 text-primary-700 dark:bg-primary-500/20 dark:text-primary-300",
-  accent: "bg-accent-100 text-accent-700 dark:bg-accent-500/20 dark:text-accent-300",
-  success: "bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300",
-  warning: "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300",
-  danger: "bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300",
-  info: "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300",
+/* Per-accent styling. `tile` = icon chip, `glow` = ambient corner wash,
+   `bar` = progress fill, `ring` = donut stroke hex. */
+const THEME = {
+  primary: {
+    tile: "bg-primary-100 text-primary-700 dark:bg-primary-500/15 dark:text-primary-300",
+    glow: "bg-primary-500/10",
+    bar: "bg-primary-500",
+    ring: "#d4941f",
+  },
+  accent: {
+    tile: "bg-accent-100 text-accent-700 dark:bg-accent-500/15 dark:text-accent-300",
+    glow: "bg-accent-500/10",
+    bar: "bg-accent-500",
+    ring: "#14b8a6",
+  },
+  success: {
+    tile: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
+    glow: "bg-emerald-500/10",
+    bar: "bg-emerald-500",
+    ring: "#22c55e",
+  },
+  warning: {
+    tile: "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
+    glow: "bg-amber-500/10",
+    bar: "bg-amber-500",
+    ring: "#f59e0b",
+  },
+  danger: {
+    tile: "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-300",
+    glow: "bg-red-500/10",
+    bar: "bg-red-500",
+    ring: "#ef4444",
+  },
+  info: {
+    tile: "bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300",
+    glow: "bg-blue-500/10",
+    bar: "bg-blue-500",
+    ring: "#3b82f6",
+  },
 };
 
-const barMap = {
-  primary: "bg-primary-500",
-  accent: "bg-accent-500",
-  success: "bg-green-500",
-  warning: "bg-amber-500",
-  danger: "bg-red-500",
-  info: "bg-blue-500",
-};
-
-const ringStrokeMap = {
-  primary: "#d4941f",
-  accent: "#14b8a6",
-  success: "#22c55e",
-  warning: "#f59e0b",
-  danger: "#ef4444",
-  info: "#3b82f6",
-};
-
-// Small donut ring showing `percent` (0-100) filled in the card's color.
-function MiniRing({ percent, color }) {
-  const size = 44;
+function MiniRing({ percent, ring }) {
+  const size = 46;
   const stroke = 5;
   const radius = (size - stroke) / 2;
-  const circumference = 2 * Math.PI * radius;
+  const circ = 2 * Math.PI * radius;
   const clamped = Math.max(0, Math.min(100, percent));
-  const offset = circumference - (clamped / 100) * circumference;
+  const offset = circ - (clamped / 100) * circ;
 
   return (
     <div className="relative shrink-0" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="-rotate-90">
-        <circle cx={size / 2} cy={size / 2} r={radius} stroke="currentColor" strokeWidth={stroke} fill="none" className="text-slate-100 dark:text-white/10" />
         <circle
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke={ringStrokeMap[color]}
+          stroke="currentColor"
+          strokeWidth={stroke}
+          fill="none"
+          className="text-slate-200/80 dark:text-white/10"
+        />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke={ring}
           strokeWidth={stroke}
           fill="none"
           strokeLinecap="round"
-          strokeDasharray={circumference}
+          strokeDasharray={circ}
           strokeDashoffset={offset}
+          style={{ transition: "stroke-dashoffset 0.6s cubic-bezier(0.4,0,0.2,1)" }}
         />
       </svg>
-      <span className="absolute inset-0 flex items-center justify-center text-[10px] font-semibold text-slate-600 dark:text-slate-300 tabular-nums">
+      <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold tabular-nums text-slate-600 dark:text-slate-300">
         {Math.round(clamped)}%
       </span>
     </div>
   );
 }
 
-// Reusable card for dashboard summary counts. `percent` (0-100) draws an
-// optional donut ring — pass it when the value has a meaningful share of a
-// known total (e.g. present-today out of total employees).
+/**
+ * Modern HRMS KPI card — tinted icon chip, large tabular value, an
+ * optional share ring, and an ambient corner glow. Pass `to` to make it
+ * a navigable tile (adds hover lift + arrow).
+ */
 export default function DashboardCard({
   title,
   value,
@@ -69,37 +93,78 @@ export default function DashboardCard({
   color = "primary",
   loading = false,
   percent,
+  hint,
   to,
 }) {
-  const content = (
+  const t = THEME[color] || THEME.primary;
+
+  const body = (
     <>
-      <span className={`absolute inset-x-0 top-0 h-1 ${barMap[color]}`} aria-hidden="true" />
+      {/* ambient glow */}
       <div
-        className={`h-12 w-12 rounded-lg flex items-center justify-center shrink-0 ${colorMap[color]}`}
-      >
-        {icon}
+        className={`pointer-events-none absolute -right-10 -top-12 h-32 w-32 rounded-full blur-2xl ${t.glow}`}
+        aria-hidden="true"
+      />
+
+      <div className="relative flex items-start gap-4">
+        <div
+          className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${t.tile}`}
+        >
+          {icon}
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400 dark:text-slate-500">
+            {title}
+          </p>
+          <p className="mt-1 text-[28px] font-bold leading-none tabular-nums text-slate-900 dark:text-white">
+            {loading ? "…" : value ?? 0}
+          </p>
+          {hint && (
+            <p className="mt-1.5 truncate text-xs text-slate-400 dark:text-slate-500">
+              {hint}
+            </p>
+          )}
+        </div>
+
+        {!loading && percent != null && <MiniRing percent={percent} ring={t.ring} />}
       </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm text-slate-500 dark:text-slate-400 truncate">{title}</p>
-        <p className="text-3xl font-bold text-slate-900 dark:text-white tabular-nums">
-          {loading ? "…" : value ?? 0}
-        </p>
-      </div>
-      {!loading && percent != null && <MiniRing percent={percent} color={color} />}
+
+      {/* progress rail (only when a share is known) */}
+      {!loading && percent != null && (
+        <div className="relative mt-4 h-1 overflow-hidden rounded-full bg-slate-100 dark:bg-white/10">
+          <span
+            className={`absolute inset-y-0 left-0 rounded-full ${t.bar}`}
+            style={{
+              width: `${Math.max(0, Math.min(100, percent))}%`,
+              transition: "width 0.6s cubic-bezier(0.4,0,0.2,1)",
+            }}
+          />
+        </div>
+      )}
+
+      {to && (
+        <span className="relative mt-3 inline-flex items-center gap-1 text-xs font-medium text-primary-600 opacity-0 transition-opacity group-hover:opacity-100 dark:text-primary-400">
+          View
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-3 w-3">
+            <path d="M5 12h14M13 6l6 6-6 6" />
+          </svg>
+        </span>
+      )}
     </>
   );
 
   const className =
-    "card relative overflow-hidden p-5 flex items-center gap-4 transition-all duration-150" +
-    (to ? " hover:-translate-y-0.5 hover:shadow-md dark:hover:shadow-black/40 hover:border-slate-300 dark:hover:border-white/20 cursor-pointer" : "");
+    "card group relative overflow-hidden p-5" +
+    (to
+      ? " cursor-pointer hover:-translate-y-0.5 hover:border-slate-300 dark:hover:border-white/20"
+      : "");
 
-  if (to) {
-    return (
-      <Link to={to} className={className}>
-        {content}
-      </Link>
-    );
-  }
-
-  return <div className={className}>{content}</div>;
+  return to ? (
+    <Link to={to} className={className}>
+      {body}
+    </Link>
+  ) : (
+    <div className={className}>{body}</div>
+  );
 }

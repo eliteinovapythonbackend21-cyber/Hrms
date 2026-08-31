@@ -12,12 +12,13 @@ export default function CountsSummary({ stats, loading }) {
   const activeTotal = stats?.active_employees;
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
       <DashboardCard
         title="Total Employees"
         value={stats?.total_employees}
         color="primary"
         loading={loading}
+        hint="All records"
         to="/employees"
         icon={
           <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -31,6 +32,7 @@ export default function CountsSummary({ stats, loading }) {
         color="accent"
         loading={loading}
         percent={shareOf(stats?.active_employees, stats?.total_employees)}
+        hint="Share of headcount"
         to="/employees"
         icon={
           <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -44,6 +46,7 @@ export default function CountsSummary({ stats, loading }) {
         color="success"
         loading={loading}
         percent={shareOf(stats?.present_today, activeTotal)}
+        hint="Of active employees"
         to="/attendance"
         icon={
           <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -57,6 +60,7 @@ export default function CountsSummary({ stats, loading }) {
         color="danger"
         loading={loading}
         percent={shareOf(stats?.absent_today, activeTotal)}
+        hint="Of active employees"
         to="/attendance"
         icon={
           <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -70,6 +74,7 @@ export default function CountsSummary({ stats, loading }) {
         color="warning"
         loading={loading}
         percent={shareOf(stats?.on_leave_today, activeTotal)}
+        hint="Approved leave today"
         to="/leaves"
         icon={
           <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -82,6 +87,7 @@ export default function CountsSummary({ stats, loading }) {
         value={stats?.total_roles}
         color="info"
         loading={loading}
+        hint="Configured access roles"
         to="/roles"
         icon={
           <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

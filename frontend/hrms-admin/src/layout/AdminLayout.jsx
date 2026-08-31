@@ -1,9 +1,11 @@
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
 import logoMark from "@/assets/logo-mark.svg";
 
 export default function AdminLayout() {
+  const location = useLocation();
+
   return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar />
@@ -15,7 +17,11 @@ export default function AdminLayout() {
         />
         <Topbar />
         <main className="flex-1 overflow-y-auto p-4 lg:p-6 relative z-10">
-          <Outlet />
+          {/* Re-keying on pathname replays the enter animation on every
+              route change, giving the panel a consistent "page in" motion. */}
+          <div key={location.pathname} className="page-in">
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>

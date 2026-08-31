@@ -119,7 +119,7 @@ export default function AttendanceMonthlySummaryTable({
       <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
         <div className="overflow-x-auto">
           <table className="min-w-[1100px] w-full">
-            <thead className="bg-slate-50 dark:bg-slate-800">
+            <thead className="tbl-head">
               <tr>
                 {[
                   "Employee",
@@ -201,7 +201,7 @@ export default function AttendanceMonthlySummaryTable({
     <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
       <div className="overflow-x-auto">
         <table className="min-w-[1200px] w-full border-collapse">
-          <thead className="bg-slate-50 dark:bg-slate-800">
+          <thead className="tbl-head">
             <tr>
               <SortableHeader
                 label="Employee"

@@ -588,7 +588,7 @@ export default function LeadWeeklySnapshotPage() {
       ) : (
         <div className="w-full min-w-0 overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
           <table className="w-full text-left text-sm">
-            <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-400">
+            <thead className="tbl-head border-b border-slate-200 dark:border-slate-700">
               <tr>
                 <th className="px-4 py-3 font-medium">Lead</th>
                 <th className="px-4 py-3 font-medium">Week Starting</th>
@@ -603,7 +603,7 @@ export default function LeadWeeklySnapshotPage() {
                 const leadName = snapshot.lead?.lead_name || `Lead #${snapshot.lead_id}`;
 
                 return (
-                  <tr key={snapshot.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                  <tr key={snapshot.id} className="tbl-row">
                     <td className="px-4 py-3">
                       <HoverDetailsTrigger align="left" panel={<SnapshotDetailsCard snapshot={snapshot} />}>
                         <span className="cursor-pointer font-medium text-slate-800 dark:text-slate-100">
