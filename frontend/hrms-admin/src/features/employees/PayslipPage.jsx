@@ -52,7 +52,11 @@ export default function PayslipPage() {
     <div className="mx-auto max-w-2xl">
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Payslip</h1>
-        <Button variant="secondary" onClick={() => navigate(-1)} className="w-full sm:w-auto">
+        <Button
+          variant="secondary"
+          onClick={() => navigate(`/employees/${id}`)}
+          className="w-full sm:w-auto"
+        >
           Back
         </Button>
       </div>

@@ -23,6 +23,26 @@ import TableToolbar from "@/components/table/TableToolbar";
 import { useToast } from "@/components/feedback/Toast";
 import { useTableExport } from "@/hooks/useTableExport";
 
+import {
+  performanceBandLabel,
+  averagePerformanceBand,
+  performanceBandClass,
+} from "./performanceRating";
+
+// Small coloured pill that renders a 0–5 score as its qualitative band.
+function PerfPill({ score, strong = false }) {
+  const label = performanceBandLabel(score);
+  return (
+    <span
+      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-${
+        strong ? "semibold" : "medium"
+      } ${performanceBandClass(label)}`}
+    >
+      {label}
+    </span>
+  );
+}
+
 const HIERARCHY_LEVELS = [
   { value: "Level 1", label: "Level 1" },
   { value: "Level 2", label: "Level 2" },
@@ -68,19 +88,19 @@ const EXPORT_COLUMNS = [
   },
   {
     header: "Day-to-Day Performance",
-    accessor: (row) => row.day_to_day_performance ?? "-",
+    accessor: (row) => performanceBandLabel(row.day_to_day_performance),
   },
   {
     header: "Work Performance",
-    accessor: (row) => row.work_performance ?? "-",
+    accessor: (row) => performanceBandLabel(row.work_performance),
   },
   {
     header: "Behavioral Performance",
-    accessor: (row) => row.behavioral_performance ?? "-",
+    accessor: (row) => performanceBandLabel(row.behavioral_performance),
   },
   {
-    header: "Overall Rating",
-    accessor: (row) => row.rating ?? "-",
+    header: "Average Performance",
+    accessor: (row) => averagePerformanceBand(row),
   },
   {
     header: "Status",
@@ -922,7 +942,7 @@ export default function PerformanceReviewListPage() {
                   <th className="px-4 py-3">Day-to-Day</th>
                   <th className="px-4 py-3">Work</th>
                   <th className="px-4 py-3">Behavior</th>
-                  <th className="px-4 py-3">Overall</th>
+                  <th className="px-4 py-3">Average</th>
                   <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3 text-right">
                     Actions
@@ -952,20 +972,26 @@ export default function PerformanceReviewListPage() {
                       {review.review_period || "-"}
                     </td>
 
-                    <td className="px-4 py-3 font-medium">
-                      {review.day_to_day_performance ?? "-"}
+                    <td className="px-4 py-3">
+                      <PerfPill score={review.day_to_day_performance} />
                     </td>
 
-                    <td className="px-4 py-3 font-medium">
-                      {review.work_performance ?? "-"}
+                    <td className="px-4 py-3">
+                      <PerfPill score={review.work_performance} />
                     </td>
 
-                    <td className="px-4 py-3 font-medium">
-                      {review.behavioral_performance ?? "-"}
+                    <td className="px-4 py-3">
+                      <PerfPill score={review.behavioral_performance} />
                     </td>
 
-                    <td className="px-4 py-3 font-semibold">
-                      {review.rating ?? "-"}
+                    <td className="px-4 py-3">
+                      <span
+                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ${performanceBandClass(
+                          averagePerformanceBand(review)
+                        )}`}
+                      >
+                        {averagePerformanceBand(review)}
+                      </span>
                     </td>
 
                     <td className="px-4 py-3">
@@ -1139,13 +1165,13 @@ export default function PerformanceReviewListPage() {
                   </div>
                 </div>
 
-                <div className="mt-4 grid grid-cols-4 gap-2">
+                <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
                   <div className="rounded-lg bg-slate-50 p-2 text-center dark:bg-slate-800">
                     <p className="text-[9px] text-slate-400">
                       Day-to-Day
                     </p>
-                    <p className="mt-1 font-bold text-slate-800 dark:text-white">
-                      {review.day_to_day_performance ?? "-"}
+                    <p className="mt-1">
+                      <PerfPill score={review.day_to_day_performance} />
                     </p>
                   </div>
 
@@ -1153,8 +1179,8 @@ export default function PerformanceReviewListPage() {
                     <p className="text-[9px] text-slate-400">
                       Work
                     </p>
-                    <p className="mt-1 font-bold text-slate-800 dark:text-white">
-                      {review.work_performance ?? "-"}
+                    <p className="mt-1">
+                      <PerfPill score={review.work_performance} />
                     </p>
                   </div>
 
@@ -1162,17 +1188,23 @@ export default function PerformanceReviewListPage() {
                     <p className="text-[9px] text-slate-400">
                       Behavior
                     </p>
-                    <p className="mt-1 font-bold text-slate-800 dark:text-white">
-                      {review.behavioral_performance ?? "-"}
+                    <p className="mt-1">
+                      <PerfPill score={review.behavioral_performance} />
                     </p>
                   </div>
 
                   <div className="rounded-lg bg-primary-50 p-2 text-center dark:bg-primary-500/10">
                     <p className="text-[9px] text-primary-500">
-                      Overall
+                      Average
                     </p>
-                    <p className="mt-1 font-bold text-primary-700 dark:text-primary-300">
-                      {review.rating ?? "-"}
+                    <p className="mt-1">
+                      <span
+                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ${performanceBandClass(
+                          averagePerformanceBand(review)
+                        )}`}
+                      >
+                        {averagePerformanceBand(review)}
+                      </span>
                     </p>
                   </div>
                 </div>

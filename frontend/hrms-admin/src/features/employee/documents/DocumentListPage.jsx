@@ -1491,8 +1491,8 @@ export default function DocumentListPage() {
       {!isLoading &&
         viewMode === "table" &&
         pagedGroups.length > 0 && (
-          <div className="overflow-visible rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
-            <table className="w-full text-left text-sm">
+          <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+            <table className="w-full min-w-[720px] text-left text-sm lg:min-w-0">
               <thead className="border-b border-slate-200 bg-slate-50 text-[11px] uppercase tracking-wide text-slate-500 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-400">
                 <tr>
                   <th className="px-3 py-2.5 font-semibold">

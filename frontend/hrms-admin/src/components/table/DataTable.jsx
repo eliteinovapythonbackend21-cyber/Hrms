@@ -70,8 +70,8 @@ export default function DataTable({
   }
 
   return (
-    <div className="w-full overflow-hidden">
-      <table className="w-full table-fixed divide-y divide-slate-200 dark:divide-white/10">
+    <div className="w-full overflow-x-auto">
+      <table className="w-full min-w-[680px] table-fixed divide-y divide-slate-200 dark:divide-white/10 sm:min-w-0">
         <thead className="bg-slate-50 dark:bg-white/[0.03]">
           <tr>
             {columns.map((col) => (

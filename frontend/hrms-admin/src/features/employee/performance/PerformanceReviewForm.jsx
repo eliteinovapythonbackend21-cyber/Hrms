@@ -809,7 +809,7 @@ export default function PerformanceReviewForm({
 
         {/* SCORE GUIDE */}
 
-        <div className="mt-4 grid grid-cols-5 gap-2">
+        <div className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-5">
           <div className="rounded-lg bg-slate-50 px-2 py-2 text-center dark:bg-slate-800">
             <p className="text-sm font-bold text-slate-800 dark:text-white">
               1

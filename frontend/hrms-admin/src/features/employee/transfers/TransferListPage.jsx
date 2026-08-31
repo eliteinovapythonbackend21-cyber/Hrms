@@ -2140,8 +2140,8 @@ export default function TransferListPage() {
            TABLE VIEW
         =================================================== */
 
-        <div className="w-full min-w-0 overflow-visible rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
-          <table className="w-full table-fixed border-collapse text-left text-sm">
+        <div className="w-full min-w-0 overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+          <table className="w-full min-w-[900px] table-fixed border-collapse text-left text-sm lg:min-w-0">
             <colgroup>
               <col className="w-[17%]" />
               <col className="w-[13%]" />
