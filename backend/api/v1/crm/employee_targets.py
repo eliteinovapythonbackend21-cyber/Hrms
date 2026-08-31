@@ -47,6 +47,9 @@ employee_targets_bp = register_crud_blueprint(
     editable=True,
     deletable=False,
     admin_only=True,
+    # CRM-department employee logins are read-only here (mirrors
+    # quotations/invoices) — they need to view their targets, not set them.
+    view_admin_only=False,
     on_create=_validate_target,
 )
 

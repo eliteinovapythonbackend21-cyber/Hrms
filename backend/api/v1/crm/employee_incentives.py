@@ -16,6 +16,9 @@ employee_incentives_bp = register_crud_blueprint(
     editable=True,
     deletable=False,
     admin_only=True,
+    # CRM-department employee logins are read-only here (mirrors
+    # quotations/invoices) — they need to view payouts, not calculate them.
+    view_admin_only=False,
 )
 
 

@@ -16,8 +16,24 @@ function toISODate(year, month, day) {
   return `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 }
 
+function formatTime(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+
 function dateKey(value) {
   if (!value) return "";
+
+  // A JS Date object must be formatted as local YYYY-MM-DD rather than
+  // stringified (Date#toString() gives "Thu Aug 27 2026 ...", whose
+  // first 10 characters are "Thu Aug 27" — not an ISO date, so it would
+  // never match the "YYYY-MM-DD" keys used to build calendar cells).
+  if (value instanceof Date) {
+    return toISODate(value.getFullYear(), value.getMonth(), value.getDate());
+  }
+
   return String(value).slice(0, 10);
 }
 
@@ -253,12 +269,20 @@ export default function MyAttendanceCalendar() {
           }
 
           const isPresent = cell.attendance && (cell.attendance.attendance_status || "Present") === "Present";
+          const checkIn = cell.attendance ? formatTime(cell.attendance.check_in) : null;
+          const checkOut = cell.attendance ? formatTime(cell.attendance.check_out) : null;
+
+          const titleParts = [];
+          if (cell.holiday) titleParts.push(cell.holiday.name);
+          if (cell.isLeave) titleParts.push("Approved leave");
+          if (checkIn) titleParts.push(`In: ${checkIn}`);
+          if (checkOut) titleParts.push(`Out: ${checkOut}`);
 
           return (
             <div
               key={cell.key}
               className={`min-h-[64px] bg-white p-1.5 dark:bg-[#0f0f16] ${isToday(cell.day) ? "ring-2 ring-inset ring-primary-400 dark:ring-primary-500" : ""}`}
-              title={cell.holiday ? cell.holiday.name : undefined}
+              title={titleParts.length ? titleParts.join(" · ") : undefined}
             >
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-semibold text-slate-600 dark:text-slate-300">{cell.day}</span>
@@ -271,6 +295,16 @@ export default function MyAttendanceCalendar() {
               {isPresent && cell.attendance.working_hours != null && (
                 <p className="mt-1 truncate text-[9px] font-medium text-emerald-600 dark:text-emerald-400">
                   {cell.attendance.working_hours}h
+                </p>
+              )}
+              {isPresent && (checkIn || checkOut) && (
+                <p className="mt-0.5 truncate text-[9px] text-slate-500 dark:text-slate-400">
+                  {checkIn || "--"} - {checkOut || "--"}
+                </p>
+              )}
+              {cell.isLeave && (
+                <p className="mt-1 truncate text-[9px] font-medium text-amber-600 dark:text-amber-400">
+                  On leave
                 </p>
               )}
               {cell.holiday && (

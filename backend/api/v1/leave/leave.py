@@ -29,6 +29,23 @@ def _is_admin(user):
     return user and user.role == "admin"
 
 
+# Roles that are allowed to browse every employee's leave records.
+# Everyone else (plain "employee" logins, including CRM/HR department
+# employees) must only ever see their own leave requests, no matter what
+# employee_id (if any) the client happens to send.
+PRIVILEGED_LEAVE_ROLES = {
+    "admin",
+    "HR",
+    "HR Director",
+    "HR Manager",
+    "HR Executive",
+    "HR Assistant",
+    "Recruiter",
+    "Payroll Executive",
+    "Training Coordinator",
+}
+
+
 def _parse_date(value):
     if not value:
         return None
@@ -55,9 +72,28 @@ def list_leaves(token_response):
 
     applied_filters = {}  # temporary debug trace, same as attendance_bp.py
 
-    if request.args.get("employee_id"):
-        query = query.filter_by(employee_id=request.args.get("employee_id"))
-        applied_filters["employee_id"] = request.args.get("employee_id")
+    current_user = _get_current_user()
+    is_privileged = bool(current_user) and current_user.role in PRIVILEGED_LEAVE_ROLES
+
+    if is_privileged:
+        if request.args.get("employee_id"):
+            query = query.filter_by(employee_id=request.args.get("employee_id"))
+            applied_filters["employee_id"] = request.args.get("employee_id")
+    else:
+        # Non-privileged logins (plain employees, including CRM/HR
+        # department employees) can only ever see their own leave
+        # records. Derive this from the JWT identity server-side rather
+        # than trusting an employee_id the client sends, so this can't
+        # be bypassed and doesn't depend on the frontend remembering to
+        # send the right filter.
+        own_employee = (
+            Employee.query.filter_by(user_id=current_user.id).first()
+            if current_user
+            else None
+        )
+
+        query = query.filter_by(employee_id=own_employee.id if own_employee else -1)
+        applied_filters["employee_id"] = own_employee.id if own_employee else None
 
     if request.args.get("status"):
         query = query.filter_by(status=request.args.get("status"))
