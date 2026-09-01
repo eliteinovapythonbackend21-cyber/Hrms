@@ -81,6 +81,25 @@ def _has_access(user):
     ]
 
 
+def _is_hr_department_employee(user):
+    """A role='employee' login whose Employee record sits in the department
+    literally named 'HR'. Such a user gets read-only (list / detail) access
+    to this HR-lifecycle screen, mirroring the frontend's HR-employee
+    workspace; create / update / deactivate stay restricted to _has_access.
+    """
+    if not user or (user.role or "").strip().lower() != "employee":
+        return False
+
+    employee = getattr(user, "employee", None)
+    department = getattr(employee, "department", None) if employee else None
+    name = (getattr(department, "department_name", "") or "").strip().lower()
+    return name == "hr"
+
+
+def _can_view(user):
+    return _has_access(user) or _is_hr_department_employee(user)
+
+
 # ============================================================
 # DATE PARSER
 # ============================================================
@@ -168,7 +187,7 @@ def list_training(token_response):
 
     current_user = _get_current_user()
 
-    if not _has_access(current_user):
+    if not _can_view(current_user):
         return jsonify({
             "message": "Access denied"
         }), 403
@@ -446,7 +465,7 @@ def get_training(
 
     current_user = _get_current_user()
 
-    if not _has_access(current_user):
+    if not _can_view(current_user):
         return jsonify({
             "message": "Access denied"
         }), 403
