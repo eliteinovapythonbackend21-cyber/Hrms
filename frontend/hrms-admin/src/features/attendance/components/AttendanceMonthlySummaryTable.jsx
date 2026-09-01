@@ -132,6 +132,7 @@ export default function AttendanceMonthlySummaryTable({
                   "Leave Deduction",
                   "Absent Deduction",
                   "Total Deduction",
+                  "Incentive (CRM)",
                   "Net Salary",
                 ].map((heading) => (
                   <th
@@ -200,7 +201,7 @@ export default function AttendanceMonthlySummaryTable({
   return (
     <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-white/10">
       <div className="overflow-x-auto">
-        <table className="min-w-[1200px] w-full border-collapse">
+        <table className="min-w-[1340px] w-full border-collapse">
           <thead className="tbl-head">
             <tr>
               <SortableHeader
@@ -279,6 +280,14 @@ export default function AttendanceMonthlySummaryTable({
                 label="Total Deduction"
                 sortKey="total_deduction"
                 sortIcon={getSortIcon("total_deduction")}
+                onSort={handleSort}
+                align="right"
+              />
+
+              <SortableHeader
+                label="Incentive (CRM)"
+                sortKey="incentive_amount"
+                sortIcon={getSortIcon("incentive_amount")}
                 onSort={handleSort}
                 align="right"
               />
@@ -430,6 +439,22 @@ export default function AttendanceMonthlySummaryTable({
                     </span>
                   </td>
 
+                  {/* INCENTIVE (CRM only) */}
+
+                  <td className="whitespace-nowrap px-4 py-4 text-right">
+                    {item.incentive_amount != null ? (
+                      <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+                        {formatCurrency(
+                          Number(item.incentive_amount || 0)
+                        )}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-slate-400 dark:text-slate-500">
+                        —
+                      </span>
+                    )}
+                  </td>
+
                   {/* NET SALARY */}
 
                   <td className="whitespace-nowrap px-4 py-4 text-right">
@@ -507,6 +532,12 @@ export default function AttendanceMonthlySummaryTable({
                         : leave + absent)
                     );
                   }, 0)
+                )}
+              </td>
+
+              <td className="px-4 py-4 text-right text-sm font-bold text-emerald-600 dark:text-emerald-400">
+                {formatCurrency(
+                  sum(data, "incentive_amount")
                 )}
               </td>
 

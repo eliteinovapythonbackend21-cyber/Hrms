@@ -129,6 +129,10 @@ export default function FinanceAttendanceMonthlyPage() {
 
         acc.totalDeduction += totalDeduction;
 
+        acc.incentive += Number(
+          item.incentive_amount || 0
+        );
+
         acc.netSalary += Number(
           item.net_salary || 0
         );
@@ -145,6 +149,7 @@ export default function FinanceAttendanceMonthlyPage() {
         leaveDeduction: 0,
         absentDeduction: 0,
         totalDeduction: 0,
+        incentive: 0,
         netSalary: 0,
       }
     );
@@ -245,6 +250,7 @@ export default function FinanceAttendanceMonthlyPage() {
       "Leave Deduction",
       "Absent Deduction",
       "Total Deduction",
+      "Incentive (CRM)",
       "Net Salary",
     ];
 
@@ -273,6 +279,9 @@ export default function FinanceAttendanceMonthlyPage() {
         leaveDeduction.toFixed(2),
         absentDeduction.toFixed(2),
         totalDeduction.toFixed(2),
+        item.incentive_amount != null
+          ? Number(item.incentive_amount).toFixed(2)
+          : "N/A",
         Number(item.net_salary || 0).toFixed(2),
       ];
     });
@@ -288,6 +297,7 @@ export default function FinanceAttendanceMonthlyPage() {
       summary.leaveDeduction.toFixed(2),
       summary.absentDeduction.toFixed(2),
       summary.totalDeduction.toFixed(2),
+      summary.incentive.toFixed(2),
       summary.netSalary.toFixed(2),
     ]);
 
@@ -423,10 +433,10 @@ export default function FinanceAttendanceMonthlyPage() {
       [
         "Total Deduction",
         formatCurrency(summary.totalDeduction),
+        "Incentive (CRM)",
+        formatCurrency(summary.incentive),
         "Net Salary",
         formatCurrency(summary.netSalary),
-        "",
-        "",
       ],
     ];
 
@@ -496,6 +506,9 @@ export default function FinanceAttendanceMonthlyPage() {
         formatCurrency(leaveDeduction),
         formatCurrency(absentDeduction),
         formatCurrency(totalDeduction),
+        item.incentive_amount != null
+          ? formatCurrency(Number(item.incentive_amount))
+          : "N/A",
         formatCurrency(item.net_salary || 0),
       ];
     });
@@ -511,6 +524,7 @@ export default function FinanceAttendanceMonthlyPage() {
       formatCurrency(summary.leaveDeduction),
       formatCurrency(summary.absentDeduction),
       formatCurrency(summary.totalDeduction),
+      formatCurrency(summary.incentive),
       formatCurrency(summary.netSalary),
     ]);
 
@@ -529,6 +543,7 @@ export default function FinanceAttendanceMonthlyPage() {
           "Leave Deduction",
           "Absent Deduction",
           "Total Deduction",
+          "Incentive",
           "Net Salary",
         ],
       ],
@@ -579,6 +594,9 @@ export default function FinanceAttendanceMonthlyPage() {
           halign: "right",
         },
         10: {
+          halign: "right",
+        },
+        11: {
           halign: "right",
         },
       },
@@ -865,11 +883,19 @@ export default function FinanceAttendanceMonthlyPage() {
         />
 
         <SummaryCard
+          title="Incentive (CRM)"
+          value={formatCurrency(
+            summary.incentive
+          )}
+          description="CRM-department monthly incentive"
+        />
+
+        <SummaryCard
           title="Net Salary"
           value={formatCurrency(
             summary.netSalary
           )}
-          description="Total monthly net salary"
+          description="Salary − deduction + incentive"
         />
       </div>
 

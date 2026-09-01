@@ -9,9 +9,8 @@ import { useAttendance } from "./useAttendance";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { useToast } from "@/components/feedback/Toast";
 import Button from "@/components/ui/Button";
-import Input from "@/components/ui/Input";
 import Modal from "@/components/ui/Modal";
-import { toDateInputValue, toTimeInputValue } from "@/utils/formatDate";
+import { toDateInputValue } from "@/utils/formatDate";
 import { getUser } from "@/utils/tokenHelpers";
 
 /* =========================================================
@@ -44,6 +43,16 @@ function hhmmToMinutes(value) {
   const [h, m] = String(value || "").split(":").map(Number);
   if (Number.isNaN(h)) return null;
   return h * 60 + (m || 0);
+}
+
+// Current wall-clock time as "HH:MM" (24h) — every check-in / check-out is
+// stamped with this at the moment the button is pressed, never a value the
+// employee typed.
+function nowHHMM() {
+  const d = new Date();
+  return `${String(d.getHours()).padStart(2, "0")}:${String(
+    d.getMinutes()
+  ).padStart(2, "0")}`;
 }
 
 function collectNetworkTelemetry() {
@@ -173,14 +182,17 @@ export default function CheckInOutWidget() {
   const employeeId = user?.employee?.id;
   const attendanceDate = today;
 
-  const [checkInTime, setCheckInTime] = useState(toTimeInputValue(now));
-  const [checkOutTime, setCheckOutTime] = useState(toTimeInputValue(now));
+  // Live wall clock — display + "would be late" check only. The value
+  // actually sent is computed fresh (nowHHMM) at the moment of the click.
+  const [clock, setClock] = useState(nowHHMM());
 
   // { mode: "late" | "permission_out" | "permission_return" | "overtime" }
   const [prompt, setPrompt] = useState(null);
 
   useEffect(() => {
     getLocation();
+    const id = setInterval(() => setClock(nowHHMM()), 15000);
+    return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -204,12 +216,12 @@ export default function CheckInOutWidget() {
 
   const workStartLabel = settings?.work_start_time || "10:00";
   const workStartMin = hhmmToMinutes(workStartLabel);
-  const checkInMin = hhmmToMinutes(checkInTime);
+  const nowMin = hhmmToMinutes(clock);
   const wouldBeLate =
     notCheckedIn &&
     workStartMin != null &&
-    checkInMin != null &&
-    checkInMin > workStartMin;
+    nowMin != null &&
+    nowMin > workStartMin;
 
   const permCap = settings?.max_permission_minutes_per_day ?? 60;
   const requiredHours = settings?.required_hours_per_day ?? 8;
@@ -229,7 +241,7 @@ export default function CheckInOutWidget() {
       const res = await checkIn.mutateAsync({
         employee_id: employeeId,
         attendance_date: attendanceDate,
-        check_in: checkInTime,
+        check_in: nowHHMM(),
         reason: reason || undefined,
         battery_percentage,
         ...baseGeo(),
@@ -267,7 +279,7 @@ export default function CheckInOutWidget() {
       const res = await checkOut.mutateAsync({
         employee_id: employeeId,
         attendance_date: attendanceDate,
-        check_out: checkOutTime,
+        check_out: nowHHMM(),
         break_type: breakType || undefined,
         reason: reason || undefined,
         overtime_reason: overtimeReason || undefined,
@@ -433,21 +445,22 @@ export default function CheckInOutWidget() {
         </div>
       )}
 
-      {/* TIME INPUTS */}
-      <div className="grid grid-cols-1 gap-x-4 sm:grid-cols-2">
-        <Input
-          label={paused ? "Return Check-In Time" : "Check In Time"}
-          type="time"
-          value={checkInTime}
-          onChange={(e) => setCheckInTime(e.target.value)}
-        />
-        <Input
-          label="Check Out Time"
-          type="time"
-          value={checkOutTime}
-          onChange={(e) => setCheckOutTime(e.target.value)}
-        />
+      {/* CURRENT TIME — check-in / check-out are always stamped "now" */}
+      <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3 dark:border-white/10 dark:bg-white/[0.04]">
+        <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+          Current time
+        </span>
+        <span className="text-lg font-bold tabular-nums text-slate-800 dark:text-slate-100">
+          {new Date(`2000-01-01T${clock}`).toLocaleTimeString(undefined, {
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
+        </span>
       </div>
+      <p className="mt-1 text-[11px] text-slate-400 dark:text-slate-500">
+        Your check-in and check-out are recorded at the current time
+        automatically.
+      </p>
 
       <div className="mb-4">
         {geoLoading && (
