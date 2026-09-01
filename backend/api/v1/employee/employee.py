@@ -1,5 +1,5 @@
 import re
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from flask import Blueprint, request, jsonify, current_app, send_file
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from sqlalchemy.exc import IntegrityError
@@ -711,9 +711,17 @@ def employee_checkin(token_response):
     if attendance_date_obj > date.today():
         return jsonify({"message": "attendance_date cannot be in the future"}), 400
 
-    check_in_datetime = _parse_datetime(attendance_date_obj, data.get("check_in"))
-    if check_in_datetime is None:
-        return jsonify({"message": "Invalid check_in format"}), 400
+    # The employee widget no longer lets the user type a time — every
+    # check-in is stamped with the real server clock (full precision, so a
+    # check-in and an immediate permission check-out in the same minute
+    # still order correctly). An explicit `check_in` is still honoured for
+    # admin / testing flows.
+    if data.get("check_in"):
+        check_in_datetime = _parse_datetime(attendance_date_obj, data.get("check_in"))
+        if check_in_datetime is None:
+            return jsonify({"message": "Invalid check_in format"}), 400
+    else:
+        check_in_datetime = datetime.now()
 
     settings = AttendanceSetting.get_settings()
     reason = (data.get("reason") or "").strip()
@@ -853,9 +861,13 @@ def employee_checkout(token_response):
             "message": "You have no open check-in to check out from."
         }), 400
 
-    check_out_datetime = _parse_datetime(attendance_date_obj, data.get("check_out"))
-    if check_out_datetime is None:
-        return jsonify({"message": "Invalid check_out format"}), 400
+    # Same as check-in: default to the real server clock (full precision).
+    if data.get("check_out"):
+        check_out_datetime = _parse_datetime(attendance_date_obj, data.get("check_out"))
+        if check_out_datetime is None:
+            return jsonify({"message": "Invalid check_out format"}), 400
+    else:
+        check_out_datetime = datetime.now()
 
     last_in = max(
         (
@@ -866,9 +878,9 @@ def employee_checkout(token_response):
         default=None,
     )
     if last_in and check_out_datetime <= last_in:
-        return jsonify({"message": "check_out must be after your last check-in"}), 400
-    if last_in and (check_out_datetime - last_in).total_seconds() < 60:
-        return jsonify({"message": "Minimum session duration is 1 minute"}), 400
+        # Clock-driven check-outs are stamped a few ms after the check-in;
+        # nudge past it rather than rejecting a genuine "leaving right now".
+        check_out_datetime = last_in + timedelta(seconds=1)
 
     settings = AttendanceSetting.get_settings()
 

@@ -241,7 +241,7 @@ export default function CheckInOutWidget() {
       const res = await checkIn.mutateAsync({
         employee_id: employeeId,
         attendance_date: attendanceDate,
-        check_in: nowHHMM(),
+        // no explicit time — the server stamps the real current time
         reason: reason || undefined,
         battery_percentage,
         ...baseGeo(),
@@ -279,7 +279,7 @@ export default function CheckInOutWidget() {
       const res = await checkOut.mutateAsync({
         employee_id: employeeId,
         attendance_date: attendanceDate,
-        check_out: nowHHMM(),
+        // no explicit time — the server stamps the real current time
         break_type: breakType || undefined,
         reason: reason || undefined,
         overtime_reason: overtimeReason || undefined,
