@@ -1665,6 +1665,7 @@ export default function TrainingProgramListPage() {
           formTitle="Training Program"
           addLabel="Add Training"
           hideAdd={readOnly}
+          forceView={readOnly}
           actionsMode="none"
           entityLabel="Training record"
           queryParams={queryParams}

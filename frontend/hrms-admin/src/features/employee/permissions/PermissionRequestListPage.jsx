@@ -1313,6 +1313,7 @@ export default function PermissionRequestListPage() {
           filename="employee-permissions"
           searchPlaceholder="Search employee, reason or status..."
           hideAdd={readOnly}
+          forceView={readOnly}
           FormComponent={PermissionRequestForm}
           formTitle="Permission Request"
           addLabel="Add Request"

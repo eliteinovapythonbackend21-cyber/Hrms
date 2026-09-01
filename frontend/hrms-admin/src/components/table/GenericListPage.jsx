@@ -71,6 +71,11 @@ export default function GenericListPage({
   entityLabel = "record",
   autoOpenCreateWith = null,
   module = null,
+  // When the caller has already established the user may view this screen
+  // through a channel the RolePermission matrix doesn't model (e.g. an
+  // HR-department "employee" login viewing the HR-lifecycle lists), it
+  // passes forceView to skip the matrix view-gate. Add/edit stay gated.
+  forceView = false,
   queryParams: externalQueryParams = {},
 }) {
   const { showToast } = useToast();
@@ -83,9 +88,10 @@ export default function GenericListPage({
 
   const addAllowed = module ? canAdd : true;
 
-  const viewDenied = module
-    ? !permsLoading && !canView
-    : false;
+  const viewDenied =
+    !forceView && module
+      ? !permsLoading && !canView
+      : false;
 
   // Normalize actionsMode so "all" (a common but unrecognized value)
   // behaves identically to "master" instead of silently falling

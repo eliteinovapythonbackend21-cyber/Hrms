@@ -1494,6 +1494,7 @@ export default function OvertimeListPage() {
           filename="overtime"
           searchPlaceholder="Search employee, description or status..."
           hideAdd={readOnly}
+          forceView={readOnly}
           FormComponent={OvertimeForm}
           formTitle="Overtime Record"
           addLabel="Add Overtime"
