@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 
 import { useIsCrmEmployee } from "@/hooks/useIsCrmEmployee";
 import { useIsHrEmployee } from "@/hooks/useIsHrEmployee";
-import {
-  CRM_EMPLOYEE_NAV,
-  HR_EMPLOYEE_NAV,
-} from "@/layout/navConfig";
+import { getUser } from "@/utils/tokenHelpers";
+import { crmApi } from "@/api/crm.api";
+import { employeeLifecycleApi } from "@/api/employee.api";
+import { attendanceApi } from "@/api/attendance.api";
+import { leavesApi } from "@/api/leaves.api";
 
 import { useDashboardStats } from "./useDashboardStats";
 import { useAttendanceTrend } from "./useAttendanceTrend";
@@ -20,7 +22,6 @@ import RadialStat from "./components/RadialStat";
 import RecentLeaves from "./components/RecentLeaves";
 import MyRecentAttendance from "./components/MyRecentAttendance";
 import FinanceMtdCard from "./components/FinanceMtdCard";
-import { getUser } from "@/utils/tokenHelpers";
 
 /* =========================================================
    HELPERS
@@ -192,13 +193,17 @@ const NAV_TONE_STRIP = {
     "bg-gradient-to-r from-accent-500 via-accent-400 to-transparent",
 };
 
-function NavShortcutGrid({ items = [], tone = "primary" }) {
+/* ---------------------------------------------------------
+   Presentational card grid — one card per workspace screen,
+   showing a live record count on the right.
+--------------------------------------------------------- */
+function WorkspaceCardGrid({ cards = [], tone = "primary" }) {
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-      {items.map((item) => (
+      {cards.map((card) => (
         <Link
-          key={item.path}
-          to={item.path}
+          key={card.path}
+          to={card.path}
           className="group card relative flex items-center gap-3 overflow-hidden p-4 transition-transform duration-200 hover:-translate-y-0.5"
         >
           <span
@@ -214,31 +219,81 @@ function NavShortcutGrid({ items = [], tone = "primary" }) {
                 : "icon-tile-primary"
             }`}
           >
-            <NavGlyph name={item.icon} />
+            <NavGlyph name={card.icon} />
           </span>
 
           <span className="min-w-0 flex-1">
             <span className="block truncate text-sm font-semibold text-slate-800 dark:text-slate-100">
-              {item.label}
+              {card.label}
             </span>
             <span className="mt-0.5 block truncate text-[11px] text-slate-400 dark:text-slate-500">
-              {item.path}
+              {card.hint}
             </span>
           </span>
 
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            className="h-4 w-4 shrink-0 text-slate-300 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-primary-500 dark:text-slate-600"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-          </svg>
+          <span className="shrink-0 bg-gradient-to-br from-slate-900 to-slate-600 bg-clip-text text-xl font-bold tabular-nums text-transparent dark:from-white dark:to-slate-400">
+            {card.loading ? "–" : card.count}
+          </span>
         </Link>
       ))}
     </div>
   );
+}
+
+/* ---------------------------------------------------------
+   Data components — one lightweight `per_page: 1` list query
+   per card, reading the paginated envelope's `total`.
+--------------------------------------------------------- */
+function useTotal(key, listFn, params) {
+  const { data, isLoading } = useQuery({
+    queryKey: ["dashboard-workspace-count", key, params],
+    queryFn: async () =>
+      (await listFn({ per_page: 1, ...params })).data.data,
+    staleTime: 60_000,
+  });
+  return { count: data?.total ?? 0, loading: isLoading };
+}
+
+function CrmWorkspaceCards() {
+  const targets = useTotal("crm-targets", crmApi.employeeTargets.list);
+  const incentives = useTotal("crm-quotations", crmApi.quotations.list);
+  const slabs = useTotal("crm-slabs", crmApi.incentiveSlabs.list);
+  const payouts = useTotal("crm-payouts", crmApi.employeeIncentives.list);
+  const invoices = useTotal("crm-invoices", crmApi.invoices.list);
+
+  const cards = [
+    { label: "Target", path: "/crm/leads/employees/targets", icon: "employees", hint: "Employee targets", ...targets },
+    { label: "Incentive", path: "/crm/quotations", icon: "crm", hint: "Incentive records", ...incentives },
+    { label: "Incentive Slabs", path: "/crm/leads/incentive-slabs", icon: "crm", hint: "Configured slabs", ...slabs },
+    { label: "Incentive Payouts", path: "/crm/leads/payouts", icon: "crm", hint: "Payout records", ...payouts },
+    { label: "Incentive Invoice", path: "/crm/invoices", icon: "crm", hint: "Invoices", ...invoices },
+  ];
+
+  return <WorkspaceCardGrid cards={cards} tone="primary" />;
+}
+
+function HrWorkspaceCards() {
+  const employeeId = getUser()?.employee?.id;
+
+  const attendance = useTotal("hr-attendance", attendanceApi.list, {
+    employee_id: employeeId,
+  });
+  const leaves = useTotal("hr-leaves", leavesApi.list, {
+    employee_id: employeeId,
+  });
+  const training = useTotal("hr-training", employeeLifecycleApi.training.list);
+  const permissions = useTotal("hr-permissions", employeeLifecycleApi.permissions.list);
+  const overtime = useTotal("hr-overtime", employeeLifecycleApi.overtime.list);
+
+  const cards = [
+    { label: "Attendance", path: "/attendance", icon: "attendance", hint: "Your records", ...attendance },
+    { label: "Leaves", path: "/leaves", icon: "leaves", hint: "Your requests", ...leaves },
+    { label: "Training", path: "/employee/training", icon: "employeeLifecycle", hint: "Training programs", ...training },
+    { label: "Leave Permissions", path: "/employee/permissions", icon: "employeeLifecycle", hint: "Permission requests", ...permissions },
+    { label: "Overtime", path: "/employee/overtime", icon: "employeeLifecycle", hint: "Overtime records", ...overtime },
+  ];
+
+  return <WorkspaceCardGrid cards={cards} tone="accent" />;
 }
 
 const LivePill = () => (
@@ -565,10 +620,7 @@ export default function DashboardPage() {
                 subtitle="Your CRM screens — targets, incentives, payouts and invoices"
               />
 
-              <NavShortcutGrid
-                items={CRM_EMPLOYEE_NAV.children}
-                tone="primary"
-              />
+              <CrmWorkspaceCards />
             </section>
           )}
 
@@ -581,10 +633,7 @@ export default function DashboardPage() {
                 subtitle="Your HR screens — attendance, leave, training, permissions and overtime"
               />
 
-              <NavShortcutGrid
-                items={HR_EMPLOYEE_NAV.children}
-                tone="accent"
-              />
+              <HrWorkspaceCards />
             </section>
           )}
 
