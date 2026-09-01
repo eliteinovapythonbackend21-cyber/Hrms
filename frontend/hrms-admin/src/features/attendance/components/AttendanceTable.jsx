@@ -73,9 +73,13 @@ function ReasonsCell({ row }) {
   }
 
   return (
-    <div className="min-w-[200px] space-y-1">
+    <div className="w-full space-y-1">
       {notes.map((n) => (
-        <p key={n.key} className={`text-[11px] leading-4 ${n.cls}`}>
+        <p
+          key={n.key}
+          title={`${n.tag}: ${n.text}`}
+          className={`whitespace-normal break-words text-[11px] leading-4 ${n.cls}`}
+        >
           <span className="font-semibold">{n.tag}:</span>{" "}
           <span className="text-slate-600 dark:text-slate-300">{n.text}</span>
         </p>
@@ -119,6 +123,7 @@ export default function AttendanceTable({ data, loading, sortBy, sortDir, onSort
     {
       key: "reasons",
       label: "Reasons / Breaks",
+      className: "w-[30%] align-top",
       render: (r) => <ReasonsCell row={r} />,
     },
     {

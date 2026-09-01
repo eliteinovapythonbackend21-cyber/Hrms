@@ -44,9 +44,11 @@ export default function EditProfileModal({ open, onClose, user }) {
       // Employees may only change fields that aren't HR-managed — the
       // username / email / primary contact inputs are shown for context
       // but rendered read-only, so only the editable values are sent.
+      const editable = { ...form };
+      delete editable.other_number;
       const profilePayload = isEmployee
         ? { emergency_contact_number: form.emergency_contact_number }
-        : { ...form };
+        : editable;
       if (!isEmployee && picture) profilePayload.profile_picture = picture;
       const res = await usersApi.updateProfile(user.id, profilePayload);
       setUser({ ...user, ...res.data.data });
@@ -123,15 +125,6 @@ export default function EditProfileModal({ open, onClose, user }) {
             disabled={isEmployee}
             hint={isEmployee ? "Contact HR to update your primary contact number" : undefined}
           />
-          {!isEmployee && (
-            <Input
-              label="Other Number"
-              name="other_number"
-              value={form.other_number}
-              onChange={handleChange}
-              error={errors.other_number}
-            />
-          )}
         </div>
 
         <div className="mt-6 border-t border-slate-200 pt-4 dark:border-white/10">
