@@ -1014,6 +1014,18 @@ export default function AttendanceListPage() {
   return (
     <div className="min-h-full space-y-6">
 
+      {/* MY CHECK-IN / CHECK-OUT — an HR-department employee still needs to
+          mark their own attendance, even though this page also shows the
+          org-wide view. A true admin (no linked Employee record) does not. */}
+      {isHrEmployee && user?.employee?.id && (
+        <div>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.15em] text-slate-400 dark:text-slate-500">
+            My check-in / check-out
+          </p>
+          <CheckInOutWidget />
+        </div>
+      )}
+
       {/* PAGE HEADER */}
 
       <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
