@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import { navConfig } from "./navConfig";
+import { navConfig, CRM_EMPLOYEE_NAV, HR_EMPLOYEE_NAV } from "./navConfig";
 import { useUI } from "@/context/UIContext";
 import { getUser } from "@/utils/tokenHelpers";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
@@ -181,40 +181,6 @@ function SubNav({ item, closeSidebar, collapsed, userRole }) {
     </div>
   );
 }
-
-// CRM-employee logins (role "employee", department "CRM") get a single,
-// read-only CRM section — Target, Incentive, Incentive Slabs, Incentive
-// Payouts and Incentive Invoice — instead of the admin CRM menu.
-const CRM_EMPLOYEE_NAV = {
-  label: "CRM",
-  path: "/crm/leads/employees/targets",
-  icon: "crm",
-  children: [
-    { label: "Target", path: "/crm/leads/employees/targets", icon: "employees" },
-    { label: "Incentive", path: "/crm/quotations", icon: "crm" },
-    { label: "Incentive Slabs", path: "/crm/leads/incentive-slabs", icon: "crm" },
-    { label: "Incentive Payouts", path: "/crm/leads/payouts", icon: "crm" },
-    { label: "Incentive Invoice", path: "/crm/invoices", icon: "crm" },
-  ],
-};
-
-// HR-employee logins (role "employee", department "HR") get a read-only
-// HR section — exactly Attendance, Leaves, Training, Leave Permissions
-// and Overtime (the same set as the admin/HR-sub-role "HR" nav entry) —
-// in addition to, not instead of, the Dashboard and "My Attendance"
-// sections a plain employee login already gets.
-const HR_EMPLOYEE_NAV = {
-  label: "HR",
-  path: "/attendance",
-  icon: "employeeLifecycle",
-  children: [
-    { label: "Attendance", path: "/attendance", icon: "attendance" },
-    { label: "Leaves", path: "/leaves", icon: "leaves" },
-    { label: "Training", path: "/employee/training", icon: "employeeLifecycle" },
-    { label: "Leave Permissions", path: "/employee/permissions", icon: "employeeLifecycle" },
-    { label: "Overtime", path: "/employee/overtime", icon: "employeeLifecycle" },
-  ],
-};
 
 export default function Sidebar() {
   const {

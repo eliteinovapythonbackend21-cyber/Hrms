@@ -1,4 +1,12 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+
+import { useIsCrmEmployee } from "@/hooks/useIsCrmEmployee";
+import { useIsHrEmployee } from "@/hooks/useIsHrEmployee";
+import {
+  CRM_EMPLOYEE_NAV,
+  HR_EMPLOYEE_NAV,
+} from "@/layout/navConfig";
 
 import { useDashboardStats } from "./useDashboardStats";
 import { useAttendanceTrend } from "./useAttendanceTrend";
@@ -140,6 +148,99 @@ function SectionHeading({
   );
 }
 
+/* =========================================================
+   NAV SHORTCUT GRID
+   Surfaces a department-scoped employee's sidebar sub-menu
+   (CRM / HR) as quick-jump cards on the dashboard so the same
+   destinations are one click away from the landing page.
+========================================================= */
+
+const NAV_ICON_PATHS = {
+  employees:
+    "M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4-4m4 4a4 4 0 10-4-4",
+  crm: "M3 7h18M3 12h18M3 17h12",
+  attendance:
+    "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4",
+  leaves:
+    "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2",
+  employeeLifecycle:
+    "M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z",
+};
+
+function NavGlyph({ name }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.9"
+      className="h-4 w-4"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d={NAV_ICON_PATHS[name] || NAV_ICON_PATHS.crm}
+      />
+    </svg>
+  );
+}
+
+const NAV_TONE_STRIP = {
+  primary:
+    "bg-gradient-to-r from-primary-500 via-primary-400 to-transparent",
+  accent:
+    "bg-gradient-to-r from-accent-500 via-accent-400 to-transparent",
+};
+
+function NavShortcutGrid({ items = [], tone = "primary" }) {
+  return (
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+      {items.map((item) => (
+        <Link
+          key={item.path}
+          to={item.path}
+          className="group card relative flex items-center gap-3 overflow-hidden p-4 transition-transform duration-200 hover:-translate-y-0.5"
+        >
+          <span
+            className={`pointer-events-none absolute inset-x-0 top-0 h-0.5 ${
+              NAV_TONE_STRIP[tone] || NAV_TONE_STRIP.primary
+            }`}
+          />
+
+          <span
+            className={`icon-tile h-10 w-10 ${
+              tone === "accent"
+                ? "icon-tile-accent"
+                : "icon-tile-primary"
+            }`}
+          >
+            <NavGlyph name={item.icon} />
+          </span>
+
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-sm font-semibold text-slate-800 dark:text-slate-100">
+              {item.label}
+            </span>
+            <span className="mt-0.5 block truncate text-[11px] text-slate-400 dark:text-slate-500">
+              {item.path}
+            </span>
+          </span>
+
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            className="h-4 w-4 shrink-0 text-slate-300 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-primary-500 dark:text-slate-600"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+          </svg>
+        </Link>
+      ))}
+    </div>
+  );
+}
+
 const LivePill = () => (
   <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-emerald-700 ring-1 ring-inset ring-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300 dark:ring-emerald-400/25">
     <span className="relative flex h-1.5 w-1.5">
@@ -159,6 +260,11 @@ export default function DashboardPage() {
 
   const isAdmin = user?.role === "admin";
   const employeeId = user?.employee?.id;
+
+  // Department-scoped employee logins get their sidebar sub-menu mirrored
+  // on the dashboard as quick-jump cards.
+  const { isCrmEmployee } = useIsCrmEmployee();
+  const { isHrEmployee } = useIsHrEmployee();
 
   const stats = useDashboardStats({
     enabled: isAdmin,
@@ -449,6 +555,38 @@ export default function DashboardPage() {
 
             <MyStatusSummary />
           </section>
+
+          {isCrmEmployee && (
+            <section>
+              <SectionHeading
+                icon={<GridIcon />}
+                tone="primary"
+                title="CRM workspace"
+                subtitle="Your CRM screens — targets, incentives, payouts and invoices"
+              />
+
+              <NavShortcutGrid
+                items={CRM_EMPLOYEE_NAV.children}
+                tone="primary"
+              />
+            </section>
+          )}
+
+          {isHrEmployee && (
+            <section>
+              <SectionHeading
+                icon={<GridIcon />}
+                tone="violet"
+                title="HR workspace"
+                subtitle="Your HR screens — attendance, leave, training, permissions and overtime"
+              />
+
+              <NavShortcutGrid
+                items={HR_EMPLOYEE_NAV.children}
+                tone="accent"
+              />
+            </section>
+          )}
 
           <section>
             <SectionHeading

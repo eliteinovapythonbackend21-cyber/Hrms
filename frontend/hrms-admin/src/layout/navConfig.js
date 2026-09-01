@@ -210,3 +210,32 @@ export const navConfig = [
   //   roles: ["admin", "finance", "HR Director", "HR Manager"],
   // },
 ];
+// Department-scoped employee nav groups. A role="employee" login whose
+// Employee record sits in the "CRM" / "HR" department gets these extra
+// (read-only) sections in the sidebar — and the Dashboard surfaces the
+// same links as quick-jump cards. Single source of truth for both.
+export const CRM_EMPLOYEE_NAV = {
+  label: "CRM",
+  path: "/crm/leads/employees/targets",
+  icon: "crm",
+  children: [
+    { label: "Target", path: "/crm/leads/employees/targets", icon: "employees" },
+    { label: "Incentive", path: "/crm/quotations", icon: "crm" },
+    { label: "Incentive Slabs", path: "/crm/leads/incentive-slabs", icon: "crm" },
+    { label: "Incentive Payouts", path: "/crm/leads/payouts", icon: "crm" },
+    { label: "Incentive Invoice", path: "/crm/invoices", icon: "crm" },
+  ],
+};
+
+export const HR_EMPLOYEE_NAV = {
+  label: "HR",
+  path: "/attendance",
+  icon: "employeeLifecycle",
+  children: [
+    { label: "Attendance", path: "/attendance", icon: "attendance" },
+    { label: "Leaves", path: "/leaves", icon: "leaves" },
+    { label: "Training", path: "/employee/training", icon: "employeeLifecycle" },
+    { label: "Leave Permissions", path: "/employee/permissions", icon: "employeeLifecycle" },
+    { label: "Overtime", path: "/employee/overtime", icon: "employeeLifecycle" },
+  ],
+};
