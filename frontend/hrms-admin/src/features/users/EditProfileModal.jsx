@@ -35,14 +35,26 @@ export default function EditProfileModal({ open, onClose, user }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const validationErrors = validateEditProfile(form);
+
+    // Employees may only edit their Emergency Contact Number here — every
+    // other field is HR-managed and not even rendered for them, so only
+    // that one value is validated and sent.
+    const validationErrors = isEmployee
+      ? validateEditProfile({
+          username: form.username,
+          email: form.email,
+          emergency_contact_number: form.emergency_contact_number,
+        })
+      : validateEditProfile(form);
     setErrors(validationErrors);
     if (Object.keys(validationErrors).length > 0) return;
 
     setSaving(true);
     try {
-      const profilePayload = { ...form };
-      if (picture) profilePayload.profile_picture = picture;
+      const profilePayload = isEmployee
+        ? { emergency_contact_number: form.emergency_contact_number }
+        : { ...form };
+      if (!isEmployee && picture) profilePayload.profile_picture = picture;
       const res = await usersApi.updateProfile(user.id, profilePayload);
       setUser({ ...user, ...res.data.data });
 
@@ -59,6 +71,7 @@ export default function EditProfileModal({ open, onClose, user }) {
   return (
     <Modal open={open} onClose={onClose} title="Edit Profile" size="lg">
       <form onSubmit={handleSubmit}>
+        {!isEmployee && (
         <div className="flex items-center gap-4 mb-6">
           <div className="relative shrink-0">
             <Avatar name={form.username} src={preview} size="lg" />
@@ -84,7 +97,9 @@ export default function EditProfileModal({ open, onClose, user }) {
             </p>
           </div>
         </div>
+        )}
 
+        {!isEmployee && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
           <Input
             label="Username"
@@ -93,7 +108,6 @@ export default function EditProfileModal({ open, onClose, user }) {
             onChange={handleChange}
             error={errors.username}
             required
-            disabled={isEmployee}
           />
           <Input
             label="Email"
@@ -103,7 +117,6 @@ export default function EditProfileModal({ open, onClose, user }) {
             onChange={handleChange}
             error={errors.email}
             required
-            disabled={isEmployee}
           />
           <Input
             label="Contact Number"
@@ -111,8 +124,6 @@ export default function EditProfileModal({ open, onClose, user }) {
             value={form.mobile}
             onChange={handleChange}
             error={errors.mobile}
-            disabled={isEmployee}
-            hint={isEmployee ? "Contact HR to update your primary contact number" : undefined}
           />
           <Input
             label="Other Number"
@@ -122,8 +133,9 @@ export default function EditProfileModal({ open, onClose, user }) {
             error={errors.other_number}
           />
         </div>
+        )}
 
-        <div className="mt-6 border-t border-slate-200 pt-4 dark:border-white/10">
+        <div className={isEmployee ? "" : "mt-6 border-t border-slate-200 pt-4 dark:border-white/10"}>
           <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Emergency Contact</p>
           <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
             Who to reach in case of an emergency
