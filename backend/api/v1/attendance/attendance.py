@@ -1,7 +1,13 @@
 from datetime import date
 from flask import Blueprint, request, jsonify, send_file
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
-from models import Attendance, Employee, BaseUser, Department, Designation, Branch, Company
+from datetime import datetime as _dt
+
+from extensions import db
+from models import (
+    Attendance, AttendanceSetting, Employee, BaseUser,
+    Department, Designation, Branch, Company,
+)
 from utils import is_hr_department_user, paginate_query
 
 attendance_bp = Blueprint("attendance_bp", __name__)
@@ -269,3 +275,82 @@ def salary_report(token_response):
     workbook = Attendance.generate_salary_report(from_date=from_date, to_date=to_date, employee_id=employee_id)
     filename = f"salary_report_{from_date_str or 'all'}_{to_date_str or 'all'}.xlsx"
     return send_file(workbook, as_attachment=True, download_name=filename, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+
+# ==================================================================
+#  ATTENDANCE SETTINGS  (global config for the check-in / permission
+#  / overtime workflow — see attendance_engine.recompute_attendance)
+# ==================================================================
+
+def _parse_hhmm(value):
+    if not value:
+        return None
+    try:
+        return _dt.strptime(str(value).strip(), "%H:%M").time()
+    except ValueError:
+        try:
+            return _dt.strptime(str(value).strip(), "%H:%M:%S").time()
+        except ValueError:
+            return None
+
+
+@attendance_bp.route("/settings", methods=["GET"])
+@jwt_required()
+@with_token
+def get_attendance_settings(token_response):
+    """Readable by any authenticated user so the check-in widget knows the
+    late cutoff / required hours / permission cap / break durations."""
+    settings = AttendanceSetting.get_settings()
+    return jsonify({
+        "message": "Attendance settings fetched",
+        "data": settings.to_dict(),
+        "token_response": token_response,
+    }), 200
+
+
+@attendance_bp.route("/settings", methods=["PUT"])
+@jwt_required()
+@with_token
+def update_attendance_settings(token_response):
+    current_user = _get_current_user()
+    if not _is_admin(current_user):
+        return jsonify({"message": "Admin privileges required"}), 403
+
+    data = request.get_json(silent=True) or {}
+    settings = AttendanceSetting.get_settings()
+
+    if "work_start_time" in data:
+        parsed = _parse_hhmm(data.get("work_start_time"))
+        if parsed is None:
+            return jsonify({"message": "work_start_time must be HH:MM"}), 400
+        settings.work_start_time = parsed
+
+    def _num(key, cast, minimum=0):
+        if key not in data:
+            return None
+        try:
+            val = cast(data.get(key))
+        except (TypeError, ValueError):
+            return "err"
+        if val < minimum:
+            return "err"
+        return val
+
+    for key, cast in (
+        ("required_hours_per_day", float),
+        ("max_permission_minutes_per_day", int),
+        ("nap_minutes", int),
+        ("lunch_minutes", int),
+        ("tea_minutes", int),
+    ):
+        result = _num(key, cast)
+        if result == "err":
+            return jsonify({"message": f"{key} must be a non-negative number"}), 400
+        if result is not None:
+            setattr(settings, key, result)
+
+    db.session.commit()
+    return jsonify({
+        "message": "Attendance settings updated",
+        "data": settings.to_dict(),
+        "token_response": token_response,
+    }), 200

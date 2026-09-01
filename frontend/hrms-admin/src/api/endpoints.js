@@ -78,6 +78,7 @@ export const API = {
     MONTHLY_SUMMARY: "/attendance/monthly-summary",
     REPORT: "/attendance/report",
     SALARY_REPORT: "/attendance/salary-report",
+    SETTINGS: "/attendance/settings",
   },
   NETWORK: {
     LIST: "/network/",

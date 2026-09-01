@@ -4,8 +4,12 @@ from flask import Blueprint, request, jsonify, current_app, send_file
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from sqlalchemy.exc import IntegrityError
 from extensions import db
-from models import BaseUser, Employee, Attendance, ManualAttendance, NetworkStatus, Department, Designation, Role
+from models import (
+    BaseUser, Employee, Attendance, AttendanceEvent, AttendanceSetting,
+    ManualAttendance, NetworkStatus, Department, Designation, Role,
+)
 from utils import paginate_query, apply_search_filters, hash_password
+from ..attendance.attendance_engine import recompute_attendance, open_session
 
 employee_bp = Blueprint("employee_bp", __name__)
 
@@ -649,10 +653,38 @@ def get_employee_payslip(employee_id, token_response):
     return jsonify({"message": "Payslip fetched", "data": data, "token_response": token_response}), 200
 
 
+def _attendance_warnings(attendance, settings):
+    """Non-blocking notices surfaced to the caller (notify-only policy)."""
+    warnings = []
+    if attendance.permission_over_limit:
+        warnings.append(
+            "Daily permission limit of "
+            f"{settings.max_permission_minutes_per_day} min exceeded "
+            f"({round(attendance.permission_minutes)} min taken)."
+        )
+    if (attendance.late_login_minutes or 0) > 0:
+        warnings.append(
+            f"Late login by {round(attendance.late_login_minutes)} min."
+        )
+    if (attendance.overtime_hours or 0) > 0:
+        warnings.append(
+            f"Worked {attendance.overtime_hours} h beyond the required "
+            f"{settings.required_hours_per_day} h."
+        )
+    return warnings
+
+
 @employee_bp.route("/checkin", methods=["POST"])
 @jwt_required()
 @with_token
 def employee_checkin(token_response):
+    """Records a check-in event.
+
+    - The FIRST check-in of the day after `work_start_time` requires a
+      late-login `reason`.
+    - Any later check-in (returning from a permission gap) requires a
+      permission-return `reason`.
+    """
     data = _get_request_data()
     employee_id = data.get("employee_id")
     employee, error_response = _fetch_employee(employee_id)
@@ -675,17 +707,59 @@ def employee_checkin(token_response):
     if check_in_datetime is None:
         return jsonify({"message": "Invalid check_in format"}), 400
 
-    attendance = Attendance(
-        employee_id=employee_id,
-        attendance_date=attendance_date_obj,
-        check_in=check_in_datetime,
-        attendance_status="Present",
-        description="user",
-        checkin_latitude=latitude,
-        checkin_longitude=longitude,
+    settings = AttendanceSetting.get_settings()
+    reason = (data.get("reason") or "").strip()
+
+    attendance = Attendance.query.filter_by(
+        employee_id=employee_id, attendance_date=attendance_date_obj
+    ).first()
+
+    reason_type = None
+
+    if attendance is None:
+        cutoff = datetime.combine(attendance_date_obj, settings.work_start_time)
+        if check_in_datetime > cutoff:
+            reason_type = "late_login"
+            if not reason:
+                return jsonify({
+                    "message": (
+                        "A reason is required for logging in after "
+                        f"{settings.work_start_time.strftime('%H:%M')}."
+                    )
+                }), 400
+        attendance = Attendance(
+            employee_id=employee_id,
+            attendance_date=attendance_date_obj,
+            attendance_status="Present",
+            description="user",
+            checkin_latitude=latitude,
+            checkin_longitude=longitude,
+        )
+        db.session.add(attendance)
+    else:
+        if open_session(attendance):
+            return jsonify({
+                "message": "You are already checked in. Check out before checking in again."
+            }), 400
+        reason_type = "permission_return"
+        if not reason:
+            return jsonify({
+                "message": "A reason is required when returning from permission."
+            }), 400
+
+    event = AttendanceEvent(
+        event_type="check_in",
+        event_time=check_in_datetime,
+        reason=reason or None,
+        reason_type=reason_type,
+        latitude=latitude,
+        longitude=longitude,
     )
-    db.session.add(attendance)
-    network_status = NetworkStatus(
+    attendance.events.append(event)
+
+    recompute_attendance(attendance)
+
+    db.session.add(NetworkStatus(
         employee_id=employee_id,
         latitude=latitude,
         longitude=longitude,
@@ -694,17 +768,28 @@ def employee_checkin(token_response):
         device_name=data.get("device_name"),
         battery_percentage=data.get("battery_percentage", 0),
         is_online=data.get("is_online", True),
-    )
-    db.session.add(network_status)
+    ))
     db.session.commit()
 
-    return jsonify({"message": "Check-in created", "token_response": token_response}), 201
+    return jsonify({
+        "message": "Check-in recorded",
+        "data": attendance.to_dict(),
+        "warnings": _attendance_warnings(attendance, settings),
+        "token_response": token_response,
+    }), 201
 
 
 @employee_bp.route("/checkout", methods=["POST"])
 @jwt_required()
 @with_token
 def employee_checkout(token_response):
+    """Records a check-out event.
+
+    Pass `is_permission: true` to start a permission gap (a permission
+    `reason` is then required and the day stays open for a later
+    check-in). Otherwise this is the end-of-day check-out; if net working
+    time exceeds the required hours an `overtime_reason` is required.
+    """
     data = _get_request_data()
     employee_id = data.get("employee_id")
     employee, error_response = _fetch_employee(employee_id)
@@ -714,35 +799,91 @@ def employee_checkout(token_response):
     if not authorized:
         return error_response
 
-    attendance_date = data.get("attendance_date")
-    attendance_date_obj = _parse_date(attendance_date)
+    attendance_date_obj = _parse_date(data.get("attendance_date"))
     if attendance_date_obj is None:
         return jsonify({"message": "Invalid attendance_date format"}), 400
     if attendance_date_obj > date.today():
         return jsonify({"message": "attendance_date cannot be in the future"}), 400
 
-    attendance = Attendance.query.filter_by(employee_id=employee_id, attendance_date=attendance_date_obj).first()
+    attendance = Attendance.query.filter_by(
+        employee_id=employee_id, attendance_date=attendance_date_obj
+    ).first()
     if not attendance:
-        return jsonify({"message": "Attendance record not found for the specified employee and date"}), 404
-    if attendance.check_in is None:
-        return jsonify({"message": "Cannot checkout before check-in"}), 400
+        return jsonify({
+            "message": "Attendance record not found for the specified employee and date"
+        }), 404
+    if not open_session(attendance):
+        return jsonify({
+            "message": "You have no open check-in to check out from."
+        }), 400
 
     check_out_datetime = _parse_datetime(attendance_date_obj, data.get("check_out"))
     if check_out_datetime is None:
         return jsonify({"message": "Invalid check_out format"}), 400
-    if check_out_datetime <= attendance.check_in:
-        return jsonify({"message": "check_out must be after check_in"}), 400
-    if (check_out_datetime - attendance.check_in).total_seconds() < 60:
-        return jsonify({"message": "Minimum attendance duration is 1 minute"}), 400
 
-    attendance.check_out = check_out_datetime
+    last_in = max(
+        (
+            e.event_time
+            for e in attendance.events
+            if e.is_active and e.event_type == "check_in" and e.event_time
+        ),
+        default=None,
+    )
+    if last_in and check_out_datetime <= last_in:
+        return jsonify({"message": "check_out must be after your last check-in"}), 400
+    if last_in and (check_out_datetime - last_in).total_seconds() < 60:
+        return jsonify({"message": "Minimum session duration is 1 minute"}), 400
+
+    settings = AttendanceSetting.get_settings()
+    is_permission = _parse_bool(data.get("is_permission")) or False
+    reason = (data.get("reason") or "").strip()
+    overtime_reason = (data.get("overtime_reason") or "").strip()
+
+    if is_permission and not reason:
+        return jsonify({
+            "message": "A reason is required when checking out for permission."
+        }), 400
+
+    event = AttendanceEvent(
+        event_type="check_out",
+        event_time=check_out_datetime,
+        reason=(reason or None) if is_permission else None,
+        reason_type="permission" if is_permission else None,
+        latitude=data.get("latitude"),
+        longitude=data.get("longitude"),
+    )
+    attendance.events.append(event)
     attendance.checkout_latitude = data.get("latitude")
     attendance.checkout_longitude = data.get("longitude")
-    attendance.working_hours = round((check_out_datetime - attendance.check_in).total_seconds() / 3600, 2)
-    attendance.attendance_status = "Present" if attendance.working_hours >= MINIMUM_PRESENT_HOURS else "Absent"
+
+    recompute_attendance(attendance)
+
+    # End-of-day check-out beyond the required hours needs an overtime reason.
+    if not is_permission and (attendance.overtime_hours or 0) > 0:
+        if not overtime_reason:
+            db.session.rollback()
+            return jsonify({
+                "message": (
+                    "You have worked beyond the required "
+                    f"{settings.required_hours_per_day} h — a reason for the "
+                    "additional working hours is required."
+                ),
+                "requires": "overtime_reason",
+            }), 400
+        event.reason = overtime_reason
+        event.reason_type = "overtime"
+        recompute_attendance(attendance)
+
     db.session.commit()
 
-    return jsonify({"message": "Check-out recorded", "data": attendance.to_dict(), "token_response": token_response}), 200
+    return jsonify({
+        "message": (
+            "Permission check-out recorded" if is_permission else "Check-out recorded"
+        ),
+        "data": attendance.to_dict(),
+        "warnings": _attendance_warnings(attendance, settings),
+        "token_response": token_response,
+    }), 200
 
 
 @employee_bp.route("/manual-attendance", methods=["POST"])

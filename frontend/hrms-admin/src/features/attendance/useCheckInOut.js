@@ -20,6 +20,16 @@ export function useTodayAttendance(employeeId, attendanceDate) {
   });
 }
 
+// Global attendance-workflow config: late cutoff, required hours,
+// permission cap, fixed break durations.
+export function useAttendanceSettings() {
+  return useQuery({
+    queryKey: ["attendance-settings"],
+    queryFn: async () => (await attendanceApi.getSettings()).data.data,
+    staleTime: 10 * 60 * 1000,
+  });
+}
+
 export function useCheckIn() {
   const queryClient = useQueryClient();
   return useMutation({

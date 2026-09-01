@@ -64,4 +64,16 @@ export const attendanceApi = {
         responseType: "blob",
       }
     ),
+
+  /*
+   * ==========================================================
+   * ATTENDANCE SETTINGS (workflow config)
+   * ==========================================================
+   */
+
+  getSettings: () =>
+    axiosClient.get(API.ATTENDANCE.SETTINGS),
+
+  updateSettings: (payload) =>
+    axiosClient.put(API.ATTENDANCE.SETTINGS, payload),
 };

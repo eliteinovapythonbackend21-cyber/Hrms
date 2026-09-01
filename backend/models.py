@@ -697,11 +697,41 @@ class Attendance(TimestampMixin, db.Model):
     attendance_status = db.Column(db.String(20),default="Present")
     description = db.Column(db.String(255), nullable=True, default="user")
     is_active = db.Column(db.Boolean, default=True)
+
+    # ---- Advanced check-in / permission / overtime workflow ----
+    # `check_in` / `check_out` above stay as the FIRST check-in and LAST
+    # check-out of the day (kept for list views + backward compatibility);
+    # the full timeline lives in `events`. Everything below is derived by
+    # attendance_engine.recompute_attendance().
+    gross_working_hours = db.Column(db.Float, default=0)      # sum of in->out segments, before breaks
+    late_login_minutes = db.Column(db.Float, default=0)
+    late_login_reason = db.Column(db.String(255), nullable=True)
+    permission_minutes = db.Column(db.Float, default=0)       # sum of out->in gaps
+    permission_over_limit = db.Column(db.Boolean, default=False)
+    nap_minutes = db.Column(db.Float, default=0)              # snapshot of AttendanceSetting at compute time
+    lunch_minutes = db.Column(db.Float, default=0)
+    tea_minutes = db.Column(db.Float, default=0)
+    overtime_hours = db.Column(db.Float, default=0)           # working_hours beyond required
+    overtime_reason = db.Column(db.String(255), nullable=True)
+
     employee = db.relationship("Employee",back_populates="attendances")
+    events = db.relationship(
+        "AttendanceEvent",
+        back_populates="attendance",
+        cascade="all, delete-orphan",
+        order_by="AttendanceEvent.event_time",
+    )
 
     def to_dict(self):
         data = super().to_dict()
         data["employee"] = _summary(self.employee, ["id", "employee_code", "first_name", "last_name"])
+        data["events"] = [
+            e.to_dict() for e in sorted(
+                (self.events or []),
+                key=lambda ev: (ev.event_time or datetime.min),
+            )
+            if e.is_active
+        ]
         return data
 
     @classmethod
@@ -2766,4 +2796,80 @@ class Income(TimestampMixin, db.Model):
     def to_dict(self):
         data = super().to_dict()
         data["account"] = _summary(self.account, ["id", "account_name"])
+        return data
+
+# ==================================================================
+#  ADVANCED ATTENDANCE WORKFLOW
+#  - AttendanceSetting: one global config row (late cutoff, required
+#    hours, permission cap, fixed break durations).
+#  - AttendanceEvent: the ordered check-in / check-out timeline for a
+#    day. Working / permission / late / overtime figures on the
+#    Attendance row are derived from these by
+#    api.v1.attendance.attendance_engine.recompute_attendance().
+# ==================================================================
+
+class AttendanceSetting(TimestampMixin, db.Model):
+    __tablename__ = "attendance_settings"
+
+    id = db.Column(db.Integer, primary_key=True)
+    # Any check-in later than this counts as a late login (reason required).
+    work_start_time = db.Column(db.Time, nullable=False, default=time(10, 0))
+    # Required net working time per day, in hours.
+    required_hours_per_day = db.Column(db.Float, nullable=False, default=8.0)
+    # Maximum total permission time per day, in minutes.
+    max_permission_minutes_per_day = db.Column(db.Integer, nullable=False, default=60)
+    # Fixed break durations auto-deducted from gross working time (minutes).
+    nap_minutes = db.Column(db.Integer, nullable=False, default=0)
+    lunch_minutes = db.Column(db.Integer, nullable=False, default=0)
+    tea_minutes = db.Column(db.Integer, nullable=False, default=0)
+    is_active = db.Column(db.Boolean, default=True)
+
+    def to_dict(self):
+        data = super().to_dict()
+        if isinstance(self.work_start_time, time):
+            data["work_start_time"] = self.work_start_time.strftime("%H:%M")
+        return data
+
+    @classmethod
+    def get_settings(cls):
+        """Return the single global settings row, creating a default one on
+        first use so callers never have to null-check."""
+        row = cls.query.order_by(cls.id.asc()).first()
+        if row is None:
+            row = cls()
+            db.session.add(row)
+            db.session.commit()
+        return row
+
+
+class AttendanceEvent(TimestampMixin, db.Model):
+    __tablename__ = "attendance_events"
+
+    id = db.Column(db.Integer, primary_key=True)
+    attendance_id = db.Column(
+        db.Integer, db.ForeignKey("attendance.id"), nullable=False, index=True
+    )
+    # "check_in" | "check_out"
+    event_type = db.Column(db.String(20), nullable=False)
+    event_time = db.Column(db.DateTime, nullable=False)
+    # Free-text reason the employee entered for this event.
+    reason = db.Column(db.String(255), nullable=True)
+    # Why the reason was required:
+    #   "late_login"        -> first check-in after work_start_time
+    #   "permission"        -> a check-out that starts a permission gap
+    #   "permission_return" -> a check-in that ends a permission gap
+    #   "overtime"          -> final check-out beyond required hours
+    reason_type = db.Column(db.String(30), nullable=True)
+    latitude = db.Column(db.Numeric(10, 7))
+    longitude = db.Column(db.Numeric(10, 7))
+    is_active = db.Column(db.Boolean, default=True)
+
+    attendance = db.relationship("Attendance", back_populates="events")
+
+    def to_dict(self):
+        data = super().to_dict()
+        if isinstance(self.latitude, (int, float)) or self.latitude is not None:
+            data["latitude"] = float(self.latitude) if self.latitude is not None else None
+        if self.longitude is not None:
+            data["longitude"] = float(self.longitude)
         return data
