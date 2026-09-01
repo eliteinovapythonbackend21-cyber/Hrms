@@ -239,3 +239,16 @@ export const HR_EMPLOYEE_NAV = {
     { label: "Overtime", path: "/employee/overtime", icon: "employeeLifecycle" },
   ],
 };
+
+// A role="employee" login whose Employee record sits in the "Finance"
+// department gets the same Finance section an admin sees.
+export const FINANCE_EMPLOYEE_NAV = {
+  label: "Finance",
+  path: "/master/employees",
+  icon: "finance",
+  children: [
+    { label: "Employees", path: "/master/employees", icon: "employees" },
+    { label: "Payroll", path: "/employee/payroll", icon: "employeeLifecycle" },
+    { label: "Attendance", path: "/finance/attendance", icon: "attendance" },
+  ],
+};

@@ -8,7 +8,10 @@ from models import (
     BaseUser, Employee, Attendance, AttendanceEvent, AttendanceSetting,
     ManualAttendance, NetworkStatus, Department, Designation, Role,
 )
-from utils import paginate_query, apply_search_filters, hash_password
+from utils import (
+    paginate_query, apply_search_filters, hash_password,
+    is_finance_department_user,
+)
 from ..attendance.attendance_engine import recompute_attendance, open_session
 
 employee_bp = Blueprint("employee_bp", __name__)
@@ -250,7 +253,12 @@ def with_token(func):
 @with_token
 def list_employees(token_response):
     current_user = _get_current_user()
-    if not _is_admin(current_user):
+    # admin, or a Finance-department "employee" login whose Finance sidebar
+    # section surfaces the org-wide Employees list (read-only).
+    if not (
+        _is_admin(current_user)
+        or is_finance_department_user(current_user)
+    ):
         return jsonify({"message": "Admin privileges required"}), 403
 
     query = Employee.query

@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import { navConfig, CRM_EMPLOYEE_NAV, HR_EMPLOYEE_NAV } from "./navConfig";
+import { navConfig, CRM_EMPLOYEE_NAV, HR_EMPLOYEE_NAV, FINANCE_EMPLOYEE_NAV } from "./navConfig";
 import { useUI } from "@/context/UIContext";
 import { getUser } from "@/utils/tokenHelpers";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useIsCrmEmployee } from "@/hooks/useIsCrmEmployee";
 import { useIsHrEmployee } from "@/hooks/useIsHrEmployee";
+import { useIsFinanceEmployee } from "@/hooks/useIsFinanceEmployee";
 import { resolveUploadUrl } from "@/utils/fileUrl";
 import Avatar from "@/components/ui/Avatar";
 import ThemeToggle from "@/theme/ThemeToggle";
@@ -195,6 +196,7 @@ export default function Sidebar() {
 
   const { isCrmEmployee } = useIsCrmEmployee();
   const { isHrEmployee } = useIsHrEmployee();
+  const { isFinanceEmployee } = useIsFinanceEmployee();
 
   const filteredNav = [
     ...navConfig.filter(
@@ -202,6 +204,7 @@ export default function Sidebar() {
     ),
     ...(isCrmEmployee ? [CRM_EMPLOYEE_NAV] : []),
     ...(isHrEmployee ? [HR_EMPLOYEE_NAV] : []),
+    ...(isFinanceEmployee ? [FINANCE_EMPLOYEE_NAV] : []),
   ];
 
   return (

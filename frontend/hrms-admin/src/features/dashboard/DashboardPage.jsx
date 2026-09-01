@@ -4,6 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 
 import { useIsCrmEmployee } from "@/hooks/useIsCrmEmployee";
 import { useIsHrEmployee } from "@/hooks/useIsHrEmployee";
+import { useIsFinanceEmployee } from "@/hooks/useIsFinanceEmployee";
+import { employeesApi } from "@/api/employees.api";
 import { getUser } from "@/utils/tokenHelpers";
 import { crmApi } from "@/api/crm.api";
 import { employeeLifecycleApi } from "@/api/employee.api";
@@ -296,6 +298,40 @@ function HrWorkspaceCards() {
   return <WorkspaceCardGrid cards={cards} tone="accent" />;
 }
 
+function FinanceWorkspaceCards() {
+  const employees = useTotal("fin-employees", employeesApi.list);
+  const payroll = useTotal(
+    "fin-payroll",
+    employeeLifecycleApi.payroll.list
+  );
+
+  const cards = [
+    {
+      label: "Employees",
+      path: "/master/employees",
+      icon: "employees",
+      hint: "Employee records",
+      ...employees,
+    },
+    {
+      label: "Payroll",
+      path: "/employee/payroll",
+      icon: "employeeLifecycle",
+      hint: "Payroll records",
+      ...payroll,
+    },
+    {
+      label: "Attendance",
+      path: "/finance/attendance",
+      icon: "attendance",
+      hint: "Monthly attendance",
+      count: "—",
+    },
+  ];
+
+  return <WorkspaceCardGrid cards={cards} tone="primary" />;
+}
+
 const LivePill = () => (
   <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-emerald-700 ring-1 ring-inset ring-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300 dark:ring-emerald-400/25">
     <span className="relative flex h-1.5 w-1.5">
@@ -320,6 +356,7 @@ export default function DashboardPage() {
   // on the dashboard as quick-jump cards.
   const { isCrmEmployee } = useIsCrmEmployee();
   const { isHrEmployee } = useIsHrEmployee();
+  const { isFinanceEmployee } = useIsFinanceEmployee();
 
   const stats = useDashboardStats({
     enabled: isAdmin,
@@ -634,6 +671,19 @@ export default function DashboardPage() {
               />
 
               <HrWorkspaceCards />
+            </section>
+          )}
+
+          {isFinanceEmployee && (
+            <section>
+              <SectionHeading
+                icon={<GridIcon />}
+                tone="emerald"
+                title="Finance workspace"
+                subtitle="Your Finance screens — employees, payroll and monthly attendance"
+              />
+
+              <FinanceWorkspaceCards />
             </section>
           )}
 

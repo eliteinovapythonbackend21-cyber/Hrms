@@ -13,6 +13,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 CRM_DEPARTMENT_NAME = "CRM"
 HR_DEPARTMENT_NAME = "HR"
+FINANCE_DEPARTMENT_NAME = "Finance"
 
 def serialize_model(item):
     if hasattr(item, "to_dict"):
@@ -395,6 +396,29 @@ def is_hr_department_employee(employee):
     return is_hr_department(getattr(employee, "department", None))
 
 
+def is_finance_department(department):
+    if not department:
+        return False
+    return (department.department_name or "").strip().lower() == FINANCE_DEPARTMENT_NAME.lower()
+
+
+def is_finance_department_employee(employee):
+    if not employee:
+        return False
+    return is_finance_department(getattr(employee, "department", None))
+
+
+def is_finance_department_user(user):
+    """True for a plain "employee"-role login whose Employee record sits in
+    the Finance department — the server-side mirror of the Finance sidebar
+    section that is only shown to these logins."""
+    if not user:
+        return False
+    from models import Employee
+    employee = Employee.query.filter_by(user_id=user.id).first()
+    return is_finance_department_employee(employee)
+
+
 def is_hr_department_user(user):
     """True for a plain "employee"-role login whose Employee record sits
     in the HR department — the read-only HR sidebar (Attendance, Leaves,
@@ -459,6 +483,7 @@ def register_crud_blueprint(
     serialize=None,
     filter_fields=None,
     own_employee_scope_field=None,
+    view_grant=None,
 ):
     """Factory that builds a Blueprint exposing GET (list) / GET (detail) /
     POST (create) / PUT (edit, only if `editable`) / DELETE (soft-delete
@@ -511,6 +536,10 @@ def register_crud_blueprint(
 
     def _view_guard():
         user = get_current_user()
+        # An explicit read-only grant (e.g. a Finance-department "employee"
+        # login viewing Payroll) bypasses the role/admin checks below.
+        if view_grant is not None and user is not None and view_grant(user):
+            return None
         if allowed_roles is not None:
             if not user or user.role not in allowed_roles:
                 return jsonify({"message": "You do not have permission to access this resource"}), 403

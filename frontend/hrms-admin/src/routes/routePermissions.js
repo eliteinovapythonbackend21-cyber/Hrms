@@ -29,7 +29,10 @@ export const routePermissions = {
   // for an HR employee.
   "/employee/permissions": [...HR_ADMIN_ROLES, "employee"],
   "/employee/overtime": [...HR_ADMIN_ROLES, "employee"],
-  "/employee/payroll": PAYROLL_ROLES,
+  // "employee" here covers a Finance-department employee reaching the
+  // Payroll screen from their Finance sidebar section; the sidebar only
+  // surfaces it for them.
+  "/employee/payroll": [...PAYROLL_ROLES, "employee"],
   "/employee/performance": HR_ADMIN_ROLES,
   "/employee/training": [...TRAINING_ROLES, "employee"],
   "/employee/promotions": HR_ADMIN_ROLES,

@@ -4,7 +4,11 @@ from flask_jwt_extended import jwt_required
 
 from models import Payroll
 
-from utils import register_crud_blueprint, with_token
+from utils import (
+    register_crud_blueprint,
+    with_token,
+    is_finance_department_user,
+)
 
 
 payroll_bp = register_crud_blueprint(
@@ -40,6 +44,10 @@ payroll_bp = register_crud_blueprint(
         "HR Manager",
         "Payroll Executive",
     ],
+
+    # A Finance-department "employee" login gets read-only (list / detail)
+    # access — writes stay restricted to allowed_roles above.
+    view_grant=is_finance_department_user,
 )
 
 
