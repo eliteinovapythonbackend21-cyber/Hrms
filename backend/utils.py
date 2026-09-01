@@ -433,6 +433,17 @@ def is_hr_department_user(user):
     return is_hr_department_employee(employee)
 
 
+def is_crm_department_user(user):
+    """True for a plain "employee"-role login whose Employee record sits in
+    the CRM department — server-side mirror of the read-only CRM incentive
+    sidebar."""
+    if not user:
+        return False
+    from models import Employee
+    employee = Employee.query.filter_by(user_id=user.id).first()
+    return is_crm_employee(employee)
+
+
 def ensure_crm_employee(employee_id):
     """Returns (employee, error_response). error_response is a
     (jsonify, status) tuple if employee_id doesn't resolve to an

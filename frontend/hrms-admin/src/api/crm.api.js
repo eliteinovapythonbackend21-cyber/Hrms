@@ -65,6 +65,22 @@ export const crmApi = {
     calculate: (month, year) => axiosClient.post(C.EMPLOYEE_INCENTIVES_CALCULATE, { month, year }),
   },
 
+  // Tier-based incentive engine (Bronze / Silver / Gold).
+  incentives: {
+    listTiers: () => axiosClient.get(C.INCENTIVE_TIERS),
+    createTier: (payload) => axiosClient.post(C.INCENTIVE_TIERS, payload),
+    updateTier: (id, payload) => axiosClient.put(C.INCENTIVE_TIERS_ITEM(id), payload),
+    deactivateTier: (id) => axiosClient.delete(C.INCENTIVE_TIERS_ITEM(id)),
+    run: (month, year) => axiosClient.post(C.INCENTIVE_RUN, { month, year }),
+    weekly: (params) => axiosClient.get(C.INCENTIVE_WEEKLY, { params }),
+    monthly: (params) => axiosClient.get(C.INCENTIVE_MONTHLY, { params }),
+    yearly: (params) => axiosClient.get(C.INCENTIVE_YEARLY, { params }),
+    summary: (params) => axiosClient.get(C.INCENTIVE_SUMMARY, { params }),
+    generateInvoice: (payoutId) =>
+      axiosClient.post(C.INCENTIVE_MONTHLY_INVOICE(payoutId)),
+    invoices: (params) => axiosClient.get(C.INCENTIVE_INVOICES, { params }),
+  },
+
   customers: {
     ...createCrudApi({ listUrl: C.CUSTOMERS, itemUrl: C.CUSTOMERS_ITEM }),
     update: (id, payload) => axiosClient.put(C.CUSTOMERS_ITEM(id), payload),

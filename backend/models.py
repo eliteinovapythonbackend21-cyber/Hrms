@@ -2596,6 +2596,146 @@ class EmployeeIncentive(TimestampMixin, db.Model):
         db.session.commit()
         return results
 
+
+# ==================================================================
+#  TIER-BASED CRM INCENTIVES
+#  IncentiveTier   -> global Bronze / Silver / Gold config
+#  WeeklyIncentive -> one row per employee per ISO week
+#  MonthlyPayout   -> sum of that month's weekly rows
+#  YearlyPayout    -> sum of the 12 monthly payouts
+#  Engine: api.v1.crm.incentive_engine
+# ==================================================================
+
+class IncentiveTier(TimestampMixin, db.Model):
+    __tablename__ = "incentive_tiers"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(30), nullable=False, unique=True)   # Bronze / Silver / Gold
+    # Minimum registrations completed in a week to sit in this tier.
+    min_registrations = db.Column(db.Integer, nullable=False, default=0)
+    # Paid per incentive-eligible registration while in this tier.
+    rate_per_registration = db.Column(db.Numeric(12, 2), nullable=False, default=0)
+    sort_order = db.Column(db.Integer, nullable=False, default=0)
+    is_active = db.Column(db.Boolean, default=True)
+
+    def to_dict(self):
+        data = super().to_dict()
+        if self.rate_per_registration is not None:
+            data["rate_per_registration"] = float(self.rate_per_registration)
+        return data
+
+    @classmethod
+    def resolve(cls, weekly_count):
+        """Highest active tier whose min_registrations <= weekly_count.
+        Returns None when the count is below the lowest tier."""
+        tiers = (
+            cls.query.filter(cls.is_active == True)
+            .order_by(cls.min_registrations.desc())
+            .all()
+        )
+        for tier in tiers:
+            if weekly_count >= (tier.min_registrations or 0):
+                return tier
+        return None
+
+
+class WeeklyIncentive(TimestampMixin, db.Model):
+    __tablename__ = "weekly_incentives"
+
+    id = db.Column(db.Integer, primary_key=True)
+    employee_id = db.Column(db.Integer, db.ForeignKey("employees.id"), nullable=False)
+    week_start_date = db.Column(db.Date, nullable=False)   # Monday
+    week_end_date = db.Column(db.Date, nullable=False)     # Sunday
+    iso_year = db.Column(db.Integer, nullable=False)
+    iso_week = db.Column(db.Integer, nullable=False)
+
+    registration_count = db.Column(db.Integer, nullable=False, default=0)
+    target_count = db.Column(db.Integer, nullable=False, default=0)
+    eligible_count = db.Column(db.Integer, nullable=False, default=0)
+
+    tier_id = db.Column(db.Integer, db.ForeignKey("incentive_tiers.id"), nullable=True)
+    tier_name = db.Column(db.String(30), nullable=True)                 # snapshot
+    rate_per_registration = db.Column(db.Numeric(12, 2), nullable=False, default=0)  # snapshot
+    amount = db.Column(db.Numeric(12, 2), nullable=False, default=0)
+
+    status = db.Column(db.String(20), default="Pending")   # Pending / Approved / Paid
+    is_active = db.Column(db.Boolean, default=True)
+
+    employee = db.relationship("Employee")
+    tier = db.relationship("IncentiveTier")
+
+    __table_args__ = (
+        db.UniqueConstraint("employee_id", "week_start_date", name="uq_weekly_incentive_period"),
+    )
+
+    def to_dict(self):
+        data = super().to_dict()
+        data["employee"] = _summary(self.employee, ["id", "employee_code", "first_name", "last_name"])
+        for k in ("rate_per_registration", "amount"):
+            if data.get(k) is not None:
+                data[k] = float(data[k])
+        return data
+
+
+class MonthlyPayout(TimestampMixin, db.Model):
+    __tablename__ = "monthly_payouts"
+
+    id = db.Column(db.Integer, primary_key=True)
+    employee_id = db.Column(db.Integer, db.ForeignKey("employees.id"), nullable=False)
+    month = db.Column(db.Integer, nullable=False)
+    year = db.Column(db.Integer, nullable=False)
+
+    week_count = db.Column(db.Integer, nullable=False, default=0)
+    registration_count = db.Column(db.Integer, nullable=False, default=0)
+    eligible_count = db.Column(db.Integer, nullable=False, default=0)
+    amount = db.Column(db.Numeric(12, 2), nullable=False, default=0)
+
+    status = db.Column(db.String(20), default="Pending")
+    is_active = db.Column(db.Boolean, default=True)
+
+    employee = db.relationship("Employee")
+
+    __table_args__ = (
+        db.UniqueConstraint("employee_id", "month", "year", name="uq_monthly_payout_period"),
+    )
+
+    def to_dict(self):
+        data = super().to_dict()
+        data["employee"] = _summary(self.employee, ["id", "employee_code", "first_name", "last_name"])
+        if data.get("amount") is not None:
+            data["amount"] = float(data["amount"])
+        return data
+
+
+class YearlyPayout(TimestampMixin, db.Model):
+    __tablename__ = "yearly_payouts"
+
+    id = db.Column(db.Integer, primary_key=True)
+    employee_id = db.Column(db.Integer, db.ForeignKey("employees.id"), nullable=False)
+    year = db.Column(db.Integer, nullable=False)
+
+    month_count = db.Column(db.Integer, nullable=False, default=0)
+    registration_count = db.Column(db.Integer, nullable=False, default=0)
+    eligible_count = db.Column(db.Integer, nullable=False, default=0)
+    amount = db.Column(db.Numeric(12, 2), nullable=False, default=0)
+
+    status = db.Column(db.String(20), default="Pending")
+    is_active = db.Column(db.Boolean, default=True)
+
+    employee = db.relationship("Employee")
+
+    __table_args__ = (
+        db.UniqueConstraint("employee_id", "year", name="uq_yearly_payout_period"),
+    )
+
+    def to_dict(self):
+        data = super().to_dict()
+        data["employee"] = _summary(self.employee, ["id", "employee_code", "first_name", "last_name"])
+        if data.get("amount") is not None:
+            data["amount"] = float(data["amount"])
+        return data
+
+
 class Quotation(TimestampMixin, db.Model):
     __tablename__ = "quotations"
 
@@ -2622,6 +2762,7 @@ class Invoice(TimestampMixin, db.Model):
     invoice_type = db.Column(db.String(20), default="Customer")
     employee_id = db.Column(db.Integer, db.ForeignKey("employees.id"), nullable=True)
     incentive_id = db.Column(db.Integer, db.ForeignKey("employee_incentives.id"), nullable=True)
+    monthly_payout_id = db.Column(db.Integer, db.ForeignKey("monthly_payouts.id"), nullable=True)
     invoice_number = db.Column(db.String(30), unique=True)
     amount = db.Column(db.Numeric(12, 2), nullable=False)
     due_date = db.Column(db.Date)

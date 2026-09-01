@@ -12,6 +12,7 @@ from .employee_incentives import employee_incentives_bp
 from .incentive_slabs import incentive_slabs_bp
 from .employee_targets import employee_targets_bp
 from .lead_weekly_snapshots import lead_weekly_snapshots_bp
+from .incentives import incentives_bp
 
 crm_blueprints = [
     (leads_bp, "/leads"),
@@ -27,5 +28,6 @@ crm_blueprints = [
     (employee_incentives_bp ,"/employee-incentives"),
     (incentive_slabs_bp , "/incentive-slabs"),
     (employee_targets_bp , "/employee-targets"),
-    (lead_weekly_snapshots_bp , "/lead-weekly-snapshots")
+    (lead_weekly_snapshots_bp , "/lead-weekly-snapshots"),
+    (incentives_bp , "/incentives"),
 ]
