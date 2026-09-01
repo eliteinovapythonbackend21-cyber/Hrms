@@ -45,10 +45,7 @@ export default function EditProfileModal({ open, onClose, user }) {
       // username / email / primary contact inputs are shown for context
       // but rendered read-only, so only the editable values are sent.
       const profilePayload = isEmployee
-        ? {
-            other_number: form.other_number,
-            emergency_contact_number: form.emergency_contact_number,
-          }
+        ? { emergency_contact_number: form.emergency_contact_number }
         : { ...form };
       if (!isEmployee && picture) profilePayload.profile_picture = picture;
       const res = await usersApi.updateProfile(user.id, profilePayload);
@@ -126,13 +123,15 @@ export default function EditProfileModal({ open, onClose, user }) {
             disabled={isEmployee}
             hint={isEmployee ? "Contact HR to update your primary contact number" : undefined}
           />
-          <Input
-            label="Other Number"
-            name="other_number"
-            value={form.other_number}
-            onChange={handleChange}
-            error={errors.other_number}
-          />
+          {!isEmployee && (
+            <Input
+              label="Other Number"
+              name="other_number"
+              value={form.other_number}
+              onChange={handleChange}
+              error={errors.other_number}
+            />
+          )}
         </div>
 
         <div className="mt-6 border-t border-slate-200 pt-4 dark:border-white/10">
