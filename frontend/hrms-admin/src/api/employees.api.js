@@ -14,6 +14,7 @@ export const employeesApi = {
   getPayslip: (id, params) => axiosClient.get(API.EMPLOYEES.PAYSLIP(id), { params }),
   checkin: (payload) => axiosClient.post(API.EMPLOYEES.CHECKIN, payload),
   checkout: (payload) => axiosClient.post(API.EMPLOYEES.CHECKOUT, payload),
+  resetAttendance: (payload) => axiosClient.post(API.EMPLOYEES.ATTENDANCE_RESET, payload),
   manualAttendance: (payload) => axiosClient.post(API.EMPLOYEES.MANUAL_ATTENDANCE, payload),
   listManualAttendance: (params) => axiosClient.get(API.EMPLOYEES.MANUAL_ATTENDANCE, { params }),
   updateManualAttendance: (id, payload) => axiosClient.put(API.EMPLOYEES.MANUAL_ATTENDANCE_ITEM(id), payload),

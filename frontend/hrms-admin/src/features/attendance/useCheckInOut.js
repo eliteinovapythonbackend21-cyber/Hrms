@@ -52,6 +52,19 @@ export function useCheckOut() {
   });
 }
 
+// Wipes an employee's attendance for a day (row + timeline events) so they
+// can check in again from scratch.
+export function useResetAttendanceDay() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload) => employeesApi.resetAttendance(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["today-attendance"] });
+      queryClient.invalidateQueries({ queryKey: ["attendance"] });
+    },
+  });
+}
+
 export function useManualAttendance() {
   const queryClient = useQueryClient();
   return useMutation({

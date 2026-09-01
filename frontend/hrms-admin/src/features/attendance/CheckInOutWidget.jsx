@@ -4,6 +4,7 @@ import {
   useCheckIn,
   useCheckOut,
   useAttendanceSettings,
+  useResetAttendanceDay,
 } from "./useCheckInOut";
 import { useAttendance } from "./useAttendance";
 import { useGeolocation } from "@/hooks/useGeolocation";
@@ -169,6 +170,7 @@ export default function CheckInOutWidget() {
   const { showToast } = useToast();
   const checkIn = useCheckIn();
   const checkOut = useCheckOut();
+  const resetDay = useResetAttendanceDay();
   const { data: settings } = useAttendanceSettings();
 
   const {
@@ -369,6 +371,30 @@ export default function CheckInOutWidget() {
 
   const saving = checkIn.isPending || checkOut.isPending;
 
+  const doReset = async () => {
+    if (!employeeId || !record) return;
+    if (
+      !window.confirm(
+        "Reset today's attendance? This clears every check-in / check-out and break for today so you can start over."
+      )
+    )
+      return;
+    try {
+      await resetDay.mutateAsync({
+        employee_id: employeeId,
+        attendance_date: attendanceDate,
+      });
+      showToast("Today's attendance was reset — you can check in again", "success");
+      setPrompt(null);
+      todayQuery.refetch();
+    } catch (err) {
+      showToast(
+        err.response?.data?.message || "Failed to reset attendance",
+        "error"
+      );
+    }
+  };
+
   return (
     <div className="card-elevated p-6">
       <div className="mb-4 flex items-center justify-between gap-3">
@@ -477,15 +503,40 @@ export default function CheckInOutWidget() {
         )}
       </div>
 
+      {record && !doneForDay && (
+        <div className="mb-3 text-right">
+          <button
+            type="button"
+            onClick={doReset}
+            disabled={resetDay.isPending}
+            className="text-[11px] font-medium text-slate-400 hover:text-rose-600 hover:underline disabled:opacity-50 dark:text-slate-500 dark:hover:text-rose-400"
+          >
+            {resetDay.isPending ? "Resetting…" : "Reset today's attendance"}
+          </button>
+        </div>
+      )}
+
       {/* ACTIONS */}
       {doneForDay ? (
-        <p className="rounded-lg bg-slate-50 px-3 py-2.5 text-sm text-slate-600 dark:bg-white/[0.04] dark:text-slate-300">
-          You have checked out for the day
-          {record?.check_out
-            ? ` at ${new Date(record.check_out).toLocaleTimeString()}`
-            : ""}
-          .
-        </p>
+        <div className="space-y-2">
+          <p className="rounded-lg bg-slate-50 px-3 py-2.5 text-sm text-slate-600 dark:bg-white/[0.04] dark:text-slate-300">
+            You have checked out for the day
+            {record?.check_out
+              ? ` at ${new Date(record.check_out).toLocaleTimeString()}`
+              : ""}
+            .
+          </p>
+          <button
+            type="button"
+            onClick={doReset}
+            disabled={resetDay.isPending}
+            className="text-xs font-semibold text-rose-600 hover:underline disabled:opacity-50 dark:text-rose-400"
+          >
+            {resetDay.isPending
+              ? "Resetting…"
+              : "Made a mistake? Reset today's attendance"}
+          </button>
+        </div>
       ) : openSession ? (
         <div className="space-y-3">
           <div>

@@ -950,6 +950,42 @@ def employee_checkout(token_response):
     }), 200
 
 
+@employee_bp.route("/attendance/reset", methods=["POST"])
+@jwt_required()
+@with_token
+def reset_attendance_day(token_response):
+    """Wipe an employee's attendance for one day so they can check in
+    again from scratch. Deletes the Attendance row and its timeline
+    events (cascade). Allowed for the employee themselves or an admin.
+    """
+    data = _get_request_data()
+    employee_id = data.get("employee_id")
+    employee, error_response = _fetch_employee(employee_id)
+    if error_response:
+        return error_response
+    authorized, current_user, error_response = _authorize_employee_action(employee)
+    if not authorized:
+        return error_response
+
+    attendance_date_obj = _parse_date(data.get("attendance_date"))
+    if attendance_date_obj is None:
+        return jsonify({"message": "Invalid attendance_date format"}), 400
+
+    attendance = Attendance.query.filter_by(
+        employee_id=employee_id, attendance_date=attendance_date_obj
+    ).first()
+    if not attendance:
+        return jsonify({"message": "No attendance to reset for that date"}), 404
+
+    db.session.delete(attendance)  # AttendanceEvent rows cascade-delete
+    db.session.commit()
+
+    return jsonify({
+        "message": "Attendance reset — you can check in again",
+        "token_response": token_response,
+    }), 200
+
+
 @employee_bp.route("/manual-attendance", methods=["POST"])
 @jwt_required()
 @with_token

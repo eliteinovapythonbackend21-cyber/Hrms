@@ -36,6 +36,7 @@ export const API = {
     PAYSLIP: (id) => `/employees/${id}/payslip`,
     CHECKIN: "/employees/checkin",
     CHECKOUT: "/employees/checkout",
+    ATTENDANCE_RESET: "/employees/attendance/reset",
     MANUAL_ATTENDANCE: "/employees/manual-attendance",
     MANUAL_ATTENDANCE_ITEM: (id) => `/employees/manual-attendance/${id}`,
     ATTENDANCE: (id) => `/employees/${id}/attendance`,
