@@ -3,6 +3,100 @@ import Badge from "@/components/ui/Badge";
 import { domainColors } from "@/theme/tokens/domainColors";
 import { formatDate, formatTime } from "@/utils/formatDate";
 
+const BREAK_EMOJI = {
+  nap: "😴",
+  lunch: "🍽️",
+  tea: "☕",
+  permission: "🚶",
+};
+
+function fmtTime(value) {
+  if (!value) return "";
+  const d = new Date(value);
+  return Number.isNaN(d.getTime())
+    ? ""
+    : d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+}
+
+// Compact "reasons & breaks" cell — surfaces every reason the employee
+// entered (late login, permission, overtime) plus measured break minutes,
+// so an admin reviewing everyone's attendance sees the why, not just the
+// times.
+function ReasonsCell({ row }) {
+  const events = row.events || [];
+  const notes = [];
+
+  if (row.late_login_minutes > 0) {
+    notes.push({
+      key: "late",
+      tag: `Late ${Math.round(row.late_login_minutes)}m`,
+      text: row.late_login_reason || "—",
+      cls: "text-amber-700 dark:text-amber-300",
+    });
+  }
+
+  events
+    .filter((e) => e.event_type === "check_out" && e.reason_type === "permission")
+    .forEach((e, i) =>
+      notes.push({
+        key: `perm-${i}`,
+        tag: `🚶 Permission ${fmtTime(e.event_time)}`,
+        text: e.reason || "—",
+        cls: "text-violet-700 dark:text-violet-300",
+      })
+    );
+
+  if (row.overtime_hours > 0) {
+    notes.push({
+      key: "ot",
+      tag: `OT ${Number(row.overtime_hours).toFixed(1)}h`,
+      text: row.overtime_reason || "—",
+      cls: "text-amber-700 dark:text-amber-300",
+    });
+  }
+
+  const breakChips = ["lunch", "tea", "nap"]
+    .map((t) => ({ t, m: Math.round(row[`${t}_minutes`] || 0) }))
+    .filter((b) => b.m > 0);
+
+  if (row.permission_over_limit) {
+    notes.push({
+      key: "over",
+      tag: "⚠ Permission over limit",
+      text: `${Math.round(row.permission_minutes || 0)}m taken`,
+      cls: "text-rose-700 dark:text-rose-300",
+    });
+  }
+
+  if (!notes.length && !breakChips.length) {
+    return <span className="text-xs text-slate-300 dark:text-slate-600">—</span>;
+  }
+
+  return (
+    <div className="min-w-[200px] space-y-1">
+      {notes.map((n) => (
+        <p key={n.key} className={`text-[11px] leading-4 ${n.cls}`}>
+          <span className="font-semibold">{n.tag}:</span>{" "}
+          <span className="text-slate-600 dark:text-slate-300">{n.text}</span>
+        </p>
+      ))}
+
+      {breakChips.length > 0 && (
+        <div className="flex flex-wrap gap-1 pt-0.5">
+          {breakChips.map((b) => (
+            <span
+              key={b.t}
+              className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-600 dark:bg-white/10 dark:text-slate-300"
+            >
+              {BREAK_EMOJI[b.t]} {b.m}m
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AttendanceTable({ data, loading, sortBy, sortDir, onSort }) {
   const columns = [
     {
@@ -21,6 +115,11 @@ export default function AttendanceTable({ data, loading, sortBy, sortDir, onSort
       label: "Working Hours",
       sortable: true,
       render: (r) => (r.working_hours != null ? `${r.working_hours}h` : "-"),
+    },
+    {
+      key: "reasons",
+      label: "Reasons / Breaks",
+      render: (r) => <ReasonsCell row={r} />,
     },
     {
       key: "attendance_status",

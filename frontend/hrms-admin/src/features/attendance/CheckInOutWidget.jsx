@@ -15,13 +15,31 @@ import { toDateInputValue, toTimeInputValue } from "@/utils/formatDate";
 import { getUser } from "@/utils/tokenHelpers";
 
 /* =========================================================
-   HELPERS
+   CONSTANTS
 ========================================================= */
 
 const now = new Date();
 const today = toDateInputValue(now);
 
-// "HH:MM" -> minutes since midnight
+// Break / permission check-out options shown as emoji chips.
+const BREAK_OPTIONS = [
+  { type: "lunch", emoji: "🍽️", label: "Lunch" },
+  { type: "tea", emoji: "☕", label: "Tea" },
+  { type: "nap", emoji: "😴", label: "Nap" },
+  { type: "permission", emoji: "🚶", label: "Permission" },
+];
+
+const BREAK_META = {
+  nap: { emoji: "😴", label: "Nap break" },
+  lunch: { emoji: "🍽️", label: "Lunch break" },
+  tea: { emoji: "☕", label: "Tea break" },
+  permission: { emoji: "🚶", label: "Permission" },
+};
+
+/* =========================================================
+   HELPERS
+========================================================= */
+
 function hhmmToMinutes(value) {
   const [h, m] = String(value || "").split(":").map(Number);
   if (Number.isNaN(h)) return null;
@@ -61,7 +79,15 @@ async function getBatteryPercentage() {
    REASON PROMPT
 ========================================================= */
 
-function ReasonPrompt({ open, title, hint, confirmLabel, loading, onConfirm, onClose }) {
+function ReasonPrompt({
+  open,
+  title,
+  hint,
+  confirmLabel,
+  loading,
+  onConfirm,
+  onClose,
+}) {
   const [value, setValue] = useState("");
 
   useEffect(() => {
@@ -150,7 +176,7 @@ export default function CheckInOutWidget() {
   const [checkInTime, setCheckInTime] = useState(toTimeInputValue(now));
   const [checkOutTime, setCheckOutTime] = useState(toTimeInputValue(now));
 
-  // { mode: "late" | "permission_out" | "permission_in" | "overtime" }
+  // { mode: "late" | "permission_out" | "permission_return" | "overtime" }
   const [prompt, setPrompt] = useState(null);
 
   useEffect(() => {
@@ -167,15 +193,17 @@ export default function CheckInOutWidget() {
   const lastEvent = events[events.length - 1] || null;
 
   /* ---- state machine ---- */
-  const openSession = lastEvent?.event_type === "check_in"; // currently "in"
-  const onPermission =
-    lastEvent?.event_type === "check_out" &&
-    lastEvent?.reason_type === "permission";
-  const doneForDay =
-    lastEvent?.event_type === "check_out" && !onPermission;
+  const lastOutType =
+    lastEvent?.event_type === "check_out" ? lastEvent.reason_type : null;
+  const openSession = lastEvent?.event_type === "check_in"; // currently working
+  const onPermission = lastOutType === "permission";
+  const onBreak = ["nap", "lunch", "tea"].includes(lastOutType);
+  const paused = onPermission || onBreak;
+  const doneForDay = lastEvent?.event_type === "check_out" && !paused;
   const notCheckedIn = !record || events.length === 0;
 
-  const workStartMin = hhmmToMinutes(settings?.work_start_time || "10:00");
+  const workStartLabel = settings?.work_start_time || "10:00";
+  const workStartMin = hhmmToMinutes(workStartLabel);
   const checkInMin = hhmmToMinutes(checkInTime);
   const wouldBeLate =
     notCheckedIn &&
@@ -209,17 +237,30 @@ export default function CheckInOutWidget() {
       });
       (res?.data?.warnings || []).forEach((w) => showToast(w, "warning"));
       showToast(
-        onPermission ? "Checked back in from permission" : "Checked in",
+        onPermission
+          ? "Checked back in from permission"
+          : onBreak
+          ? `Back from ${BREAK_META[lastOutType]?.label || "break"}`
+          : "Checked in",
         "success"
       );
       setPrompt(null);
       todayQuery.refetch();
     } catch (err) {
-      showToast(err.response?.data?.message || "Check-in failed", "error");
+      const data = err.response?.data;
+      if (data?.requires === "late_login_reason") {
+        setPrompt({ mode: "late" });
+        return;
+      }
+      if (data?.requires === "permission_return_reason") {
+        setPrompt({ mode: "permission_return" });
+        return;
+      }
+      showToast(data?.message || "Check-in failed", "error");
     }
   };
 
-  const doCheckOut = async ({ isPermission, reason, overtimeReason } = {}) => {
+  const doCheckOut = async ({ breakType, reason, overtimeReason } = {}) => {
     if (!employeeId)
       return showToast("No employee record linked to this account", "error");
     try {
@@ -227,14 +268,18 @@ export default function CheckInOutWidget() {
         employee_id: employeeId,
         attendance_date: attendanceDate,
         check_out: checkOutTime,
-        is_permission: isPermission || undefined,
+        break_type: breakType || undefined,
         reason: reason || undefined,
         overtime_reason: overtimeReason || undefined,
         ...baseGeo(),
       });
       (res?.data?.warnings || []).forEach((w) => showToast(w, "warning"));
       showToast(
-        isPermission ? "Checked out for permission" : "Checked out for the day",
+        breakType
+          ? `${BREAK_META[breakType]?.emoji || ""} ${
+              BREAK_META[breakType]?.label || "Break"
+            } started — check in when you're back`
+          : "Checked out for the day",
         "success"
       );
       setPrompt(null);
@@ -242,9 +287,12 @@ export default function CheckInOutWidget() {
     } catch (err) {
       const data = err.response?.data;
       if (data?.requires === "overtime_reason") {
-        // End-of-day checkout beyond the required hours — ask for a reason.
         setPrompt({ mode: "overtime" });
         showToast(data.message, "warning");
+        return;
+      }
+      if (data?.requires === "permission_reason") {
+        setPrompt({ mode: "permission_out" });
         return;
       }
       showToast(data?.message || "Check-out failed", "error");
@@ -253,20 +301,24 @@ export default function CheckInOutWidget() {
 
   /* ---- button handlers ---- */
   const handleCheckIn = () => {
-    if (onPermission) return setPrompt({ mode: "permission_in" });
+    if (onPermission) return setPrompt({ mode: "permission_return" });
+    if (onBreak) return doCheckIn(); // returning from a break needs no reason
     if (wouldBeLate) return setPrompt({ mode: "late" });
     doCheckIn();
   };
 
-  const handleCheckOutForDay = () => doCheckOut({});
-  const handleCheckOutForPermission = () =>
-    setPrompt({ mode: "permission_out" });
+  const handleBreak = (type) => {
+    if (type === "permission") return setPrompt({ mode: "permission_out" });
+    doCheckOut({ breakType: type });
+  };
+
+  const handleEndOfDay = () => doCheckOut({});
 
   const confirmPrompt = (value) => {
-    if (prompt?.mode === "late" || prompt?.mode === "permission_in") {
+    if (prompt?.mode === "late" || prompt?.mode === "permission_return") {
       doCheckIn(value);
     } else if (prompt?.mode === "permission_out") {
-      doCheckOut({ isPermission: true, reason: value });
+      doCheckOut({ breakType: "permission", reason: value });
     } else if (prompt?.mode === "overtime") {
       doCheckOut({ overtimeReason: value });
     }
@@ -276,17 +328,17 @@ export default function CheckInOutWidget() {
     switch (prompt?.mode) {
       case "late":
         return {
-          title: "Late login reason",
-          hint: `Login is after ${settings?.work_start_time || "10:00"} — a reason is required.`,
+          title: "Late login — reason",
+          hint: `Your check-in is after ${workStartLabel}. Enter the reason for the late login; it's saved with your attendance.`,
           confirmLabel: "Check In",
         };
       case "permission_out":
         return {
-          title: "Permission — reason",
+          title: "🚶 Permission — reason",
           hint: "You are checking out for permission. Enter the reason; check in again when you return.",
           confirmLabel: "Check Out",
         };
-      case "permission_in":
+      case "permission_return":
         return {
           title: "Return from permission — reason",
           hint: "Enter the reason / note for returning from permission.",
@@ -301,7 +353,7 @@ export default function CheckInOutWidget() {
       default:
         return {};
     }
-  }, [prompt, settings, requiredHours]);
+  }, [prompt, workStartLabel, requiredHours]);
 
   const saving = checkIn.isPending || checkOut.isPending;
 
@@ -314,7 +366,7 @@ export default function CheckInOutWidget() {
 
         <span
           className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ring-inset ${
-            onPermission
+            paused
               ? "bg-amber-50 text-amber-700 ring-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300"
               : openSession
               ? "bg-emerald-50 text-emerald-700 ring-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300"
@@ -323,8 +375,10 @@ export default function CheckInOutWidget() {
               : "bg-rose-50 text-rose-700 ring-rose-500/20 dark:bg-rose-500/10 dark:text-rose-300"
           }`}
         >
-          {onPermission
-            ? "On permission"
+          {paused
+            ? `${BREAK_META[lastOutType]?.emoji || ""} On ${
+                BREAK_META[lastOutType]?.label || "break"
+              }`
             : openSession
             ? "Checked in"
             : doneForDay
@@ -342,9 +396,9 @@ export default function CheckInOutWidget() {
 
       {/* TODAY SUMMARY */}
       {record && (
-        <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
           <SummaryTile
-            label="Working hrs"
+            label="Working"
             value={`${(record.working_hours ?? 0).toFixed(2)}h`}
             tone="emerald"
           />
@@ -354,14 +408,27 @@ export default function CheckInOutWidget() {
             tone={record.permission_over_limit ? "rose" : "violet"}
           />
           <SummaryTile
-            label="Late by"
-            value={`${Math.round(record.late_login_minutes ?? 0)}m`}
-            tone={record.late_login_minutes ? "amber" : "slate"}
+            label="🍽️ Lunch"
+            value={`${Math.round(record.lunch_minutes ?? 0)}m`}
           />
           <SummaryTile
-            label="Overtime"
-            value={`${(record.overtime_hours ?? 0).toFixed(2)}h`}
-            tone={record.overtime_hours ? "amber" : "slate"}
+            label="☕ Tea"
+            value={`${Math.round(record.tea_minutes ?? 0)}m`}
+          />
+          <SummaryTile
+            label="😴 Nap"
+            value={`${Math.round(record.nap_minutes ?? 0)}m`}
+          />
+          <SummaryTile
+            label="Late / OT"
+            value={`${Math.round(record.late_login_minutes ?? 0)}m / ${(
+              record.overtime_hours ?? 0
+            ).toFixed(1)}h`}
+            tone={
+              record.late_login_minutes || record.overtime_hours
+                ? "amber"
+                : "slate"
+            }
           />
         </div>
       )}
@@ -369,7 +436,7 @@ export default function CheckInOutWidget() {
       {/* TIME INPUTS */}
       <div className="grid grid-cols-1 gap-x-4 sm:grid-cols-2">
         <Input
-          label={onPermission ? "Return Check-In Time" : "Check In Time"}
+          label={paused ? "Return Check-In Time" : "Check In Time"}
           type="time"
           value={checkInTime}
           onChange={(e) => setCheckInTime(e.target.value)}
@@ -407,23 +474,34 @@ export default function CheckInOutWidget() {
           .
         </p>
       ) : openSession ? (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="space-y-3">
+          <div>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+              Check out for a break / permission
+            </p>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {BREAK_OPTIONS.map((opt) => (
+                <button
+                  key={opt.type}
+                  type="button"
+                  disabled={!employeeId || saving}
+                  onClick={() => handleBreak(opt.type)}
+                  className="flex flex-col items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 py-3 text-xs font-semibold text-slate-700 transition hover:-translate-y-0.5 hover:border-primary-300 hover:bg-primary-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-200 dark:hover:border-primary-500/40 dark:hover:bg-primary-500/10"
+                >
+                  <span className="text-xl leading-none">{opt.emoji}</span>
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <Button
-            variant="secondary"
-            onClick={handleCheckOutForPermission}
+            onClick={handleEndOfDay}
             isLoading={saving}
             disabled={!employeeId}
             className="w-full"
           >
-            Check out for permission
-          </Button>
-          <Button
-            onClick={handleCheckOutForDay}
-            isLoading={saving}
-            disabled={!employeeId}
-            className="w-full"
-          >
-            Check out for the day
+            🏁 Check out for the day
           </Button>
         </div>
       ) : (
@@ -433,7 +511,11 @@ export default function CheckInOutWidget() {
           disabled={!employeeId}
           className="w-full"
         >
-          {onPermission ? "Check in (back from permission)" : "Check In"}
+          {paused
+            ? `Check in — back from ${
+                BREAK_META[lastOutType]?.label || "break"
+              }`
+            : "Check In"}
         </Button>
       )}
 

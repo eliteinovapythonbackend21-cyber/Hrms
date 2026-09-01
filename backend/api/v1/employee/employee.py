@@ -725,7 +725,8 @@ def employee_checkin(token_response):
                     "message": (
                         "A reason is required for logging in after "
                         f"{settings.work_start_time.strftime('%H:%M')}."
-                    )
+                    ),
+                    "requires": "late_login_reason",
                 }), 400
         attendance = Attendance(
             employee_id=employee_id,
@@ -741,11 +742,33 @@ def employee_checkin(token_response):
             return jsonify({
                 "message": "You are already checked in. Check out before checking in again."
             }), 400
-        reason_type = "permission_return"
-        if not reason:
-            return jsonify({
-                "message": "A reason is required when returning from permission."
-            }), 400
+
+        # The reason type mirrors what the previous check-out was for: only
+        # a return FROM PERMISSION needs a reason — returning from a
+        # nap / lunch / tea break does not.
+        last_out = next(
+            (
+                e
+                for e in sorted(
+                    (ev for ev in attendance.events if ev.is_active and ev.event_time),
+                    key=lambda ev: ev.event_time,
+                    reverse=True,
+                )
+                if e.event_type == "check_out"
+            ),
+            None,
+        )
+        last_out_type = last_out.reason_type if last_out else None
+
+        if last_out_type in ("nap", "lunch", "tea"):
+            reason_type = f"{last_out_type}_return"
+        else:
+            reason_type = "permission_return"
+            if not reason:
+                return jsonify({
+                    "message": "A reason is required when returning from permission.",
+                    "requires": "permission_return_reason",
+                }), 400
 
     event = AttendanceEvent(
         event_type="check_in",
@@ -785,9 +808,14 @@ def employee_checkin(token_response):
 def employee_checkout(token_response):
     """Records a check-out event.
 
-    Pass `is_permission: true` to start a permission gap (a permission
-    `reason` is then required and the day stays open for a later
-    check-in). Otherwise this is the end-of-day check-out; if net working
+    `break_type` starts a gap the day stays open through, and the engine
+    attributes that gap's minutes to the matching bucket:
+        "nap" | "lunch" | "tea"  -> break buckets, reason optional
+        "permission"             -> permission bucket, reason REQUIRED
+    (`is_permission: true` is accepted as an alias for
+    `break_type: "permission"`.)
+
+    With no `break_type` this is the end-of-day check-out; if net working
     time exceeds the required hours an `overtime_reason` is required.
     """
     data = _get_request_data()
@@ -835,20 +863,32 @@ def employee_checkout(token_response):
         return jsonify({"message": "Minimum session duration is 1 minute"}), 400
 
     settings = AttendanceSetting.get_settings()
-    is_permission = _parse_bool(data.get("is_permission")) or False
+
+    BREAK_TYPES = ("nap", "lunch", "tea", "permission")
+    break_type = (data.get("break_type") or "").strip().lower() or None
+    if _parse_bool(data.get("is_permission")):
+        break_type = "permission"
+    if break_type is not None and break_type not in BREAK_TYPES:
+        return jsonify({
+            "message": "break_type must be one of nap, lunch, tea, permission"
+        }), 400
+
+    is_break = break_type is not None
+    is_permission = break_type == "permission"
     reason = (data.get("reason") or "").strip()
     overtime_reason = (data.get("overtime_reason") or "").strip()
 
     if is_permission and not reason:
         return jsonify({
-            "message": "A reason is required when checking out for permission."
+            "message": "A reason is required when checking out for permission.",
+            "requires": "permission_reason",
         }), 400
 
     event = AttendanceEvent(
         event_type="check_out",
         event_time=check_out_datetime,
-        reason=(reason or None) if is_permission else None,
-        reason_type="permission" if is_permission else None,
+        reason=(reason or None) if is_break else None,
+        reason_type=break_type,
         latitude=data.get("latitude"),
         longitude=data.get("longitude"),
     )
@@ -859,7 +899,7 @@ def employee_checkout(token_response):
     recompute_attendance(attendance)
 
     # End-of-day check-out beyond the required hours needs an overtime reason.
-    if not is_permission and (attendance.overtime_hours or 0) > 0:
+    if not is_break and (attendance.overtime_hours or 0) > 0:
         if not overtime_reason:
             db.session.rollback()
             return jsonify({
@@ -876,10 +916,14 @@ def employee_checkout(token_response):
 
     db.session.commit()
 
+    _labels = {
+        "nap": "Nap break started",
+        "lunch": "Lunch break started",
+        "tea": "Tea break started",
+        "permission": "Permission check-out recorded",
+    }
     return jsonify({
-        "message": (
-            "Permission check-out recorded" if is_permission else "Check-out recorded"
-        ),
+        "message": _labels.get(break_type, "Check-out recorded"),
         "data": attendance.to_dict(),
         "warnings": _attendance_warnings(attendance, settings),
         "token_response": token_response,

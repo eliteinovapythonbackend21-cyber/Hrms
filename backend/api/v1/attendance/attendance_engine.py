@@ -28,14 +28,6 @@ def recompute_attendance(attendance):
         key=lambda e: e.event_time,
     )
 
-    # --- snapshot the fixed break config onto the row ---
-    nap = float(settings.nap_minutes or 0)
-    lunch = float(settings.lunch_minutes or 0)
-    tea = float(settings.tea_minutes or 0)
-    attendance.nap_minutes = nap
-    attendance.lunch_minutes = lunch
-    attendance.tea_minutes = tea
-
     first_in = next(
         (e for e in events if e.event_type == "check_in"), None
     )
@@ -48,18 +40,25 @@ def recompute_attendance(attendance):
     attendance.check_out = last_out.event_time if last_out else None
 
     # --- walk the timeline ---
+    # A check_in -> check_out span is WORK. A check_out -> check_in gap is a
+    # break / permission, attributed to that check_out's reason_type
+    # (nap / lunch / tea / permission). Gaps are never counted as work, so
+    # there is no separate deduction — the config durations are just caps.
     gross_seconds = 0.0
-    permission_seconds = 0.0
-    open_in = None       # timestamp of an unmatched check_in
-    open_out = None       # timestamp of an unmatched check_out
+    bucket_seconds = {"nap": 0.0, "lunch": 0.0, "tea": 0.0, "permission": 0.0}
+    open_in = None            # timestamp of an unmatched check_in
+    open_out = None           # timestamp of an unmatched check_out
+    open_out_type = None      # reason_type of that check_out
 
     for e in events:
         if e.event_type == "check_in":
             if open_out is not None:
                 gap = (e.event_time - open_out).total_seconds()
                 if gap > 0:
-                    permission_seconds += gap
+                    key = open_out_type if open_out_type in bucket_seconds else "permission"
+                    bucket_seconds[key] += gap
                 open_out = None
+                open_out_type = None
             if open_in is None:
                 open_in = e.event_time
         elif e.event_type == "check_out":
@@ -69,16 +68,20 @@ def recompute_attendance(attendance):
                     gross_seconds += seg
                 open_in = None
             open_out = e.event_time
+            open_out_type = e.reason_type
 
     gross_hours = gross_seconds / 3600.0
-    break_hours = (nap + lunch + tea) / 60.0
-    net_hours = max(0.0, gross_hours - break_hours)
+    net_hours = max(0.0, gross_hours)
 
     attendance.gross_working_hours = round(gross_hours, 2)
     attendance.working_hours = round(net_hours, 2)
 
-    # --- permission ---
-    permission_minutes = permission_seconds / 60.0
+    # --- measured break / permission durations ---
+    attendance.nap_minutes = round(bucket_seconds["nap"] / 60.0, 1)
+    attendance.lunch_minutes = round(bucket_seconds["lunch"] / 60.0, 1)
+    attendance.tea_minutes = round(bucket_seconds["tea"] / 60.0, 1)
+
+    permission_minutes = bucket_seconds["permission"] / 60.0
     attendance.permission_minutes = round(permission_minutes, 1)
     attendance.permission_over_limit = permission_minutes > float(
         settings.max_permission_minutes_per_day or 0
