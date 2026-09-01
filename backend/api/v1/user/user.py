@@ -41,6 +41,10 @@ def _validate_user_fields(data, require_password=False):
             errors.append("email must be a valid email address")
     if data.get("mobile") and not MOBILE_RE.match(data.get("mobile")):
         errors.append("mobile must be a valid phone number")
+    if data.get("other_number") and not MOBILE_RE.match(data.get("other_number")):
+        errors.append("other_number must be a valid phone number")
+    if data.get("emergency_contact_number") and not MOBILE_RE.match(data.get("emergency_contact_number")):
+        errors.append("emergency_contact_number must be a valid phone number")
     if require_password:
         password = data.get("password")
         if not password or len(password) < 6:
@@ -380,11 +384,24 @@ def update_profile(user_id, token_response):
             return jsonify({"message": "Email already exists"}), 409
         user.email = email
 
-    if "mobile" in data and data.get("mobile"):
+    # A plain "employee" login editing their own profile can't change
+    # their primary contact number — My Profile ▸ Edit Profile shows it
+    # disabled for them; only an admin editing someone else's profile can
+    # still update it. Silently ignore rather than error, since the field
+    # is legitimately present (disabled) in the employee's own form.
+    is_self_employee_edit = current_user.id == user.id and current_user.role == "employee"
+
+    if "mobile" in data and data.get("mobile") and not is_self_employee_edit:
         mobile = data.get("mobile")
         if BaseUser.query.filter(BaseUser.id != user.id, BaseUser.mobile == mobile).first():
             return jsonify({"message": "Mobile already exists"}), 409
         user.mobile = mobile
+
+    if "other_number" in data:
+        user.other_number = data.get("other_number") or None
+
+    if "emergency_contact_number" in data:
+        user.emergency_contact_number = data.get("emergency_contact_number") or None
 
     try:
         db.session.commit()

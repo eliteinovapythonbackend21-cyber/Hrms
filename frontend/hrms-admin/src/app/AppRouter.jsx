@@ -13,6 +13,7 @@ import ResetPasswordPage from "@/features/auth/ResetPasswordPage";
 
 // Dashboard
 import DashboardPage from "@/features/dashboard/DashboardPage";
+import MyCalendarPage from "@/features/dashboard/MyCalendarPage";
 
 // Users
 import UserListPage from "@/features/users/UserListPage";
@@ -147,6 +148,7 @@ export default function AppRouter() {
         <Route path="/master/employees" element={<RoleGuard><EmployeeListPage /></RoleGuard>} />
         <Route path="/leave-types" element={<RoleGuard><LeaveTypeListPage /></RoleGuard>} />
         <Route path="/holidays" element={<RoleGuard><HolidayListPage /></RoleGuard>} />
+        <Route path="/my-calendar" element={<RoleGuard><MyCalendarPage /></RoleGuard>} />
 
         {/* HR — users filtered by HR sub-role */}
         <Route path="/users/hr/:roleSlug" element={<RoleGuard><HrRoleUserListPage /></RoleGuard>} />

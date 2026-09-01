@@ -5,6 +5,7 @@ export default function Input({
   className = "",
   icon,
   rightIcon,
+  hint,
   ...props
 }) {
   return (
@@ -32,6 +33,7 @@ export default function Input({
         )}
       </div>
       {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
+      {!error && hint && <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">{hint}</p>}
     </div>
   );
 }

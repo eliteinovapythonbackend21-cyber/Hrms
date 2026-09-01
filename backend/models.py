@@ -126,6 +126,11 @@ class BaseUser(TimestampMixin, db.Model):
     username = db.Column(db.String(100), nullable=False, unique=True)
     email = db.Column(db.String(150), nullable=False, unique=True, index=True)
     mobile = db.Column(db.String(15), unique=True)
+    # Additional contact fields for My Profile ▸ Edit Profile. Not unique —
+    # unlike `mobile` there's no uniqueness expectation for a secondary or
+    # an emergency contact number.
+    other_number = db.Column(db.String(15), nullable=True)
+    emergency_contact_number = db.Column(db.String(15), nullable=True)
     password = db.Column(db.String(255), nullable=False)
     role_id = db.Column(db.Integer, db.ForeignKey("roles.id"), nullable=False, index=True)
     role = db.Column(db.String(20), nullable=False, index=True)

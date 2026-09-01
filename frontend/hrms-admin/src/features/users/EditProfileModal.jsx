@@ -17,6 +17,8 @@ export default function EditProfileModal({ open, onClose, user }) {
     username: user?.username || "",
     email: user?.email || "",
     mobile: user?.mobile || "",
+    other_number: user?.other_number || "",
+    emergency_contact_number: user?.emergency_contact_number || "",
   });
   const [picture, setPicture] = useState(null);
   const [preview, setPreview] = useState(resolveUploadUrl(user?.profile_picture?.url));
@@ -103,7 +105,39 @@ export default function EditProfileModal({ open, onClose, user }) {
             required
             disabled={isEmployee}
           />
-          <Input label="Mobile" name="mobile" value={form.mobile} onChange={handleChange} error={errors.mobile} />
+          <Input
+            label="Contact Number"
+            name="mobile"
+            value={form.mobile}
+            onChange={handleChange}
+            error={errors.mobile}
+            disabled={isEmployee}
+            hint={isEmployee ? "Contact HR to update your primary contact number" : undefined}
+          />
+          <Input
+            label="Other Number"
+            name="other_number"
+            value={form.other_number}
+            onChange={handleChange}
+            error={errors.other_number}
+          />
+        </div>
+
+        <div className="mt-6 border-t border-slate-200 pt-4 dark:border-white/10">
+          <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Emergency Contact</p>
+          <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+            Who to reach in case of an emergency
+          </p>
+
+          <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-x-4">
+            <Input
+              label="Emergency Contact Number"
+              name="emergency_contact_number"
+              value={form.emergency_contact_number}
+              onChange={handleChange}
+              error={errors.emergency_contact_number}
+            />
+          </div>
         </div>
 
         <div className="flex justify-end gap-2 mt-4">

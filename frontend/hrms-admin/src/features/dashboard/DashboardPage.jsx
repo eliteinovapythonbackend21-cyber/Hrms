@@ -5,7 +5,7 @@ import CountsSummary from "./components/CountsSummary";
 import AttendanceTrendChart from "./components/AttendanceTrendChart";
 import LeaveStatusChart from "./components/LeaveStatusChart";
 import MyStatusSummary from "./components/MyStatusSummary";
-import MyAttendanceCalendar from "./components/MyAttendanceCalendar";
+import MyQuickLinks from "./components/MyQuickLinks";
 import RadialStat from "./components/RadialStat";
 import RecentLeaves from "./components/RecentLeaves";
 import MyRecentAttendance from "./components/MyRecentAttendance";
@@ -286,10 +286,13 @@ export default function DashboardPage() {
 
           <div>
             <div className="mb-3">
-              <p className="section-label">Calendar</p>
+              <p className="section-label">Quick links</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+                Jump straight to your attendance, leave and holiday screens
+              </p>
             </div>
 
-            <MyAttendanceCalendar />
+            <MyQuickLinks />
           </div>
 
           <div>

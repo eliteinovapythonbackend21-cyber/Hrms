@@ -2,8 +2,10 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { attendanceApi } from "@/api/attendance.api";
 import { leavesApi } from "@/api/leaves.api";
-import { holidayApi } from "@/api/master.api";
+import { holidayApi, masterApi } from "@/api/master.api";
 import { getUser } from "@/utils/tokenHelpers";
+import { useCompanies } from "@/features/master/company/useCompanies";
+import { useCompanyBranches } from "@/features/master/branches/useBranches";
 
 const MONTH_NAMES = [
   "January", "February", "March", "April", "May", "June",
@@ -52,14 +54,114 @@ export default function MyAttendanceCalendar() {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const monthEnd = toISODate(year, month, daysInMonth);
 
+  /*
+   * Organization filters — Company → Branch → Department →
+   * Designation, same cascading pattern as AttendanceListPage.jsx.
+   * The calendar always stays scoped to this login's own employee_id
+   * (the grid renders one record per day, so it can't meaningfully show
+   * more than one employee), and the backend join additionally narrows
+   * that to only the selected company/branch/department/designation —
+   * so these filters double as a quick "does my record match this
+   * org slice" check, and matter more once the backend allows an HR
+   * employee login to browse broader attendance data from other screens.
+   */
+
+  const [companyFilterId, setCompanyFilterId] = useState("");
+  const [branchFilterId, setBranchFilterId] = useState("");
+  const [departmentFilterId, setDepartmentFilterId] = useState("");
+  const [designationFilterId, setDesignationFilterId] = useState("");
+
+  const { data: companyData, isLoading: companiesLoading } = useCompanies({
+    page: 1,
+    per_page: 1000,
+    is_active: true,
+  });
+  const filterCompanies = companyData?.items || companyData?.data || [];
+
+  const { data: branchData, isLoading: branchesLoading } = useCompanyBranches(
+    companyFilterId || undefined,
+    { page: 1, per_page: 1000, is_active: true }
+  );
+  const filterBranches = branchData?.items || branchData?.data || [];
+
+  const { data: departmentData, isLoading: departmentsLoading } = useQuery({
+    queryKey: ["my-calendar-filter-departments", companyFilterId, branchFilterId],
+    queryFn: async () => {
+      const res = await masterApi.listDepartments({
+        company_id: companyFilterId ? Number(companyFilterId) : undefined,
+        branch_id: branchFilterId ? Number(branchFilterId) : undefined,
+        page: 1,
+        per_page: 1000,
+        is_active: true,
+      });
+      return res?.data?.data || res?.data || {};
+    },
+    enabled: !!branchFilterId,
+  });
+  const filterDepartments = departmentData?.items || departmentData?.data || [];
+
+  const { data: designationData, isLoading: designationsLoading } = useQuery({
+    queryKey: ["my-calendar-filter-designations", departmentFilterId],
+    queryFn: async () => {
+      const res = await masterApi.listDesignations({
+        department_id: departmentFilterId ? Number(departmentFilterId) : undefined,
+        page: 1,
+        per_page: 1000,
+        is_active: true,
+      });
+      return res?.data?.data || res?.data || {};
+    },
+    enabled: !!departmentFilterId,
+  });
+  const filterDesignations = designationData?.items || designationData?.data || [];
+
+  const handleCompanyFilterChange = (e) => {
+    setCompanyFilterId(e.target.value);
+    setBranchFilterId("");
+    setDepartmentFilterId("");
+    setDesignationFilterId("");
+  };
+
+  const handleBranchFilterChange = (e) => {
+    setBranchFilterId(e.target.value);
+    setDepartmentFilterId("");
+    setDesignationFilterId("");
+  };
+
+  const handleDepartmentFilterChange = (e) => {
+    setDepartmentFilterId(e.target.value);
+    setDesignationFilterId("");
+  };
+
+  const handleDesignationFilterChange = (e) => {
+    setDesignationFilterId(e.target.value);
+  };
+
+  const orgFilterParams = {
+    company_id: companyFilterId ? Number(companyFilterId) : undefined,
+    branch_id: branchFilterId ? Number(branchFilterId) : undefined,
+    department_id: departmentFilterId ? Number(departmentFilterId) : undefined,
+    designation_id: designationFilterId ? Number(designationFilterId) : undefined,
+  };
+
   const { data: attendanceData, isLoading: attendanceLoading, isError: attendanceError } = useQuery({
-    queryKey: ["my-attendance-calendar", employeeId, monthStart, monthEnd],
+    queryKey: [
+      "my-attendance-calendar",
+      employeeId,
+      monthStart,
+      monthEnd,
+      companyFilterId,
+      branchFilterId,
+      departmentFilterId,
+      designationFilterId,
+    ],
     queryFn: async () => {
       const res = await attendanceApi.list({
         employee_id: employeeId,
         from_date: monthStart,
         to_date: monthEnd,
         per_page: 100,
+        ...orgFilterParams,
       });
       return res.data?.data?.items || [];
     },
@@ -219,6 +321,63 @@ export default function MyAttendanceCalendar() {
           Failed to load calendar data. Please refresh the page and try again.
         </div>
       )}
+
+      {/* ORGANIZATION FILTERS */}
+      <div className="grid grid-cols-2 gap-2 px-4 pt-3 sm:grid-cols-4">
+        <select
+          value={companyFilterId}
+          onChange={handleCompanyFilterChange}
+          disabled={companiesLoading}
+          className="h-9 w-full rounded-lg border border-slate-200 bg-white px-2 text-xs text-slate-700 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-200"
+        >
+          <option value="">All Companies</option>
+          {filterCompanies.map((company) => (
+            <option key={company.id} value={company.id}>{company.name}</option>
+          ))}
+        </select>
+
+        <select
+          value={branchFilterId}
+          onChange={handleBranchFilterChange}
+          disabled={!companyFilterId || branchesLoading}
+          className="h-9 w-full rounded-lg border border-slate-200 bg-white px-2 text-xs text-slate-700 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-200"
+        >
+          <option value="">
+            {!companyFilterId ? "Select Company First" : branchesLoading ? "Loading..." : "All Branches"}
+          </option>
+          {filterBranches.map((branch) => (
+            <option key={branch.id} value={branch.id}>{branch.name}</option>
+          ))}
+        </select>
+
+        <select
+          value={departmentFilterId}
+          onChange={handleDepartmentFilterChange}
+          disabled={!branchFilterId || departmentsLoading}
+          className="h-9 w-full rounded-lg border border-slate-200 bg-white px-2 text-xs text-slate-700 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-200"
+        >
+          <option value="">
+            {!branchFilterId ? "Select Branch First" : departmentsLoading ? "Loading..." : "All Departments"}
+          </option>
+          {filterDepartments.map((department) => (
+            <option key={department.id} value={department.id}>{department.department_name}</option>
+          ))}
+        </select>
+
+        <select
+          value={designationFilterId}
+          onChange={handleDesignationFilterChange}
+          disabled={!departmentFilterId || designationsLoading}
+          className="h-9 w-full rounded-lg border border-slate-200 bg-white px-2 text-xs text-slate-700 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-200"
+        >
+          <option value="">
+            {!departmentFilterId ? "Select Department First" : designationsLoading ? "Loading..." : "All Designations"}
+          </option>
+          {filterDesignations.map((designation) => (
+            <option key={designation.id} value={designation.id}>{designation.designation_name || designation.name}</option>
+          ))}
+        </select>
+      </div>
 
       {/* SUMMARY */}
       <div className="grid grid-cols-3 gap-3 px-4 py-3">

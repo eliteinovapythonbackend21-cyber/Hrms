@@ -181,10 +181,11 @@ def _generate_branch_code(company, branch_name):
 @jwt_required()
 @with_token
 def list_departments(token_response):
-    current_user = _get_current_user()
-    if not _is_admin(current_user):
-        return jsonify({"message": "Admin privileges required"}), 403
-
+    # Read access is open to any authenticated user — needed for the
+    # Company/Branch/Department/Designation org filter dropdowns shown
+    # on employee-facing screens (My Calendar, Dashboard, and the
+    # HR-employee's org-wide Attendance/Leaves views). Create/update/
+    # delete stay admin-only below.
     query = Department.query
 
     is_active_param = request.args.get("is_active")
@@ -393,10 +394,7 @@ def delete_department(department_id, token_response):
 @jwt_required()
 @with_token
 def list_designations(token_response):
-    current_user = _get_current_user()
-    if not _is_admin(current_user):
-        return jsonify({"message": "Admin privileges required"}), 403
-
+    # Read access is open to any authenticated user (see list_departments).
     # Was: Designation.query.filter_by(is_active=True) — same bug as
     # departments/companies/branches had: deactivated rows were never
     # returned at all, so the Inactive/All tabs could never show them.
@@ -523,10 +521,7 @@ def delete_designation(designation_id, token_response):
 @jwt_required()
 @with_token
 def list_companies(token_response):
-    current_user = _get_current_user()
-    if not _is_admin(current_user):
-        return jsonify({"message": "Admin privileges required"}), 403
-
+    # Read access is open to any authenticated user (see list_departments).
     query = Company.query
 
     is_active_param = request.args.get("is_active")
@@ -732,11 +727,7 @@ def delete_company(company_id, token_response):
 @jwt_required()
 @with_token
 def list_branches(token_response):
-    current_user = _get_current_user()
-
-    if not _is_admin(current_user):
-        return jsonify({"message": "Admin privileges required"}), 403
-
+    # Read access is open to any authenticated user (see list_departments).
     query = Branch.query
 
     is_active_param = request.args.get("is_active")
@@ -796,10 +787,7 @@ def get_branch(branch_id, token_response):
 @jwt_required()
 @with_token
 def list_company_branches(company_id, token_response):
-    current_user = _get_current_user()
-    if not _is_admin(current_user):
-        return jsonify({"message": "Admin privileges required"}), 403
-
+    # Read access is open to any authenticated user (see list_departments).
     company, error_response = _fetch_company(company_id)
 
     if error_response:

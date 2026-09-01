@@ -109,18 +109,32 @@ export const navConfig = [
     ],
   },
   {
-    // Plain "employee" logins get one consolidated section instead of the
-    // separate "Holidays" and "HR" sections above — same 4 screens, just
-    // not labeled "HR" for a non-HR user. Admin/HR/Finance nav is untouched.
+    // Plain "employee" logins (Normal, CRM and HR department employees
+    // alike — the CRM/HR sections below are layered on top of this same
+    // base nav) get their own attendance section straight under
+    // Dashboard, split out from the holiday-related screens below.
+    // Admin/HR-sub-role/Finance nav is untouched.
     label: "My Attendance",
     path: "/attendance",
     icon: "attendance",
     roles: ["employee"],
     children: [
-      { label: "Holidays", path: "/holidays", icon: "holiday", roles: ["employee"] },
-      { label: "Leave Types", path: "/leave-types", icon: "leaveType", roles: ["employee"] },
       { label: "Attendance", path: "/attendance", icon: "attendance", roles: ["employee"] },
-      { label: "Leaves", path: "/leaves", icon: "leaves", roles: ["employee"] },
+      { label: "Leave", path: "/leaves", icon: "leaves", roles: ["employee"] },
+    ],
+  },
+  {
+    // Everything holiday/leave-type related for a plain employee login,
+    // plus a standalone "Calendar" screen (the same widget shown on the
+    // Dashboard) for a dedicated month view.
+    label: "My Holidays",
+    path: "/my-calendar",
+    icon: "holiday",
+    roles: ["employee"],
+    children: [
+      { label: "Calendar", path: "/my-calendar", icon: "attendance", roles: ["employee"] },
+      { label: "Holidays", path: "/holidays", icon: "holiday", roles: ["employee"] },
+      { label: "Leave Type", path: "/leave-types", icon: "leaveType", roles: ["employee"] },
     ],
   },
 

@@ -25,5 +25,8 @@ export const validateEditProfile = (data) => {
   if (!isRequired(data.email)) errors.email = "Email is required";
   else if (!isValidEmail(data.email)) errors.email = "Enter a valid email address";
   if (data.mobile && !isValidMobile(data.mobile)) errors.mobile = "Enter a valid mobile number";
+  if (data.other_number && !isValidMobile(data.other_number)) errors.other_number = "Enter a valid mobile number";
+  if (data.emergency_contact_number && !isValidMobile(data.emergency_contact_number))
+    errors.emergency_contact_number = "Enter a valid mobile number";
   return errors;
 };

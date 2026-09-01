@@ -48,6 +48,7 @@ export const routePermissions = {
   "/master/designations": ["admin"],
   "/leave-types": ["admin", ...EMPLOYEE_LIKE_ROLES],
   "/holidays": ["admin", ...EMPLOYEE_LIKE_ROLES],
+  "/my-calendar": ["admin", ...EMPLOYEE_LIKE_ROLES],
   "/users/hr/:roleSlug": ["admin", ...HR_SUB_ROLES],
   "/network": ["admin"],
   "/roles": ["admin"],

@@ -696,6 +696,29 @@ export default function AttendanceListPage() {
 
   /*
    * ----------------------------------------------------------
+   * STATUS FILTER — clicking the Present / Absent / Leave metric
+   * card below narrows the list to just that status; clicking the
+   * same card again clears it back to everything for the period.
+   * ----------------------------------------------------------
+   */
+
+  const [statusCardFilter, setStatusCardFilter] = useState(null);
+
+  const statusMatchers = {
+    Present: isPresent,
+    Absent: isAbsent,
+    Leave: isLeave,
+  };
+
+  const toggleStatusCardFilter = (status) =>
+    setStatusCardFilter((current) => (current === status ? null : status));
+
+  const displayedAttendanceItems = statusCardFilter
+    ? attendanceItems.filter(statusMatchers[statusCardFilter])
+    : attendanceItems;
+
+  /*
+   * ----------------------------------------------------------
    * TOTAL RECORDS
    * ----------------------------------------------------------
    */
@@ -890,6 +913,8 @@ export default function AttendanceListPage() {
             value={presentCount}
             description={periodTitle}
             icon="present"
+            onClick={() => toggleStatusCardFilter("Present")}
+            active={statusCardFilter === "Present"}
           />
 
           <AttendanceMetric
@@ -897,6 +922,8 @@ export default function AttendanceListPage() {
             value={absentCount}
             description={periodTitle}
             icon="absent"
+            onClick={() => toggleStatusCardFilter("Absent")}
+            active={statusCardFilter === "Absent"}
           />
 
           <AttendanceMetric
@@ -904,6 +931,8 @@ export default function AttendanceListPage() {
             value={leaveCount}
             description={periodTitle}
             icon="leave"
+            onClick={() => toggleStatusCardFilter("Leave")}
+            active={statusCardFilter === "Leave"}
           />
 
           <AttendanceMetric
@@ -922,8 +951,10 @@ export default function AttendanceListPage() {
             <div>
 
               <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
-                {periodType ===
-                PERIOD_TYPES.DAILY
+                {statusCardFilter
+                  ? `${statusCardFilter} Days`
+                  : periodType ===
+                    PERIOD_TYPES.DAILY
                   ? "Today's Attendance"
                   : periodType ===
                     PERIOD_TYPES.MONTHLY
@@ -937,9 +968,21 @@ export default function AttendanceListPage() {
 
             </div>
 
-            <span className="w-fit rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-500 dark:bg-white/[0.06] dark:text-slate-400">
-              {totalRecords} Records
-            </span>
+            <div className="flex items-center gap-2">
+              {statusCardFilter && (
+                <button
+                  type="button"
+                  onClick={() => setStatusCardFilter(null)}
+                  className="rounded-full border border-slate-200 px-3 py-1 text-xs font-medium text-slate-500 hover:bg-slate-50 dark:border-white/10 dark:text-slate-400 dark:hover:bg-white/5"
+                >
+                  Clear filter
+                </button>
+              )}
+
+              <span className="w-fit rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-500 dark:bg-white/[0.06] dark:text-slate-400">
+                {displayedAttendanceItems.length} Records
+              </span>
+            </div>
 
           </div>
 
@@ -949,7 +992,7 @@ export default function AttendanceListPage() {
             </div>
           ) : (
             <AttendanceTable
-              data={attendanceItems}
+              data={displayedAttendanceItems}
               loading={isLoading}
               sortBy={sortBy}
               sortDir={sortDir}
@@ -1329,6 +1372,8 @@ export default function AttendanceListPage() {
             value={presentCount}
             description="Employees present"
             icon="present"
+            onClick={() => toggleStatusCardFilter("Present")}
+            active={statusCardFilter === "Present"}
           />
 
           <AttendanceMetric
@@ -1336,6 +1381,8 @@ export default function AttendanceListPage() {
             value={absentCount}
             description="Employees absent"
             icon="absent"
+            onClick={() => toggleStatusCardFilter("Absent")}
+            active={statusCardFilter === "Absent"}
           />
 
           <AttendanceMetric
@@ -1343,6 +1390,8 @@ export default function AttendanceListPage() {
             value={leaveCount}
             description="Leave records"
             icon="leave"
+            onClick={() => toggleStatusCardFilter("Leave")}
+            active={statusCardFilter === "Leave"}
           />
 
           <AttendanceMetric
@@ -1560,8 +1609,10 @@ export default function AttendanceListPage() {
               <div className="flex items-center gap-2">
 
                 <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
-                  {periodType ===
-                  PERIOD_TYPES.DAILY
+                  {statusCardFilter
+                    ? `${statusCardFilter} Days`
+                    : periodType ===
+                    PERIOD_TYPES.DAILY
                     ? "Daily Attendance Records"
                     : periodType ===
                       PERIOD_TYPES.MONTHLY
@@ -1570,8 +1621,18 @@ export default function AttendanceListPage() {
                 </h2>
 
                 <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-500 dark:bg-white/[0.06] dark:text-slate-400">
-                  {totalRecords}
+                  {displayedAttendanceItems.length}
                 </span>
+
+                {statusCardFilter && (
+                  <button
+                    type="button"
+                    onClick={() => setStatusCardFilter(null)}
+                    className="rounded-full border border-slate-200 px-3 py-1 text-xs font-medium text-slate-500 hover:bg-slate-50 dark:border-white/10 dark:text-slate-400 dark:hover:bg-white/5"
+                  >
+                    Clear filter
+                  </button>
+                )}
 
               </div>
 
@@ -1610,7 +1671,7 @@ export default function AttendanceListPage() {
         <div className="overflow-x-auto">
 
           <AttendanceTable
-            data={attendanceItems}
+            data={displayedAttendanceItems}
             loading={isLoading}
             sortBy={sortBy}
             sortDir={sortDir}
@@ -2018,6 +2079,8 @@ function AttendanceMetric({
   value,
   description,
   icon,
+  onClick,
+  active,
 }) {
   const tileTints = {
     users: "stat-tile-primary",
@@ -2057,8 +2120,20 @@ function AttendanceMetric({
     hours: "◴",
   };
 
+  const Wrapper = onClick ? "button" : "div";
+
   return (
-    <div className={`stat-tile ${tileTints[icon] || "stat-tile-primary"} !p-5`}>
+    <Wrapper
+      type={onClick ? "button" : undefined}
+      onClick={onClick}
+      className={`stat-tile ${tileTints[icon] || "stat-tile-primary"} !p-5 ${
+        onClick
+          ? `w-full text-left transition-transform hover:-translate-y-0.5 ${
+              active ? "ring-2 ring-primary-500" : ""
+            }`
+          : ""
+      }`}
+    >
 
       <div className="flex items-start justify-between">
 
@@ -2086,7 +2161,7 @@ function AttendanceMetric({
 
       </div>
 
-    </div>
+    </Wrapper>
   );
 }
 
