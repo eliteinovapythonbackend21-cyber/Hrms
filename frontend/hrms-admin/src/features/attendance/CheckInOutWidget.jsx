@@ -559,28 +559,45 @@ export default function CheckInOutWidget() {
             </div>
           </div>
 
-          <Button
-            onClick={handleEndOfDay}
-            isLoading={saving}
-            disabled={!employeeId}
-            className="w-full"
-          >
-            🏁 Check out for the day
-          </Button>
+          <div className="flex justify-center pt-1">
+            <Button
+              onClick={handleEndOfDay}
+              isLoading={saving}
+              disabled={!employeeId}
+              className="h-10 rounded-lg px-6 text-sm font-semibold"
+            >
+              🏁 Check out for the day
+            </Button>
+          </div>
         </div>
       ) : (
-        <Button
-          onClick={handleCheckIn}
-          isLoading={saving}
-          disabled={!employeeId}
-          className="w-full"
-        >
-          {paused
-            ? `Check in — back from ${
-                BREAK_META[lastOutType]?.label || "break"
-              }`
-            : "Check In"}
-        </Button>
+        <div className="flex justify-center">
+          <Button
+            onClick={handleCheckIn}
+            isLoading={saving}
+            disabled={!employeeId}
+            className="inline-flex h-10 items-center gap-2 rounded-lg px-8 text-sm font-semibold"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.4"
+              className="h-4 w-4"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="m5 12 5 5L20 7"
+              />
+            </svg>
+            {paused
+              ? `Check in — back from ${
+                  BREAK_META[lastOutType]?.label || "break"
+                }`
+              : "Check In"}
+          </Button>
+        </div>
       )}
 
       <ReasonPrompt
