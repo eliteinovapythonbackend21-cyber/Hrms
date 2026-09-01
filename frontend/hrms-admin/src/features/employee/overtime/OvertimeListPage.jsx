@@ -391,6 +391,10 @@ export default function OvertimeListPage() {
     String(user?.role || "").toLowerCase() ===
     "admin";
 
+  // HR-department employees get the same org-wide, filterable (read-only)
+  // view as an admin here — not the self-scoped employee view.
+  const canViewAll = isAdmin || readOnly;
+
 
   /* ==========================================================
      EDIT
@@ -735,7 +739,7 @@ export default function OvertimeListPage() {
     },
 
     enabled:
-      isAdmin &&
+      canViewAll &&
       Boolean(branchFilterId),
   });
 
@@ -767,7 +771,7 @@ export default function OvertimeListPage() {
     },
 
     enabled:
-      isAdmin &&
+      canViewAll &&
       Boolean(departmentFilterId),
   });
 
@@ -887,7 +891,7 @@ export default function OvertimeListPage() {
         RECORD_STATUS.ACTIVE;
     }
 
-    if (isAdmin) {
+    if (canViewAll) {
       if (companyFilterId) {
         params.company_id =
           Number(companyFilterId);
@@ -912,7 +916,7 @@ export default function OvertimeListPage() {
           );
       }
     } else if (
-      user?.employee?.id
+      !canViewAll && user?.employee?.id
     ) {
       params.employee_id =
         Number(user.employee.id);
@@ -920,7 +924,7 @@ export default function OvertimeListPage() {
 
     return params;
   }, [
-    isAdmin,
+    canViewAll,
     user?.employee?.id,
     companyFilterId,
     branchFilterId,
@@ -1264,7 +1268,7 @@ export default function OvertimeListPage() {
           ORGANIZATION FILTERS
       ====================================================== */}
 
-      {isAdmin && (
+      {canViewAll && (
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
 
           <div className="mb-4">

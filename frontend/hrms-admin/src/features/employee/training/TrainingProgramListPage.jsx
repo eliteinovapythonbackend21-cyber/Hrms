@@ -428,6 +428,10 @@ export default function TrainingProgramListPage() {
   const isAdmin =
     String(user?.role || "").toLowerCase() === "admin";
 
+  // An HR-department employee gets the same org-wide, filterable view as
+  // an admin here (read-only) — NOT the self-scoped employee view.
+  const canViewAll = isAdmin || readOnly;
+
 
   /* ==========================================================
      EDIT
@@ -745,7 +749,7 @@ export default function TrainingProgramListPage() {
     },
 
     enabled:
-      isAdmin &&
+      canViewAll &&
       Boolean(branchFilterId),
   });
 
@@ -776,7 +780,7 @@ export default function TrainingProgramListPage() {
     },
 
     enabled:
-      isAdmin &&
+      canViewAll &&
       Boolean(departmentFilterId),
   });
 
@@ -891,7 +895,7 @@ export default function TrainingProgramListPage() {
        ADMIN FILTERS
     -------------------------------------------------------- */
 
-    if (isAdmin) {
+    if (canViewAll) {
       if (companyFilterId) {
         params.company_id =
           Number(companyFilterId);
@@ -919,7 +923,7 @@ export default function TrainingProgramListPage() {
     -------------------------------------------------------- */
 
     if (
-      !isAdmin &&
+      !canViewAll &&
       user?.employee?.id
     ) {
       params.employee_id =
@@ -929,7 +933,7 @@ export default function TrainingProgramListPage() {
 
     return params;
   }, [
-    isAdmin,
+    canViewAll,
     user?.employee?.id,
 
     companyFilterId,
@@ -1424,7 +1428,7 @@ export default function TrainingProgramListPage() {
 
       {/* ORGANIZATION FILTERS */}
 
-      {isAdmin && (
+      {canViewAll && (
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
 
           <div className="mb-4">

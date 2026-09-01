@@ -335,6 +335,10 @@ export default function PermissionRequestListPage() {
     String(user?.role || "").toLowerCase() ===
     "admin";
 
+  // HR-department employees get the same org-wide, filterable (read-only)
+  // view as an admin here — not the self-scoped employee view.
+  const canViewAll = isAdmin || readOnly;
+
   /* ==========================================================
      EDIT MODAL
   ========================================================== */
@@ -632,7 +636,7 @@ export default function PermissionRequestListPage() {
     },
 
     enabled:
-      isAdmin &&
+      canViewAll &&
       !!branchFilterId,
   });
 
@@ -659,7 +663,7 @@ export default function PermissionRequestListPage() {
     },
 
     enabled:
-      isAdmin &&
+      canViewAll &&
       !!departmentFilterId,
   });
 
@@ -755,7 +759,7 @@ export default function PermissionRequestListPage() {
         RECORD_STATUS.ACTIVE;
     }
 
-    if (isAdmin) {
+    if (canViewAll) {
       if (companyFilterId) {
         params.company_id =
           companyFilterId;
@@ -775,14 +779,14 @@ export default function PermissionRequestListPage() {
         params.designation_id =
           designationFilterId;
       }
-    } else if (user?.employee?.id) {
+    } else if (!canViewAll && user?.employee?.id) {
       params.employee_id =
         Number(user.employee.id);
     }
 
     return params;
   }, [
-    isAdmin,
+    canViewAll,
     user?.employee?.id,
     companyFilterId,
     branchFilterId,
@@ -1101,7 +1105,7 @@ export default function PermissionRequestListPage() {
 
       {/* ORGANIZATION FILTERS */}
 
-      {isAdmin && (
+      {canViewAll && (
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
 
           <div className="mb-4">
