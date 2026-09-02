@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { useMonthlyLeaveRecord } from "./useLeaves";
 
 import Button from "@/components/ui/Button";
+import ViewToggle, { useViewMode } from "@/components/table/ViewToggle";
 import { getUser } from "@/utils/tokenHelpers";
 import { useIsHrEmployee } from "@/hooks/useIsHrEmployee";
 import { formatDate } from "@/utils/formatDate";
@@ -163,6 +164,75 @@ function EmployeeRow({ row, canViewAll }) {
   );
 }
 
+function EmployeeCard({ row, canViewAll }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:shadow-md dark:border-white/10 dark:bg-white/[0.04]">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="truncate font-semibold text-slate-900 dark:text-white">
+            {row.employee}
+          </p>
+          <p className="text-[11px] text-slate-400">
+            {row.employee_code || "—"}
+            {canViewAll && row.department ? ` · ${row.department}` : ""}
+          </p>
+        </div>
+        <div className="shrink-0 text-right">
+          <p className="text-xl font-bold leading-none text-slate-900 dark:text-white">
+            {row.total_days}
+          </p>
+          <p className="text-[10px] uppercase tracking-wide text-slate-400">days</p>
+        </div>
+      </div>
+
+      <div className="mt-3 flex flex-wrap gap-1">
+        {Object.entries(row.by_category || {}).map(([cat, val]) => (
+          <CategoryChip key={cat} category={cat} value={val} />
+        ))}
+        {Object.entries(row.by_status || {}).map(([st, val]) => (
+          <StatusChip key={st} status={st} value={val} />
+        ))}
+      </div>
+
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="mt-3 text-xs font-semibold text-primary-600 hover:underline dark:text-primary-400"
+      >
+        {open ? "Hide" : `Show ${row.request_count} request${row.request_count === 1 ? "" : "s"}`}
+      </button>
+
+      {open && (
+        <div className="mt-2 space-y-2 border-t border-slate-100 pt-2 dark:border-white/10">
+          {row.leaves.map((lv) => (
+            <div key={lv.id} className="rounded-lg bg-slate-50 p-2 text-xs dark:bg-white/[0.03]">
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-medium text-slate-700 dark:text-slate-200">
+                  {lv.leave_type}
+                </span>
+                <span className="text-slate-500">{lv.status}</span>
+              </div>
+              <p className="mt-0.5 text-slate-500">
+                {formatDate(lv.from_date)} → {formatDate(lv.to_date)} · {lv.days_in_month}d
+              </p>
+              {lv.reason && (
+                <p className="mt-0.5 text-slate-500">
+                  <span className="font-semibold">Reason:</span> {lv.reason}
+                </p>
+              )}
+              {lv.description && (
+                <p className="mt-0.5 whitespace-pre-line text-slate-400">{lv.description}</p>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function MonthlyLeaveRecordPage() {
   const now = new Date();
   const [month, setMonth] = useState(now.getMonth() + 1);
@@ -172,6 +242,8 @@ export default function MonthlyLeaveRecordPage() {
   const isAdmin = String(user?.role || "").toLowerCase() === "admin";
   const { isHrEmployee } = useIsHrEmployee();
   const canViewAll = isAdmin || isHrEmployee;
+
+  const [view, setView] = useViewMode("leaveMonthlyRecord:view");
 
   const years = useMemo(
     () => Array.from({ length: 6 }, (_, i) => now.getFullYear() - i),
@@ -255,11 +327,14 @@ export default function MonthlyLeaveRecordPage() {
           <h2 className="text-base font-semibold text-slate-900 dark:text-white">
             {MONTHS[month - 1]} {year}
           </h2>
-          {isFetching && (
-            <span className="rounded-full bg-primary-50 px-2.5 py-1 text-[11px] font-semibold text-primary-600 dark:bg-primary-900/20 dark:text-primary-400">
-              Updating
-            </span>
-          )}
+          <div className="flex items-center gap-2">
+            {isFetching && (
+              <span className="rounded-full bg-primary-50 px-2.5 py-1 text-[11px] font-semibold text-primary-600 dark:bg-primary-900/20 dark:text-primary-400">
+                Updating
+              </span>
+            )}
+            <ViewToggle mode={view} onChange={setView} />
+          </div>
         </div>
 
         {isError ? (
@@ -276,6 +351,12 @@ export default function MonthlyLeaveRecordPage() {
             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
               Nothing overlaps {MONTHS[month - 1]} {year}.
             </p>
+          </div>
+        ) : view === "cards" ? (
+          <div className="grid grid-cols-1 gap-3 p-4 md:grid-cols-2 xl:grid-cols-3">
+            {rows.map((row) => (
+              <EmployeeCard key={row.employee_id} row={row} canViewAll={canViewAll} />
+            ))}
           </div>
         ) : (
           <div className="overflow-x-auto">
