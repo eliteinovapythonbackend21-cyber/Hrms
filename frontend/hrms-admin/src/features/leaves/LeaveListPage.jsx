@@ -70,6 +70,10 @@ const EXPORT_COLUMNS = [
     accessor: (r) => r.reason,
   },
   {
+    header: "Description",
+    accessor: (r) => r.description,
+  },
+  {
     header: "Status",
     accessor: (r) => r.status,
   },
@@ -856,6 +860,26 @@ export default function LeaveListPage() {
               onExportPDF={exportPDF}
               exporting={exporting}
             />
+
+            <Link to="/leaves/monthly-record">
+              <Button variant="secondary">
+                <span className="flex items-center gap-2">
+
+                  <svg
+                    className="h-4 w-4"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <rect x="3" y="4" width="18" height="17" rx="2" />
+                    <path d="M8 2v4M16 2v4M3 10h18" />
+                  </svg>
+
+                  Monthly Record
+                </span>
+              </Button>
+            </Link>
 
             {isAdmin && (
               <Link to="/leaves/approvals">

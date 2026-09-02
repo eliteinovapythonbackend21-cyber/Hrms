@@ -37,6 +37,7 @@ import AttendanceReportsPage from "@/features/attendance/AttendanceReportsPage";
 import LeaveListPage from "@/features/leaves/LeaveListPage";
 import LeaveFormPage from "@/features/leaves/LeaveFormPage";
 import LeaveApprovalsPage from "@/features/leaves/LeaveApprovalsPage";
+import MonthlyLeaveRecordPage from "@/features/leaves/MonthlyLeaveRecordPage";
 
 // Master
 import CompanyListPage from "@/features/master/company/CompanyListPage";
@@ -140,6 +141,7 @@ export default function AppRouter() {
         <Route path="/leaves/new" element={<RoleGuard><LeaveFormPage /></RoleGuard>} />
         <Route path="/leaves/:id/edit" element={<RoleGuard><LeaveFormPage /></RoleGuard>} />
         <Route path="/leaves/approvals" element={<RoleGuard><LeaveApprovalsPage /></RoleGuard>} />
+        <Route path="/leaves/monthly-record" element={<RoleGuard><MonthlyLeaveRecordPage /></RoleGuard>} />
 
         {/* Master */}
         <Route path="/master/company" element={<RoleGuard><CompanyListPage /></RoleGuard>} />

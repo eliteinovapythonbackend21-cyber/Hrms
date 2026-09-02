@@ -92,6 +92,7 @@ export const API = {
     DELETE: (id) => `/leaves/${id}`,
     APPROVE: (id) => `/leaves/${id}/approve`,
     REJECT: (id) => `/leaves/${id}/reject`,
+    MONTHLY_SUMMARY: "/leaves/monthly-summary",
   },
   ROLES: {
     LIST: "/roles/",

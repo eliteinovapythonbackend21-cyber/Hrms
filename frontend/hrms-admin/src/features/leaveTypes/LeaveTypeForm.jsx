@@ -1,5 +1,6 @@
 import { useState } from "react";
 import Input from "@/components/ui/Input";
+import Select from "@/components/ui/Select";
 import Button from "@/components/ui/Button";
 import { isRequired } from "@/utils/validators";
 
@@ -12,6 +13,7 @@ const validateLeaveType = (data) => {
 export default function LeaveTypeForm({ initialData = {}, onSubmit, loading, onCancel }) {
   const [form, setForm] = useState({
     name: initialData.name || "",
+    category: initialData.category || "Leave",
     is_active: initialData.is_active !== undefined ? initialData.is_active : true,
   });
   const [errors, setErrors] = useState({});
@@ -34,6 +36,20 @@ export default function LeaveTypeForm({ initialData = {}, onSubmit, loading, onC
   return (
     <form id="LeaveType-form" onSubmit={handleSubmit}>
       <Input label="Leave Type Name" name="name" value={form.name} onChange={handleChange} error={errors.name} required />
+      <Select
+        label="Category"
+        name="category"
+        value={form.category}
+        onChange={handleChange}
+        placeholder="Leave"
+        options={[
+          { value: "Leave", label: "Leave" },
+          { value: "Permission", label: "Permission" },
+        ]}
+      />
+      <p className="-mt-3 mb-4 text-xs text-slate-400 dark:text-slate-500">
+        Leave = multi-day absence · Permission = short in-day absence
+      </p>
       <div className="mb-4">
         <label className="inline-flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
           <input type="checkbox" name="is_active" checked={form.is_active} onChange={handleChange} className="h-4 w-4" />

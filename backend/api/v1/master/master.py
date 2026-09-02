@@ -993,6 +993,8 @@ def list_leave_types(token_response):
     query = LeaveType.query
     if request.args.get("is_active") is not None:
         query = query.filter(LeaveType.is_active == (request.args.get("is_active").lower() in {"true", "1", "yes"}))
+    if request.args.get("category"):
+        query = query.filter(LeaveType.category == request.args.get("category"))
     query = apply_search_filters(query, request.args, ["name"])
     return jsonify({"message": "Leave types fetched", "data": paginate_query(query, request.args), "token_response": token_response}), 200
 
@@ -1006,8 +1008,12 @@ def create_leave_type(token_response):
         return jsonify({"message": "Admin privileges required"}), 403
 
     data = request.json or {}
+    category = data.get("category") or "Leave"
+    if category not in {"Leave", "Permission"}:
+        return jsonify({"message": "category must be 'Leave' or 'Permission'"}), 400
     leave_type = LeaveType(
         name=data.get("name"),
+        category=category,
         is_active=data.get("is_active", True),
     )
     db.session.add(leave_type)
@@ -1035,7 +1041,9 @@ def update_leave_type(leave_type_id, token_response):
     if error_response:
         return error_response
     data = request.json or {}
-    for field in ["name", "is_active"]:
+    if "category" in data and data["category"] not in {"Leave", "Permission"}:
+        return jsonify({"message": "category must be 'Leave' or 'Permission'"}), 400
+    for field in ["name", "category", "is_active"]:
         if field in data:
             setattr(leave_type, field, data[field])
     try:

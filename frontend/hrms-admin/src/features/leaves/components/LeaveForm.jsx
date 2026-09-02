@@ -99,6 +99,7 @@ export default function LeaveForm({
     from_date: toDateInputValue(initialData.from_date),
     to_date: toDateInputValue(initialData.to_date),
     reason: initialData.reason || "",
+    description: initialData.description || "",
     status: initialData.status || "Pending",
   });
 
@@ -272,10 +273,24 @@ export default function LeaveForm({
         <Input
           label="Reason"
           name="reason"
-          placeholder="Enter the reason for leave..."
+          placeholder="Short reason for leave (e.g. Medical, Personal)..."
           value={form.reason}
           onChange={handleChange}
         />
+
+        <div className="mb-1">
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
+            Leave Description
+          </label>
+          <textarea
+            name="description"
+            rows={4}
+            className="input min-h-[96px] resize-y"
+            placeholder="Describe the leave request in detail — context, plan for handover, contact availability..."
+            value={form.description}
+            onChange={handleChange}
+          />
+        </div>
       </section>
 
       {/* ADMIN STATUS */}

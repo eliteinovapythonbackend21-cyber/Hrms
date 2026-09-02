@@ -1,3 +1,4 @@
+import calendar
 from datetime import date
 from flask import Blueprint, request, jsonify, send_file
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
@@ -229,6 +230,7 @@ def create_leave(token_response):
         to_date=to_date,
         total_days=data.get("total_days", total_days),
         reason=data.get("reason"),
+        description=data.get("description"),
         status=data.get("status", "Pending"),
         is_active=True,
     )
@@ -249,7 +251,7 @@ def update_leave(leave_id, token_response):
         return jsonify({"message": "Leave not found"}), 404
 
     data = request.json or {}
-    for field in ["employee_id", "leave_type_id", "reason", "status", "is_active", "total_days"]:
+    for field in ["employee_id", "leave_type_id", "reason", "description", "status", "is_active", "total_days"]:
         if field in data:
             setattr(leave, field, data[field])
 
@@ -337,3 +339,137 @@ def leave_report(token_response):
     workbook = Leave.generate_leave_report(from_date=from_date, to_date=to_date, employee_id=employee_id)
     filename = f"leave_report_{request.args.get('from_date') or 'all'}_{request.args.get('to_date') or 'all'}.xlsx"
     return send_file(workbook, as_attachment=True, download_name=filename, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+
+
+@leave_bp.route("/monthly-summary", methods=["GET"])
+@jwt_required()
+@with_token
+def leave_monthly_summary(token_response):
+    """Monthly Leave Record — one row per employee for the requested
+    month, with total leave days (clipped to the month), request count,
+    and per-status / per-category breakdowns.
+
+    Scope mirrors list_leaves: admins & HR see everyone (optionally
+    filtered by employee_id / org filters); every other login sees only
+    their own record.
+    """
+    today = date.today()
+    month = _parse_int(request.args.get("month")) or today.month
+    year = _parse_int(request.args.get("year")) or today.year
+    if not (1 <= month <= 12):
+        return jsonify({"message": "month must be 1-12"}), 400
+
+    period_start = date(year, month, 1)
+    period_end = date(year, month, calendar.monthrange(year, month)[1])
+
+    current_user = _get_current_user()
+    is_privileged = bool(current_user) and (
+        current_user.role in PRIVILEGED_LEAVE_ROLES
+        or is_hr_department_user(current_user)
+    )
+
+    query = Leave.query.filter(
+        Leave.is_active.is_(True),
+        Leave.from_date <= period_end,
+        Leave.to_date >= period_start,
+    )
+
+    if is_privileged:
+        emp_filter = _parse_int(request.args.get("employee_id"))
+        if emp_filter:
+            query = query.filter(Leave.employee_id == emp_filter)
+
+        company_id = _parse_int(request.args.get("company_id"))
+        branch_id = _parse_int(request.args.get("branch_id"))
+        department_id = _parse_int(request.args.get("department_id"))
+        designation_id = _parse_int(request.args.get("designation_id"))
+        if company_id or branch_id or department_id or designation_id:
+            query = query.join(Employee, Leave.employee_id == Employee.id)
+            if department_id:
+                query = query.filter(Employee.department_id == department_id)
+            if designation_id:
+                query = query.filter(Employee.designation_id == designation_id)
+            if company_id or branch_id:
+                query = query.join(Department, Employee.department_id == Department.id)
+                if company_id:
+                    query = query.filter(Department.company_id == company_id)
+                if branch_id:
+                    query = query.filter(Department.branch_id == branch_id)
+    else:
+        own_employee = (
+            Employee.query.filter_by(user_id=current_user.id).first()
+            if current_user
+            else None
+        )
+        query = query.filter(Leave.employee_id == (own_employee.id if own_employee else -1))
+
+    rows = {}
+    for leave in query.all():
+        overlap_start = max(leave.from_date, period_start)
+        overlap_end = min(leave.to_date, period_end)
+        days = (overlap_end - overlap_start).days + 1
+        if days <= 0:
+            continue
+
+        emp = leave.employee
+        bucket = rows.setdefault(
+            leave.employee_id,
+            {
+                "employee_id": leave.employee_id,
+                "employee": _emp_name(emp),
+                "employee_code": getattr(emp, "employee_code", None),
+                "department": emp.department.name if emp and emp.department else None,
+                "total_days": 0,
+                "request_count": 0,
+                "by_status": {},
+                "by_category": {},
+                "by_type": {},
+                "leaves": [],
+            },
+        )
+        bucket["total_days"] += days
+        bucket["request_count"] += 1
+        bucket["by_status"][leave.status] = bucket["by_status"].get(leave.status, 0) + days
+
+        lt = leave.leave_type
+        category = (lt.category if lt and getattr(lt, "category", None) else "Leave")
+        type_name = lt.name if lt else "—"
+        bucket["by_category"][category] = bucket["by_category"].get(category, 0) + days
+        bucket["by_type"][type_name] = bucket["by_type"].get(type_name, 0) + days
+        bucket["leaves"].append({
+            "id": leave.id,
+            "leave_type": type_name,
+            "category": category,
+            "from_date": leave.from_date.isoformat() if leave.from_date else None,
+            "to_date": leave.to_date.isoformat() if leave.to_date else None,
+            "days_in_month": days,
+            "status": leave.status,
+            "reason": leave.reason,
+            "description": leave.description,
+        })
+
+    result = sorted(rows.values(), key=lambda r: (r["employee"] or "").lower())
+    totals = {
+        "employees": len(result),
+        "total_days": sum(r["total_days"] for r in result),
+        "requests": sum(r["request_count"] for r in result),
+    }
+
+    return jsonify({
+        "message": "Monthly leave record fetched",
+        "data": {
+            "month": month,
+            "year": year,
+            "period_start": period_start.isoformat(),
+            "period_end": period_end.isoformat(),
+            "rows": result,
+            "totals": totals,
+        },
+        "token_response": token_response,
+    }), 200
+
+
+def _emp_name(emp):
+    if not emp:
+        return "—"
+    return f"{emp.first_name or ''} {emp.last_name or ''}".strip() or "—"

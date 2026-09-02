@@ -45,6 +45,7 @@ export const routePermissions = {
   "/leaves": ["admin", ...EMPLOYEE_LIKE_ROLES],
   "/leaves/new": ["admin", ...EMPLOYEE_LIKE_ROLES],
   "/leaves/approvals": ["admin"],
+  "/leaves/monthly-record": ["admin", ...EMPLOYEE_LIKE_ROLES],
   "/master/company": ["admin"],
   "/master/branches": ["admin"],
   "/master/departments": ["admin"],

@@ -9,4 +9,6 @@ export const leavesApi = {
   deactivate: (id) => axiosClient.delete(API.LEAVES.DELETE(id)),
   approve: (id) => axiosClient.post(API.LEAVES.APPROVE(id)),
   reject: (id) => axiosClient.post(API.LEAVES.REJECT(id)),
+  monthlySummary: (params) =>
+    axiosClient.get(API.LEAVES.MONTHLY_SUMMARY, { params }),
 };

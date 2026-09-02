@@ -121,6 +121,7 @@ export const navConfig = [
     children: [
       { label: "Attendance", path: "/attendance", icon: "attendance", roles: ["employee"] },
       { label: "Leave", path: "/leaves", icon: "leaves", roles: ["employee"] },
+      { label: "Monthly Leave Record", path: "/leaves/monthly-record", icon: "leaves", roles: ["employee"] },
     ],
   },
   {
@@ -194,6 +195,7 @@ export const navConfig = [
     children: [
       { label: "Attendance", path: "/attendance", icon: "attendance", roles: ["admin", ...EMPLOYEE_LIKE_ROLES] },
       { label: "Leaves", path: "/leaves", icon: "leaves", roles: ["admin", ...EMPLOYEE_LIKE_ROLES] },
+      { label: "Monthly Leave Record", path: "/leaves/monthly-record", icon: "leaves", roles: ["admin", ...EMPLOYEE_LIKE_ROLES] },
       { label: "Training", path: "/employee/training", icon: "employeeLifecycle", roles: TRAINING_ROLES },
       { label: "Leave Permissions", path: "/employee/permissions", icon: "employeeLifecycle", roles: HR_ADMIN_ROLES },
       { label: "Overtime", path: "/employee/overtime", icon: "employeeLifecycle", roles: HR_ADMIN_ROLES },
@@ -234,6 +236,7 @@ export const HR_EMPLOYEE_NAV = {
   children: [
     { label: "Attendance", path: "/attendance", icon: "attendance" },
     { label: "Leaves", path: "/leaves", icon: "leaves" },
+    { label: "Monthly Leave Record", path: "/leaves/monthly-record", icon: "leaves" },
     { label: "Training", path: "/employee/training", icon: "employeeLifecycle" },
     { label: "Leave Permissions", path: "/employee/permissions", icon: "employeeLifecycle" },
     { label: "Overtime", path: "/employee/overtime", icon: "employeeLifecycle" },

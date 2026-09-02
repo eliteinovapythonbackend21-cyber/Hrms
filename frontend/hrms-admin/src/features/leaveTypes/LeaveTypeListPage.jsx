@@ -32,6 +32,7 @@ import { useModulePermissions } from "@/hooks/useModulePermissions";
 const EXPORT_COLUMNS = [
   { header: "ID", accessor: (r) => r.id },
   { header: "Name", accessor: (r) => r.name },
+  { header: "Category", accessor: (r) => r.category || "Leave" },
   {
     header: "Status",
     accessor: (r) => (r.is_active ? "Active" : "Inactive"),
@@ -103,6 +104,7 @@ export default function LeaveTypeListPage() {
   const [confirmRow, setConfirmRow] = useState(null);
 
   const [statusFilter, setStatusFilter] = useState("active");
+  const [categoryFilter, setCategoryFilter] = useState("all");
 
 
   const leaveTypes = data?.items || [];
@@ -120,6 +122,10 @@ export default function LeaveTypeListPage() {
 
   const filteredLeaveTypes = leaveTypes.filter(
     (item) => {
+      if (categoryFilter !== "all" && (item.category || "Leave") !== categoryFilter) {
+        return false;
+      }
+
       if (statusFilter === "active") {
         return item.is_active;
       }
@@ -271,6 +277,27 @@ export default function LeaveTypeListPage() {
             </div>
 
           </div>
+        );
+      },
+    },
+
+
+    {
+      key: "category",
+      label: "Category",
+
+      render: (r) => {
+        const category = r.category || "Leave";
+        return (
+          <Badge
+            className={
+              category === "Permission"
+                ? "inline-flex items-center rounded-full bg-violet-50 px-2.5 py-1 text-xs text-violet-700 dark:bg-violet-500/10 dark:text-violet-300"
+                : "inline-flex items-center rounded-full bg-blue-50 px-2.5 py-1 text-xs text-blue-700 dark:bg-blue-500/10 dark:text-blue-300"
+            }
+          >
+            {category}
+          </Badge>
         );
       },
     },
@@ -542,6 +569,27 @@ export default function LeaveTypeListPage() {
             </div>
 
 
+            <div className="flex flex-wrap items-center gap-2">
+
+            <div className="flex w-fit items-center rounded-lg bg-slate-100 p-1 dark:bg-white/[0.06]">
+
+              {["all", "Leave", "Permission"].map((cat) => (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => setCategoryFilter(cat)}
+                  className={`rounded-md px-3 py-1.5 text-xs font-medium transition ${
+                    categoryFilter === cat
+                      ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
+                      : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+                  }`}
+                >
+                  {cat === "all" ? "All Types" : cat}
+                </button>
+              ))}
+
+            </div>
+
             <div className="flex w-fit items-center rounded-lg bg-slate-100 p-1 dark:bg-white/[0.06]">
 
               <button
@@ -579,6 +627,8 @@ export default function LeaveTypeListPage() {
               >
                 All
               </button>
+
+            </div>
 
             </div>
 

@@ -331,6 +331,8 @@ class LeaveType(TimestampMixin, db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False, unique=True)
+    # "Leave" (multi-day absence) or "Permission" (short in-day absence).
+    category = db.Column(db.String(20), nullable=False, default="Leave", server_default="Leave")
     is_active = db.Column(db.Boolean, default=True)
     leaves = db.relationship("Leave", back_populates="leave_type")
 
@@ -339,6 +341,7 @@ class LeaveType(TimestampMixin, db.Model):
 
     def to_dict(self):
         data = super().to_dict()
+        data["category"] = self.category or "Leave"
         return data
 
 
@@ -1286,6 +1289,7 @@ class Leave(TimestampMixin, db.Model):
     to_date = db.Column(db.Date)
     total_days = db.Column(db.Integer)
     reason = db.Column(db.Text)
+    description = db.Column(db.Text)
     status = db.Column(db.String(20), default="Pending")
     is_active = db.Column(db.Boolean, default=True)
     employee = db.relationship("Employee", back_populates="leaves")
@@ -1294,7 +1298,7 @@ class Leave(TimestampMixin, db.Model):
     def to_dict(self):
         data = super().to_dict()
         data["employee"] = _summary(self.employee, ["id", "employee_code", "first_name", "last_name"])
-        data["leave_type"] = _summary(self.leave_type, ["id", "name"]) if self.leave_type else None
+        data["leave_type"] = _summary(self.leave_type, ["id", "name", "category"]) if self.leave_type else None
         return data
 
     @classmethod

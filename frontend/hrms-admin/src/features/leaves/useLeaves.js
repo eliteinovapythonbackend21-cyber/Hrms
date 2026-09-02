@@ -23,6 +23,23 @@ export function useLeaves(params = {}, options = {}) {
   });
 }
 
+export function useMonthlyLeaveRecord(params = {}, options = {}) {
+  return useQuery({
+    queryKey: ["leave-monthly-record", params],
+
+    queryFn: async () => {
+      const response = await leavesApi.monthlySummary(params);
+      return response.data.data;
+    },
+
+    enabled: options.enabled ?? true,
+
+    placeholderData: (previousData) => previousData,
+
+    staleTime: 30 * 1000,
+  });
+}
+
 export function useLeave(id) {
   return useQuery({
     queryKey: ["leave", id],

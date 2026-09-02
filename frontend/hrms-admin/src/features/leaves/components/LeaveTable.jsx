@@ -72,8 +72,8 @@ function LeavePeriod({ row }) {
   );
 }
 
-function ReasonCell({ reason }) {
-  if (!reason) {
+function ReasonCell({ reason, description }) {
+  if (!reason && !description) {
     return (
       <span className="text-sm text-slate-400 dark:text-slate-500">
         No reason provided
@@ -83,12 +83,22 @@ function ReasonCell({ reason }) {
 
   return (
     <div className="max-w-[260px]">
-      <p
-        className="truncate text-sm text-slate-600 dark:text-slate-300"
-        title={reason}
-      >
-        {reason}
-      </p>
+      {reason && (
+        <p
+          className="truncate text-sm text-slate-600 dark:text-slate-300"
+          title={reason}
+        >
+          {reason}
+        </p>
+      )}
+      {description && (
+        <p
+          className="mt-0.5 truncate text-xs text-slate-400 dark:text-slate-500"
+          title={description}
+        >
+          {description}
+        </p>
+      )}
     </div>
   );
 }
@@ -151,7 +161,9 @@ export default function LeaveTable({
     {
       key: "reason",
       label: "Reason",
-      render: (row) => <ReasonCell reason={row.reason} />,
+      render: (row) => (
+        <ReasonCell reason={row.reason} description={row.description} />
+      ),
     },
 
     {
