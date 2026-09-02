@@ -158,6 +158,7 @@ export const navConfig = [
       { label: "Registeration", path: "/crm/meetings", icon: "crm" },
       { label: "Targets", path: "/crm/leads/employees/targets", icon: "employees" },
       // { label: "Headcount", path: "/crm/leads/employees/headcount", icon: "employees" },
+      { label: "Incentives", path: "/crm/incentives", icon: "crm" },
       { label: "Incentive", path: "/crm/quotations", icon: "crm" },
       { label: "Incentive Slabs", path: "/crm/leads/incentive-slabs", icon: "crm" },
       { label: "Incentive Payouts", path: "/crm/leads/payouts", icon: "crm" },
@@ -216,14 +217,13 @@ export const navConfig = [
 // same links as quick-jump cards. Single source of truth for both.
 export const CRM_EMPLOYEE_NAV = {
   label: "CRM",
-  path: "/crm/leads/employees/targets",
+  path: "/crm/incentives",
   icon: "crm",
   children: [
     { label: "Target", path: "/crm/leads/employees/targets", icon: "employees" },
-    { label: "Incentive", path: "/crm/quotations", icon: "crm" },
+    // Tier dashboard — tier badge + weekly / monthly / yearly payouts + invoices.
+    { label: "Incentives", path: "/crm/incentives", icon: "crm" },
     { label: "Incentive Slabs", path: "/crm/leads/incentive-slabs", icon: "crm" },
-    { label: "Incentive Payouts", path: "/crm/leads/payouts", icon: "crm" },
-    { label: "Incentive Invoice", path: "/crm/invoices", icon: "crm" },
   ],
 };
 

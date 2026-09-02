@@ -16,6 +16,9 @@ import {
 
 import { useCRMEmployeeOptions } from "@/hooks/useLookupOptions";
 import { useIsCrmEmployee } from "@/hooks/useIsCrmEmployee";
+import { Link } from "react-router-dom";
+import { useIncentiveSummary } from "@/features/crm/incentives/useIncentives";
+import { formatCurrency } from "@/utils/formatCurrency";
 import { getUser } from "@/utils/tokenHelpers";
 
 /* =========================================================
@@ -309,6 +312,11 @@ export default function EmployeeTargetPage() {
   const { isCrmEmployee: readOnly } = useIsCrmEmployee();
   const user = getUser();
 
+  const { data: incentiveSummary } = useIncentiveSummary(
+    { year: new Date().getFullYear() },
+    { enabled: readOnly }
+  );
+
   const {
     data: allData,
     isLoading,
@@ -586,6 +594,48 @@ export default function EmployeeTargetPage() {
           )}
         </div>
       </div>
+
+      {/* MY INCENTIVE TIER — CRM employee */}
+      {readOnly && incentiveSummary && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary-200/60 bg-gradient-to-br from-primary-50 to-white p-4 dark:border-primary-500/20 dark:from-primary-500/[0.08] dark:to-white/[0.02]">
+          <div className="flex items-center gap-3">
+            <span
+              className={`chip ${
+                incentiveSummary.current_tier === "Gold"
+                  ? "chip-amber"
+                  : incentiveSummary.current_tier === "Silver"
+                  ? "bg-slate-100 text-slate-700 ring-slate-500/20 dark:bg-white/10 dark:text-slate-200 dark:ring-white/15"
+                  : incentiveSummary.current_tier === "Bronze"
+                  ? "bg-orange-50 text-orange-700 ring-orange-500/20 dark:bg-orange-500/10 dark:text-orange-300 dark:ring-orange-400/25"
+                  : "bg-slate-100 text-slate-500 ring-slate-500/15 dark:bg-white/10 dark:text-slate-400"
+              }`}
+            >
+              {incentiveSummary.current_tier
+                ? `${
+                    incentiveSummary.current_tier === "Gold"
+                      ? "🥇"
+                      : incentiveSummary.current_tier === "Silver"
+                      ? "🥈"
+                      : "🥉"
+                  } ${incentiveSummary.current_tier} tier`
+                : "No tier yet"}
+            </span>
+            <span className="text-xs text-slate-500 dark:text-slate-400">
+              {incentiveSummary.yearly
+                ? `${incentiveSummary.yearly.registration_count} registrations · ${formatCurrency(
+                    incentiveSummary.yearly.amount || 0
+                  )} this year`
+                : "No payout recorded yet"}
+            </span>
+          </div>
+          <Link
+            to="/crm/incentives"
+            className="text-xs font-semibold text-primary-600 hover:underline dark:text-primary-400"
+          >
+            View incentive dashboard →
+          </Link>
+        </div>
+      )}
 
       {/* STATS */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">

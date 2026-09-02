@@ -67,6 +67,8 @@ export const routePermissions = {
   // add/edit/deactivate control for a CRM employee.
   "/crm/quotations": ["admin", "employee"],
   "/crm/invoices": ["admin", "employee"],
+  // Tier-based incentive dashboard — admin (full) + CRM-dept employee (own, read-only)
+  "/crm/incentives": ["admin", "employee"],
   "/crm/payments": ["admin"],
   "/crm/support-tickets": ["admin"],
   "/finance/accounts": ["admin", "finance"],
