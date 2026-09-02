@@ -4,6 +4,7 @@ import { navConfig, CRM_EMPLOYEE_NAV, HR_EMPLOYEE_NAV, FINANCE_EMPLOYEE_NAV } fr
 import { useUI } from "@/context/UIContext";
 import { getUser } from "@/utils/tokenHelpers";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { useMyEmployee } from "@/hooks/useMyEmployee";
 import { useIsCrmEmployee } from "@/hooks/useIsCrmEmployee";
 import { useIsHrEmployee } from "@/hooks/useIsHrEmployee";
 import { useIsFinanceEmployee } from "@/hooks/useIsFinanceEmployee";
@@ -193,6 +194,18 @@ export default function Sidebar() {
 
   const user = getUser();
   const currentUser = useCurrentUser();
+  const { employee: myEmployee } = useMyEmployee();
+
+  const displayName =
+    [myEmployee?.first_name, myEmployee?.last_name].filter(Boolean).join(" ") ||
+    currentUser?.username ||
+    "User";
+  const roleLine =
+    [myEmployee?.designation?.designation_name, myEmployee?.department?.department_name]
+      .filter(Boolean)
+      .join(" · ") ||
+    currentUser?.role ||
+    "Member";
 
   const { isCrmEmployee } = useIsCrmEmployee();
   const { isHrEmployee } = useIsHrEmployee();
@@ -362,11 +375,11 @@ export default function Sidebar() {
               }`}
             >
               <p className="text-xs font-semibold text-slate-800 dark:text-slate-100 truncate">
-                {currentUser?.username || "User"}
+                {displayName}
               </p>
 
-              <p className="text-[10px] text-slate-500 dark:text-slate-500 capitalize truncate mt-0.5">
-                {currentUser?.role || "Member"}
+              <p className="text-[10px] text-slate-500 dark:text-slate-500 truncate mt-0.5">
+                {roleLine}
               </p>
             </div>
           </div>
@@ -399,6 +412,49 @@ export default function Sidebar() {
         <div className="shrink-0 border-t border-slate-200/80 dark:border-white/[0.08] px-3 py-2.5">
           <ThemeToggle collapsed={sidebarCollapsed} />
         </div>
+
+        {/* PROFILE DETAILS — below the theme selection, employee logins */}
+        {!sidebarCollapsed &&
+          user?.role === "employee" &&
+          myEmployee && (
+            <div className="shrink-0 border-t border-slate-200/80 px-3 py-3 dark:border-white/[0.08]">
+              <p className="mb-1.5 text-[9px] font-semibold uppercase tracking-[0.16em] text-slate-400 dark:text-slate-600">
+                My profile
+              </p>
+              <dl className="space-y-1 text-[10.5px] leading-tight">
+                <div className="flex justify-between gap-2">
+                  <dt className="text-slate-400 dark:text-slate-500">Code</dt>
+                  <dd className="truncate font-medium text-slate-600 dark:text-slate-300">
+                    {myEmployee.employee_code || "—"}
+                  </dd>
+                </div>
+                <div className="flex justify-between gap-2">
+                  <dt className="text-slate-400 dark:text-slate-500">Phone</dt>
+                  <dd className="truncate font-medium text-slate-600 dark:text-slate-300">
+                    {myEmployee.phone || currentUser?.mobile || "—"}
+                  </dd>
+                </div>
+                <div className="flex justify-between gap-2">
+                  <dt className="text-slate-400 dark:text-slate-500">Emergency</dt>
+                  <dd className="truncate font-medium text-slate-600 dark:text-slate-300">
+                    {currentUser?.emergency_contact_number ||
+                      myEmployee.emergency_contact_number ||
+                      "—"}
+                  </dd>
+                </div>
+              </dl>
+              <NavLink
+                to={
+                  currentUser?.employee?.id
+                    ? `/employees/${currentUser.employee.id}`
+                    : "/dashboard"
+                }
+                className="mt-2 block text-[10px] font-semibold text-primary-600 hover:underline dark:text-primary-400"
+              >
+                View full profile →
+              </NavLink>
+            </div>
+          )}
       </aside>
     </>
   );

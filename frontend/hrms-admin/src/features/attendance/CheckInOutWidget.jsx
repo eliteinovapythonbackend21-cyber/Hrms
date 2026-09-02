@@ -432,7 +432,79 @@ export default function CheckInOutWidget() {
         </p>
       )}
 
-      {/* TODAY SUMMARY */}
+      {/* CRITICAL — permission over the daily limit */}
+      {record?.permission_over_limit && (
+        <div className="mb-4 flex items-start gap-2.5 rounded-xl border border-rose-300 bg-rose-50 p-3 text-sm text-rose-700 dark:border-rose-500/40 dark:bg-rose-500/10 dark:text-rose-300">
+          <span className="mt-0.5 text-base leading-none">⚠️</span>
+          <div>
+            <p className="font-semibold">
+              Permission limit exceeded
+            </p>
+            <p className="mt-0.5 text-xs">
+              {Math.round(record.permission_minutes ?? 0)} min taken today —
+              over the {permCap} min daily limit. HR has been notified.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* CHECK-IN / CHECK-OUT OF THE DAY — always shown first, above the
+          summary tiles and the break/permission controls. */}
+      {record && (
+        <div className="mb-4 grid grid-cols-2 gap-3">
+          <div className="rounded-xl border border-emerald-200/70 bg-emerald-50/60 p-3 dark:border-emerald-500/20 dark:bg-emerald-500/[0.06]">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-emerald-700/70 dark:text-emerald-300/70">
+              Check in
+            </p>
+            <p className="mt-1 text-lg font-bold tabular-nums text-emerald-700 dark:text-emerald-300">
+              {record.check_in
+                ? new Date(record.check_in).toLocaleTimeString(undefined, {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })
+                : "—"}
+            </p>
+          </div>
+          <div className="rounded-xl border border-primary-200/70 bg-primary-50/60 p-3 dark:border-primary-500/20 dark:bg-primary-500/[0.06]">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-primary-700/70 dark:text-primary-300/70">
+              Check out
+            </p>
+            <p className="mt-1 text-lg font-bold tabular-nums text-primary-700 dark:text-primary-300">
+              {doneForDay && record.check_out
+                ? new Date(record.check_out).toLocaleTimeString(undefined, {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })
+                : paused
+                ? "On break"
+                : "—"}
+            </p>
+          </div>
+
+          {events.length > 0 && (
+            <div className="col-span-2 flex flex-wrap gap-1.5">
+              {events.map((e, i) => (
+                <span
+                  key={i}
+                  className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600 dark:bg-white/10 dark:text-slate-300"
+                >
+                  {e.event_type === "check_in"
+                    ? BREAK_META[String(e.reason_type || "").replace("_return", "")]?.emoji || "▶"
+                    : BREAK_META[e.reason_type]?.emoji || "⏹"}
+                  {" "}
+                  {new Date(e.event_time).toLocaleTimeString(undefined, {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                  {e.reason_type ? ` · ${e.reason_type.replace(/_/g, " ")}` : ""}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* TODAY SUMMARY — below the day's check-in / check-out */}
       {record && (
         <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
           <SummaryTile
@@ -538,7 +610,20 @@ export default function CheckInOutWidget() {
           </button>
         </div>
       ) : openSession ? (
-        <div className="space-y-3">
+        <div className="space-y-4">
+          {/* Check out for the day — first */}
+          <div className="flex justify-center">
+            <Button
+              onClick={handleEndOfDay}
+              isLoading={saving}
+              disabled={!employeeId}
+              className="h-10 rounded-lg px-6 text-sm font-semibold"
+            >
+              🏁 Check out for the day
+            </Button>
+          </div>
+
+          {/* Then break / permission */}
           <div>
             <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
               Check out for a break / permission
@@ -557,17 +642,6 @@ export default function CheckInOutWidget() {
                 </button>
               ))}
             </div>
-          </div>
-
-          <div className="flex justify-center pt-1">
-            <Button
-              onClick={handleEndOfDay}
-              isLoading={saving}
-              disabled={!employeeId}
-              className="h-10 rounded-lg px-6 text-sm font-semibold"
-            >
-              🏁 Check out for the day
-            </Button>
           </div>
         </div>
       ) : (

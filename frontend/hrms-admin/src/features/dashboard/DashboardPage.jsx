@@ -20,6 +20,9 @@ import AttendanceTrendChart from "./components/AttendanceTrendChart";
 import LeaveStatusChart from "./components/LeaveStatusChart";
 import MyStatusSummary from "./components/MyStatusSummary";
 import MyQuickLinks from "./components/MyQuickLinks";
+import MyProfileCard from "./components/MyProfileCard";
+import CheckInOutWidget from "@/features/attendance/CheckInOutWidget";
+import { useMyEmployee } from "@/hooks/useMyEmployee";
 import RadialStat from "./components/RadialStat";
 import RecentLeaves from "./components/RecentLeaves";
 import MyRecentAttendance from "./components/MyRecentAttendance";
@@ -357,6 +360,12 @@ export default function DashboardPage() {
   const { isCrmEmployee } = useIsCrmEmployee();
   const { isHrEmployee } = useIsHrEmployee();
   const { isFinanceEmployee } = useIsFinanceEmployee();
+  const { employee: myEmployee } = useMyEmployee();
+
+  const displayName =
+    [myEmployee?.first_name, myEmployee?.last_name].filter(Boolean).join(" ") ||
+    user?.username ||
+    "User";
 
   const stats = useDashboardStats({
     enabled: isAdmin,
@@ -449,7 +458,7 @@ export default function DashboardPage() {
                 <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white lg:text-2xl">
                   {greeting},{" "}
                   <span className="bg-gradient-to-r from-primary-500 to-accent-500 bg-clip-text text-transparent">
-                    {user?.username || "User"}
+                    {displayName}
                   </span>
                 </h1>
 
@@ -637,6 +646,30 @@ export default function DashboardPage() {
            EMPLOYEE DASHBOARD
         =================================================== */
         <div className="space-y-6">
+          {/* CHECK-IN / CHECK-OUT — right on the dashboard, above everything */}
+          <section>
+            <SectionHeading
+              icon={<UsersIcon />}
+              tone="primary"
+              title="Check in / check out"
+              subtitle="Mark your attendance for today"
+            />
+
+            <CheckInOutWidget />
+          </section>
+
+          {/* PROFILE */}
+          <section>
+            <SectionHeading
+              icon={<UsersIcon />}
+              tone="accent"
+              title="My profile"
+              subtitle="Your personal, contact and organisation details"
+            />
+
+            <MyProfileCard />
+          </section>
+
           <section>
             <SectionHeading
               icon={<UsersIcon />}
