@@ -443,11 +443,32 @@ export default function AttendanceMonthlySummaryTable({
 
                   <td className="whitespace-nowrap px-4 py-4 text-right">
                     {item.incentive_amount != null ? (
-                      <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
-                        {formatCurrency(
-                          Number(item.incentive_amount || 0)
+                      <div className="flex flex-col items-end">
+                        <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+                          {formatCurrency(
+                            Number(item.incentive_amount || 0)
+                          )}
+                        </span>
+                        {(item.incentive_registrations != null ||
+                          item.incentive_eligible != null) && (
+                          <span className="mt-0.5 text-[10px] text-slate-400 dark:text-slate-500">
+                            {item.incentive_eligible != null
+                              ? `${item.incentive_eligible} eligible`
+                              : ""}
+                            {item.incentive_registrations != null
+                              ? ` / ${item.incentive_registrations} reg`
+                              : ""}
+                          </span>
                         )}
-                      </span>
+                        {item.incentive_source &&
+                          item.incentive_source !== "none" && (
+                            <span className="mt-0.5 rounded-full bg-emerald-50 px-1.5 py-px text-[9px] font-semibold uppercase tracking-wide text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-300">
+                              {item.incentive_source === "tier"
+                                ? "Tier payout"
+                                : "Slab"}
+                            </span>
+                          )}
+                      </div>
                     ) : (
                       <span className="text-xs text-slate-400 dark:text-slate-500">
                         —

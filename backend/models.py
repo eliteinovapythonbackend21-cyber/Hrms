@@ -879,16 +879,40 @@ class Attendance(TimestampMixin, db.Model):
         is_crm = department_name == "crm"
 
         incentive_amount = None
+        incentive_source = None
+        incentive_registrations = None
+        incentive_eligible = None
         if is_crm:
-            incentive_rows = EmployeeIncentive.query.filter(
-                EmployeeIncentive.employee_id == employee.id,
-                EmployeeIncentive.month == month,
-                EmployeeIncentive.year == year,
-                EmployeeIncentive.is_active == True,
-            ).all()
-            incentive_amount = round(
-                sum(float(r.calculated_amount or 0) for r in incentive_rows), 2
-            )
+            # Prefer the tier-based monthly payout (crm/incentives engine);
+            # fall back to the legacy slab-based EmployeeIncentive rows so
+            # older data still shows. Either way the incentive is ADDED to
+            # the CRM employee's take-home pay below.
+            payout = MonthlyPayout.query.filter(
+                MonthlyPayout.employee_id == employee.id,
+                MonthlyPayout.month == month,
+                MonthlyPayout.year == year,
+                MonthlyPayout.is_active == True,
+            ).first()
+
+            if payout is not None:
+                incentive_amount = round(float(payout.amount or 0), 2)
+                incentive_registrations = payout.registration_count
+                incentive_eligible = payout.eligible_count
+                incentive_source = "tier"
+            else:
+                incentive_rows = EmployeeIncentive.query.filter(
+                    EmployeeIncentive.employee_id == employee.id,
+                    EmployeeIncentive.month == month,
+                    EmployeeIncentive.year == year,
+                    EmployeeIncentive.is_active == True,
+                ).all()
+                incentive_amount = round(
+                    sum(float(r.calculated_amount or 0) for r in incentive_rows), 2
+                )
+                incentive_eligible = sum(
+                    int(r.eligible_customer_count or 0) for r in incentive_rows
+                )
+                incentive_source = "slab" if incentive_rows else "none"
 
         net_salary = round(
             gross_salary - total_deduction + (incentive_amount or 0.0), 2
@@ -917,6 +941,9 @@ class Attendance(TimestampMixin, db.Model):
             "absent_deduction": absent_deduction,
             "total_deduction": total_deduction,
             "incentive_amount": incentive_amount,
+            "incentive_source": incentive_source,
+            "incentive_registrations": incentive_registrations,
+            "incentive_eligible": incentive_eligible,
             "net_salary": net_salary,
         }
 
