@@ -425,7 +425,7 @@ def leave_monthly_summary(token_response):
                 "employee_id": leave.employee_id,
                 "employee": _emp_name(emp),
                 "employee_code": getattr(emp, "employee_code", None),
-                "department": emp.department.name if emp and emp.department else None,
+                "department": getattr(emp.department, "department_name", None) if emp and emp.department else None,
                 "total_days": 0,
                 "request_count": 0,
                 "by_status": {},
