@@ -54,6 +54,10 @@ const EXPORT_COLUMNS = [
     accessor: (r) => r.leave_type?.name || "",
   },
   {
+    header: "Category",
+    accessor: (r) => r.leave_type?.category || "Leave",
+  },
+  {
     header: "From",
     accessor: (r) => formatDate(r.from_date),
   },
@@ -317,6 +321,9 @@ export default function LeaveListPage() {
   const [statusFilter, setStatusFilter] =
     useState("");
 
+  const [categoryFilter, setCategoryFilter] =
+    useState("");
+
   /* ----------------------------------------------------------
      ORGANIZATION FILTERS — Company → Branch → Department →
      Designation. Same cascading pattern as AttendanceListPage:
@@ -503,6 +510,10 @@ export default function LeaveListPage() {
         statusFilter ||
         undefined,
 
+      category:
+        categoryFilter ||
+        undefined,
+
       /*
        * Employee users should only receive
        * their own leave records if the backend
@@ -576,6 +587,7 @@ export default function LeaveListPage() {
     debouncedSearch,
     leaveTypeFilter,
     statusFilter,
+    categoryFilter,
     canViewAll,
     user?.employee?.id,
     periodRange.from_date,
@@ -704,7 +716,8 @@ export default function LeaveListPage() {
   const hasFilters =
     Boolean(debouncedSearch) ||
     Boolean(leaveTypeFilter) ||
-    Boolean(statusFilter);
+    Boolean(statusFilter) ||
+    Boolean(categoryFilter);
 
   /* ==========================================================
      CLEAR FILTERS
@@ -714,6 +727,7 @@ export default function LeaveListPage() {
     setSearch("");
     setLeaveTypeFilter("");
     setStatusFilter("");
+    setCategoryFilter("");
     setPage(1);
   };
 
@@ -734,6 +748,15 @@ export default function LeaveListPage() {
     event
   ) => {
     setStatusFilter(
+      event.target.value
+    );
+    setPage(1);
+  };
+
+  const handleCategoryChange = (
+    event
+  ) => {
+    setCategoryFilter(
       event.target.value
     );
     setPage(1);
@@ -1169,6 +1192,17 @@ export default function LeaveListPage() {
               />
 
               <Select
+                value={categoryFilter}
+                onChange={handleCategoryChange}
+                placeholder="All categories"
+                options={[
+                  { value: "Leave", label: "Leave" },
+                  { value: "Permission", label: "Permission" },
+                ]}
+                className="sm:w-44"
+              />
+
+              <Select
                 value={leaveTypeFilter}
                 onChange={handleLeaveTypeChange}
                 placeholder="All leave types"
@@ -1253,6 +1287,12 @@ export default function LeaveListPage() {
               {statusFilter && (
                 <span className="rounded-full bg-primary-50 px-3 py-1 text-xs font-medium text-primary-700 dark:bg-primary-900/20 dark:text-primary-300">
                   Status: {statusFilter}
+                </span>
+              )}
+
+              {categoryFilter && (
+                <span className="rounded-full bg-primary-50 px-3 py-1 text-xs font-medium text-primary-700 dark:bg-primary-900/20 dark:text-primary-300">
+                  Category: {categoryFilter}
                 </span>
               )}
 

@@ -4,7 +4,7 @@ from flask import Blueprint, request, jsonify, send_file
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from functools import wraps
 
-from models import Leave, Employee, BaseUser, Department
+from models import Leave, Employee, BaseUser, Department, LeaveType
 from utils import is_hr_department_user, paginate_query
 
 leave_bp = Blueprint("leave_bp", __name__)
@@ -106,6 +106,13 @@ def list_leaves(token_response):
     if request.args.get("status"):
         query = query.filter_by(status=request.args.get("status"))
         applied_filters["status"] = request.args.get("status")
+
+    # Filter by leave-type category ("Leave" / "Permission").
+    if request.args.get("category"):
+        query = query.join(LeaveType, Leave.leave_type_id == LeaveType.id).filter(
+            LeaveType.category == request.args.get("category")
+        )
+        applied_filters["category"] = request.args.get("category")
 
     # Day-to-day: a leave is "on" a given date if that date falls
     # within [from_date, to_date] inclusive.

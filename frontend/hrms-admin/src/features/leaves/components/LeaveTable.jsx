@@ -154,6 +154,25 @@ export default function LeaveTable({
     },
 
     {
+      key: "category",
+      label: "Category",
+      render: (row) => {
+        const category = row.leave_type?.category || "Leave";
+        return (
+          <span
+            className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${
+              category === "Permission"
+                ? "bg-violet-50 text-violet-700 dark:bg-violet-500/10 dark:text-violet-300"
+                : "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300"
+            }`}
+          >
+            {category}
+          </span>
+        );
+      },
+    },
+
+    {
       key: "from_date",
       label: "Leave Period",
       sortable: true,
