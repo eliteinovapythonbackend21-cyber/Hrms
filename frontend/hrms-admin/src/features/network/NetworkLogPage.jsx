@@ -11,6 +11,10 @@ import TableToolbar from "@/components/table/TableToolbar";
 import { formatDateTime } from "@/utils/formatDate";
 import { getUser } from "@/utils/tokenHelpers";
 import { networkApi } from "@/api/network.api";
+import {
+  use3DTilt,
+  Motion3DStyles,
+} from "@/hooks/use3DMotion";
 
 const EXPORT_COLUMNS = [
   {
@@ -57,6 +61,29 @@ const EXPORT_COLUMNS = [
     accessor: (r) => formatDateTime(r.created_at),
   },
 ];
+
+function TiltCard({
+  children,
+  className = "",
+  max = 9,
+  scale = 1.02,
+}) {
+  const { ref, handlers } = use3DTilt({ max, scale });
+
+  return (
+    <div className="u-tilt-perspective u-rise">
+      <div
+        ref={ref}
+        {...handlers}
+        className={`u-tilt u-glare relative h-full overflow-hidden ${className}`}
+      >
+        <div className="u-tilt-content h-full">
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function NetworkLogPage() {
   const {
@@ -510,14 +537,20 @@ export default function NetworkLogPage() {
 
   return (
     <div className="space-y-6">
+      <Motion3DStyles />
+
       {/* ======================================================
           HEADER
       ====================================================== */}
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
+      <TiltCard
+        max={7}
+        scale={1.012}
+        className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-white/[0.04]"
+      >
         <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
           <div className="flex items-start gap-4">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-blue-50 dark:bg-blue-500/10">
+            <div className="u-float-layer flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-blue-50 dark:bg-blue-500/10">
               <svg
                 className="h-6 w-6 text-blue-600 dark:text-blue-400"
                 viewBox="0 0 24 24"
@@ -574,7 +607,7 @@ export default function NetworkLogPage() {
             exporting={exporting}
           />
         </div>
-      </div>
+      </TiltCard>
 
       {/* ======================================================
           KPI CARDS
@@ -582,7 +615,11 @@ export default function NetworkLogPage() {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {/* Total */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md dark:border-white/10 dark:bg-white/[0.04]">
+        <TiltCard
+          max={9}
+          scale={1.025}
+          className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.04]"
+        >
           <div className="flex items-start justify-between">
             <div>
               <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
@@ -616,10 +653,14 @@ export default function NetworkLogPage() {
           <div className="mt-4 h-1 overflow-hidden rounded-full bg-slate-100 dark:bg-white/[0.06]">
             <div className="h-full w-full rounded-full bg-blue-500" />
           </div>
-        </div>
+        </TiltCard>
 
         {/* Online */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md dark:border-white/10 dark:bg-white/[0.04]">
+        <TiltCard
+          max={9}
+          scale={1.025}
+          className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.04]"
+        >
           <div className="flex items-start justify-between">
             <div>
               <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
@@ -648,10 +689,14 @@ export default function NetworkLogPage() {
               }}
             />
           </div>
-        </div>
+        </TiltCard>
 
         {/* Offline */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md dark:border-white/10 dark:bg-white/[0.04]">
+        <TiltCard
+          max={9}
+          scale={1.025}
+          className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.04]"
+        >
           <div className="flex items-start justify-between">
             <div>
               <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
@@ -680,10 +725,14 @@ export default function NetworkLogPage() {
               }}
             />
           </div>
-        </div>
+        </TiltCard>
 
         {/* Battery */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md dark:border-white/10 dark:bg-white/[0.04]">
+        <TiltCard
+          max={9}
+          scale={1.025}
+          className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.04]"
+        >
           <div className="flex items-start justify-between">
             <div>
               <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
@@ -728,7 +777,7 @@ export default function NetworkLogPage() {
               }}
             />
           </div>
-        </div>
+        </TiltCard>
       </div>
 
       {/* ======================================================
@@ -737,7 +786,11 @@ export default function NetworkLogPage() {
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         {/* Connection Health */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
+        <TiltCard
+          max={8}
+          scale={1.02}
+          className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.04]"
+        >
           <div className="flex items-start justify-between">
             <div>
               <p className="text-sm font-semibold text-slate-900 dark:text-white">
@@ -801,10 +854,14 @@ export default function NetworkLogPage() {
               </div>
             </div>
           </div>
-        </div>
+        </TiltCard>
 
         {/* Network Distribution */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
+        <TiltCard
+          max={8}
+          scale={1.02}
+          className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.04]"
+        >
           <div>
             <p className="text-sm font-semibold text-slate-900 dark:text-white">
               Network Distribution
@@ -874,10 +931,14 @@ export default function NetworkLogPage() {
               </div>
             </div>
           </div>
-        </div>
+        </TiltCard>
 
         {/* Location Coverage */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
+        <TiltCard
+          max={8}
+          scale={1.02}
+          className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.04]"
+        >
           <div className="flex items-start justify-between">
             <div>
               <p className="text-sm font-semibold text-slate-900 dark:text-white">
@@ -927,7 +988,7 @@ export default function NetworkLogPage() {
               GPS data availability
             </p>
           </div>
-        </div>
+        </TiltCard>
       </div>
 
       {/* ======================================================
