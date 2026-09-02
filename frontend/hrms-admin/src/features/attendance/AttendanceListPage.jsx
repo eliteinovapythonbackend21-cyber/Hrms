@@ -11,6 +11,7 @@ import { useTableExport } from "@/hooks/useTableExport";
 
 import TablePagination from "@/components/table/TablePagination";
 import TableToolbar from "@/components/table/TableToolbar";
+import ViewToggle, { useViewMode } from "@/components/table/ViewToggle";
 import Button from "@/components/ui/Button";
 
 import { getUser } from "@/utils/tokenHelpers";
@@ -300,6 +301,8 @@ export default function AttendanceListPage() {
   // (Manual Entry / Reports), which stay isAdmin-only below.
   const { isHrEmployee } = useIsHrEmployee();
   const canViewAll = isAdmin || isHrEmployee;
+
+  const [view, setView] = useViewMode("attendance:view");
 
   /*
    * ----------------------------------------------------------
@@ -979,6 +982,8 @@ export default function AttendanceListPage() {
                 </button>
               )}
 
+              <ViewToggle mode={view} onChange={setView} />
+
               <span className="w-fit rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-500 dark:bg-white/[0.06] dark:text-slate-400">
                 {displayedAttendanceItems.length} Records
               </span>
@@ -989,6 +994,57 @@ export default function AttendanceListPage() {
           {isError ? (
             <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-600 dark:border-red-900/40 dark:bg-red-950/20 dark:text-red-400">
               Failed to load attendance records.
+            </div>
+          ) : view === "cards" && !isLoading && displayedAttendanceItems.length > 0 ? (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {displayedAttendanceItems.map((row) => (
+                <div
+                  key={row.id}
+                  className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:shadow-md dark:border-white/10 dark:bg-white/[0.04]"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                      {formatDate(row.attendance_date)}
+                    </p>
+                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600 dark:bg-white/10 dark:text-slate-300">
+                      {row.attendance_status}
+                    </span>
+                  </div>
+
+                  <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+                    <div className="rounded-lg bg-slate-50 py-2 dark:bg-white/[0.04]">
+                      <p className="text-[10px] uppercase tracking-wide text-slate-400">In</p>
+                      <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">
+                        {row.check_in ? formatTime(row.check_in) : "—"}
+                      </p>
+                    </div>
+                    <div className="rounded-lg bg-slate-50 py-2 dark:bg-white/[0.04]">
+                      <p className="text-[10px] uppercase tracking-wide text-slate-400">Out</p>
+                      <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">
+                        {row.check_out ? formatTime(row.check_out) : "—"}
+                      </p>
+                    </div>
+                    <div className="rounded-lg bg-slate-50 py-2 dark:bg-white/[0.04]">
+                      <p className="text-[10px] uppercase tracking-wide text-slate-400">Hours</p>
+                      <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">
+                        {row.working_hours != null ? `${row.working_hours}h` : "—"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {row.late_login_minutes > 0 && (
+                    <p className="mt-2 text-[11px] font-medium text-amber-600 dark:text-amber-400">
+                      Late {Math.round(row.late_login_minutes)}m
+                      {row.late_login_reason ? ` · ${row.late_login_reason}` : ""}
+                    </p>
+                  )}
+                  {row.permission_over_limit && (
+                    <p className="mt-1 text-[11px] font-bold uppercase tracking-wide text-rose-600 dark:text-rose-400">
+                      ⚠ Critical · permission exceeded
+                    </p>
+                  )}
+                </div>
+              ))}
             </div>
           ) : (
             <AttendanceTable

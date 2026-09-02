@@ -15,6 +15,8 @@ import TableToolbar from "@/components/table/TableToolbar";
 
 import Select from "@/components/ui/Select";
 import Button from "@/components/ui/Button";
+import ViewToggle, { useViewMode } from "@/components/table/ViewToggle";
+import LeaveStatusBadge from "./components/LeaveStatusBadge";
 
 import { getUser } from "@/utils/tokenHelpers";
 import { useIsHrEmployee } from "@/hooks/useIsHrEmployee";
@@ -323,6 +325,8 @@ export default function LeaveListPage() {
 
   const [categoryFilter, setCategoryFilter] =
     useState("");
+
+  const [view, setView] = useViewMode("leaves:view");
 
   /* ----------------------------------------------------------
      ORGANIZATION FILTERS — Company → Branch → Department →
@@ -1247,6 +1251,8 @@ export default function LeaveListPage() {
                 </Button>
               )}
 
+              <ViewToggle mode={view} onChange={setView} />
+
             </div>
           </div>
 
@@ -1353,14 +1359,76 @@ export default function LeaveListPage() {
               </div>
             )}
 
-          <LeaveTable
-            data={leaves}
-            loading={isLoading}
-            isAdmin={isAdmin}
-            sortBy={sortBy}
-            sortDir={sortDir}
-            onSort={toggleSort}
-          />
+          {view === "cards" && !isLoading && leaves.length > 0 ? (
+            <div className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 xl:grid-cols-3">
+              {leaves.map((row) => {
+                const category = row.leave_type?.category || "Leave";
+                const name = row.employee
+                  ? `${row.employee.first_name || ""} ${row.employee.last_name || ""}`.trim()
+                  : "-";
+                return (
+                  <div
+                    key={row.id}
+                    className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:shadow-md dark:border-white/10 dark:bg-white/[0.04]"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate font-semibold text-slate-900 dark:text-white">
+                          {name}
+                        </p>
+                        <p className="text-[11px] text-slate-400">
+                          {row.employee?.employee_code || ""}
+                        </p>
+                      </div>
+                      <LeaveStatusBadge status={row.status} />
+                    </div>
+
+                    <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600 dark:bg-white/10 dark:text-slate-300">
+                        {row.leave_type?.name || "-"}
+                      </span>
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                          category === "Permission"
+                            ? "bg-violet-50 text-violet-700 dark:bg-violet-500/10 dark:text-violet-300"
+                            : "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300"
+                        }`}
+                      >
+                        {category}
+                      </span>
+                      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600 dark:bg-white/10 dark:text-slate-300">
+                        {row.total_days || 0}d
+                      </span>
+                    </div>
+
+                    <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+                      {formatDate(row.from_date)} → {formatDate(row.to_date)}
+                    </p>
+
+                    {row.reason && (
+                      <p className="mt-2 line-clamp-2 text-xs text-slate-600 dark:text-slate-300">
+                        <span className="font-semibold">Reason:</span> {row.reason}
+                      </p>
+                    )}
+                    {row.description && (
+                      <p className="mt-1 line-clamp-3 whitespace-pre-line text-xs text-slate-500 dark:text-slate-400">
+                        {row.description}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <LeaveTable
+              data={leaves}
+              loading={isLoading}
+              isAdmin={isAdmin}
+              sortBy={sortBy}
+              sortDir={sortDir}
+              onSort={toggleSort}
+            />
+          )}
 
         </div>
 

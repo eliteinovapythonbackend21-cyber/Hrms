@@ -49,7 +49,7 @@ function EmployeeCell({ employee }) {
 function LeavePeriod({ row }) {
   return (
     <div className="min-w-[155px]">
-      <div className="flex items-center gap-2 text-sm font-medium text-slate-800 dark:text-slate-200">
+      <div className="flex items-center gap-2 whitespace-nowrap text-sm font-medium text-slate-800 dark:text-slate-200">
         <span>{formatDate(row.from_date)}</span>
 
         <svg
@@ -145,8 +145,8 @@ export default function LeaveTable({
       key: "leave_type",
       label: "Leave Type",
       render: (row) => (
-        <div className="min-w-[130px]">
-          <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
+        <div className="min-w-[120px]">
+          <span className="whitespace-nowrap text-sm font-medium text-slate-700 dark:text-slate-200">
             {row.leave_type?.name || "-"}
           </span>
         </div>
@@ -242,6 +242,7 @@ export default function LeaveTable({
       sortBy={sortBy}
       sortDir={sortDir}
       onSort={onSort}
+      autoLayout
     />
   );
 }

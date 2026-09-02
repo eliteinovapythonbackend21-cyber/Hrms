@@ -52,6 +52,8 @@ export default function DataTable({
   sortBy,
   sortDir,
   onSort,
+  autoLayout = false,
+  minWidthClass = "min-w-[680px] sm:min-w-0",
 }) {
   if (loading) {
     return (
@@ -71,13 +73,19 @@ export default function DataTable({
 
   return (
     <div className="w-full overflow-x-auto">
-      <table className="w-full min-w-[680px] table-fixed divide-y divide-slate-200 dark:divide-white/10 sm:min-w-0">
+      <table
+        className={`w-full divide-y divide-slate-200 dark:divide-white/10 ${
+          autoLayout ? "table-auto" : "table-fixed"
+        } ${autoLayout ? "min-w-[900px] lg:min-w-full" : minWidthClass}`}
+      >
         <thead className="tbl-head">
           <tr>
             {columns.map((col) => (
               <th
                 key={col.key}
                 className={`px-4 py-3 text-left ${
+                  autoLayout ? "whitespace-nowrap" : ""
+                } ${
                   col.headerClassName ||
                   col.className ||
                   ""

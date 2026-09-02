@@ -11,6 +11,7 @@ import {
 import LeaveTypeForm from "./LeaveTypeForm";
 
 import DataTable from "@/components/table/DataTable";
+import ViewToggle, { useViewMode } from "@/components/table/ViewToggle";
 import Badge from "@/components/ui/Badge";
 import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
@@ -105,6 +106,7 @@ export default function LeaveTypeListPage() {
 
   const [statusFilter, setStatusFilter] = useState("active");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [view, setView] = useViewMode("leaveTypes:view");
 
 
   const leaveTypes = data?.items || [];
@@ -630,6 +632,8 @@ export default function LeaveTypeListPage() {
 
             </div>
 
+            <ViewToggle mode={view} onChange={setView} />
+
             </div>
 
           </div>
@@ -654,9 +658,79 @@ export default function LeaveTypeListPage() {
         )}
 
 
-        {/* FIXED TABLE */}
+        {/* TABLE / CARDS */}
 
-        {!isError && (
+        {!isError && view === "cards" && !isLoading && filteredLeaveTypes.length > 0 && (
+          <div className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 xl:grid-cols-3">
+            {filteredLeaveTypes.map((r) => {
+              const category = r.category || "Leave";
+              return (
+                <div
+                  key={r.id}
+                  className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:shadow-md dark:border-white/10 dark:bg-white/[0.04]"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-sm font-bold text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
+                        {r.name?.charAt(0)?.toUpperCase() || "L"}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="truncate font-semibold text-slate-800 dark:text-white">
+                          {r.name || "-"}
+                        </p>
+                        <p className="font-mono text-[11px] text-slate-400">#{r.id}</p>
+                      </div>
+                    </div>
+                    <Badge
+                      className={
+                        r.is_active
+                          ? "inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300"
+                          : "inline-flex items-center gap-1.5 rounded-full bg-red-50 px-2 py-0.5 text-[11px] text-red-700 dark:bg-red-500/10 dark:text-red-300"
+                      }
+                    >
+                      {r.is_active ? "Active" : "Inactive"}
+                    </Badge>
+                  </div>
+
+                  <div className="mt-3 flex items-center justify-between">
+                    <span
+                      className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${
+                        category === "Permission"
+                          ? "bg-violet-50 text-violet-700 dark:bg-violet-500/10 dark:text-violet-300"
+                          : "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300"
+                      }`}
+                    >
+                      {category}
+                    </span>
+
+                    <div className="flex items-center gap-1.5">
+                      {canEdit && (
+                        <button
+                          type="button"
+                          onClick={() => openEdit(r)}
+                          className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-primary-600 transition hover:bg-primary-50 dark:border-white/10 dark:bg-white/[0.06] dark:text-primary-400 dark:hover:bg-primary-500/10"
+                        >
+                          Edit
+                        </button>
+                      )}
+                      {r.is_active && canDelete && (
+                        <button
+                          type="button"
+                          onClick={() => setConfirmRow(r)}
+                          className="rounded-lg border border-red-200 bg-white px-2.5 py-1.5 text-xs font-medium text-red-600 transition hover:bg-red-50 dark:border-red-900/50 dark:bg-white/[0.06] dark:text-red-400 dark:hover:bg-red-500/10"
+                        >
+                          Deactivate
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {!isError && (view === "table" || isLoading) && (
           <div className="w-full">
 
             <DataTable

@@ -500,25 +500,33 @@ export default function EmployeeDetailPage() {
     <div className="mx-auto max-w-6xl space-y-6">
       {/* HEADER */}
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-            {isSelfView ? "My Profile" : "Employee Details"}
-          </h1>
+      <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-gradient-to-br from-primary-50 via-white to-sky-50 p-5 shadow-sm dark:border-white/10 dark:from-primary-900/20 dark:via-slate-900 dark:to-sky-900/10 sm:p-6">
+        <div className="pointer-events-none absolute -right-10 -top-16 h-48 w-48 rounded-full bg-primary-200/40 blur-3xl dark:bg-primary-500/10" />
+        <div className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-4">
+            <div className="hidden h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary-600 text-white shadow-sm sm:flex">
+              <UserIcon />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+                {isSelfView ? "My Profile" : "Employee Details"}
+              </h1>
 
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            {isSelfView
-              ? "Your personal and organization information."
-              : "View employee personal, organization and employment information."}
-          </p>
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                {isSelfView
+                  ? "Your personal and organization information."
+                  : "View employee personal, organization and employment information."}
+              </p>
+            </div>
+          </div>
+
+          <Button
+            variant="secondary"
+            onClick={handleBack}
+          >
+            Back
+          </Button>
         </div>
-
-        <Button
-          variant="secondary"
-          onClick={handleBack}
-        >
-          Back
-        </Button>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -527,9 +535,11 @@ export default function EmployeeDetailPage() {
         <div className="space-y-4 lg:sticky lg:top-6 lg:col-span-1 lg:h-fit">
           {/* EMPLOYEE PROFILE */}
 
-          <div className="rounded-xl border border-slate-200 bg-white p-6 text-center shadow-sm dark:border-slate-700 dark:bg-slate-900">
+          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white text-center shadow-sm dark:border-slate-700 dark:bg-slate-900">
+            <div className="h-20 bg-gradient-to-r from-primary-500 via-sky-500 to-indigo-500" />
+            <div className="px-6 pb-6">
             <div
-              className={`mx-auto w-fit rounded-full ring-4 ${SKY.ring}`}
+              className={`mx-auto -mt-10 w-fit rounded-full bg-white p-1 ring-4 dark:bg-slate-900 ${SKY.ring}`}
             >
               <Avatar
                 name={
@@ -610,6 +620,7 @@ export default function EmployeeDetailPage() {
                 )}
               </div>
             )}
+            </div>
           </div>
 
           {/* ORGANIZATION */}
@@ -638,30 +649,25 @@ export default function EmployeeDetailPage() {
           {/* COUNTS */}
 
           <div className="grid grid-cols-3 gap-2">
-            {counts.map(
-              (count) => (
+            {counts.map((count, i) => {
+              const tints = [
+                "from-primary-50 to-white text-primary-600 dark:from-primary-900/20 dark:to-slate-900 dark:text-primary-300",
+                "from-emerald-50 to-white text-emerald-600 dark:from-emerald-900/20 dark:to-slate-900 dark:text-emerald-300",
+                "from-violet-50 to-white text-violet-600 dark:from-violet-900/20 dark:to-slate-900 dark:text-violet-300",
+              ];
+              return (
                 <div
-                  key={
-                    count.label
-                  }
-                  className="rounded-lg border border-slate-100 bg-white p-3 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900"
+                  key={count.label}
+                  className={`rounded-xl border border-slate-100 bg-gradient-to-br p-3 text-center shadow-sm dark:border-slate-800 ${tints[i % tints.length]}`}
                 >
-                  <p
-                    className={`text-xl font-bold ${SKY.text}`}
-                  >
-                    {
-                      count.value
-                    }
-                  </p>
+                  <p className="text-xl font-bold">{count.value}</p>
 
-                  <p className="mt-0.5 text-[11px] leading-tight text-slate-500 dark:text-slate-400">
-                    {
-                      count.label
-                    }
+                  <p className="mt-0.5 text-[11px] font-medium leading-tight text-slate-500 dark:text-slate-400">
+                    {count.label}
                   </p>
                 </div>
-              )
-            )}
+              );
+            })}
           </div>
         </div>
 

@@ -643,7 +643,7 @@ export default function CheckInOutWidget() {
             type="button"
             onClick={handleEndOfDay}
             disabled={!employeeId || saving}
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-rose-500 to-rose-600 text-sm font-bold text-white shadow-lg shadow-rose-600/25 transition hover:from-rose-500 hover:to-rose-700 disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-rose-500 to-rose-600 px-5 text-sm font-semibold text-white shadow-sm shadow-rose-600/20 transition hover:from-rose-500 hover:to-rose-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
           >
             <LogoutIcon />
             {saving ? "Working…" : "Check Out"}
@@ -676,7 +676,7 @@ export default function CheckInOutWidget() {
           type="button"
           onClick={handleCheckIn}
           disabled={!employeeId || saving}
-          className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 text-sm font-bold text-white shadow-lg shadow-emerald-600/25 transition hover:from-emerald-500 hover:to-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-emerald-500 to-emerald-600 px-5 text-sm font-semibold text-white shadow-sm shadow-emerald-600/20 transition hover:from-emerald-500 hover:to-emerald-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
         >
           <LoginIcon />
           {saving
