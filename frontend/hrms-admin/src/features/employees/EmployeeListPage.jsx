@@ -24,6 +24,12 @@ import { useCompanies } from "@/features/master/company/useCompanies";
 import { useCompanyBranches } from "@/features/master/branches/useBranches";
 import { formatCurrency } from "@/utils/formatCurrency";
 import { useModulePermissions } from "@/hooks/useModulePermissions";
+import {
+  use3DTilt,
+  useMagnetic,
+  Motion3DStyles,
+  GridPattern,
+} from "@/hooks/use3DMotion";
 
 const EXPORT_COLUMNS = [
   {
@@ -83,6 +89,203 @@ const ACCENT = {
 const EMPLOYEE_LIST_PAGE_SIZE = 10;
 const EMPLOYEE_LIST_CARD_PAGE_SIZE = 6;
 
+/* Tilt+glare stat tile used in the summary row. */
+function StatTile({ tone, label, value, hint, icon }) {
+  const { ref, handlers } = use3DTilt({ max: 9, scale: 1.02 });
+  const border = {
+    primary: "border-slate-200 dark:border-white/10",
+    emerald: "border-emerald-100 dark:border-emerald-900/30",
+    red: "border-red-100 dark:border-red-900/30",
+  }[tone];
+  const valueColor = {
+    primary: "text-slate-900 dark:text-white",
+    emerald: "text-emerald-600 dark:text-emerald-400",
+    red: "text-rose-600 dark:text-rose-400",
+  }[tone];
+  const iconTone = {
+    primary: "bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400",
+    emerald: "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400",
+    red: "bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400",
+  }[tone];
+
+  return (
+    <div className="u-tilt-perspective">
+      <div
+        ref={ref}
+        {...handlers}
+        className={`u-tilt u-glare relative h-[110px] overflow-hidden rounded-xl border bg-white px-4 py-3 shadow-sm dark:bg-white/[0.04] ${border}`}
+      >
+        <div className="u-tilt-content flex h-full items-center justify-between">
+          <div className="min-w-0">
+            <p className="truncate text-xs font-medium text-slate-500 dark:text-slate-400">{label}</p>
+            <p className={`mt-1 text-2xl font-bold tracking-tight ${valueColor}`}>{value}</p>
+            <p className="mt-0.5 truncate text-[11px] text-slate-400">{hint}</p>
+          </div>
+          <div className={`u-float-layer flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${iconTone}`}>
+            {icon}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* 3D tilt+glare employee card, extracted so its tilt hook lives per-card. */
+function EmployeeCard({
+  employee,
+  index,
+  statusBadge,
+  hideSalary,
+  hideActions,
+  restricted,
+  isMutating,
+  onDeactivate,
+  onReactivate,
+}) {
+  const { ref, handlers } = use3DTilt({ max: 10, scale: 1.025 });
+  const name =
+    `${employee.first_name || ""} ${employee.last_name || ""}`.trim() ||
+    `Employee #${employee.id}`;
+  const isActive = employee.is_active !== false;
+
+  return (
+    <div
+      className="u-tilt-perspective u-rise"
+      style={{ animationDelay: `${Math.min(index, 10) * 45}ms` }}
+    >
+      <div
+        ref={ref}
+        {...handlers}
+        className={`u-tilt u-glare relative overflow-hidden rounded-2xl border bg-white shadow-sm dark:bg-white/[0.04] ${
+          isActive
+            ? "border-slate-200 dark:border-white/10"
+            : "border-red-100 bg-red-50/20 dark:border-red-900/30 dark:bg-red-950/10"
+        }`}
+      >
+        <div
+          className={`absolute inset-x-0 top-0 h-0.5 ${
+            isActive ? "bg-primary-600" : "bg-red-500"
+          }`}
+        />
+
+        <div className="u-tilt-content p-4">
+          <div className="flex items-start justify-between gap-2.5">
+            <div className="flex min-w-0 items-center gap-2.5">
+              <div className="u-float-layer relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-50 font-bold text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
+                {name.charAt(0).toUpperCase()}
+                <span
+                  className={`absolute -bottom-1 -right-1 h-3 w-3 rounded-full border-2 border-white dark:border-slate-900 ${
+                    isActive ? "bg-emerald-500 u-pulse" : "bg-red-500"
+                  }`}
+                />
+              </div>
+
+              <div className="min-w-0">
+                <p title={name} className="truncate font-semibold text-slate-900 dark:text-white">
+                  {name}
+                </p>
+                <p className="font-mono text-[10px] text-slate-400">
+                  {employee.employee_code || `#${employee.id}`}
+                </p>
+              </div>
+            </div>
+
+            <div className="shrink-0">{statusBadge(isActive)}</div>
+          </div>
+
+          <div className="my-3 border-t border-slate-100 dark:border-slate-800" />
+
+          <div className="space-y-2 text-xs">
+            <div className="flex items-center justify-between gap-2">
+              <span className="shrink-0 text-slate-400">Company</span>
+              <span
+                title={employee.department?.company?.name || ""}
+                className="truncate text-right font-semibold text-slate-700 dark:text-slate-200"
+              >
+                {employee.department?.company?.name || "—"}
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between gap-2">
+              <span className="shrink-0 text-slate-400">Branch</span>
+              <span
+                title={employee.department?.branch?.name || ""}
+                className="truncate text-right font-medium text-slate-700 dark:text-slate-200"
+              >
+                {employee.department?.branch?.name || "—"}
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between gap-2">
+              <span className="shrink-0 text-slate-400">Department</span>
+              <span
+                title={employee.department?.department_name || ""}
+                className="truncate text-right font-semibold text-slate-700 dark:text-slate-200"
+              >
+                {employee.department?.department_name || "—"}
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between gap-2">
+              <span className="shrink-0 text-slate-400">Designation</span>
+              <span
+                title={employee.designation?.designation_name || ""}
+                className="truncate text-right font-semibold text-slate-700 dark:text-slate-200"
+              >
+                {employee.designation?.designation_name || "—"}
+              </span>
+            </div>
+
+            {!hideSalary && employee.salary != null && (
+              <div className="flex items-center justify-between gap-2">
+                <span className="shrink-0 text-slate-400">Salary</span>
+                <span className="truncate text-right font-semibold text-slate-700 dark:text-slate-200">
+                  {formatCurrency(employee.salary)}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {!hideActions && (
+            <div className="mt-3 grid grid-cols-3 gap-2">
+              <Link
+                to={`/employees/${employee.id}${restricted ? "?restricted=1" : ""}`}
+                className="rounded-lg border border-slate-200 px-3 py-2 text-center text-xs font-semibold text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary-200 hover:bg-primary-50 hover:text-primary-600 hover:shadow-sm dark:border-white/10 dark:text-slate-200 dark:hover:border-primary-500/40 dark:hover:bg-primary-500/10 dark:hover:text-primary-400"
+              >
+                View
+              </Link>
+
+              {!restricted && (
+                <Link
+                  to={`/employees/${employee.id}/edit`}
+                  className="rounded-lg border border-slate-200 px-3 py-2 text-center text-xs font-semibold text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary-200 hover:bg-primary-50 hover:text-primary-600 hover:shadow-sm dark:border-white/10 dark:text-slate-200 dark:hover:border-primary-500/40 dark:hover:bg-primary-500/10 dark:hover:text-primary-400"
+                >
+                  Edit
+                </Link>
+              )}
+
+              {!restricted && (
+                <button
+                  type="button"
+                  disabled={isMutating}
+                  onClick={() => (isActive ? onDeactivate(employee) : onReactivate(employee))}
+                  className={`rounded-lg px-3 py-2 text-xs font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm disabled:cursor-not-allowed disabled:opacity-50 ${
+                    isActive
+                      ? "border border-red-200 bg-white text-red-600 hover:bg-red-50 dark:border-red-900/40 dark:bg-slate-800 dark:text-red-400 dark:hover:bg-red-500/10"
+                      : "border border-emerald-200 bg-white text-emerald-600 hover:bg-emerald-50 dark:border-emerald-900/40 dark:bg-slate-800 dark:text-emerald-400 dark:hover:bg-emerald-500/10"
+                  }`}
+                >
+                  {isActive ? "Deactivate" : "Reactivate"}
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function EmployeeListPage({
   restricted = false,
   hideSalary = false,
@@ -108,6 +311,8 @@ export default function EmployeeListPage({
     useModulePermissions(
       "Employees"
     );
+
+  const addMagnet = useMagnetic(0.28);
 
   /* =======================================================
      UI STATE
@@ -745,22 +950,32 @@ export default function EmployeeListPage({
 
   if (isError) {
     return (
-      <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-600 dark:border-red-900/40 dark:bg-red-950/20 dark:text-red-400">
-        Failed to load employees.
+      <div className="p-6">
+        <Motion3DStyles />
+        <div className="u-rise rounded-xl border border-red-200 bg-red-50 p-4 text-red-600 dark:border-red-900/40 dark:bg-red-950/20 dark:text-red-400">
+          Failed to load employees.
+        </div>
       </div>
     );
   }
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-        <div className="flex items-center gap-3">
-          <div
-            className={`flex h-10 w-10 items-center justify-center rounded-xl text-white shadow-sm ${ACCENT.icon}`}
-          >
-            <span className="font-bold">
-              E
-            </span>
+      <Motion3DStyles />
+
+      <div className="u-rise relative flex flex-col gap-4 overflow-hidden rounded-2xl border border-slate-200/80 bg-gradient-to-br from-white via-sky-50/40 to-white p-4 shadow-sm dark:border-white/[0.08] dark:from-sky-500/[0.08] dark:via-white/[0.02] dark:to-transparent xl:flex-row xl:items-center xl:justify-between">
+        <GridPattern id="employee-grid" />
+        <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-sky-500/15 blur-3xl" />
+
+        <div className="relative flex items-center gap-3">
+          <div className="u-hover-float">
+            <div
+              className={`u-float-target flex h-11 w-11 items-center justify-center rounded-xl text-white shadow-lg shadow-sky-600/30 ring-1 ring-white/20 ${ACCENT.icon}`}
+            >
+              <span className="font-bold">
+                E
+              </span>
+            </div>
           </div>
 
           <div>
@@ -774,7 +989,7 @@ export default function EmployeeListPage({
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="relative flex flex-wrap items-center gap-2">
           <TableToolbar
             onRefresh={refetch}
             refreshing={
@@ -792,95 +1007,45 @@ export default function EmployeeListPage({
           />
 
           {canAdd && (
-            <Link
-              to="/employees/new"
-              className="w-full sm:w-auto"
-            >
-              <Button className="h-10 w-full px-4 sm:w-auto">
-                <span className="mr-1.5 text-lg">
-                  +
-                </span>
-                Add Employee
-              </Button>
-            </Link>
+            <div ref={addMagnet.ref} {...addMagnet.handlers} className="inline-block w-full will-change-transform sm:w-auto">
+              <Link
+                to="/employees/new"
+                className="block w-full sm:w-auto"
+              >
+                <Button className="h-10 w-full px-4 shadow-sm transition-shadow duration-200 hover:shadow-lg sm:w-auto">
+                  <span className="mr-1.5 text-lg leading-none transition-transform duration-300 hover:rotate-90">
+                    +
+                  </span>
+                  Add Employee
+                </Button>
+              </Link>
+            </div>
           )}
         </div>
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div className="stat-tile stat-tile-primary h-[110px] px-4 py-3">
-          <div className="flex h-full items-center justify-between">
-            <div>
-              <p className="truncate text-xs font-medium text-slate-500 dark:text-slate-400">
-                Total Employees
-              </p>
-
-              <p className="mt-1 bg-gradient-to-br from-slate-900 to-slate-600 bg-clip-text text-2xl font-bold tracking-tight text-transparent dark:from-white dark:to-slate-400">
-                {
-                  allEmployees.length
-                }
-              </p>
-
-              <p className="mt-0.5 text-[11px] text-slate-400">
-                All records
-              </p>
-            </div>
-
-            <div className="icon-tile icon-tile-primary h-9 w-9">
-              <span className="text-sm font-bold">
-                E
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div className="stat-tile stat-tile-success h-[110px] px-4 py-3">
-          <div className="flex h-full items-center justify-between">
-            <div>
-              <p className="truncate text-xs font-medium text-slate-500 dark:text-slate-400">
-                Active Employees
-              </p>
-
-              <p className="mt-1 text-2xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400">
-                {
-                  activeEmployees.length
-                }
-              </p>
-
-              <p className="mt-0.5 text-[11px] text-slate-400">
-                Currently active
-              </p>
-            </div>
-
-            <div className="icon-tile icon-tile-emerald h-9 w-9">
-              <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
-            </div>
-          </div>
-        </div>
-
-        <div className="stat-tile stat-tile-danger h-[110px] px-4 py-3">
-          <div className="flex h-full items-center justify-between">
-            <div>
-              <p className="truncate text-xs font-medium text-slate-500 dark:text-slate-400">
-                Inactive Employees
-              </p>
-
-              <p className="mt-1 text-2xl font-bold tracking-tight text-rose-600 dark:text-rose-400">
-                {
-                  inactiveEmployees.length
-                }
-              </p>
-
-              <p className="mt-0.5 text-[11px] text-slate-400">
-                Deactivated employees
-              </p>
-            </div>
-
-            <div className="icon-tile icon-tile-rose h-9 w-9">
-              <span className="h-2.5 w-2.5 rounded-full bg-rose-500" />
-            </div>
-          </div>
-        </div>
+        <StatTile
+          tone="primary"
+          label="Total Employees"
+          value={allEmployees.length}
+          hint="All records"
+          icon={<span className="text-sm font-bold">E</span>}
+        />
+        <StatTile
+          tone="emerald"
+          label="Active Employees"
+          value={activeEmployees.length}
+          hint="Currently active"
+          icon={<span className="h-2.5 w-2.5 rounded-full bg-emerald-500 u-pulse" />}
+        />
+        <StatTile
+          tone="red"
+          label="Inactive Employees"
+          value={inactiveEmployees.length}
+          hint="Deactivated employees"
+          icon={<span className="h-2.5 w-2.5 rounded-full bg-rose-500" />}
+        />
       </div>
 
       {/* SEARCH + COMPANY/BRANCH/DEPARTMENT/DESIGNATION FILTERS + VIEW TOGGLE + STATUS */}
@@ -1179,245 +1344,20 @@ export default function EmployeeListPage({
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {pagedEmployees.map(
-            (employee) => {
-              const name =
-                `${
-                  employee.first_name ||
-                  ""
-                } ${
-                  employee.last_name ||
-                  ""
-                }`.trim() ||
-                `Employee #${employee.id}`;
-
-              const isActive =
-                employee.is_active !==
-                false;
-
-              return (
-                <div
-                  key={
-                    employee.id
-                  }
-                  className={`relative overflow-hidden rounded-2xl border bg-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg dark:bg-white/[0.04] ${
-                    isActive
-                      ? "border-slate-200 dark:border-white/10"
-                      : "border-red-100 bg-red-50/20 dark:border-red-900/30 dark:bg-red-950/10"
-                  }`}
-                >
-                  <div
-                    className={`absolute inset-x-0 top-0 h-0.5 ${
-                      isActive
-                        ? "bg-primary-600"
-                        : "bg-red-500"
-                    }`}
-                  />
-
-                  <div className="p-4">
-                    <div className="flex items-start justify-between gap-2.5">
-                      <div className="flex min-w-0 items-center gap-2.5">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-50 font-bold text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
-                          {name
-                            .charAt(
-                              0
-                            )
-                            .toUpperCase()}
-                        </div>
-
-                        <div className="min-w-0">
-                          <p
-                            title={
-                              name
-                            }
-                            className="truncate font-semibold text-slate-900 dark:text-white"
-                          >
-                            {
-                              name
-                            }
-                          </p>
-
-                          <p className="font-mono text-[10px] text-slate-400">
-                            {employee.employee_code ||
-                              `#${employee.id}`}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="shrink-0">
-                        {statusBadge(
-                          isActive
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="my-3 border-t border-slate-100 dark:border-slate-800" />
-
-                    <div className="space-y-2 text-xs">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="shrink-0 text-slate-400">
-                          Company
-                        </span>
-
-                        <span
-                          title={
-                            employee
-                              .department
-                              ?.company
-                              ?.name ||
-                            ""
-                          }
-                          className="truncate text-right font-semibold text-slate-700 dark:text-slate-200"
-                        >
-                          {employee
-                            .department
-                            ?.company
-                            ?.name ||
-                            "—"}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="shrink-0 text-slate-400">
-                          Branch
-                        </span>
-
-                        <span
-                          title={
-                            employee
-                              .department
-                              ?.branch
-                              ?.name ||
-                            ""
-                          }
-                          className="truncate text-right font-medium text-slate-700 dark:text-slate-200"
-                        >
-                          {employee
-                            .department
-                            ?.branch
-                            ?.name ||
-                            "—"}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="shrink-0 text-slate-400">
-                          Department
-                        </span>
-
-                        <span
-                          title={
-                            employee
-                              .department
-                              ?.department_name ||
-                            ""
-                          }
-                          className="truncate text-right font-semibold text-slate-700 dark:text-slate-200"
-                        >
-                          {employee
-                            .department
-                            ?.department_name ||
-                            "—"}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="shrink-0 text-slate-400">
-                          Designation
-                        </span>
-
-                        <span
-                          title={
-                            employee
-                              .designation
-                              ?.designation_name ||
-                            ""
-                          }
-                          className="truncate text-right font-semibold text-slate-700 dark:text-slate-200"
-                        >
-                          {employee
-                            .designation
-                            ?.designation_name ||
-                            "—"}
-                        </span>
-                      </div>
-
-                      {!hideSalary &&
-                        employee.salary !=
-                          null && (
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="shrink-0 text-slate-400">
-                              Salary
-                            </span>
-
-                            <span className="truncate text-right font-semibold text-slate-700 dark:text-slate-200">
-                              {formatCurrency(
-                                employee.salary
-                              )}
-                            </span>
-                          </div>
-                        )}
-                    </div>
-
-                    {!hideActions && (
-                      <div className="mt-3 grid grid-cols-3 gap-2">
-                        <Link
-                          to={`/employees/${employee.id}${
-                            restricted
-                              ? "?restricted=1"
-                              : ""
-                          }`}
-                          className="rounded-lg border border-slate-200 px-3 py-2 text-center text-xs font-semibold text-slate-700 transition-all hover:border-primary-200 hover:bg-primary-50 hover:text-primary-600 dark:border-white/10 dark:text-slate-200 dark:hover:border-primary-500/40 dark:hover:bg-primary-500/10 dark:hover:text-primary-400"
-                        >
-                          View
-                        </Link>
-
-                        {!restricted && (
-                          <Link
-                            to={`/employees/${employee.id}/edit`}
-                            className="rounded-lg border border-slate-200 px-3 py-2 text-center text-xs font-semibold text-slate-700 transition-all hover:border-primary-200 hover:bg-primary-50 hover:text-primary-600 dark:border-white/10 dark:text-slate-200 dark:hover:border-primary-500/40 dark:hover:bg-primary-500/10 dark:hover:text-primary-400"
-                          >
-                            Edit
-                          </Link>
-                        )}
-
-                        {!restricted && (
-                          <button
-                            type="button"
-                            disabled={
-                              isMutating
-                            }
-                            onClick={() => {
-                              if (
-                                isActive
-                              ) {
-                                handleDeactivate(
-                                  employee
-                                );
-                              } else {
-                                handleReactivate(
-                                  employee
-                                );
-                              }
-                            }}
-                            className={`rounded-lg px-3 py-2 text-xs font-semibold transition-all disabled:cursor-not-allowed disabled:opacity-50 ${
-                              isActive
-                                ? "border border-red-200 bg-white text-red-600 hover:bg-red-50 dark:border-red-900/40 dark:bg-slate-800 dark:text-red-400 dark:hover:bg-red-500/10"
-                                : "border border-emerald-200 bg-white text-emerald-600 hover:bg-emerald-50 dark:border-emerald-900/40 dark:bg-slate-800 dark:text-emerald-400 dark:hover:bg-emerald-500/10"
-                            }`}
-                          >
-                            {isActive
-                              ? "Deactivate"
-                              : "Reactivate"}
-                          </button>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            }
-          )}
+          {pagedEmployees.map((employee, i) => (
+            <EmployeeCard
+              key={employee.id}
+              employee={employee}
+              index={i}
+              statusBadge={statusBadge}
+              hideSalary={hideSalary}
+              hideActions={hideActions}
+              restricted={restricted}
+              isMutating={isMutating}
+              onDeactivate={handleDeactivate}
+              onReactivate={handleReactivate}
+            />
+          ))}
         </div>
       )}
 
@@ -2260,20 +2200,30 @@ function CrmEmployeeView() {
 
   if (isError) {
     return (
-      <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-600 dark:border-red-900/40 dark:bg-red-950/20 dark:text-red-400">
-        Failed to load CRM employees.
+      <div className="p-6">
+        <Motion3DStyles />
+        <div className="u-rise rounded-xl border border-red-200 bg-red-50 p-4 text-red-600 dark:border-red-900/40 dark:bg-red-950/20 dark:text-red-400">
+          Failed to load CRM employees.
+        </div>
       </div>
     );
   }
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary-600 text-white shadow-sm">
-            <span className="text-lg font-bold">
-              C
-            </span>
+      <Motion3DStyles />
+
+      <div className="u-rise relative flex flex-col gap-4 overflow-hidden rounded-2xl border border-slate-200/80 bg-gradient-to-br from-white via-primary-50/40 to-white p-4 shadow-sm dark:border-white/[0.08] dark:from-primary-500/[0.08] dark:via-white/[0.02] dark:to-transparent xl:flex-row xl:items-center xl:justify-between">
+        <GridPattern id="crm-employee-grid" />
+        <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-primary-500/15 blur-3xl" />
+
+        <div className="relative flex items-center gap-3">
+          <div className="u-hover-float">
+            <div className="u-float-target flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 text-white shadow-lg shadow-primary-600/30 ring-1 ring-white/20">
+              <span className="text-lg font-bold">
+                C
+              </span>
+            </div>
           </div>
 
           <div>
@@ -2304,8 +2254,8 @@ function CrmEmployeeView() {
         />
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div className="stat-tile stat-tile-primary p-4">
+      <div className="u-rise grid grid-cols-1 gap-3 sm:grid-cols-3" style={{ animationDelay: "60ms" }}>
+        <div className="stat-tile stat-tile-primary p-4 transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-md">
           <p className="text-xs text-slate-500 dark:text-slate-400">
             Total CRM Employees
           </p>
@@ -2317,7 +2267,7 @@ function CrmEmployeeView() {
           </p>
         </div>
 
-        <div className="stat-tile stat-tile-success p-4">
+        <div className="stat-tile stat-tile-success p-4 transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-md">
           <p className="text-xs text-slate-500 dark:text-slate-400">
             Active
           </p>
@@ -2329,7 +2279,7 @@ function CrmEmployeeView() {
           </p>
         </div>
 
-        <div className="stat-tile stat-tile-danger p-4">
+        <div className="stat-tile stat-tile-danger p-4 transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-md">
           <p className="text-xs text-slate-500 dark:text-slate-400">
             Inactive
           </p>

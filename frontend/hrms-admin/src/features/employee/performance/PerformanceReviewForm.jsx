@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import { employeesApi } from "@/api/employees.api";
+import { useMagnetic, Motion3DStyles } from "@/hooks/use3DMotion";
 
 /* ============================================================
    CONSTANTS
@@ -219,6 +220,8 @@ export default function PerformanceReviewForm({
   });
 
   const [errors, setErrors] = useState({});
+
+  const submitMagnet = useMagnetic(0.2);
 
   /* ----------------------------------------------------------
      UPDATE FORM WHEN EDIT RECORD CHANGES
@@ -526,11 +529,13 @@ export default function PerformanceReviewForm({
       onSubmit={handleSubmit}
       className="space-y-5"
     >
+      <Motion3DStyles />
+
       {/* ======================================================
           EMPLOYEE / REVIEW INFORMATION
       ====================================================== */}
 
-      <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
+      <div className="u-rise rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-shadow duration-300 hover:shadow-md dark:border-white/10 dark:bg-white/[0.04]">
         <div className="mb-4">
           <h3 className="text-sm font-bold text-slate-900 dark:text-white">
             Review Information
@@ -696,7 +701,7 @@ export default function PerformanceReviewForm({
           PERFORMANCE SCORES
       ====================================================== */}
 
-      <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
+      <div className="u-rise rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-shadow duration-300 hover:shadow-md dark:border-white/10 dark:bg-white/[0.04]" style={{ animationDelay: "50ms" }}>
         <div className="mb-4">
           <h3 className="text-sm font-bold text-slate-900 dark:text-white">
             Performance Evaluation
@@ -810,7 +815,7 @@ export default function PerformanceReviewForm({
         {/* SCORE GUIDE */}
 
         <div className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-5">
-          <div className="rounded-lg bg-slate-50 px-2 py-2 text-center dark:bg-white/[0.06]">
+          <div className="rounded-lg bg-slate-50 px-2 py-2 text-center transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-sm dark:bg-white/[0.06]">
             <p className="text-sm font-bold text-slate-800 dark:text-white">
               1
             </p>
@@ -819,7 +824,7 @@ export default function PerformanceReviewForm({
             </p>
           </div>
 
-          <div className="rounded-lg bg-slate-50 px-2 py-2 text-center dark:bg-white/[0.06]">
+          <div className="rounded-lg bg-slate-50 px-2 py-2 text-center transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-sm dark:bg-white/[0.06]">
             <p className="text-sm font-bold text-slate-800 dark:text-white">
               2
             </p>
@@ -828,7 +833,7 @@ export default function PerformanceReviewForm({
             </p>
           </div>
 
-          <div className="rounded-lg bg-slate-50 px-2 py-2 text-center dark:bg-white/[0.06]">
+          <div className="rounded-lg bg-slate-50 px-2 py-2 text-center transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-sm dark:bg-white/[0.06]">
             <p className="text-sm font-bold text-slate-800 dark:text-white">
               3
             </p>
@@ -837,7 +842,7 @@ export default function PerformanceReviewForm({
             </p>
           </div>
 
-          <div className="rounded-lg bg-slate-50 px-2 py-2 text-center dark:bg-white/[0.06]">
+          <div className="rounded-lg bg-slate-50 px-2 py-2 text-center transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-sm dark:bg-white/[0.06]">
             <p className="text-sm font-bold text-slate-800 dark:text-white">
               4
             </p>
@@ -846,7 +851,7 @@ export default function PerformanceReviewForm({
             </p>
           </div>
 
-          <div className="rounded-lg bg-slate-50 px-2 py-2 text-center dark:bg-white/[0.06]">
+          <div className="rounded-lg bg-slate-50 px-2 py-2 text-center transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-sm dark:bg-white/[0.06]">
             <p className="text-sm font-bold text-slate-800 dark:text-white">
               5
             </p>
@@ -861,7 +866,7 @@ export default function PerformanceReviewForm({
           OVERALL RATING
       ====================================================== */}
 
-      <div className="rounded-xl border border-primary-100 bg-primary-50/50 p-4 shadow-sm dark:border-primary-500/20 dark:bg-primary-500/5">
+      <div className="u-rise rounded-xl border border-primary-100 bg-primary-50/50 p-4 shadow-sm transition-shadow duration-300 hover:shadow-md dark:border-primary-500/20 dark:bg-primary-500/5" style={{ animationDelay: "100ms" }}>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
             <FieldLabel required>
@@ -982,24 +987,26 @@ export default function PerformanceReviewForm({
           type="button"
           onClick={onCancel}
           disabled={loading}
-          className="h-10 rounded-lg border border-slate-300 bg-white px-5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-600 dark:bg-white/[0.06] dark:text-slate-200 dark:hover:bg-slate-700"
+          className="h-10 rounded-lg border border-slate-300 bg-white px-5 text-sm font-semibold text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-600 dark:bg-white/[0.06] dark:text-slate-200 dark:hover:bg-slate-700"
         >
           Cancel
         </button>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="h-10 rounded-lg bg-primary-600 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {loading
-            ? isEdit
-              ? "Updating..."
-              : "Saving..."
-            : isEdit
-            ? "Update Review"
-            : "Save Review"}
-        </button>
+        <div ref={submitMagnet.ref} {...submitMagnet.handlers} className="inline-block will-change-transform">
+          <button
+            type="submit"
+            disabled={loading}
+            className="h-10 rounded-lg bg-primary-600 px-5 text-sm font-semibold text-white shadow-sm transition-shadow duration-200 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {loading
+              ? isEdit
+                ? "Updating..."
+                : "Saving..."
+              : isEdit
+              ? "Update Review"
+              : "Save Review"}
+          </button>
+        </div>
       </div>
     </form>
   );

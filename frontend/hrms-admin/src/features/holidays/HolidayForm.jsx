@@ -1,4 +1,5 @@
 import GenericForm from "@/components/form/GenericForm";
+import { Motion3DStyles } from "@/hooks/use3DMotion";
 
 const HOLIDAY_TYPE_OPTIONS = [
   { value: "Government", label: "Government Holiday" },
@@ -26,14 +27,17 @@ export default function HolidayForm({ formId = "holidays-form", initialData, onS
   };
 
   return (
-    <GenericForm
-      formId={formId}
-      fields={FIELDS}
-      initialData={normalizedInitialData}
-      onSubmit={onSubmit}
-      loading={loading}
-      onCancel={onCancel}
-      isEdit={isEdit}
-    />
+    <div className="u-rise">
+      <Motion3DStyles />
+      <GenericForm
+        formId={formId}
+        fields={FIELDS}
+        initialData={normalizedInitialData}
+        onSubmit={onSubmit}
+        loading={loading}
+        onCancel={onCancel}
+        isEdit={isEdit}
+      />
+    </div>
   );
 }

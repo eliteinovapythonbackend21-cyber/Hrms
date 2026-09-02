@@ -4,6 +4,7 @@ import Select from "@/components/ui/Select";
 import { useEmployeeOptions } from "@/hooks/useLookupOptions";
 import { getDocumentTypeOptions } from "./useDocuments";
 import { isRequired } from "@/utils/validators";
+import { Motion3DStyles } from "@/hooks/use3DMotion";
 
 const ALLOWED_TYPES = ["image/png", "image/jpeg", "image/gif", "application/pdf"];
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
@@ -82,7 +83,8 @@ export default function DocumentForm({ formId = "employee-documents-form", initi
   };
 
   return (
-    <form id={formId} onSubmit={handleSubmit}>
+    <form id={formId} onSubmit={handleSubmit} className="u-rise">
+      <Motion3DStyles />
       <Select
         label="Employee"
         name="employee_id"
@@ -111,13 +113,13 @@ export default function DocumentForm({ formId = "employee-documents-form", initi
 
         {!file ? (
           <label
-            className={`flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed px-4 py-6 cursor-pointer transition-colors ${
+            className={`group flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed px-4 py-6 cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm ${
               errors.file
                 ? "border-red-500"
                 : "border-slate-300 dark:border-slate-600 hover:border-primary-500 dark:hover:border-primary-400"
             }`}
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-slate-400 transition-transform duration-200 group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 9l5-5 5 5M12 4v12" />
             </svg>
             <span className="text-sm text-slate-600 dark:text-slate-300">
@@ -132,7 +134,7 @@ export default function DocumentForm({ formId = "employee-documents-form", initi
             />
           </label>
         ) : (
-          <div className="flex items-center gap-3 rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2.5">
+          <div className="u-rise flex items-center gap-3 rounded-lg border border-slate-300 transition-shadow duration-200 hover:shadow-sm dark:border-slate-600 px-3 py-2.5">
             {file.type === "application/pdf" ? (
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded bg-red-50 dark:bg-red-500/10">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

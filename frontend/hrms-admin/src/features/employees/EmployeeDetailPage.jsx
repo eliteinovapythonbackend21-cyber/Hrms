@@ -22,6 +22,7 @@ import EmployeeSubList from "@/components/EmployeeSubList";
 
 import { employeeLifecycleApi } from "@/api/employee.api";
 import { getUser } from "@/utils/tokenHelpers";
+import { use3DTilt, Motion3DStyles } from "@/hooks/use3DMotion";
 
 const SKY = {
   text: "text-sky-600 dark:text-sky-400",
@@ -196,6 +197,26 @@ function Field({
         >
           {value || "-"}
         </p>
+      </div>
+    </div>
+  );
+}
+
+function CountTile({ label, value, tint }) {
+  const { ref, handlers } = use3DTilt({ max: 10, scale: 1.03 });
+  return (
+    <div className="u-tilt-perspective">
+      <div
+        ref={ref}
+        {...handlers}
+        className={`u-tilt u-glare relative overflow-hidden rounded-xl border border-slate-100 bg-gradient-to-br p-3 text-center shadow-sm dark:border-slate-800 ${tint}`}
+      >
+        <div className="u-tilt-content">
+          <p className="text-xl font-bold">{value}</p>
+          <p className="mt-0.5 text-[11px] font-medium leading-tight text-slate-500 dark:text-slate-400">
+            {label}
+          </p>
+        </div>
       </div>
     </div>
   );
@@ -498,14 +519,18 @@ export default function EmployeeDetailPage() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
+      <Motion3DStyles />
+
       {/* HEADER */}
 
-      <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-gradient-to-br from-primary-50 via-white to-sky-50 p-5 shadow-sm dark:border-white/10 dark:from-primary-900/20 dark:via-slate-900 dark:to-sky-900/10 sm:p-6">
+      <div className="u-rise relative overflow-hidden rounded-2xl border border-slate-200 bg-gradient-to-br from-primary-50 via-white to-sky-50 p-5 shadow-sm dark:border-white/10 dark:from-primary-900/20 dark:via-slate-900 dark:to-sky-900/10 sm:p-6">
         <div className="pointer-events-none absolute -right-10 -top-16 h-48 w-48 rounded-full bg-primary-200/40 blur-3xl dark:bg-primary-500/10" />
         <div className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
-            <div className="hidden h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary-600 text-white shadow-sm sm:flex">
-              <UserIcon />
+            <div className="u-hover-float hidden sm:flex">
+              <div className="u-float-target flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 text-white shadow-lg shadow-primary-600/30">
+                <UserIcon />
+              </div>
             </div>
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
@@ -532,10 +557,10 @@ export default function EmployeeDetailPage() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* LEFT COLUMN */}
 
-        <div className="space-y-4 lg:sticky lg:top-6 lg:col-span-1 lg:h-fit">
+        <div className="u-rise space-y-4 lg:sticky lg:top-6 lg:col-span-1 lg:h-fit" style={{ animationDelay: "60ms" }}>
           {/* EMPLOYEE PROFILE */}
 
-          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white text-center shadow-sm dark:border-slate-700 dark:bg-slate-900">
+          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white text-center shadow-sm transition-shadow duration-300 hover:shadow-md dark:border-slate-700 dark:bg-slate-900">
             <div className="h-20 bg-gradient-to-r from-primary-500 via-sky-500 to-indigo-500" />
             <div className="px-6 pb-6">
             <div
@@ -565,10 +590,15 @@ export default function EmployeeDetailPage() {
               <Badge
                 className={
                   employee.is_active
-                    ? "bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300"
-                    : "bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300"
+                    ? "inline-flex items-center gap-1.5 bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300"
+                    : "inline-flex items-center gap-1.5 bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300"
                 }
               >
+                <span
+                  className={`h-1.5 w-1.5 rounded-full ${
+                    employee.is_active ? "bg-emerald-500 u-pulse" : "bg-red-500"
+                  }`}
+                />
                 {employee.is_active
                   ? "Active"
                   : "Inactive"}
@@ -656,16 +686,12 @@ export default function EmployeeDetailPage() {
                 "from-violet-50 to-white text-violet-600 dark:from-violet-900/20 dark:to-slate-900 dark:text-violet-300",
               ];
               return (
-                <div
+                <CountTile
                   key={count.label}
-                  className={`rounded-xl border border-slate-100 bg-gradient-to-br p-3 text-center shadow-sm dark:border-slate-800 ${tints[i % tints.length]}`}
-                >
-                  <p className="text-xl font-bold">{count.value}</p>
-
-                  <p className="mt-0.5 text-[11px] font-medium leading-tight text-slate-500 dark:text-slate-400">
-                    {count.label}
-                  </p>
-                </div>
+                  label={count.label}
+                  value={count.value}
+                  tint={tints[i % tints.length]}
+                />
               );
             })}
           </div>
@@ -673,10 +699,10 @@ export default function EmployeeDetailPage() {
 
         {/* RIGHT COLUMN */}
 
-        <div className="space-y-6 lg:col-span-2">
+        <div className="u-rise space-y-6 lg:col-span-2" style={{ animationDelay: "100ms" }}>
           {/* PERSONAL */}
 
-          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition-shadow duration-300 hover:shadow-md dark:border-slate-700 dark:bg-slate-900">
             <h3 className="mb-4 text-xs font-semibold uppercase tracking-wide text-slate-400">
               Personal
             </h3>
@@ -777,7 +803,7 @@ export default function EmployeeDetailPage() {
           {/* EMPLOYMENT */}
 
           {showEmployment && (
-            <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+            <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition-shadow duration-300 hover:shadow-md dark:border-slate-700 dark:bg-slate-900">
               <h3 className="mb-4 text-xs font-semibold uppercase tracking-wide text-slate-400">
                 Employment
               </h3>
@@ -798,7 +824,7 @@ export default function EmployeeDetailPage() {
 
                   <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
                     <div
-                      className={`h-full ${SKY.bar}`}
+                      className={`h-full ${SKY.bar} transition-[width] duration-700 ease-out`}
                       style={{
                         width: `${Math.min(
                           salaryPct,

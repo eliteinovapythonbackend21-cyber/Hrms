@@ -4,6 +4,7 @@ import Button from "@/components/ui/Button";
 import { employeesApi } from "@/api/employees.api";
 import { masterApi } from "@/api/master.api";
 import { useCompanies } from "@/features/master/company/useCompanies";
+import { useMagnetic, Motion3DStyles } from "@/hooks/use3DMotion";
 
 /* =========================================================
    TRANSFER REASONS
@@ -231,6 +232,8 @@ export default function TransferForm({
 
   const [error, setError] =
     useState("");
+
+  const submitMagnet = useMagnetic(0.2);
 
   /* =========================================================
      SYNC EDIT DATA
@@ -705,8 +708,9 @@ export default function TransferForm({
     <form
       id={formId}
       onSubmit={handleSubmit}
-      className="space-y-5"
+      className="u-rise space-y-5"
     >
+      <Motion3DStyles />
       {error && (
         <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600 dark:border-red-900/40 dark:bg-red-950/20 dark:text-red-400">
           {error}
@@ -786,7 +790,7 @@ export default function TransferForm({
       ===================================================== */}
 
       {selectedEmployee && (
-        <div className="grid grid-cols-1 gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 sm:grid-cols-3 dark:border-white/10 dark:bg-white/[0.03]">
+        <div className="u-rise grid grid-cols-1 gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 transition-shadow duration-200 hover:shadow-sm sm:grid-cols-3 dark:border-white/10 dark:bg-white/[0.03]">
           <div>
             <p className="text-[10px] uppercase tracking-wide text-slate-400">
               Company
@@ -1152,16 +1156,19 @@ export default function TransferForm({
       ===================================================== */}
 
       <div className="flex justify-end gap-2 border-t border-slate-200 pt-4 dark:border-white/10">
-        <Button
-          type="submit"
-          disabled={loading}
-        >
-          {loading
-            ? "Saving..."
-            : initialData?.id
-              ? "Update Transfer"
-              : "Add Transfer"}
-        </Button>
+        <div ref={submitMagnet.ref} {...submitMagnet.handlers} className="inline-block will-change-transform">
+          <Button
+            type="submit"
+            disabled={loading}
+            className="shadow-sm transition-shadow duration-200 hover:shadow-lg"
+          >
+            {loading
+              ? "Saving..."
+              : initialData?.id
+                ? "Update Transfer"
+                : "Add Transfer"}
+          </Button>
+        </div>
       </div>
     </form>
   );

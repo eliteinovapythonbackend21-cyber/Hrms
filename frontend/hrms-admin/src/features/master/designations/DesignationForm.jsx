@@ -5,6 +5,7 @@ import Select from "@/components/ui/Select";
 import Button from "@/components/ui/Button";
 import { masterApi } from "@/api/master.api";
 import { isRequired } from "@/utils/validators";
+import { useMagnetic, Motion3DStyles } from "@/hooks/use3DMotion";
 
 
 const validateDesignation = (data) => {
@@ -36,6 +37,8 @@ export default function DesignationForm({ initialData = {}, onSubmit, loading, o
     is_admin_designation: initialData.is_admin_designation !== undefined ? initialData.is_admin_designation : false,
   });
   const [errors, setErrors] = useState({});
+
+  const submitMagnet = useMagnetic(0.22);
 
   const { data: companies } = useQuery({
     queryKey: ["companies-dropdown"],
@@ -131,63 +134,103 @@ export default function DesignationForm({ initialData = {}, onSubmit, loading, o
 
   return (
     <form id="designation-form" onSubmit={handleSubmit}>
-      {initialData.designation_code && (
-        <Input label="Designation Code" name="designation_code" value={initialData.designation_code} disabled />
-      )}
+      <Motion3DStyles />
 
-      <Select
-        label="Company"
-        options={companyOptions}
-        value={companyId}
-        onChange={handleCompanyChange}
-        error={errors.company_id}
-        required
-      />
-
-      <Select
-        label="Branch"
-        options={branchOptions}
-        value={branchId}
-        onChange={handleBranchChange}
-        error={errors.branch_id}
-        required
-        disabled={!companyId}
-        placeholder={companyId ? "Select..." : "Select a company first"}
-      />
-
-      <Select
-        label="Department"
-        name="department_id"
-        options={deptOptions}
-        value={form.department_id}
-        onChange={handleChange}
-        error={errors.department_id}
-        required
-        disabled={!branchId}
-        placeholder={branchId ? "Select..." : "Select a branch first"}
-      />
-
-      <Input label="Designation Name" name="designation_name" value={form.designation_name} onChange={handleChange} error={errors.designation_name} required />
-      <Input label="Description" name="description" value={form.description} onChange={handleChange} />
-      <div className="mb-4">
-        {/* <label className="inline-flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
-          <input type="checkbox" name="is_admin_designation" checked={form.is_admin_designation} onChange={handleChange} className="h-4 w-4" />
-          Admin designation
-        </label> */}
+      <div className="u-rise mb-4 flex items-center gap-3">
+        <div className="u-hover-float">
+          <div className="u-float-target flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-primary-500 to-primary-700 text-white shadow-sm shadow-primary-600/30">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M22 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
+            </svg>
+          </div>
+        </div>
+        <div>
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
+            Designation Information
+          </h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            Enter the designation details.
+          </p>
+        </div>
       </div>
-      <div className="mb-4">
-        <label className="inline-flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
-          <input type="checkbox" name="status" checked={form.status} onChange={handleChange} className="h-4 w-4" />
-          Active
-        </label>
+
+      <div className="u-rise" style={{ animationDelay: "60ms" }}>
+        {initialData.designation_code && (
+          <Input label="Designation Code" name="designation_code" value={initialData.designation_code} disabled />
+        )}
+
+        <Select
+          label="Company"
+          options={companyOptions}
+          value={companyId}
+          onChange={handleCompanyChange}
+          error={errors.company_id}
+          required
+        />
+
+        <Select
+          label="Branch"
+          options={branchOptions}
+          value={branchId}
+          onChange={handleBranchChange}
+          error={errors.branch_id}
+          required
+          disabled={!companyId}
+          placeholder={companyId ? "Select..." : "Select a company first"}
+        />
+
+        <Select
+          label="Department"
+          name="department_id"
+          options={deptOptions}
+          value={form.department_id}
+          onChange={handleChange}
+          error={errors.department_id}
+          required
+          disabled={!branchId}
+          placeholder={branchId ? "Select..." : "Select a branch first"}
+        />
+
+        <Input label="Designation Name" name="designation_name" value={form.designation_name} onChange={handleChange} error={errors.designation_name} required />
+        <Input label="Description" name="description" value={form.description} onChange={handleChange} />
+        <div className="mb-4">
+          {/* <label className="inline-flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+            <input type="checkbox" name="is_admin_designation" checked={form.is_admin_designation} onChange={handleChange} className="h-4 w-4" />
+            Admin designation
+          </label> */}
+        </div>
+        <div className="mb-4">
+          <label className="inline-flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+            <input type="checkbox" name="status" checked={form.status} onChange={handleChange} className="h-4 w-4" />
+            Active
+          </label>
+        </div>
       </div>
+
       <div className="flex justify-end gap-2 mt-6">
-        <Button type="button" variant="secondary" onClick={onCancel}>
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={onCancel}
+          className="transition-transform duration-200 hover:-translate-y-0.5"
+        >
           Cancel
         </Button>
-        <Button type="submit" isLoading={loading}>
-          {isEdit ? "Update" : "Create"}
-        </Button>
+        <div
+          ref={submitMagnet.ref}
+          {...submitMagnet.handlers}
+          className="inline-block will-change-transform"
+        >
+          <Button
+            type="submit"
+            isLoading={loading}
+            className="shadow-sm transition-shadow duration-200 hover:shadow-lg"
+          >
+            {isEdit ? "Update" : "Create"}
+          </Button>
+        </div>
       </div>
     </form>
   );

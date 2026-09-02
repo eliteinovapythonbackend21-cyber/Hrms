@@ -6,6 +6,7 @@ import LoadingSpinner from "@/components/feedback/LoadingSpinner";
 import Button from "@/components/ui/Button";
 import Select from "@/components/ui/Select";
 import { formatCurrency } from "@/utils/formatCurrency";
+import { use3DTilt, useMagnetic, Motion3DStyles } from "@/hooks/use3DMotion";
 
 const MONTH_OPTIONS = [
   "January", "February", "March", "April", "May", "June",
@@ -48,21 +49,26 @@ export default function PayslipPage() {
 
   const { data: payslip, isLoading, isError, error } = useEmployeePayslip(id, { month, year });
 
+  const cardTilt = use3DTilt({ max: 6, scale: 1.012 });
+  const downloadMagnet = useMagnetic(0.2);
+
   return (
     <div className="mx-auto max-w-2xl">
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <Motion3DStyles />
+
+      <div className="u-rise mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Payslip</h1>
         <Button
           variant="secondary"
           onClick={() => navigate(`/employees/${id}`)}
-          className="w-full sm:w-auto"
+          className="w-full transition-transform duration-200 hover:-translate-y-0.5 sm:w-auto"
         >
           Back
         </Button>
       </div>
 
       {/* PERIOD PICKER */}
-      <div className="mb-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+      <div className="u-rise mb-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-shadow duration-300 hover:shadow-md dark:border-slate-700 dark:bg-slate-900" style={{ animationDelay: "50ms" }}>
         <div className="grid grid-cols-1 gap-x-4 sm:grid-cols-2">
           <Select label="Month" options={MONTH_OPTIONS} value={month} onChange={(e) => setMonth(e.target.value)} />
           <Select label="Year" options={YEAR_OPTIONS} value={year} onChange={(e) => setYear(e.target.value)} />
@@ -76,15 +82,20 @@ export default function PayslipPage() {
       )}
 
       {isError && (
-        <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-center text-sm text-red-600 dark:border-red-900/40 dark:bg-red-500/10 dark:text-red-400">
+        <div className="u-rise rounded-xl border border-red-200 bg-red-50 p-6 text-center text-sm text-red-600 dark:border-red-900/40 dark:bg-red-500/10 dark:text-red-400">
           Failed to load payslip{error?.response?.data?.message ? `: ${error.response.data.message}` : "."}
         </div>
       )}
 
       {payslip && (
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <div className="u-rise u-tilt-perspective" style={{ animationDelay: "100ms" }}>
+        <div
+          ref={cardTilt.ref}
+          {...cardTilt.handlers}
+          className="u-tilt u-glare overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900"
+        >
           {/* LETTERHEAD */}
-          <div className="border-b border-slate-100 bg-slate-50 px-6 py-5 dark:border-slate-800 dark:bg-slate-800/60">
+          <div className="u-tilt-content border-b border-slate-100 bg-slate-50 px-6 py-5 dark:border-slate-800 dark:bg-slate-800/60">
             <p className="text-lg font-bold text-slate-900 dark:text-white">
               {payslip.employee.company || "Company"}
             </p>
@@ -161,10 +172,13 @@ export default function PayslipPage() {
 
           {/* DOWNLOAD */}
           <div className="px-6 py-5">
-            <Button className="w-full" onClick={() => downloadPayslipPdf(payslip)}>
-              Download Payslip PDF
-            </Button>
+            <div ref={downloadMagnet.ref} {...downloadMagnet.handlers} className="w-full will-change-transform">
+              <Button className="w-full shadow-sm transition-shadow duration-200 hover:shadow-lg" onClick={() => downloadPayslipPdf(payslip)}>
+                Download Payslip PDF
+              </Button>
+            </div>
           </div>
+        </div>
         </div>
       )}
     </div>

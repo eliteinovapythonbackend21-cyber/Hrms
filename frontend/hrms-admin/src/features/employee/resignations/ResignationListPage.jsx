@@ -12,6 +12,12 @@ import TableToolbar from "@/components/table/TableToolbar";
 import { useToast } from "@/components/feedback/Toast";
 import { useIsHrEmployee } from "@/hooks/useIsHrEmployee";
 import { useTableExport } from "@/hooks/useTableExport";
+import {
+  use3DTilt,
+  useMagnetic,
+  Motion3DStyles,
+  GridPattern,
+} from "@/hooks/use3DMotion";
 
 import { employeeLifecycleApi } from "@/api/employee.api";
 import { employeesApi } from "@/api/employees.api";
@@ -280,7 +286,7 @@ function OrganizationHoverCard({
         <span
           className={`h-1.5 w-1.5 shrink-0 rounded-full ${
             hasOrganization
-              ? "bg-sky-500"
+              ? "bg-sky-500 u-pulse"
               : "bg-slate-400 dark:bg-slate-500"
           }`}
         />
@@ -623,23 +629,31 @@ function StatCard({ icon, value, label, tone = "sky" }) {
       "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400",
   };
 
+  const { ref, handlers } = use3DTilt({ max: 9, scale: 1.02 });
+
   return (
-    <div className="rounded-xl border border-slate-200 bg-gradient-to-br from-white to-slate-50/60 p-5 shadow-sm dark:border-white/10 dark:from-primary-500/[0.06] dark:to-white/[0.02]">
-      <div className="flex items-center gap-3">
-        <div
-          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${tones[tone]}`}
-        >
-          {icon}
-        </div>
+    <div className="u-tilt-perspective">
+      <div
+        ref={ref}
+        {...handlers}
+        className="u-tilt u-glare relative overflow-hidden rounded-xl border border-slate-200 bg-gradient-to-br from-white to-slate-50/60 p-5 shadow-sm dark:border-white/10 dark:from-primary-500/[0.06] dark:to-white/[0.02]"
+      >
+        <div className="u-tilt-content flex items-center gap-3">
+          <div
+            className={`u-float-layer flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${tones[tone]}`}
+          >
+            {icon}
+          </div>
 
-        <div>
-          <p className="text-2xl font-bold text-slate-900 dark:text-white">
-            {value}
-          </p>
+          <div>
+            <p className="text-2xl font-bold text-slate-900 dark:text-white">
+              {value}
+            </p>
 
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            {label}
-          </p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              {label}
+            </p>
+          </div>
         </div>
       </div>
     </div>
@@ -770,7 +784,7 @@ const TableIconButton = ({
       disabled={disabled}
       title={title}
       aria-label={title}
-      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${tones[tone]}`}
+      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-all duration-200 hover:-translate-y-0.5 hover:scale-110 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0 disabled:hover:scale-100 ${tones[tone]}`}
     >
       {children}
     </button>
@@ -830,6 +844,8 @@ export default function ResignationListPage() {
 
   // HR-department employees: this screen is view-only.
   const { isHrEmployee: readOnly } = useIsHrEmployee();
+
+  const addMagnet = useMagnetic(0.25);
 
   const {
     data: allData,
@@ -1275,8 +1291,11 @@ export default function ResignationListPage() {
 
   if (isError) {
     return (
-      <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-600 dark:border-red-900/40 dark:bg-red-950/20 dark:text-red-400">
-        Failed to load resignations.
+      <div className="p-6">
+        <Motion3DStyles />
+        <div className="u-rise rounded-xl border border-red-200 bg-red-50 p-4 text-red-600 dark:border-red-900/40 dark:bg-red-950/20 dark:text-red-400">
+          Failed to load resignations.
+        </div>
       </div>
     );
   }
@@ -1287,9 +1306,14 @@ export default function ResignationListPage() {
 
   return (
     <div className="min-w-0 space-y-5">
+      <Motion3DStyles />
+
       {/* HEADER */}
-      <div className="flex min-w-0 flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-        <div className="min-w-0">
+      <div className="u-rise relative flex min-w-0 flex-col gap-4 overflow-hidden rounded-2xl border border-slate-200/80 bg-gradient-to-br from-white via-sky-50/40 to-white p-4 shadow-sm dark:border-white/[0.08] dark:from-sky-500/[0.08] dark:via-white/[0.02] dark:to-transparent xl:flex-row xl:items-center xl:justify-between">
+        <GridPattern id="resignation-grid" />
+        <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-sky-500/15 blur-3xl" />
+
+        <div className="relative min-w-0">
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
             Resignations
           </h1>
@@ -1299,7 +1323,7 @@ export default function ResignationListPage() {
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="relative flex flex-wrap items-center gap-2">
           <TableToolbar
             onRefresh={refetch}
             refreshing={isFetching}
@@ -1314,17 +1338,19 @@ export default function ResignationListPage() {
               View only
             </span>
           ) : (
-          <Button
-            type="button"
-            onClick={handleAdd}
-            className="h-10 w-full px-4 sm:w-auto"
-          >
-            <span className="mr-1.5 text-lg">
-              +
-            </span>
+          <div ref={addMagnet.ref} {...addMagnet.handlers} className="inline-block w-full will-change-transform sm:w-auto">
+            <Button
+              type="button"
+              onClick={handleAdd}
+              className="h-10 w-full px-4 shadow-sm transition-shadow duration-200 hover:shadow-lg sm:w-auto"
+            >
+              <span className="mr-1.5 text-lg leading-none transition-transform duration-300 hover:rotate-90">
+                +
+              </span>
 
-            Add Resignation
-          </Button>
+              Add Resignation
+            </Button>
+          </div>
           )}
         </div>
       </div>
@@ -1889,7 +1915,7 @@ export default function ResignationListPage() {
         /* CARD VIEW                                                         */
         /* ---------------------------------------------------------------- */
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {paged.map((resignation) => {
+          {paged.map((resignation, resignationIdx) => {
             const employee =
               employeeMap[
                 resignation.employee_id
@@ -1920,7 +1946,8 @@ export default function ResignationListPage() {
             return (
               <div
                 key={resignation.id}
-                className="relative min-w-0 overflow-visible rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg dark:border-white/10 dark:bg-white/[0.04]"
+                style={{ animationDelay: `${Math.min(resignationIdx, 10) * 40}ms` }}
+                className="u-rise relative min-w-0 overflow-visible rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl dark:border-white/10 dark:bg-white/[0.04]"
               >
                 <div className="absolute inset-x-0 top-0 h-0.5 rounded-t-2xl bg-primary-600" />
 

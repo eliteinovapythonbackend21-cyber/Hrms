@@ -13,6 +13,7 @@ import Modal from "@/components/ui/Modal";
 import { domainColors } from "@/theme/tokens/domainColors";
 import { formatDate } from "@/utils/formatDate";
 import { resolveUploadUrl } from "@/utils/fileUrl";
+import { use3DTilt, Motion3DStyles } from "@/hooks/use3DMotion";
 
 // Module identity: indigo — Users is its own module.
 const INDIGO = {
@@ -151,6 +152,7 @@ export default function UserProfilePage() {
   } = useUser(id);
 
   const [showImage, setShowImage] = useState(false);
+  const cardTilt = use3DTilt({ max: 6, scale: 1.012 });
 
   /*
    * ============================================================
@@ -261,18 +263,22 @@ export default function UserProfilePage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-5">
+      <Motion3DStyles />
+
       {/* ======================================================
           HEADER
           ====================================================== */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="u-rise flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           {/* Icon */}
-          <div
-            className={`flex h-10 w-10 items-center justify-center rounded-xl text-white shadow-sm ${INDIGO.icon}`}
-          >
-            <span className="font-bold">
-              U
-            </span>
+          <div className="u-hover-float">
+            <div
+              className={`u-float-target flex h-10 w-10 items-center justify-center rounded-xl text-white shadow-sm shadow-indigo-600/30 ${INDIGO.icon}`}
+            >
+              <span className="font-bold">
+                U
+              </span>
+            </div>
           </div>
 
           {/* Title */}
@@ -294,7 +300,7 @@ export default function UserProfilePage() {
             variant="secondary"
             onClick={() => refetch()}
             isLoading={isFetching}
-            className="w-full sm:w-auto"
+            className="w-full transition-transform duration-200 hover:-translate-y-0.5 sm:w-auto"
           >
             Refresh
           </Button>
@@ -303,7 +309,7 @@ export default function UserProfilePage() {
             type="button"
             variant="secondary"
             onClick={handleBack}
-            className="w-full sm:w-auto"
+            className="w-full transition-transform duration-200 hover:-translate-y-0.5 sm:w-auto"
           >
             Back
           </Button>
@@ -313,8 +319,13 @@ export default function UserProfilePage() {
       {/* ======================================================
           PROFILE CARD
           ====================================================== */}
-      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
-        <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:text-left">
+      <div className="u-rise u-tilt-perspective" style={{ animationDelay: "60ms" }}>
+        <div
+          ref={cardTilt.ref}
+          {...cardTilt.handlers}
+          className="u-tilt u-glare relative overflow-hidden rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-white/[0.04]"
+        >
+        <div className="u-tilt-content flex flex-col items-center gap-4 text-center sm:flex-row sm:text-left">
           {/* Avatar */}
           <button
             type="button"
@@ -328,9 +339,9 @@ export default function UserProfilePage() {
                 ? "View profile picture"
                 : undefined
             }
-            className={`rounded-full ring-4 ${INDIGO.ring} ${
+            className={`u-float-layer rounded-full ring-4 transition-transform duration-200 ${INDIGO.ring} ${
               avatarSrc
-                ? "cursor-pointer transition-opacity hover:opacity-90"
+                ? "cursor-pointer hover:scale-105 hover:opacity-90"
                 : "cursor-default"
             }`}
           >
@@ -355,23 +366,24 @@ export default function UserProfilePage() {
           </div>
 
           {/* Edit Profile */}
-          <div className="sm:ml-auto">
+          <div className="u-float-layer sm:ml-auto">
             <Button
               type="button"
               variant="secondary"
               onClick={handleEditProfile}
-              className="w-full sm:w-auto"
+              className="w-full transition-transform duration-200 hover:-translate-y-0.5 sm:w-auto"
             >
               Edit Profile
             </Button>
           </div>
+        </div>
         </div>
       </div>
 
       {/* ======================================================
           ACCOUNT INFORMATION
           ====================================================== */}
-      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
+      <div className="u-rise rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition-shadow duration-300 hover:shadow-md dark:border-white/10 dark:bg-white/[0.04]" style={{ animationDelay: "100ms" }}>
         <h3 className="mb-4 text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
           Account
         </h3>

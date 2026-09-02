@@ -3,6 +3,7 @@ import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
 import { isRequired } from "@/utils/validators";
 import { ROLE_CATEGORY_OPTIONS } from "@/constants/roles";
+import { Motion3DStyles } from "@/hooks/use3DMotion";
 
 const validateRole = (data) => {
   const errors = {};
@@ -40,13 +41,14 @@ export default function RoleForm({ initialData = {}, onSubmit, loading, lockedCa
   };
 
   return (
-    <form id="role-form" onSubmit={handleSubmit}>
+    <form id="role-form" onSubmit={handleSubmit} className="u-rise">
+      <Motion3DStyles />
       <Input label="Role Name" name="name" value={form.name} onChange={handleChange} error={errors.name} required />
 
       {lockedCategory ? (
         <div className="mb-4">
           <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Category</label>
-          <div className="input flex items-center bg-slate-50 dark:bg-white/[0.06] text-slate-500 dark:text-slate-400">
+          <div className="input flex items-center bg-slate-50 transition-shadow duration-200 hover:shadow-sm dark:bg-white/[0.06] text-slate-500 dark:text-slate-400">
             {lockedCategory}
           </div>
           <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">

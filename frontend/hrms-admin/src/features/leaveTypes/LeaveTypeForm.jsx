@@ -3,6 +3,7 @@ import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
 import Button from "@/components/ui/Button";
 import { isRequired } from "@/utils/validators";
+import { useMagnetic, Motion3DStyles } from "@/hooks/use3DMotion";
 
 const validateLeaveType = (data) => {
   const errors = {};
@@ -17,6 +18,7 @@ export default function LeaveTypeForm({ initialData = {}, onSubmit, loading, onC
     is_active: initialData.is_active !== undefined ? initialData.is_active : true,
   });
   const [errors, setErrors] = useState({});
+  const submitMagnet = useMagnetic(0.2);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -34,7 +36,8 @@ export default function LeaveTypeForm({ initialData = {}, onSubmit, loading, onC
   const isEdit = !!initialData.id;
 
   return (
-    <form id="LeaveType-form" onSubmit={handleSubmit}>
+    <form id="LeaveType-form" onSubmit={handleSubmit} className="u-rise">
+      <Motion3DStyles />
       <Input label="Leave Type Name" name="name" value={form.name} onChange={handleChange} error={errors.name} required />
       <Select
         label="Category"
@@ -57,12 +60,19 @@ export default function LeaveTypeForm({ initialData = {}, onSubmit, loading, onC
         </label>
       </div>
       <div className="flex justify-end gap-2 mt-6">
-        <Button type="button" variant="secondary" onClick={onCancel}>
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={onCancel}
+          className="transition-transform duration-200 hover:-translate-y-0.5"
+        >
           Cancel
         </Button>
-        <Button type="submit" isLoading={loading}>
-          {isEdit ? "Update" : "Create"}
-        </Button>
+        <div ref={submitMagnet.ref} {...submitMagnet.handlers} className="inline-block will-change-transform">
+          <Button type="submit" isLoading={loading} className="shadow-sm transition-shadow duration-200 hover:shadow-lg">
+            {isEdit ? "Update" : "Create"}
+          </Button>
+        </div>
       </div>
     </form>
   );

@@ -28,6 +28,12 @@ import TableToolbar from "@/components/table/TableToolbar";
 
 import { masterApi } from "@/api/master.api";
 import { useModulePermissions } from "@/hooks/useModulePermissions";
+import {
+  use3DTilt,
+  useMagnetic,
+  Motion3DStyles,
+  GridPattern,
+} from "@/hooks/use3DMotion";
 
 
 const EXPORT_COLUMNS = [
@@ -40,6 +46,127 @@ const EXPORT_COLUMNS = [
   },
 ];
 
+
+/* Tilt+glare stat tile used in the summary row. */
+function StatTile({ tone, label, value, hint, icon }) {
+  const { ref, handlers } = use3DTilt({ max: 9, scale: 1.02 });
+  const border = {
+    primary: "border-slate-200 dark:border-white/10",
+    emerald: "border-emerald-100 dark:border-emerald-900/30",
+    red: "border-red-100 dark:border-red-900/30",
+  }[tone];
+  const valueColor = {
+    primary: "text-slate-900 dark:text-white",
+    emerald: "text-emerald-600 dark:text-emerald-400",
+    red: "text-red-600 dark:text-red-400",
+  }[tone];
+  const iconTone = {
+    primary: "bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400",
+    emerald: "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400",
+    red: "bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400",
+  }[tone];
+
+  return (
+    <div className="u-tilt-perspective">
+      <div
+        ref={ref}
+        {...handlers}
+        className={`u-tilt u-glare relative h-[110px] overflow-hidden rounded-xl border bg-white px-4 py-3 shadow-sm dark:bg-white/[0.04] ${border}`}
+      >
+        <div className="u-tilt-content flex h-full items-center justify-between">
+          <div className="min-w-0">
+            <p className="truncate text-xs font-medium text-slate-500 dark:text-slate-400">{label}</p>
+            <p className={`mt-1 text-2xl font-bold tracking-tight ${valueColor}`}>{value}</p>
+            <p className="mt-0.5 truncate text-[11px] text-slate-400">{hint}</p>
+          </div>
+          <div className={`u-float-layer flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${iconTone}`}>
+            {icon}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* 3D tilt+glare leave-type card. */
+function LeaveTypeCard({ row, index, canEdit, canDelete, onEdit, onDelete }) {
+  const { ref, handlers } = use3DTilt({ max: 10, scale: 1.025 });
+  const category = row.category || "Leave";
+
+  return (
+    <div
+      className="u-tilt-perspective u-rise"
+      style={{ animationDelay: `${Math.min(index, 10) * 45}ms` }}
+    >
+      <div
+        ref={ref}
+        {...handlers}
+        className="u-tilt u-glare relative overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-white/[0.04]"
+      >
+        <div className="u-tilt-content flex items-start justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="u-float-layer relative flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-sm font-bold text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
+              {row.name?.charAt(0)?.toUpperCase() || "L"}
+              <span
+                className={`absolute -bottom-1 -right-1 h-3 w-3 rounded-full border-2 border-white dark:border-slate-900 ${
+                  row.is_active ? "bg-emerald-500 u-pulse" : "bg-red-500"
+                }`}
+              />
+            </div>
+            <div className="min-w-0">
+              <p className="truncate font-semibold text-slate-800 dark:text-white">
+                {row.name || "-"}
+              </p>
+              <p className="font-mono text-[11px] text-slate-400">#{row.id}</p>
+            </div>
+          </div>
+          <Badge
+            className={
+              row.is_active
+                ? "inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300"
+                : "inline-flex items-center gap-1.5 rounded-full bg-red-50 px-2 py-0.5 text-[11px] text-red-700 dark:bg-red-500/10 dark:text-red-300"
+            }
+          >
+            {row.is_active ? "Active" : "Inactive"}
+          </Badge>
+        </div>
+
+        <div className="u-tilt-content mt-3 flex items-center justify-between">
+          <span
+            className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium transition-transform duration-200 hover:scale-105 ${
+              category === "Permission"
+                ? "bg-violet-50 text-violet-700 dark:bg-violet-500/10 dark:text-violet-300"
+                : "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300"
+            }`}
+          >
+            {category}
+          </span>
+
+          <div className="flex items-center gap-1.5">
+            {canEdit && (
+              <button
+                type="button"
+                onClick={onEdit}
+                className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-primary-600 transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary-50 hover:shadow-sm dark:border-white/10 dark:bg-white/[0.06] dark:text-primary-400 dark:hover:bg-primary-500/10"
+              >
+                Edit
+              </button>
+            )}
+            {row.is_active && canDelete && (
+              <button
+                type="button"
+                onClick={onDelete}
+                className="rounded-lg border border-red-200 bg-white px-2.5 py-1.5 text-xs font-medium text-red-600 transition-all duration-200 hover:-translate-y-0.5 hover:bg-red-50 hover:shadow-sm dark:border-red-900/50 dark:bg-white/[0.06] dark:text-red-400 dark:hover:bg-red-500/10"
+              >
+                Deactivate
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function LeaveTypeListPage() {
   const { showToast } = useToast();
@@ -107,6 +234,8 @@ export default function LeaveTypeListPage() {
   const [statusFilter, setStatusFilter] = useState("active");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [view, setView] = useViewMode("leaveTypes:view");
+
+  const addMagnet = useMagnetic(0.25);
 
 
   const leaveTypes = data?.items || [];
@@ -323,7 +452,7 @@ export default function LeaveTypeListPage() {
             <span
               className={
                 r.is_active
-                  ? "h-1.5 w-1.5 rounded-full bg-emerald-500"
+                  ? "h-1.5 w-1.5 rounded-full bg-emerald-500 u-pulse"
                   : "h-1.5 w-1.5 rounded-full bg-red-500"
               }
             />
@@ -374,22 +503,26 @@ export default function LeaveTypeListPage() {
 
   return (
     <div className="space-y-5">
-
+      <Motion3DStyles />
 
       {/* =====================================================
           PAGE HEADER
       ====================================================== */}
 
-      <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+      <div className="u-rise relative flex flex-col gap-4 overflow-hidden rounded-2xl border border-slate-200/80 bg-gradient-to-br from-white via-primary-50/40 to-white p-4 shadow-sm dark:border-white/[0.08] dark:from-primary-500/[0.08] dark:via-white/[0.02] dark:to-transparent xl:flex-row xl:items-center xl:justify-between">
+        <GridPattern id="leavetype-grid" />
+        <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-primary-500/15 blur-3xl" />
 
-        <div>
+        <div className="relative">
 
           <div className="flex items-center gap-3">
 
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-600 text-white shadow-sm">
-              <span className="font-bold">
-                L
-              </span>
+            <div className="u-hover-float">
+              <div className="u-float-target flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 text-white shadow-lg shadow-primary-600/30 ring-1 ring-white/20">
+                <span className="font-bold">
+                  L
+                </span>
+              </div>
             </div>
 
             <div>
@@ -409,7 +542,7 @@ export default function LeaveTypeListPage() {
         </div>
 
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="relative flex flex-wrap items-center gap-2">
 
           <TableToolbar
             onRefresh={refetch}
@@ -420,16 +553,18 @@ export default function LeaveTypeListPage() {
           />
 
           {canAdd && (
-            <Button
-              onClick={openAdd}
-              className="h-10 w-full px-4 sm:w-auto"
-            >
-              <span className="mr-1.5 text-lg">
-                +
-              </span>
+            <div ref={addMagnet.ref} {...addMagnet.handlers} className="inline-block w-full will-change-transform sm:w-auto">
+              <Button
+                onClick={openAdd}
+                className="h-10 w-full px-4 shadow-sm transition-shadow duration-200 hover:shadow-lg sm:w-auto"
+              >
+                <span className="mr-1.5 text-lg leading-none transition-transform duration-300 hover:rotate-90">
+                  +
+                </span>
 
-              Add Leave Type
-            </Button>
+                Add Leave Type
+              </Button>
+            </div>
           )}
 
         </div>
@@ -442,108 +577,27 @@ export default function LeaveTypeListPage() {
       ====================================================== */}
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-
-
-        {/* TOTAL */}
-
-        <div className="h-[110px] rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition hover:shadow-md dark:border-white/10 dark:bg-white/[0.04]">
-
-          <div className="flex h-full items-center justify-between">
-
-            <div className="min-w-0">
-
-              <p className="truncate text-xs font-medium text-slate-500 dark:text-slate-400">
-                Total Leave Types
-              </p>
-
-              <p className="mt-1 text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-                {leaveTypes.length}
-              </p>
-
-              <p className="mt-0.5 truncate text-[11px] text-slate-400">
-                Current page
-              </p>
-
-            </div>
-
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
-
-              <span className="text-sm font-bold">
-                L
-              </span>
-
-            </div>
-
-          </div>
-
-        </div>
-
-
-        {/* ACTIVE */}
-
-        <div className="h-[110px] rounded-xl border border-emerald-100 bg-white px-4 py-3 shadow-sm transition hover:shadow-md dark:border-emerald-900/30 dark:bg-white/[0.04]">
-
-          <div className="flex h-full items-center justify-between">
-
-            <div className="min-w-0">
-
-              <p className="truncate text-xs font-medium text-slate-500 dark:text-slate-400">
-                Active Leave Types
-              </p>
-
-              <p className="mt-1 text-2xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400">
-                {activeLeaveTypes.length}
-              </p>
-
-              <p className="mt-0.5 truncate text-[11px] text-slate-400">
-                Currently active
-              </p>
-
-            </div>
-
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-50 dark:bg-emerald-500/10">
-
-              <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
-
-            </div>
-
-          </div>
-
-        </div>
-
-
-        {/* INACTIVE */}
-
-        <div className="h-[110px] rounded-xl border border-red-100 bg-white px-4 py-3 shadow-sm transition hover:shadow-md dark:border-red-900/30 dark:bg-white/[0.04]">
-
-          <div className="flex h-full items-center justify-between">
-
-            <div className="min-w-0">
-
-              <p className="truncate text-xs font-medium text-slate-500 dark:text-slate-400">
-                Inactive Leave Types
-              </p>
-
-              <p className="mt-1 text-2xl font-bold tracking-tight text-red-600 dark:text-red-400">
-                {inactiveLeaveTypes.length}
-              </p>
-
-              <p className="mt-0.5 truncate text-[11px] text-slate-400">
-                Deactivated leave types
-              </p>
-
-            </div>
-
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-50 dark:bg-red-500/10">
-
-              <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
-
-            </div>
-
-          </div>
-
-        </div>
-
+        <StatTile
+          tone="primary"
+          label="Total Leave Types"
+          value={leaveTypes.length}
+          hint="Current page"
+          icon={<span className="text-sm font-bold">L</span>}
+        />
+        <StatTile
+          tone="emerald"
+          label="Active Leave Types"
+          value={activeLeaveTypes.length}
+          hint="Currently active"
+          icon={<span className="h-2.5 w-2.5 rounded-full bg-emerald-500 u-pulse" />}
+        />
+        <StatTile
+          tone="red"
+          label="Inactive Leave Types"
+          value={inactiveLeaveTypes.length}
+          hint="Deactivated leave types"
+          icon={<span className="h-2.5 w-2.5 rounded-full bg-red-500" />}
+        />
       </div>
 
 
@@ -662,71 +716,17 @@ export default function LeaveTypeListPage() {
 
         {!isError && view === "cards" && !isLoading && filteredLeaveTypes.length > 0 && (
           <div className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 xl:grid-cols-3">
-            {filteredLeaveTypes.map((r) => {
-              const category = r.category || "Leave";
-              return (
-                <div
-                  key={r.id}
-                  className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:shadow-md dark:border-white/10 dark:bg-white/[0.04]"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-sm font-bold text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
-                        {r.name?.charAt(0)?.toUpperCase() || "L"}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="truncate font-semibold text-slate-800 dark:text-white">
-                          {r.name || "-"}
-                        </p>
-                        <p className="font-mono text-[11px] text-slate-400">#{r.id}</p>
-                      </div>
-                    </div>
-                    <Badge
-                      className={
-                        r.is_active
-                          ? "inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300"
-                          : "inline-flex items-center gap-1.5 rounded-full bg-red-50 px-2 py-0.5 text-[11px] text-red-700 dark:bg-red-500/10 dark:text-red-300"
-                      }
-                    >
-                      {r.is_active ? "Active" : "Inactive"}
-                    </Badge>
-                  </div>
-
-                  <div className="mt-3 flex items-center justify-between">
-                    <span
-                      className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${
-                        category === "Permission"
-                          ? "bg-violet-50 text-violet-700 dark:bg-violet-500/10 dark:text-violet-300"
-                          : "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300"
-                      }`}
-                    >
-                      {category}
-                    </span>
-
-                    <div className="flex items-center gap-1.5">
-                      {canEdit && (
-                        <button
-                          type="button"
-                          onClick={() => openEdit(r)}
-                          className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-primary-600 transition hover:bg-primary-50 dark:border-white/10 dark:bg-white/[0.06] dark:text-primary-400 dark:hover:bg-primary-500/10"
-                        >
-                          Edit
-                        </button>
-                      )}
-                      {r.is_active && canDelete && (
-                        <button
-                          type="button"
-                          onClick={() => setConfirmRow(r)}
-                          className="rounded-lg border border-red-200 bg-white px-2.5 py-1.5 text-xs font-medium text-red-600 transition hover:bg-red-50 dark:border-red-900/50 dark:bg-white/[0.06] dark:text-red-400 dark:hover:bg-red-500/10"
-                        >
-                          Deactivate
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+            {filteredLeaveTypes.map((r, i) => (
+              <LeaveTypeCard
+                key={r.id}
+                row={r}
+                index={i}
+                canEdit={canEdit}
+                canDelete={canDelete}
+                onEdit={() => openEdit(r)}
+                onDelete={() => setConfirmRow(r)}
+              />
+            ))}
           </div>
         )}
 

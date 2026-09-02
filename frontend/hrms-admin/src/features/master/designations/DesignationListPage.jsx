@@ -21,6 +21,12 @@ import ConfirmDialog from "@/components/feedback/ConfirmDialog";
 import TableToolbar from "@/components/table/TableToolbar";
 import { useToast } from "@/components/feedback/Toast";
 import { useTableExport } from "@/hooks/useTableExport";
+import {
+  use3DTilt,
+  useMagnetic,
+  Motion3DStyles,
+  GridPattern,
+} from "@/hooks/use3DMotion";
 
 const EXPORT_COLUMNS = [
   { header: "Code", accessor: (r) => r.designation_code },
@@ -28,6 +34,187 @@ const EXPORT_COLUMNS = [
   { header: "Department", accessor: (r) => r.department?.department_name },
   { header: "Status", accessor: (r) => (r.is_active ? "Active" : "Inactive") },
 ];
+
+/* Tilt+glare stat tile used in the summary row. */
+function StatTile({ tone, label, value, hint, icon }) {
+  const { ref, handlers } = use3DTilt({ max: 9, scale: 1.02 });
+  const border = {
+    primary: "border-slate-200 dark:border-white/10",
+    emerald: "border-emerald-100 dark:border-emerald-900/30",
+    red: "border-red-100 dark:border-red-900/30",
+  }[tone];
+  const valueColor = {
+    primary: "text-slate-900 dark:text-white",
+    emerald: "text-emerald-600 dark:text-emerald-400",
+    red: "text-red-600 dark:text-red-400",
+  }[tone];
+  const iconTone = {
+    primary: "bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400",
+    emerald: "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400",
+    red: "bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400",
+  }[tone];
+
+  return (
+    <div className="u-tilt-perspective">
+      <div
+        ref={ref}
+        {...handlers}
+        className={`u-tilt u-glare relative h-[110px] overflow-hidden rounded-xl border bg-white px-4 py-3 shadow-sm dark:bg-white/[0.04] ${border}`}
+      >
+        <div className="u-tilt-content flex h-full items-center justify-between">
+          <div className="min-w-0">
+            <p className="truncate text-xs font-medium text-slate-500 dark:text-slate-400">{label}</p>
+            <p className={`mt-1 text-2xl font-bold tracking-tight ${valueColor}`}>{value}</p>
+            <p className="mt-0.5 truncate text-[11px] text-slate-400">{hint}</p>
+          </div>
+          <div className={`u-float-layer flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${iconTone}`}>
+            {icon}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* 3D tilt+glare designation card, extracted so its tilt hook lives per-card. */
+function DesignationCard({ designation, index, statusBadge, companyName, branchName, departmentName, departmentCode, employeeCount, onEdit, onDelete, onReactivate, reactivating }) {
+  const { ref, handlers } = use3DTilt({ max: 10, scale: 1.025 });
+  const firstLetter = designation.designation_name?.charAt(0)?.toUpperCase() || "D";
+
+  return (
+    <div
+      className="u-tilt-perspective u-rise"
+      style={{ animationDelay: `${Math.min(index, 10) * 45}ms` }}
+    >
+      <div
+        ref={ref}
+        {...handlers}
+        className={`u-tilt u-glare group relative overflow-hidden rounded-2xl border bg-white shadow-sm dark:bg-white/[0.04] ${designation.is_active ? "border-slate-200 hover:border-primary-200 dark:border-white/10 dark:hover:border-primary-500/40" : "border-red-100 bg-red-50/20 dark:border-red-900/30 dark:bg-red-950/10"}`}
+      >
+        <div className={`absolute inset-x-0 top-0 h-0.5 ${designation.is_active ? "bg-primary-600" : "bg-red-500"}`} />
+        <div className="u-tilt-content p-4">
+          <div className="flex items-start justify-between gap-2.5">
+            <div className="flex min-w-0 items-center gap-2.5">
+              <div className={`u-float-layer relative flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-base font-bold shadow-sm ${designation.is_active ? "bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400" : "bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400"}`}>
+                {firstLetter}
+                <span className={`absolute -bottom-1 -right-1 h-3 w-3 rounded-full border-2 border-white dark:border-slate-900 ${designation.is_active ? "bg-emerald-500 u-pulse" : "bg-red-500"}`} />
+              </div>
+              <div className="min-w-0">
+                <h3 title={designation.designation_name} className="truncate text-sm font-semibold text-slate-900 dark:text-white">{designation.designation_name || "Unnamed Designation"}</h3>
+                <div className="mt-0.5 flex items-center gap-1">
+                  <span className="text-[9px] font-medium uppercase tracking-wide text-slate-400">Code</span>
+                  <span className="truncate font-mono text-[11px] font-medium text-slate-600 dark:text-slate-300">{designation.designation_code || "-"}</span>
+                </div>
+              </div>
+            </div>
+            <div className="shrink-0">{statusBadge(designation.is_active)}</div>
+          </div>
+
+          <div className="my-3 border-t border-slate-100 dark:border-white/10" />
+
+          <div className="space-y-2">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 21h18M5 21V5a2 2 0 012-2h10a2 2 0 012 2v16M9 7h2M9 11h2M9 15h2M15 7h2M15 11h2M15 15h2" />
+                </svg>
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[9px] font-medium uppercase tracking-wide text-slate-400">Company</p>
+                <p title={companyName} className="truncate text-[11px] font-semibold text-slate-700 dark:text-slate-200">{companyName}</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500 dark:bg-white/[0.06] dark:text-slate-400">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 21h18M5 21V5a2 2 0 012-2h10a2 2 0 012 2v16" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 7h2M9 11h2M15 7h2M15 11h2" />
+                </svg>
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[9px] font-medium uppercase tracking-wide text-slate-400">Branch</p>
+                <p title={branchName} className="truncate text-[11px] font-medium text-slate-700 dark:text-slate-200">{branchName}</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500 dark:bg-white/[0.06] dark:text-slate-400">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[9px] font-medium uppercase tracking-wide text-slate-400">Department</p>
+                <div className="flex min-w-0 items-center gap-1.5">
+                  <p title={departmentName} className="truncate text-[11px] font-semibold text-slate-700 dark:text-slate-200">{departmentName}</p>
+                  {departmentCode !== "-" && <span className="shrink-0 rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[9px] text-slate-500 dark:bg-white/[0.06] dark:text-slate-400">{departmentCode}</span>}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-3 rounded-lg border border-slate-100 bg-slate-50/70 px-3 py-2 dark:border-white/10 dark:bg-white/[0.03]">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M22 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-[9px] font-medium uppercase tracking-wide text-slate-400">Employees</p>
+                  <p className="text-xs font-semibold text-slate-800 dark:text-white">{employeeCount} <span className="font-normal text-slate-400">{employeeCount === 1 ? "Employee" : "Employees"}</span></p>
+                </div>
+              </div>
+              <div className="u-float-layer flex h-7 min-w-7 items-center justify-center rounded-md bg-white px-2 text-[11px] font-bold text-primary-600 shadow-sm dark:bg-white/[0.04] dark:text-primary-400">{employeeCount}</div>
+            </div>
+          </div>
+
+          <div className="mt-3 flex items-center gap-2">
+            <button type="button" onClick={onEdit} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] font-semibold text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary-200 hover:bg-primary-50 hover:text-primary-600 hover:shadow-md dark:border-white/10 dark:bg-white/[0.06] dark:text-slate-200 dark:hover:border-primary-500/40 dark:hover:bg-primary-500/10 dark:hover:text-primary-400">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a2.121 2.121 0 013 3l-9.9 9.9-4.137 1.034 1.034-4.137 9.9-9.9z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6" />
+              </svg>
+              Edit
+            </button>
+            {designation.is_active ? (
+              <button type="button" onClick={onDelete} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-2 text-[11px] font-semibold text-red-600 transition-all duration-200 hover:-translate-y-0.5 hover:bg-red-50 hover:shadow-md dark:border-red-900/40 dark:bg-white/[0.06] dark:text-red-400 dark:hover:bg-red-500/10">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M18 6L6 18M6 6l12 12" />
+                </svg>
+                Deactivate
+              </button>
+            ) : (
+              <button type="button" onClick={onReactivate} disabled={reactivating} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-emerald-200 bg-white px-3 py-2 text-[11px] font-semibold text-emerald-600 transition-all duration-200 hover:-translate-y-0.5 hover:bg-emerald-50 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50 dark:border-emerald-900/40 dark:bg-white/[0.06] dark:text-emerald-400 dark:hover:bg-emerald-500/10">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 12a8 8 0 018-8 8.5 8.5 0 017 4" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M20 4v5h-5" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M20 12a8 8 0 01-8 8 8.5 8.5 0 01-7-4" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 20v-5h5" />
+                </svg>
+                Reactivate
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className={`u-tilt-content border-t px-4 py-2 ${designation.is_active ? "border-slate-100 bg-slate-50/50 dark:border-white/10 dark:bg-white/[0.03]" : "border-red-100 bg-red-50/50 dark:border-red-900/20 dark:bg-red-950/20"}`}>
+          <div className="flex items-center justify-between">
+            <span className="text-[9px] font-medium uppercase tracking-wider text-slate-400">Designation Status</span>
+            <span className={`flex items-center gap-1.5 text-[10px] font-semibold ${designation.is_active ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+              <span className={`h-1.5 w-1.5 rounded-full ${designation.is_active ? "bg-emerald-500" : "bg-red-500"}`} />
+              {designation.is_active ? "Operational" : "Deactivated"}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function DesignationListPage() {
   const { showToast } = useToast();
@@ -49,6 +236,8 @@ export default function DesignationListPage() {
   const [companyFilterId, setCompanyFilterId] = useState("");
   const [branchFilterId, setBranchFilterId] = useState("");
   const [departmentFilterId, setDepartmentFilterId] = useState("");
+
+  const addMagnet = useMagnetic(0.28);
 
   const { data: companyData } = useCompanies({ page: 1, per_page: 100, is_active: true });
   const { data: branchData } = useCompanyBranches(companyFilterId, { page: 1, per_page: 100, is_active: true });
@@ -214,7 +403,8 @@ export default function DesignationListPage() {
   if (isError) {
     return (
       <div className="p-6">
-        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-600 dark:border-red-900/40 dark:bg-red-950/20 dark:text-red-400">
+        <Motion3DStyles />
+        <div className="u-rise rounded-xl border border-red-200 bg-red-50 p-4 text-red-600 dark:border-red-900/40 dark:bg-red-950/20 dark:text-red-400">
           <h2 className="font-semibold">Failed to load designations</h2>
           <p className="mt-1 text-sm">{error?.response?.data?.message || error?.message || "Unable to load designations."}</p>
         </div>
@@ -224,11 +414,18 @@ export default function DesignationListPage() {
 
   return (
     <div className="space-y-5">
+      <Motion3DStyles />
+
       {/* HEADER */}
-      <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary-600 text-white shadow-sm">
-            <span className="text-lg font-bold">D</span>
+      <div className="u-rise relative flex flex-col gap-4 overflow-hidden rounded-2xl border border-slate-200/80 bg-gradient-to-br from-white via-primary-50/40 to-white p-4 shadow-sm dark:border-white/[0.08] dark:from-primary-500/[0.08] dark:via-white/[0.02] dark:to-transparent xl:flex-row xl:items-center xl:justify-between">
+        <GridPattern id="designation-grid" />
+        <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-primary-500/15 blur-3xl" />
+
+        <div className="relative flex items-center gap-3">
+          <div className="u-hover-float">
+            <div className="u-float-target flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 text-white shadow-lg shadow-primary-600/30 ring-1 ring-white/20">
+              <span className="text-lg font-bold">D</span>
+            </div>
           </div>
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Designations</h1>
@@ -236,55 +433,40 @@ export default function DesignationListPage() {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="relative flex flex-wrap items-center gap-2">
           <TableToolbar onRefresh={refetch} refreshing={isFetching} onExportExcel={exportExcel} onExportPDF={exportPDF} exporting={exporting} />
-          <Button type="button" onClick={handleAdd} className="h-10 w-full px-4 sm:w-auto">
-            <span className="mr-1.5 text-lg">+</span>
-            Add Designation
-          </Button>
+          <div ref={addMagnet.ref} {...addMagnet.handlers} className="inline-block w-full will-change-transform sm:w-auto">
+            <Button type="button" onClick={handleAdd} className="h-10 w-full px-4 shadow-sm transition-shadow duration-200 hover:shadow-lg sm:w-auto">
+              <span className="mr-1.5 text-lg leading-none transition-transform duration-300 hover:rotate-90">+</span>
+              Add Designation
+            </Button>
+          </div>
         </div>
       </div>
 
       {/* STAT CARDS */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div className="h-[110px] rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition hover:shadow-md dark:border-white/10 dark:bg-white/[0.04]">
-          <div className="flex h-full items-center justify-between">
-            <div className="min-w-0">
-              <p className="truncate text-xs font-medium text-slate-500 dark:text-slate-400">Total Designations</p>
-              <p className="mt-1 text-2xl font-bold tracking-tight text-slate-900 dark:text-white">{designations.length}</p>
-              <p className="mt-0.5 truncate text-[11px] text-slate-400">Current page</p>
-            </div>
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
-              <span className="text-sm font-bold">D</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="h-[110px] rounded-xl border border-emerald-100 bg-white px-4 py-3 shadow-sm transition hover:shadow-md dark:border-emerald-900/30 dark:bg-white/[0.04]">
-          <div className="flex h-full items-center justify-between">
-            <div className="min-w-0">
-              <p className="truncate text-xs font-medium text-slate-500 dark:text-slate-400">Active Designations</p>
-              <p className="mt-1 text-2xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400">{activeDesignations.length}</p>
-              <p className="mt-0.5 truncate text-[11px] text-slate-400">Currently active</p>
-            </div>
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-50 dark:bg-emerald-500/10">
-              <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
-            </div>
-          </div>
-        </div>
-
-        <div className="h-[110px] rounded-xl border border-red-100 bg-white px-4 py-3 shadow-sm transition hover:shadow-md dark:border-red-900/30 dark:bg-white/[0.04]">
-          <div className="flex h-full items-center justify-between">
-            <div className="min-w-0">
-              <p className="truncate text-xs font-medium text-slate-500 dark:text-slate-400">Inactive Designations</p>
-              <p className="mt-1 text-2xl font-bold tracking-tight text-red-600 dark:text-red-400">{inactiveDesignations.length}</p>
-              <p className="mt-0.5 truncate text-[11px] text-slate-400">Deactivated designations</p>
-            </div>
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-50 dark:bg-red-500/10">
-              <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
-            </div>
-          </div>
-        </div>
+        <StatTile
+          tone="primary"
+          label="Total Designations"
+          value={designations.length}
+          hint="Current page"
+          icon={<span className="text-sm font-bold">D</span>}
+        />
+        <StatTile
+          tone="emerald"
+          label="Active Designations"
+          value={activeDesignations.length}
+          hint="Currently active"
+          icon={<span className="h-2.5 w-2.5 rounded-full bg-emerald-500 u-pulse" />}
+        />
+        <StatTile
+          tone="red"
+          label="Inactive Designations"
+          value={inactiveDesignations.length}
+          hint="Deactivated designations"
+          icon={<span className="h-2.5 w-2.5 rounded-full bg-red-500" />}
+        />
       </div>
 
       {/* SEARCH + COMPANY/BRANCH/DEPARTMENT FILTER + VIEW TOGGLE + STATUS */}
@@ -376,10 +558,10 @@ export default function DesignationListPage() {
               {filteredDesignations.map((designation) => {
                 const firstLetter = designation.designation_name?.charAt(0)?.toUpperCase() || "D";
                 return (
-                  <tr key={designation.id} className="tbl-row">
+                  <tr key={designation.id} className="tbl-row group">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2.5">
-                        <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-sm font-bold ${designation.is_active ? "bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400" : "bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400"}`}>
+                        <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-sm font-bold transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:scale-110 ${designation.is_active ? "bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400" : "bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400"}`}>
                           {firstLetter}
                         </div>
                         <div className="min-w-0">
@@ -426,139 +608,23 @@ export default function DesignationListPage() {
       {/* DESIGNATION CARDS */}
       {!isLoading && viewMode === "card" && filteredDesignations.length > 0 && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {filteredDesignations.map((designation) => {
-            const firstLetter = designation.designation_name?.charAt(0)?.toUpperCase() || "D";
-            const companyName = getCompanyName(designation);
-            const branchName = getBranchName(designation);
-            const departmentName = getDepartmentName(designation);
-            const departmentCode = getDepartmentCode(designation);
-            const employeeCount = getEmployeeCount(designation);
-
-            return (
-              <div key={designation.id} className={`group relative overflow-hidden rounded-2xl border bg-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg dark:bg-white/[0.04] ${designation.is_active ? "border-slate-200 hover:border-primary-200 dark:border-white/10 dark:hover:border-primary-500/40" : "border-red-100 bg-red-50/20 dark:border-red-900/30 dark:bg-red-950/10"}`}>
-                <div className={`absolute inset-x-0 top-0 h-0.5 ${designation.is_active ? "bg-primary-600" : "bg-red-500"}`} />
-                <div className="p-4">
-                  <div className="flex items-start justify-between gap-2.5">
-                    <div className="flex min-w-0 items-center gap-2.5">
-                      <div className={`relative flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-base font-bold shadow-sm ${designation.is_active ? "bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400" : "bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400"}`}>
-                        {firstLetter}
-                        <span className={`absolute -bottom-1 -right-1 h-3 w-3 rounded-full border-2 border-white dark:border-slate-900 ${designation.is_active ? "bg-emerald-500" : "bg-red-500"}`} />
-                      </div>
-                      <div className="min-w-0">
-                        <h3 title={designation.designation_name} className="truncate text-sm font-semibold text-slate-900 dark:text-white">{designation.designation_name || "Unnamed Designation"}</h3>
-                        <div className="mt-0.5 flex items-center gap-1">
-                          <span className="text-[9px] font-medium uppercase tracking-wide text-slate-400">Code</span>
-                          <span className="truncate font-mono text-[11px] font-medium text-slate-600 dark:text-slate-300">{designation.designation_code || "-"}</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="shrink-0">{statusBadge(designation.is_active)}</div>
-                  </div>
-
-                  <div className="my-3 border-t border-slate-100 dark:border-white/10" />
-
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2.5">
-                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M3 21h18M5 21V5a2 2 0 012-2h10a2 2 0 012 2v16M9 7h2M9 11h2M9 15h2M15 7h2M15 11h2M15 15h2" />
-                        </svg>
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-[9px] font-medium uppercase tracking-wide text-slate-400">Company</p>
-                        <p title={companyName} className="truncate text-[11px] font-semibold text-slate-700 dark:text-slate-200">{companyName}</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2.5">
-                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500 dark:bg-white/[0.06] dark:text-slate-400">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M3 21h18M5 21V5a2 2 0 012-2h10a2 2 0 012 2v16" />
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 7h2M9 11h2M15 7h2M15 11h2" />
-                        </svg>
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-[9px] font-medium uppercase tracking-wide text-slate-400">Branch</p>
-                        <p title={branchName} className="truncate text-[11px] font-medium text-slate-700 dark:text-slate-200">{branchName}</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2.5">
-                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500 dark:bg-white/[0.06] dark:text-slate-400">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-                        </svg>
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-[9px] font-medium uppercase tracking-wide text-slate-400">Department</p>
-                        <div className="flex min-w-0 items-center gap-1.5">
-                          <p title={departmentName} className="truncate text-[11px] font-semibold text-slate-700 dark:text-slate-200">{departmentName}</p>
-                          {departmentCode !== "-" && <span className="shrink-0 rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[9px] text-slate-500 dark:bg-white/[0.06] dark:text-slate-400">{departmentCode}</span>}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="mt-3 rounded-lg border border-slate-100 bg-slate-50/70 px-3 py-2 dark:border-white/10 dark:bg-white/[0.03]">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2" />
-                            <circle cx="9" cy="7" r="4" />
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M22 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
-                          </svg>
-                        </div>
-                        <div>
-                          <p className="text-[9px] font-medium uppercase tracking-wide text-slate-400">Employees</p>
-                          <p className="text-xs font-semibold text-slate-800 dark:text-white">{employeeCount} <span className="font-normal text-slate-400">{employeeCount === 1 ? "Employee" : "Employees"}</span></p>
-                        </div>
-                      </div>
-                      <div className="flex h-7 min-w-7 items-center justify-center rounded-md bg-white px-2 text-[11px] font-bold text-primary-600 shadow-sm dark:bg-white/[0.04] dark:text-primary-400">{employeeCount}</div>
-                    </div>
-                  </div>
-
-                  <div className="mt-3 flex items-center gap-2">
-                    <button type="button" onClick={() => handleEdit(designation)} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] font-semibold text-slate-700 transition-all hover:border-primary-200 hover:bg-primary-50 hover:text-primary-600 dark:border-white/10 dark:bg-white/[0.06] dark:text-slate-200 dark:hover:border-primary-500/40 dark:hover:bg-primary-500/10 dark:hover:text-primary-400">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a2.121 2.121 0 013 3l-9.9 9.9-4.137 1.034 1.034-4.137 9.9-9.9z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6" />
-                      </svg>
-                      Edit
-                    </button>
-                    {designation.is_active ? (
-                      <button type="button" onClick={() => handleDelete(designation)} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-2 text-[11px] font-semibold text-red-600 transition-all hover:bg-red-50 dark:border-red-900/40 dark:bg-white/[0.06] dark:text-red-400 dark:hover:bg-red-500/10">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M18 6L6 18M6 6l12 12" />
-                        </svg>
-                        Deactivate
-                      </button>
-                    ) : (
-                      <button type="button" onClick={() => handleReactivate(designation)} disabled={updateDesignation.isPending} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-emerald-200 bg-white px-3 py-2 text-[11px] font-semibold text-emerald-600 transition-all hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-emerald-900/40 dark:bg-white/[0.06] dark:text-emerald-400 dark:hover:bg-emerald-500/10">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M4 12a8 8 0 018-8 8.5 8.5 0 017 4" />
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M20 4v5h-5" />
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M20 12a8 8 0 01-8 8 8.5 8.5 0 01-7-4" />
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M4 20v-5h5" />
-                        </svg>
-                        Reactivate
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                <div className={`border-t px-4 py-2 ${designation.is_active ? "border-slate-100 bg-slate-50/50 dark:border-white/10 dark:bg-white/[0.03]" : "border-red-100 bg-red-50/50 dark:border-red-900/20 dark:bg-red-950/20"}`}>
-                  <div className="flex items-center justify-between">
-                    <span className="text-[9px] font-medium uppercase tracking-wider text-slate-400">Designation Status</span>
-                    <span className={`flex items-center gap-1.5 text-[10px] font-semibold ${designation.is_active ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
-                      <span className={`h-1.5 w-1.5 rounded-full ${designation.is_active ? "bg-emerald-500" : "bg-red-500"}`} />
-                      {designation.is_active ? "Operational" : "Deactivated"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+          {filteredDesignations.map((designation, i) => (
+            <DesignationCard
+              key={designation.id}
+              designation={designation}
+              index={i}
+              statusBadge={statusBadge}
+              companyName={getCompanyName(designation)}
+              branchName={getBranchName(designation)}
+              departmentName={getDepartmentName(designation)}
+              departmentCode={getDepartmentCode(designation)}
+              employeeCount={getEmployeeCount(designation)}
+              onEdit={() => handleEdit(designation)}
+              onDelete={() => handleDelete(designation)}
+              onReactivate={() => handleReactivate(designation)}
+              reactivating={updateDesignation.isPending}
+            />
+          ))}
         </div>
       )}
 

@@ -119,7 +119,7 @@ function IconAction({
   to,
   tone = "primary",
 }) {
-  const className = `inline-flex h-7 w-7 items-center justify-center rounded-md ring-1 ring-inset ring-transparent transition ${
+  const className = `inline-flex h-7 w-7 items-center justify-center rounded-md ring-1 ring-inset ring-transparent transition-all duration-200 hover:-translate-y-0.5 hover:scale-110 hover:shadow-sm ${
     ICON_ACTION_TONES[tone] || ICON_ACTION_TONES.primary
   }`;
 
@@ -455,7 +455,7 @@ export default function EmployeeTable({
           <span
             className={`h-1.5 w-1.5 rounded-full ${
               employee.is_active
-                ? "bg-emerald-500"
+                ? "bg-emerald-500 u-pulse"
                 : "bg-rose-500"
             }`}
           />
@@ -540,7 +540,7 @@ export default function EmployeeTable({
           ) : (
             <Link
               to={`/employees/${employee.id}`}
-              className="rounded-md bg-primary-50 px-2 py-1 text-xs font-semibold text-primary-700 ring-1 ring-inset ring-primary-500/15 transition hover:bg-primary-100 dark:bg-primary-500/10 dark:text-primary-300 dark:ring-primary-400/20 dark:hover:bg-primary-500/20"
+              className="rounded-md bg-primary-50 px-2 py-1 text-xs font-semibold text-primary-700 ring-1 ring-inset ring-primary-500/15 transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary-100 hover:shadow-sm dark:bg-primary-500/10 dark:text-primary-300 dark:ring-primary-400/20 dark:hover:bg-primary-500/20"
             >
               View
             </Link>
@@ -557,7 +557,7 @@ export default function EmployeeTable({
                 to={getSalaryPath(
                   employee.id
                 )}
-                className="rounded-md bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-500/15 transition hover:bg-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-300 dark:ring-emerald-400/20 dark:hover:bg-emerald-500/20"
+                className="rounded-md bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-500/15 transition-all duration-200 hover:-translate-y-0.5 hover:bg-emerald-100 hover:shadow-sm dark:bg-emerald-500/10 dark:text-emerald-300 dark:ring-emerald-400/20 dark:hover:bg-emerald-500/20"
               >
                 Salary
               </Link>
@@ -566,7 +566,7 @@ export default function EmployeeTable({
                 to={getPayslipPath(
                   employee.id
                 )}
-                className="rounded-md bg-violet-50 px-2 py-1 text-xs font-semibold text-violet-700 ring-1 ring-inset ring-violet-500/15 transition hover:bg-violet-100 dark:bg-violet-500/10 dark:text-violet-300 dark:ring-violet-400/20 dark:hover:bg-violet-500/20"
+                className="rounded-md bg-violet-50 px-2 py-1 text-xs font-semibold text-violet-700 ring-1 ring-inset ring-violet-500/15 transition-all duration-200 hover:-translate-y-0.5 hover:bg-violet-100 hover:shadow-sm dark:bg-violet-500/10 dark:text-violet-300 dark:ring-violet-400/20 dark:hover:bg-violet-500/20"
               >
                 Payslip
               </Link>

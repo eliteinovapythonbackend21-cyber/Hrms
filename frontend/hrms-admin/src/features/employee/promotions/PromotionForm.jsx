@@ -5,6 +5,8 @@ import {
   useDesignationOptions,
 } from "@/hooks/useLookupOptions";
 
+import { Motion3DStyles } from "@/hooks/use3DMotion";
+
 /* =========================================================
    PROMOTION REASON OPTIONS
 ========================================================= */
@@ -284,7 +286,9 @@ export default function PromotionForm({
   };
 
   return (
-    <GenericForm
+    <div className="u-rise">
+      <Motion3DStyles />
+      <GenericForm
       /*
        * IMPORTANT:
        *
@@ -309,6 +313,7 @@ export default function PromotionForm({
       initialData={normalizedInitialData}
       onSubmit={onSubmit}
       loading={loading}
-    />
+      />
+    </div>
   );
 }

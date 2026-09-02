@@ -9,6 +9,7 @@ import { setUser } from "@/utils/tokenHelpers";
 import { notifyUserUpdated } from "@/hooks/useCurrentUser";
 import { resolveUploadUrl } from "@/utils/fileUrl";
 import { validateEditProfile } from "./userValidation";
+import { useMagnetic, Motion3DStyles } from "@/hooks/use3DMotion";
 
 export default function EditProfileModal({ open, onClose, user }) {
   const { showToast } = useToast();
@@ -24,6 +25,7 @@ export default function EditProfileModal({ open, onClose, user }) {
   const [preview, setPreview] = useState(resolveUploadUrl(user?.profile_picture?.url));
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
+  const saveMagnet = useMagnetic(0.2);
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
@@ -65,9 +67,10 @@ export default function EditProfileModal({ open, onClose, user }) {
 
   return (
     <Modal open={open} onClose={onClose} title="Edit Profile" size="lg">
-      <form onSubmit={handleSubmit}>
-        <div className="flex items-center gap-4 mb-6">
-          <div className="relative shrink-0">
+      <form onSubmit={handleSubmit} className="u-rise">
+        <Motion3DStyles />
+        <div className="u-hover-float flex items-center gap-4 mb-6">
+          <div className="u-float-target relative shrink-0">
             <Avatar name={form.username} src={preview} size="lg" />
             {!isEmployee && (
               <label
@@ -145,12 +148,19 @@ export default function EditProfileModal({ open, onClose, user }) {
         </div>
 
         <div className="flex justify-end gap-2 mt-4">
-          <Button type="button" variant="secondary" onClick={onClose}>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={onClose}
+            className="transition-transform duration-200 hover:-translate-y-0.5"
+          >
             Cancel
           </Button>
-          <Button type="submit" isLoading={saving}>
-            Save Changes
-          </Button>
+          <div ref={saveMagnet.ref} {...saveMagnet.handlers} className="inline-block will-change-transform">
+            <Button type="submit" isLoading={saving} className="shadow-sm transition-shadow duration-200 hover:shadow-lg">
+              Save Changes
+            </Button>
+          </div>
         </div>
       </form>
     </Modal>

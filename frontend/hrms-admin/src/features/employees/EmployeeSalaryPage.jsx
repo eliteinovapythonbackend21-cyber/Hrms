@@ -21,6 +21,7 @@ import { formatCurrency } from "@/utils/formatCurrency";
 
 import { useState } from "react";
 import { getUser } from "@/utils/tokenHelpers";
+import { use3DTilt, Motion3DStyles } from "@/hooks/use3DMotion";
 
 // Module identity: sky — matches the rest of the Employee module.
 const SKY = {
@@ -28,6 +29,32 @@ const SKY = {
   badge:
     "bg-sky-50 text-sky-700 dark:bg-sky-500/10 dark:text-sky-400",
 };
+
+function StatCard({ tone, label, value, icon }) {
+  const { ref, handlers } = use3DTilt({ max: 9, scale: 1.02 });
+  const border = tone === "emerald" ? "border-emerald-100 dark:border-emerald-900/30" : "border-slate-200 dark:border-slate-700";
+  return (
+    <div className="u-tilt-perspective">
+      <div
+        ref={ref}
+        {...handlers}
+        className={`u-tilt u-glare relative overflow-hidden rounded-xl border bg-white p-4 shadow-sm dark:bg-slate-900 ${border}`}
+      >
+        <div className="u-tilt-content flex items-center justify-between">
+          <div>
+            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">{label}</p>
+            <p className={`mt-1 text-lg font-semibold ${tone === "emerald" ? "text-emerald-600 dark:text-emerald-400" : "font-mono text-slate-900 dark:text-white"}`}>
+              {value}
+            </p>
+          </div>
+          <div className={`u-float-layer flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${tone === "emerald" ? "bg-emerald-50 dark:bg-emerald-500/10" : "bg-sky-50 text-sky-700 dark:bg-sky-500/10 dark:text-sky-400"}`}>
+            {icon}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function EmployeeSalaryPage() {
   const { id } = useParams();
@@ -158,16 +185,20 @@ export default function EmployeeSalaryPage() {
 
   return (
     <div className="mx-auto max-w-lg space-y-5">
+      <Motion3DStyles />
+
       {/* HEADER */}
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="u-rise flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <div
-            className={`flex h-10 w-10 items-center justify-center rounded-xl text-white shadow-sm ${SKY.icon}`}
-          >
-            <span className="font-bold">
-              E
-            </span>
+          <div className="u-hover-float">
+            <div
+              className={`u-float-target flex h-10 w-10 items-center justify-center rounded-xl text-white shadow-sm shadow-sky-600/30 ${SKY.icon}`}
+            >
+              <span className="font-bold">
+                E
+              </span>
+            </div>
           </div>
 
           <div>
@@ -190,7 +221,7 @@ export default function EmployeeSalaryPage() {
         <Button
           variant="secondary"
           onClick={handleBack}
-          className="w-full sm:w-auto"
+          className="w-full transition-transform duration-200 hover:-translate-y-0.5 sm:w-auto"
         >
           Back
         </Button>
@@ -199,54 +230,23 @@ export default function EmployeeSalaryPage() {
       {/* STAT CARDS */}
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                Employee Code
-              </p>
-
-              <p className="mt-1 font-mono text-lg font-semibold text-slate-900 dark:text-white">
-                {
-                  salaryData.employee_code
-                }
-              </p>
-            </div>
-
-            <div
-              className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${SKY.badge}`}
-            >
-              <span className="text-sm font-bold">
-                E
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div className="rounded-xl border border-emerald-100 bg-white p-4 shadow-sm dark:border-emerald-900/30 dark:bg-slate-900">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                Current Salary
-              </p>
-
-              <p className="mt-1 text-lg font-semibold text-emerald-600 dark:text-emerald-400">
-                {formatCurrency(
-                  salaryData.salary
-                )}
-              </p>
-            </div>
-
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-50 dark:bg-emerald-500/10">
-              <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
-            </div>
-          </div>
-        </div>
+        <StatCard
+          tone="sky"
+          label="Employee Code"
+          value={salaryData.employee_code}
+          icon={<span className="text-sm font-bold">E</span>}
+        />
+        <StatCard
+          tone="emerald"
+          label="Current Salary"
+          value={formatCurrency(salaryData.salary)}
+          icon={<span className="h-2.5 w-2.5 rounded-full bg-emerald-500 u-pulse" />}
+        />
       </div>
 
       {/* ADMIN ACTION CARD */}
 
-      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+      <div className="u-rise rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition-shadow duration-300 hover:shadow-md dark:border-slate-700 dark:bg-slate-900" style={{ animationDelay: "60ms" }}>
         {isAdmin ? (
           <>
             <h3 className="mb-4 text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">

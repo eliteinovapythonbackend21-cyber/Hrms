@@ -26,6 +26,7 @@ import RadialStat from "./components/RadialStat";
 import RecentLeaves from "./components/RecentLeaves";
 import MyRecentAttendance from "./components/MyRecentAttendance";
 import FinanceMtdCard from "./components/FinanceMtdCard";
+import { use3DTilt, Motion3DStyles } from "@/hooks/use3DMotion";
 
 /* =========================================================
    HELPERS
@@ -201,44 +202,58 @@ const NAV_TONE_STRIP = {
    Presentational card grid — one card per workspace screen,
    showing a live record count on the right.
 --------------------------------------------------------- */
+function WorkspaceCard({ card, tone, index }) {
+  const { ref, handlers } = use3DTilt({ max: 9, scale: 1.02 });
+
+  return (
+    <div
+      className="u-tilt-perspective u-rise"
+      style={{ animationDelay: `${Math.min(index, 10) * 45}ms` }}
+    >
+      <Link
+        ref={ref}
+        {...handlers}
+        to={card.path}
+        className="u-tilt u-glare group card relative flex items-center gap-3 overflow-hidden p-4"
+      >
+        <span
+          className={`pointer-events-none absolute inset-x-0 top-0 h-0.5 ${
+            NAV_TONE_STRIP[tone] || NAV_TONE_STRIP.primary
+          }`}
+        />
+
+        <span
+          className={`u-tilt-content icon-tile h-10 w-10 transition-transform duration-300 group-hover:scale-110 ${
+            tone === "accent"
+              ? "icon-tile-accent"
+              : "icon-tile-primary"
+          }`}
+        >
+          <NavGlyph name={card.icon} />
+        </span>
+
+        <span className="u-tilt-content min-w-0 flex-1">
+          <span className="block truncate text-sm font-semibold text-slate-800 dark:text-slate-100">
+            {card.label}
+          </span>
+          <span className="mt-0.5 block truncate text-[11px] text-slate-400 dark:text-slate-500">
+            {card.hint}
+          </span>
+        </span>
+
+        <span className="u-float-layer shrink-0 bg-gradient-to-br from-slate-900 to-slate-600 bg-clip-text text-xl font-bold tabular-nums text-transparent dark:from-white dark:to-slate-400">
+          {card.loading ? "–" : card.count}
+        </span>
+      </Link>
+    </div>
+  );
+}
+
 function WorkspaceCardGrid({ cards = [], tone = "primary" }) {
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-      {cards.map((card) => (
-        <Link
-          key={card.path}
-          to={card.path}
-          className="group card relative flex items-center gap-3 overflow-hidden p-4 transition-transform duration-200 hover:-translate-y-0.5"
-        >
-          <span
-            className={`pointer-events-none absolute inset-x-0 top-0 h-0.5 ${
-              NAV_TONE_STRIP[tone] || NAV_TONE_STRIP.primary
-            }`}
-          />
-
-          <span
-            className={`icon-tile h-10 w-10 ${
-              tone === "accent"
-                ? "icon-tile-accent"
-                : "icon-tile-primary"
-            }`}
-          >
-            <NavGlyph name={card.icon} />
-          </span>
-
-          <span className="min-w-0 flex-1">
-            <span className="block truncate text-sm font-semibold text-slate-800 dark:text-slate-100">
-              {card.label}
-            </span>
-            <span className="mt-0.5 block truncate text-[11px] text-slate-400 dark:text-slate-500">
-              {card.hint}
-            </span>
-          </span>
-
-          <span className="shrink-0 bg-gradient-to-br from-slate-900 to-slate-600 bg-clip-text text-xl font-bold tabular-nums text-transparent dark:from-white dark:to-slate-400">
-            {card.loading ? "–" : card.count}
-          </span>
-        </Link>
+      {cards.map((card, i) => (
+        <WorkspaceCard key={card.path} card={card} tone={tone} index={i} />
       ))}
     </div>
   );
@@ -416,10 +431,12 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6 pb-10">
+      <Motion3DStyles />
+
       {/* =====================================================
           PAGE HEADER
       ===================================================== */}
-      <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-gradient-to-br from-white via-primary-50/40 to-accent-50/30 shadow-sm dark:border-white/[0.08] dark:from-primary-500/[0.08] dark:via-white/[0.02] dark:to-accent-500/[0.06]">
+      <div className="u-rise relative overflow-hidden rounded-2xl border border-slate-200/80 bg-gradient-to-br from-white via-primary-50/40 to-accent-50/30 shadow-sm dark:border-white/[0.08] dark:from-primary-500/[0.08] dark:via-white/[0.02] dark:to-accent-500/[0.06]">
         {/* top accent strip */}
         <span className="pointer-events-none absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-primary-500 via-violet-400 to-accent-500" />
 
@@ -445,9 +462,9 @@ export default function DashboardPage() {
 
         <div className="relative flex flex-col gap-4 px-5 py-5 lg:flex-row lg:items-center lg:justify-between lg:px-6 lg:py-6">
           <div className="flex items-center gap-3.5 min-w-0">
-            <div className="relative shrink-0">
+            <div className="u-hover-float relative shrink-0">
               <div className="absolute inset-0 rounded-2xl bg-primary-500/25 blur-lg" />
-              <div className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-400 to-primary-600 text-white shadow-lg shadow-primary-600/30 ring-1 ring-white/20">
+              <div className="u-float-target relative flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-400 to-primary-600 text-white shadow-lg shadow-primary-600/30 ring-1 ring-white/20">
                 <SparkleIcon />
               </div>
             </div>
@@ -570,7 +587,7 @@ export default function DashboardPage() {
             />
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="rounded-2xl transition-transform duration-200 hover:-translate-y-0.5">
+              <div className="u-tilt-perspective rounded-2xl transition-transform duration-300 will-change-transform [transform-style:preserve-3d] hover:-translate-y-1 hover:scale-[1.015] hover:shadow-xl hover:[transform:perspective(900px)_rotateX(2deg)_translateY(-4px)_scale(1.015)]">
                 <RadialStat
                   title="Attendance rate"
                   percent={attendanceRate}
@@ -586,7 +603,7 @@ export default function DashboardPage() {
                 />
               </div>
 
-              <div className="rounded-2xl transition-transform duration-200 hover:-translate-y-0.5">
+              <div className="u-tilt-perspective rounded-2xl transition-transform duration-300 will-change-transform [transform-style:preserve-3d] hover:-translate-y-1 hover:scale-[1.015] hover:shadow-xl hover:[transform:perspective(900px)_rotateX(2deg)_translateY(-4px)_scale(1.015)]">
                 <RadialStat
                   title="Leave approval rate"
                   percent={approvalRate}
@@ -608,14 +625,14 @@ export default function DashboardPage() {
             />
 
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-              <div className="transition-transform duration-200 hover:-translate-y-0.5">
+              <div className="u-tilt-perspective transition-transform duration-300 will-change-transform [transform-style:preserve-3d] hover:-translate-y-1 hover:scale-[1.012] hover:shadow-xl hover:[transform:perspective(900px)_rotateX(1.5deg)_translateY(-4px)_scale(1.012)]">
                 <AttendanceTrendChart
                   data={trend.data}
                   loading={trend.isLoading}
                 />
               </div>
 
-              <div className="transition-transform duration-200 hover:-translate-y-0.5">
+              <div className="u-tilt-perspective transition-transform duration-300 will-change-transform [transform-style:preserve-3d] hover:-translate-y-1 hover:scale-[1.012] hover:shadow-xl hover:[transform:perspective(900px)_rotateX(1.5deg)_translateY(-4px)_scale(1.012)]">
                 <LeaveStatusChart
                   data={leaveBreakdown.data}
                   loading={leaveBreakdown.isLoading}
@@ -635,7 +652,7 @@ export default function DashboardPage() {
               subtitle="Latest leave requests across the organisation"
             />
 
-            <div className="transition-transform duration-200 hover:-translate-y-0.5">
+            <div className="u-tilt-perspective transition-transform duration-300 will-change-transform [transform-style:preserve-3d] hover:-translate-y-1 hover:scale-[1.012] hover:shadow-xl hover:[transform:perspective(900px)_rotateX(1.5deg)_translateY(-4px)_scale(1.012)]">
               <RecentLeaves />
             </div>
           </section>
@@ -731,7 +748,7 @@ export default function DashboardPage() {
             />
 
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-              <div className="transition-transform duration-200 hover:-translate-y-0.5">
+              <div className="u-tilt-perspective transition-transform duration-300 will-change-transform [transform-style:preserve-3d] hover:-translate-y-1 hover:scale-[1.012] hover:shadow-xl hover:[transform:perspective(900px)_rotateX(1.5deg)_translateY(-4px)_scale(1.012)]">
                 <AttendanceTrendChart
                   data={trend.data}
                   loading={trend.isLoading}
@@ -739,7 +756,7 @@ export default function DashboardPage() {
                 />
               </div>
 
-              <div className="transition-transform duration-200 hover:-translate-y-0.5">
+              <div className="u-tilt-perspective transition-transform duration-300 will-change-transform [transform-style:preserve-3d] hover:-translate-y-1 hover:scale-[1.012] hover:shadow-xl hover:[transform:perspective(900px)_rotateX(1.5deg)_translateY(-4px)_scale(1.012)]">
                 <LeaveStatusChart
                   data={leaveBreakdown.data}
                   loading={leaveBreakdown.isLoading}
@@ -757,7 +774,7 @@ export default function DashboardPage() {
               subtitle="Your latest check-in / check-out records"
             />
 
-            <div className="transition-transform duration-200 hover:-translate-y-0.5">
+            <div className="u-tilt-perspective transition-transform duration-300 will-change-transform [transform-style:preserve-3d] hover:-translate-y-1 hover:scale-[1.012] hover:shadow-xl hover:[transform:perspective(900px)_rotateX(1.5deg)_translateY(-4px)_scale(1.012)]">
               <MyRecentAttendance title="Your recent check-in / check-out" />
             </div>
           </section>

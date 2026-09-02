@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import { isRequired } from "@/utils/validators";
+import { useMagnetic, Motion3DStyles } from "@/hooks/use3DMotion";
 
 const initialForm = {
   name: "",
@@ -36,6 +37,8 @@ export default function CompanyForm({
 }) {
   const [form, setForm] = useState(initialForm);
   const [errors, setErrors] = useState({});
+
+  const submitMagnet = useMagnetic(0.22);
 
   // Branches already saved against this company (edit mode only).
   // Shown read-only here — manage/remove them from the Branches page.
@@ -158,19 +161,30 @@ export default function CompanyForm({
       onSubmit={handleSubmit}
       className="space-y-6"
     >
-      {/* Company Information */}
-      <div>
-        <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
-          Company Information
-        </h2>
+      <Motion3DStyles />
 
-        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-          Enter the company details.
-        </p>
+      {/* Company Information */}
+      <div className="u-rise flex items-center gap-3">
+        <div className="u-hover-float">
+          <div className="u-float-target flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-primary-500 to-primary-700 text-white shadow-sm shadow-primary-600/30">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 21h18M5 21V5a2 2 0 012-2h10a2 2 0 012 2v16M9 7h2M9 11h2M9 15h2M15 7h2M15 11h2M15 15h2" />
+            </svg>
+          </div>
+        </div>
+        <div>
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
+            Company Information
+          </h2>
+
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            Enter the company details.
+          </p>
+        </div>
       </div>
 
       {/* Company Fields */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="u-rise grid grid-cols-1 md:grid-cols-2 gap-4" style={{ animationDelay: "60ms" }}>
         <Input
           label="Company Name"
           name="name"
@@ -261,7 +275,10 @@ export default function CompanyForm({
       </div>
 
       {/* Branches */}
-      <div className="rounded-lg border border-slate-200 p-3 dark:border-white/10">
+      <div
+        className="u-rise rounded-lg border border-slate-200 p-3 transition-shadow duration-300 hover:shadow-md dark:border-white/10"
+        style={{ animationDelay: "110ms" }}
+      >
         <label className="mb-1 block text-sm font-medium">
           Branches
         </label>
@@ -282,7 +299,7 @@ export default function CompanyForm({
               {existingBranches.map((b) => (
                 <span
                   key={b.id}
-                  className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-600 dark:bg-white/[0.06] dark:text-slate-300"
+                  className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-600 transition-transform duration-200 hover:scale-105 dark:bg-white/[0.06] dark:text-slate-300"
                 >
                   {b.name}
                 </span>
@@ -304,7 +321,7 @@ export default function CompanyForm({
           <button
             type="button"
             onClick={handleAddBranch}
-            className="shrink-0 rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"
+            className="shrink-0 rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-50 hover:shadow-sm dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"
           >
             + Add
           </button>
@@ -319,14 +336,14 @@ export default function CompanyForm({
             {branchNames.map((name, index) => (
               <span
                 key={`${name}-${index}`}
-                className="inline-flex items-center gap-1.5 rounded-full bg-primary-50 px-2.5 py-1 text-xs text-primary-700 dark:bg-primary-500/10 dark:text-primary-300"
+                className="u-rise inline-flex items-center gap-1.5 rounded-full bg-primary-50 px-2.5 py-1 text-xs text-primary-700 transition-transform duration-200 hover:scale-105 hover:shadow-sm dark:bg-primary-500/10 dark:text-primary-300"
               >
                 {name}
                 <button
                   type="button"
                   onClick={() => handleRemoveBranch(index)}
                   aria-label={`Remove ${name}`}
-                  className="text-primary-500 hover:text-primary-700 dark:hover:text-primary-100"
+                  className="text-primary-500 transition-transform hover:scale-125 hover:text-primary-700 dark:hover:text-primary-100"
                 >
                   ×
                 </button>
@@ -357,16 +374,24 @@ export default function CompanyForm({
           type="button"
           variant="secondary"
           onClick={onCancel}
+          className="transition-transform duration-200 hover:-translate-y-0.5"
         >
           Cancel
         </Button>
 
-        <Button
-          type="submit"
-          isLoading={loading}
+        <div
+          ref={submitMagnet.ref}
+          {...submitMagnet.handlers}
+          className="inline-block will-change-transform"
         >
-          {isEdit ? "Update Company" : "Create Company"}
-        </Button>
+          <Button
+            type="submit"
+            isLoading={loading}
+            className="shadow-sm transition-shadow duration-200 hover:shadow-lg"
+          >
+            {isEdit ? "Update Company" : "Create Company"}
+          </Button>
+        </div>
       </div>
     </form>
   );

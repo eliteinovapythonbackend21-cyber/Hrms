@@ -29,6 +29,12 @@ import TableToolbar from "@/components/table/TableToolbar";
 import { useToast } from "@/components/feedback/Toast";
 import { useIsHrEmployee } from "@/hooks/useIsHrEmployee";
 import { useTableExport } from "@/hooks/useTableExport";
+import {
+  use3DTilt,
+  useMagnetic,
+  Motion3DStyles,
+  GridPattern,
+} from "@/hooks/use3DMotion";
 
 
 /* -------------------------------------------------------------------------- */
@@ -157,21 +163,29 @@ function StatCard({
   value,
   label,
 }) {
+  const { ref, handlers } = use3DTilt({ max: 8, scale: 1.02 });
+
   return (
-    <div className="h-[76px] rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 shadow-sm transition hover:shadow-md dark:border-white/10 dark:bg-white/[0.04]">
-      <div className="flex h-full items-center justify-between">
-        <div className="min-w-0">
-          <p className="truncate text-[11px] font-medium text-slate-500 dark:text-slate-400">
-            {label}
-          </p>
+    <div className="u-tilt-perspective">
+      <div
+        ref={ref}
+        {...handlers}
+        className="u-tilt u-glare relative h-[76px] overflow-hidden rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 shadow-sm dark:border-white/10 dark:bg-white/[0.04]"
+      >
+        <div className="u-tilt-content flex h-full items-center justify-between">
+          <div className="min-w-0">
+            <p className="truncate text-[11px] font-medium text-slate-500 dark:text-slate-400">
+              {label}
+            </p>
 
-          <p className="mt-0.5 text-xl font-bold tracking-tight text-slate-900 dark:text-white">
-            {value}
-          </p>
-        </div>
+            <p className="mt-0.5 text-xl font-bold tracking-tight text-slate-900 dark:text-white">
+              {value}
+            </p>
+          </div>
 
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
-          {icon}
+          <div className="u-float-layer flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
+            {icon}
+          </div>
         </div>
       </div>
     </div>
@@ -445,7 +459,7 @@ const TableIconButton = ({
       disabled={disabled}
       title={title}
       aria-label={title}
-      className={`flex h-7 w-7 items-center justify-center rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${tones[tone]}`}
+      className={`flex h-7 w-7 items-center justify-center rounded-lg transition-all duration-200 hover:-translate-y-0.5 hover:scale-110 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0 disabled:hover:scale-100 ${tones[tone]}`}
     >
       {children}
     </button>
@@ -462,6 +476,8 @@ export default function DocumentListPage() {
 
   // HR-department employees: this screen is view-only.
   const { isHrEmployee: readOnly } = useIsHrEmployee();
+
+  const addMagnet = useMagnetic(0.25);
 
 
   /* ----------------------------- DOCUMENTS -------------------------------- */
@@ -1077,8 +1093,11 @@ export default function DocumentListPage() {
 
   if (isError) {
     return (
-      <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-600 dark:border-red-900/40 dark:bg-red-950/20 dark:text-red-400">
-        Failed to load employee documents.
+      <div className="p-6">
+        <Motion3DStyles />
+        <div className="u-rise rounded-xl border border-red-200 bg-red-50 p-4 text-red-600 dark:border-red-900/40 dark:bg-red-950/20 dark:text-red-400">
+          Failed to load employee documents.
+        </div>
       </div>
     );
   }
@@ -1090,17 +1109,23 @@ export default function DocumentListPage() {
 
   return (
     <div className="space-y-4">
+      <Motion3DStyles />
 
       {/* ================================================================== */}
       {/* HEADER                                                             */}
       {/* ================================================================== */}
 
-      <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-600 text-white shadow-sm">
-            <span className="text-base font-bold">
-              D
-            </span>
+      <div className="u-rise relative flex flex-col gap-3 overflow-hidden rounded-2xl border border-slate-200/80 bg-gradient-to-br from-white via-primary-50/40 to-white p-4 shadow-sm dark:border-white/[0.08] dark:from-primary-500/[0.08] dark:via-white/[0.02] dark:to-transparent xl:flex-row xl:items-center xl:justify-between">
+        <GridPattern id="document-grid" />
+        <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-primary-500/15 blur-3xl" />
+
+        <div className="relative flex items-center gap-3">
+          <div className="u-hover-float">
+            <div className="u-float-target flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 text-white shadow-lg shadow-primary-600/30 ring-1 ring-white/20">
+              <span className="text-base font-bold">
+                D
+              </span>
+            </div>
           </div>
 
           <div>
@@ -1114,7 +1139,7 @@ export default function DocumentListPage() {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="relative flex flex-wrap items-center gap-2">
           <TableToolbar
             onRefresh={refetch}
             refreshing={isFetching}
@@ -1135,16 +1160,18 @@ export default function DocumentListPage() {
               View only
             </span>
           ) : (
-            <Button
-              type="button"
-              onClick={handleAdd}
-              className="h-9 w-full px-3.5 text-sm sm:w-auto"
-            >
-              <span className="mr-1.5 text-base">
-                +
-              </span>
-              Add Document
-            </Button>
+            <div ref={addMagnet.ref} {...addMagnet.handlers} className="inline-block w-full will-change-transform sm:w-auto">
+              <Button
+                type="button"
+                onClick={handleAdd}
+                className="h-9 w-full px-3.5 text-sm shadow-sm transition-shadow duration-200 hover:shadow-lg sm:w-auto"
+              >
+                <span className="mr-1.5 text-base leading-none transition-transform duration-300 hover:rotate-90">
+                  +
+                </span>
+                Add Document
+              </Button>
+            </div>
           )}
         </div>
       </div>
@@ -1713,7 +1740,7 @@ export default function DocumentListPage() {
                                 <span
                                   className={`h-1.5 w-1.5 rounded-full ${
                                     isActive
-                                      ? "bg-emerald-500"
+                                      ? "bg-emerald-500 u-pulse"
                                       : "bg-red-500"
                                   }`}
                                 />
@@ -1902,7 +1929,7 @@ export default function DocumentListPage() {
         pagedGroups.length > 0 && (
           <div className="grid grid-cols-1 items-start gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {pagedGroups.map(
-              (group) => {
+              (group, groupIdx) => {
                 const emp =
                   group.employee;
 
@@ -1928,7 +1955,8 @@ export default function DocumentListPage() {
                     key={
                       group.employeeId
                     }
-                    className={`group relative overflow-hidden rounded-xl border bg-white shadow-sm transition-all duration-200 hover:shadow-md dark:bg-white/[0.04] ${
+                    style={{ animationDelay: `${Math.min(groupIdx, 10) * 40}ms` }}
+                    className={`u-rise group relative overflow-hidden rounded-xl border bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl dark:bg-white/[0.04] ${
                       allInactive
                         ? "border-red-100 bg-red-50/20 dark:border-red-900/30 dark:bg-red-950/10"
                         : "border-slate-200 hover:border-primary-200 dark:border-white/10 dark:hover:border-primary-500/40"

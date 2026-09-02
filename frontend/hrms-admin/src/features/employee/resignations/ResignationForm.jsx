@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import GenericForm from "@/components/form/GenericForm";
 import { useEmployeeOptions } from "@/hooks/useLookupOptions";
 import { employeesApi } from "@/api/employees.api";
+import { use3DTilt, Motion3DStyles } from "@/hooks/use3DMotion";
 
 const STATUS_OPTIONS = [
   { value: "Pending", label: "Pending" },
@@ -46,6 +47,7 @@ export default function ResignationForm({
   isEdit,
 }) {
   const employeeOptions = useEmployeeOptions();
+  const orgTilt = use3DTilt({ max: 6, scale: 1.012 });
 
   const { data: employeesData, isLoading: employeesLoading } = useQuery({
     queryKey: ["resignation-form", "employees"],
@@ -285,68 +287,78 @@ export default function ResignationForm({
 
   return (
     <div className="space-y-4">
+      <Motion3DStyles />
+
       {/* Previous Organization Preview */}
       {selectedEmployee && (
-        <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4 dark:border-white/10 dark:bg-white/[0.03]">
-          <div className="mb-3 flex items-center justify-between gap-2">
-            <div>
-              <h3 className="text-sm font-semibold text-slate-800 dark:text-white">
-                Previous Organization
-              </h3>
+        <div className="u-rise u-tilt-perspective">
+          <div
+            ref={orgTilt.ref}
+            {...orgTilt.handlers}
+            className="u-tilt u-glare relative overflow-hidden rounded-xl border border-slate-200 bg-slate-50/80 p-4 dark:border-white/10 dark:bg-white/[0.03]"
+          >
+            <div className="u-tilt-content mb-3 flex items-center justify-between gap-2">
+              <div>
+                <h3 className="text-sm font-semibold text-slate-800 dark:text-white">
+                  Previous Organization
+                </h3>
 
-              <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
-                Organization information captured for this resignation record
-              </p>
+                <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
+                  Organization information captured for this resignation record
+                </p>
+              </div>
+
+              <span className="rounded-full bg-sky-50 px-2.5 py-1 text-[10px] font-medium text-sky-700 dark:bg-sky-500/10 dark:text-sky-400">
+                Historical Record
+              </span>
             </div>
 
-            <span className="rounded-full bg-sky-50 px-2.5 py-1 text-[10px] font-medium text-sky-700 dark:bg-sky-500/10 dark:text-sky-400">
-              Historical Record
-            </span>
-          </div>
+            <div className="u-tilt-content grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <OrganizationItem
+                label="Company"
+                value={organization.company?.name}
+              />
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <OrganizationItem
-              label="Company"
-              value={organization.company?.name}
-            />
+              <OrganizationItem
+                label="Branch"
+                value={organization.branch?.name}
+              />
 
-            <OrganizationItem
-              label="Branch"
-              value={organization.branch?.name}
-            />
+              <OrganizationItem
+                label="Department"
+                value={
+                  organization.department?.department_name ||
+                  organization.department?.name
+                }
+              />
 
-            <OrganizationItem
-              label="Department"
-              value={
-                organization.department?.department_name ||
-                organization.department?.name
-              }
-            />
-
-            <OrganizationItem
-              label="Designation"
-              value={
-                organization.designation?.designation_name ||
-                organization.designation?.name
-              }
-            />
+              <OrganizationItem
+                label="Designation"
+                value={
+                  organization.designation?.designation_name ||
+                  organization.designation?.name
+                }
+              />
+            </div>
           </div>
         </div>
       )}
 
       {!selectedEmployee && !employeesLoading && (
-        <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-700 dark:border-amber-900/40 dark:bg-amber-500/10 dark:text-amber-400">
+        <div className="u-rise rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-700 dark:border-amber-900/40 dark:bg-amber-500/10 dark:text-amber-400">
           Select an employee to view the previous organization details.
         </div>
       )}
 
-      <GenericForm
-        formId={formId}
-        fields={fields}
-        initialData={initialData}
-        onSubmit={handleSubmit}
-        loading={loading}
-      />
+      <div className="u-rise">
+        <GenericForm
+          formId={formId}
+          fields={fields}
+          initialData={initialData}
+          onSubmit={handleSubmit}
+          loading={loading}
+        />
+      </div>
     </div>
   );
 }

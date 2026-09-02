@@ -22,6 +22,12 @@ import ConfirmDialog from "@/components/feedback/ConfirmDialog";
 import TableToolbar from "@/components/table/TableToolbar";
 import { useToast } from "@/components/feedback/Toast";
 import { useTableExport } from "@/hooks/useTableExport";
+import {
+  use3DTilt,
+  useMagnetic,
+  Motion3DStyles,
+  GridPattern,
+} from "@/hooks/use3DMotion";
 
 const EXPORT_COLUMNS = [
   { header: "Code", accessor: (r) => r.code },
@@ -46,9 +52,10 @@ function CompanyDetailsModal({ companyId, onClose }) {
       )}
 
       {!isLoading && company && (
-        <div className="space-y-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
+        <div className="u-rise space-y-4">
+          <Motion3DStyles />
+          <div className="u-hover-float flex items-center gap-3">
+            <div className="u-float-target flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 text-white shadow-sm shadow-primary-600/30">
               <span className="text-lg font-bold">{company.name?.charAt(0)?.toUpperCase() || "C"}</span>
             </div>
             <div className="min-w-0">
@@ -80,6 +87,173 @@ function CompanyDetailsModal({ companyId, onClose }) {
   );
 }
 
+/* Tilt+glare stat tile used in the summary row. */
+function StatTile({ tone, label, value, hint, icon }) {
+  const { ref, handlers } = use3DTilt({ max: 9, scale: 1.02 });
+  const border = {
+    primary: "border-slate-200 dark:border-white/10",
+    emerald: "border-emerald-100 dark:border-emerald-900/30",
+    red: "border-red-100 dark:border-red-900/30",
+  }[tone];
+  const valueColor = {
+    primary: "text-slate-900 dark:text-white",
+    emerald: "text-emerald-600 dark:text-emerald-400",
+    red: "text-red-600 dark:text-red-400",
+  }[tone];
+  const iconTone = {
+    primary: "bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400",
+    emerald: "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400",
+    red: "bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400",
+  }[tone];
+
+  return (
+    <div className="u-tilt-perspective">
+      <div
+        ref={ref}
+        {...handlers}
+        className={`u-tilt u-glare relative h-[110px] overflow-hidden rounded-xl border bg-white px-4 py-3 shadow-sm dark:bg-white/[0.04] ${border}`}
+      >
+        <div className="u-tilt-content flex h-full items-center justify-between">
+          <div className="min-w-0">
+            <p className="truncate text-xs font-medium text-slate-500 dark:text-slate-400">{label}</p>
+            <p className={`mt-1 text-2xl font-bold tracking-tight ${valueColor}`}>{value}</p>
+            <p className="mt-0.5 truncate text-[11px] text-slate-400">{hint}</p>
+          </div>
+          <div className={`u-float-layer flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${iconTone}`}>
+            {icon}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* 3D tilt+glare branch card, extracted so its tilt hook lives per-card. */
+function BranchCard({ branch, index, statusBadge, onEdit, onDelete, onReactivate, onViewCompany, reactivating }) {
+  const { ref, handlers } = use3DTilt({ max: 10, scale: 1.025 });
+  const firstLetter = branch.name?.charAt(0)?.toUpperCase() || "B";
+  const companyName = branch.company?.name || "-";
+  const companyCode = branch.company?.code || "-";
+
+  return (
+    <div
+      className="u-tilt-perspective u-rise"
+      style={{ animationDelay: `${Math.min(index, 10) * 45}ms` }}
+    >
+      <div
+        ref={ref}
+        {...handlers}
+        className={`u-tilt u-glare group relative overflow-hidden rounded-2xl border bg-white shadow-sm dark:bg-white/[0.04] ${branch.is_active ? "border-slate-200 hover:border-primary-200 dark:border-white/10 dark:hover:border-primary-500/40" : "border-red-100 bg-red-50/20 dark:border-red-900/30 dark:bg-red-950/10"}`}
+      >
+        <div className={`absolute inset-x-0 top-0 h-0.5 ${branch.is_active ? "bg-primary-600" : "bg-red-500"}`} />
+        <div className="u-tilt-content p-4">
+          <div className="flex items-start justify-between gap-2.5">
+            <div className="flex min-w-0 items-center gap-2.5">
+              <div className={`u-float-layer relative flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-base font-bold shadow-sm ${branch.is_active ? "bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400" : "bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400"}`}>
+                {firstLetter}
+                <span className={`absolute -bottom-1 -right-1 h-3 w-3 rounded-full border-2 border-white dark:border-slate-900 ${branch.is_active ? "bg-emerald-500 u-pulse" : "bg-red-500"}`} />
+              </div>
+              <div className="min-w-0">
+                <h3 title={branch.name} className="truncate text-sm font-semibold text-slate-900 dark:text-white">{branch.name || "Unnamed Branch"}</h3>
+                <div className="mt-0.5 flex items-center gap-1">
+                  <span className="text-[9px] font-medium uppercase tracking-wide text-slate-400">Code</span>
+                  <span className="truncate font-mono text-[11px] font-medium text-slate-600 dark:text-slate-300">{branch.code || "-"}</span>
+                </div>
+              </div>
+            </div>
+            <div className="shrink-0">{statusBadge(branch.is_active)}</div>
+          </div>
+
+          <div className="my-3 border-t border-slate-100 dark:border-white/10" />
+
+          <button type="button" onClick={onViewCompany} disabled={!branch.company?.id} className="group/company flex w-full items-center justify-between rounded-lg border border-slate-100 bg-slate-50/70 px-3 py-2 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-primary-200 hover:bg-primary-50/50 hover:shadow-sm disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:bg-white/[0.03] dark:hover:border-primary-500/30 dark:hover:bg-primary-500/10">
+            <div className="flex min-w-0 items-center gap-2">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 21h18M5 21V5a2 2 0 012-2h10a2 2 0 012 2v16M9 7h2M9 11h2M9 15h2M15 7h2M15 11h2M15 15h2" />
+                </svg>
+              </div>
+              <div className="min-w-0">
+                <p className="text-[9px] font-medium uppercase tracking-wide text-slate-400">Company</p>
+                <p title={companyName} className="truncate text-[11px] font-semibold text-primary-600 dark:text-primary-400">{companyName}</p>
+              </div>
+            </div>
+            <div className="ml-2 flex shrink-0 flex-col items-end">
+              <span className="text-[8px] font-medium uppercase tracking-wide text-slate-400">Code</span>
+              <span className="max-w-[80px] truncate font-mono text-[9px] text-slate-500 dark:text-slate-400">{companyCode}</span>
+            </div>
+          </button>
+
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <div className="flex min-w-0 items-center gap-2 rounded-lg border border-slate-100 bg-white px-2.5 py-2 dark:border-white/10 dark:bg-white/[0.04]">
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500 dark:bg-white/[0.06] dark:text-slate-400">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 21s7-6.1 7-12a7 7 0 10-14 0c0 5.9 7 12 7 12z" />
+                  <circle cx="12" cy="9" r="2.2" />
+                </svg>
+              </div>
+              <div className="min-w-0">
+                <p className="text-[9px] font-medium uppercase tracking-wide text-slate-400">City</p>
+                <p title={branch.city || "-"} className="truncate text-[11px] font-medium text-slate-700 dark:text-slate-200">{branch.city || "-"}</p>
+              </div>
+            </div>
+
+            <div className="flex min-w-0 items-center gap-2 rounded-lg border border-slate-100 bg-white px-2.5 py-2 dark:border-white/10 dark:bg-white/[0.04]">
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500 dark:bg-white/[0.06] dark:text-slate-400">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h2.28a2 2 0 011.9 1.37l1.1 3.29a2 2 0 01-.45 2.05l-1.38 1.38a16 16 0 006.46 6.46l1.38-1.38a2 2 0 012.05-.45l3.29 1.1A2 2 0 0121 18.72V21a2 2 0 01-2 2h-1C9.72 23 1 14.28 1 4V3a2 2 0 012-2z" />
+                </svg>
+              </div>
+              <div className="min-w-0">
+                <p className="text-[9px] font-medium uppercase tracking-wide text-slate-400">Phone</p>
+                <p title={branch.phone || "-"} className="truncate text-[11px] font-medium text-slate-700 dark:text-slate-200">{branch.phone || "-"}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-3 flex items-center gap-2">
+            <button type="button" onClick={onEdit} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] font-semibold text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary-200 hover:bg-primary-50 hover:text-primary-600 hover:shadow-md dark:border-white/10 dark:bg-white/[0.06] dark:text-slate-200 dark:hover:border-primary-500/40 dark:hover:bg-primary-500/10 dark:hover:text-primary-400">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a2.121 2.121 0 013 3l-9.9 9.9-4.137 1.034 1.034-4.137 9.9-9.9z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6" />
+              </svg>
+              Edit
+            </button>
+            {branch.is_active ? (
+              <button type="button" onClick={onDelete} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-2 text-[11px] font-semibold text-red-600 transition-all duration-200 hover:-translate-y-0.5 hover:bg-red-50 hover:shadow-md dark:border-red-900/40 dark:bg-white/[0.06] dark:text-red-400 dark:hover:bg-red-500/10">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M18 6L6 18M6 6l12 12" />
+                </svg>
+                Deactivate
+              </button>
+            ) : (
+              <button type="button" onClick={onReactivate} disabled={reactivating} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-emerald-200 bg-white px-3 py-2 text-[11px] font-semibold text-emerald-600 transition-all duration-200 hover:-translate-y-0.5 hover:bg-emerald-50 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50 dark:border-emerald-900/40 dark:bg-white/[0.06] dark:text-emerald-400 dark:hover:bg-emerald-500/10">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 12a8 8 0 018-8 8.5 8.5 0 017 4" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M20 4v5h-5" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M20 12a8 8 0 01-8 8 8.5 8.5 0 01-7-4" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 20v-5h5" />
+                </svg>
+                Reactivate
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className={`u-tilt-content border-t px-4 py-2 ${branch.is_active ? "border-slate-100 bg-slate-50/50 dark:border-white/10 dark:bg-white/[0.03]" : "border-red-100 bg-red-50/50 dark:border-red-900/20 dark:bg-red-950/20"}`}>
+          <div className="flex items-center justify-between">
+            <span className="text-[9px] font-medium uppercase tracking-wider text-slate-400">Branch Status</span>
+            <span className={`flex items-center gap-1.5 text-[10px] font-semibold ${branch.is_active ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+              <span className={`h-1.5 w-1.5 rounded-full ${branch.is_active ? "bg-emerald-500" : "bg-red-500"}`} />
+              {branch.is_active ? "Operational" : "Deactivated"}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function BranchListPage() {
   const { showToast } = useToast();
 
@@ -99,6 +273,8 @@ export default function BranchListPage() {
   const [viewMode, setViewMode] = useState("card"); // "card" | "table"
 
   const [viewingCompanyId, setViewingCompanyId] = useState(null);
+
+  const addMagnet = useMagnetic(0.28);
 
   const { data: companyData } = useCompanies({ page: 1, per_page: 100 });
 
@@ -216,7 +392,8 @@ export default function BranchListPage() {
   if (isError) {
     return (
       <div className="p-6">
-        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-600 dark:border-red-900/40 dark:bg-red-950/20 dark:text-red-400">
+        <Motion3DStyles />
+        <div className="u-rise rounded-xl border border-red-200 bg-red-50 p-4 text-red-600 dark:border-red-900/40 dark:bg-red-950/20 dark:text-red-400">
           <h2 className="font-semibold">Failed to load branches</h2>
           <p className="mt-1 text-sm">{error?.response?.data?.message || error?.message || "Unable to load branches."}</p>
         </div>
@@ -226,11 +403,18 @@ export default function BranchListPage() {
 
   return (
     <div className="space-y-5">
+      <Motion3DStyles />
+
       {/* HEADER */}
-      <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary-600 text-white shadow-sm">
-            <span className="text-lg font-bold">B</span>
+      <div className="u-rise relative flex flex-col gap-4 overflow-hidden rounded-2xl border border-slate-200/80 bg-gradient-to-br from-white via-primary-50/40 to-white p-4 shadow-sm dark:border-white/[0.08] dark:from-primary-500/[0.08] dark:via-white/[0.02] dark:to-transparent xl:flex-row xl:items-center xl:justify-between">
+        <GridPattern id="branch-grid" />
+        <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-primary-500/15 blur-3xl" />
+
+        <div className="relative flex items-center gap-3">
+          <div className="u-hover-float">
+            <div className="u-float-target flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 text-white shadow-lg shadow-primary-600/30 ring-1 ring-white/20">
+              <span className="text-lg font-bold">B</span>
+            </div>
           </div>
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Branches</h1>
@@ -238,55 +422,40 @@ export default function BranchListPage() {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="relative flex flex-wrap items-center gap-2">
           <TableToolbar onRefresh={refetch} refreshing={isFetching} onExportExcel={exportExcel} onExportPDF={exportPDF} exporting={exporting} />
-          <Button type="button" onClick={handleAdd} className="h-10 w-full px-4 sm:w-auto">
-            <span className="mr-1.5 text-lg">+</span>
-            Add Branch
-          </Button>
+          <div ref={addMagnet.ref} {...addMagnet.handlers} className="inline-block w-full will-change-transform sm:w-auto">
+            <Button type="button" onClick={handleAdd} className="h-10 w-full px-4 shadow-sm transition-shadow duration-200 hover:shadow-lg sm:w-auto">
+              <span className="mr-1.5 text-lg leading-none transition-transform duration-300 hover:rotate-90">+</span>
+              Add Branch
+            </Button>
+          </div>
         </div>
       </div>
 
       {/* STAT CARDS */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div className="h-[110px] rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition hover:shadow-md dark:border-white/10 dark:bg-white/[0.04]">
-          <div className="flex h-full items-center justify-between">
-            <div className="min-w-0">
-              <p className="truncate text-xs font-medium text-slate-500 dark:text-slate-400">Total Branches</p>
-              <p className="mt-1 text-2xl font-bold tracking-tight text-slate-900 dark:text-white">{branches.length}</p>
-              <p className="mt-0.5 truncate text-[11px] text-slate-400">Current page</p>
-            </div>
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
-              <span className="text-sm font-bold">B</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="h-[110px] rounded-xl border border-emerald-100 bg-white px-4 py-3 shadow-sm transition hover:shadow-md dark:border-emerald-900/30 dark:bg-white/[0.04]">
-          <div className="flex h-full items-center justify-between">
-            <div className="min-w-0">
-              <p className="truncate text-xs font-medium text-slate-500 dark:text-slate-400">Active Branches</p>
-              <p className="mt-1 text-2xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400">{activeBranches.length}</p>
-              <p className="mt-0.5 truncate text-[11px] text-slate-400">Currently active</p>
-            </div>
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-50 dark:bg-emerald-500/10">
-              <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
-            </div>
-          </div>
-        </div>
-
-        <div className="h-[110px] rounded-xl border border-red-100 bg-white px-4 py-3 shadow-sm transition hover:shadow-md dark:border-red-900/30 dark:bg-white/[0.04]">
-          <div className="flex h-full items-center justify-between">
-            <div className="min-w-0">
-              <p className="truncate text-xs font-medium text-slate-500 dark:text-slate-400">Inactive Branches</p>
-              <p className="mt-1 text-2xl font-bold tracking-tight text-red-600 dark:text-red-400">{inactiveBranches.length}</p>
-              <p className="mt-0.5 truncate text-[11px] text-slate-400">Deactivated branches</p>
-            </div>
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-50 dark:bg-red-500/10">
-              <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
-            </div>
-          </div>
-        </div>
+        <StatTile
+          tone="primary"
+          label="Total Branches"
+          value={branches.length}
+          hint="Current page"
+          icon={<span className="text-sm font-bold">B</span>}
+        />
+        <StatTile
+          tone="emerald"
+          label="Active Branches"
+          value={activeBranches.length}
+          hint="Currently active"
+          icon={<span className="h-2.5 w-2.5 rounded-full bg-emerald-500 u-pulse" />}
+        />
+        <StatTile
+          tone="red"
+          label="Inactive Branches"
+          value={inactiveBranches.length}
+          hint="Deactivated branches"
+          icon={<span className="h-2.5 w-2.5 rounded-full bg-red-500" />}
+        />
       </div>
 
       {/* SEARCH + COMPANY FILTER + VIEW TOGGLE + STATUS */}
@@ -371,10 +540,10 @@ export default function BranchListPage() {
               {filteredBranches.map((branch) => {
                 const firstLetter = branch.name?.charAt(0)?.toUpperCase() || "B";
                 return (
-                  <tr key={branch.id} className="tbl-row">
+                  <tr key={branch.id} className="tbl-row group">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2.5">
-                        <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-sm font-bold ${branch.is_active ? "bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400" : "bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400"}`}>
+                        <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-sm font-bold transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:scale-110 ${branch.is_active ? "bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400" : "bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400"}`}>
                           {firstLetter}
                         </div>
                         <div className="min-w-0">
@@ -424,120 +593,19 @@ export default function BranchListPage() {
       {/* BRANCH CARDS */}
       {!isLoading && viewMode === "card" && filteredBranches.length > 0 && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {filteredBranches.map((branch) => {
-            const firstLetter = branch.name?.charAt(0)?.toUpperCase() || "B";
-            const companyName = branch.company?.name || "-";
-            const companyCode = branch.company?.code || "-";
-
-            return (
-              <div key={branch.id} className={`group relative overflow-hidden rounded-2xl border bg-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg dark:bg-white/[0.04] ${branch.is_active ? "border-slate-200 hover:border-primary-200 dark:border-white/10 dark:hover:border-primary-500/40" : "border-red-100 bg-red-50/20 dark:border-red-900/30 dark:bg-red-950/10"}`}>
-                <div className={`absolute inset-x-0 top-0 h-0.5 ${branch.is_active ? "bg-primary-600" : "bg-red-500"}`} />
-                <div className="p-4">
-                  <div className="flex items-start justify-between gap-2.5">
-                    <div className="flex min-w-0 items-center gap-2.5">
-                      <div className={`relative flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-base font-bold shadow-sm ${branch.is_active ? "bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400" : "bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400"}`}>
-                        {firstLetter}
-                        <span className={`absolute -bottom-1 -right-1 h-3 w-3 rounded-full border-2 border-white dark:border-slate-900 ${branch.is_active ? "bg-emerald-500" : "bg-red-500"}`} />
-                      </div>
-                      <div className="min-w-0">
-                        <h3 title={branch.name} className="truncate text-sm font-semibold text-slate-900 dark:text-white">{branch.name || "Unnamed Branch"}</h3>
-                        <div className="mt-0.5 flex items-center gap-1">
-                          <span className="text-[9px] font-medium uppercase tracking-wide text-slate-400">Code</span>
-                          <span className="truncate font-mono text-[11px] font-medium text-slate-600 dark:text-slate-300">{branch.code || "-"}</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="shrink-0">{statusBadge(branch.is_active)}</div>
-                  </div>
-
-                  <div className="my-3 border-t border-slate-100 dark:border-white/10" />
-
-                  <button type="button" onClick={() => branch.company?.id && setViewingCompanyId(branch.company.id)} disabled={!branch.company?.id} className="group/company flex w-full items-center justify-between rounded-lg border border-slate-100 bg-slate-50/70 px-3 py-2 text-left transition hover:border-primary-200 hover:bg-primary-50/50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:bg-white/[0.03] dark:hover:border-primary-500/30 dark:hover:bg-primary-500/10">
-                    <div className="flex min-w-0 items-center gap-2">
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M3 21h18M5 21V5a2 2 0 012-2h10a2 2 0 012 2v16M9 7h2M9 11h2M9 15h2M15 7h2M15 11h2M15 15h2" />
-                        </svg>
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-[9px] font-medium uppercase tracking-wide text-slate-400">Company</p>
-                        <p title={companyName} className="truncate text-[11px] font-semibold text-primary-600 dark:text-primary-400">{companyName}</p>
-                      </div>
-                    </div>
-                    <div className="ml-2 flex shrink-0 flex-col items-end">
-                      <span className="text-[8px] font-medium uppercase tracking-wide text-slate-400">Code</span>
-                      <span className="max-w-[80px] truncate font-mono text-[9px] text-slate-500 dark:text-slate-400">{companyCode}</span>
-                    </div>
-                  </button>
-
-                  <div className="mt-3 grid grid-cols-2 gap-2">
-                    <div className="flex min-w-0 items-center gap-2 rounded-lg border border-slate-100 bg-white px-2.5 py-2 dark:border-white/10 dark:bg-white/[0.04]">
-                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500 dark:bg-white/[0.06] dark:text-slate-400">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 21s7-6.1 7-12a7 7 0 10-14 0c0 5.9 7 12 7 12z" />
-                          <circle cx="12" cy="9" r="2.2" />
-                        </svg>
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-[9px] font-medium uppercase tracking-wide text-slate-400">City</p>
-                        <p title={branch.city || "-"} className="truncate text-[11px] font-medium text-slate-700 dark:text-slate-200">{branch.city || "-"}</p>
-                      </div>
-                    </div>
-
-                    <div className="flex min-w-0 items-center gap-2 rounded-lg border border-slate-100 bg-white px-2.5 py-2 dark:border-white/10 dark:bg-white/[0.04]">
-                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500 dark:bg-white/[0.06] dark:text-slate-400">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h2.28a2 2 0 011.9 1.37l1.1 3.29a2 2 0 01-.45 2.05l-1.38 1.38a16 16 0 006.46 6.46l1.38-1.38a2 2 0 012.05-.45l3.29 1.1A2 2 0 0121 18.72V21a2 2 0 01-2 2h-1C9.72 23 1 14.28 1 4V3a2 2 0 012-2z" />
-                        </svg>
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-[9px] font-medium uppercase tracking-wide text-slate-400">Phone</p>
-                        <p title={branch.phone || "-"} className="truncate text-[11px] font-medium text-slate-700 dark:text-slate-200">{branch.phone || "-"}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="mt-3 flex items-center gap-2">
-                    <button type="button" onClick={() => handleEdit(branch)} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] font-semibold text-slate-700 transition-all hover:border-primary-200 hover:bg-primary-50 hover:text-primary-600 dark:border-white/10 dark:bg-white/[0.06] dark:text-slate-200 dark:hover:border-primary-500/40 dark:hover:bg-primary-500/10 dark:hover:text-primary-400">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a2.121 2.121 0 013 3l-9.9 9.9-4.137 1.034 1.034-4.137 9.9-9.9z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6" />
-                      </svg>
-                      Edit
-                    </button>
-                    {branch.is_active ? (
-                      <button type="button" onClick={() => handleDelete(branch)} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-2 text-[11px] font-semibold text-red-600 transition-all hover:bg-red-50 dark:border-red-900/40 dark:bg-white/[0.06] dark:text-red-400 dark:hover:bg-red-500/10">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M18 6L6 18M6 6l12 12" />
-                        </svg>
-                        Deactivate
-                      </button>
-                    ) : (
-                      <button type="button" onClick={() => handleReactivate(branch)} disabled={updateBranch.isPending} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-emerald-200 bg-white px-3 py-2 text-[11px] font-semibold text-emerald-600 transition-all hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-emerald-900/40 dark:bg-white/[0.06] dark:text-emerald-400 dark:hover:bg-emerald-500/10">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M4 12a8 8 0 018-8 8.5 8.5 0 017 4" />
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M20 4v5h-5" />
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M20 12a8 8 0 01-8 8 8.5 8.5 0 01-7-4" />
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M4 20v-5h5" />
-                        </svg>
-                        Reactivate
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                <div className={`border-t px-4 py-2 ${branch.is_active ? "border-slate-100 bg-slate-50/50 dark:border-white/10 dark:bg-white/[0.03]" : "border-red-100 bg-red-50/50 dark:border-red-900/20 dark:bg-red-950/20"}`}>
-                  <div className="flex items-center justify-between">
-                    <span className="text-[9px] font-medium uppercase tracking-wider text-slate-400">Branch Status</span>
-                    <span className={`flex items-center gap-1.5 text-[10px] font-semibold ${branch.is_active ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
-                      <span className={`h-1.5 w-1.5 rounded-full ${branch.is_active ? "bg-emerald-500" : "bg-red-500"}`} />
-                      {branch.is_active ? "Operational" : "Deactivated"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+          {filteredBranches.map((branch, i) => (
+            <BranchCard
+              key={branch.id}
+              branch={branch}
+              index={i}
+              statusBadge={statusBadge}
+              onEdit={() => handleEdit(branch)}
+              onDelete={() => handleDelete(branch)}
+              onReactivate={() => handleReactivate(branch)}
+              onViewCompany={() => branch.company?.id && setViewingCompanyId(branch.company.id)}
+              reactivating={updateBranch.isPending}
+            />
+          ))}
         </div>
       )}
 

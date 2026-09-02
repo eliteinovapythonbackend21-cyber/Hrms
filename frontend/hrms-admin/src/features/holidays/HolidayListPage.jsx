@@ -31,6 +31,12 @@ import TableToolbar from "@/components/table/TableToolbar";
 import { holidayApi } from "@/api/master.api";
 import { formatDate } from "@/utils/formatDate";
 import { useModulePermissions } from "@/hooks/useModulePermissions";
+import {
+  use3DTilt,
+  useMagnetic,
+  Motion3DStyles,
+  GridPattern,
+} from "@/hooks/use3DMotion";
 
 
 /* ============================================================
@@ -347,36 +353,42 @@ function SummaryCard({
     styles[tone] ||
     styles.primary;
 
+  const { ref, handlers } = use3DTilt({ max: 8, scale: 1.02 });
+
   return (
-    <div
-      className={`h-[100px] rounded-xl border bg-white px-3 py-2.5 shadow-sm transition hover:shadow-md dark:bg-white/[0.04] ${current.border}`}
-    >
-      <div className="flex h-full items-center justify-between gap-2">
+    <div className="u-tilt-perspective">
+      <div
+        ref={ref}
+        {...handlers}
+        className={`u-tilt u-glare relative h-[100px] overflow-hidden rounded-xl border bg-white px-3 py-2.5 shadow-sm dark:bg-white/[0.04] ${current.border}`}
+      >
+        <div className="u-tilt-content flex h-full items-center justify-between gap-2">
 
-        <div className="min-w-0">
+          <div className="min-w-0">
 
-          <p className="truncate text-[10px] font-medium text-slate-500 dark:text-slate-400">
-            {label}
-          </p>
+            <p className="truncate text-[10px] font-medium text-slate-500 dark:text-slate-400">
+              {label}
+            </p>
 
-          <p
-            className={`mt-1 text-xl font-bold ${current.value}`}
+            <p
+              className={`mt-1 text-xl font-bold ${current.value}`}
+            >
+              {value}
+            </p>
+
+            <p className="truncate text-[9px] text-slate-400">
+              {description}
+            </p>
+
+          </div>
+
+          <div
+            className={`u-float-layer flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold ${current.icon}`}
           >
-            {value}
-          </p>
-
-          <p className="truncate text-[9px] text-slate-400">
-            {description}
-          </p>
+            {icon}
+          </div>
 
         </div>
-
-        <div
-          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold ${current.icon}`}
-        >
-          {icon}
-        </div>
-
       </div>
     </div>
   );
@@ -487,6 +499,8 @@ export default function HolidayListPage() {
     useModulePermissions(
       "Holidays"
     );
+
+  const addMagnet = useMagnetic(0.25);
 
 
   /* ==========================================================
@@ -2163,21 +2177,26 @@ export default function HolidayListPage() {
 
   return (
     <div className="space-y-5">
+      <Motion3DStyles />
 
       {/* ======================================================
           HEADER
       ====================================================== */}
 
-      <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+      <div className="u-rise relative flex flex-col gap-4 overflow-hidden rounded-2xl border border-slate-200/80 bg-gradient-to-br from-white via-primary-50/40 to-white p-4 shadow-sm dark:border-white/[0.08] dark:from-primary-500/[0.08] dark:via-white/[0.02] dark:to-transparent xl:flex-row xl:items-center xl:justify-between">
+        <GridPattern id="holiday-grid" />
+        <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-primary-500/15 blur-3xl" />
 
-        <div>
+        <div className="relative">
 
           <div className="flex items-center gap-3">
 
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-600 text-white shadow-sm">
-              <span className="font-bold">
-                H
-              </span>
+            <div className="u-hover-float">
+              <div className="u-float-target flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 text-white shadow-lg shadow-primary-600/30 ring-1 ring-white/20">
+                <span className="font-bold">
+                  H
+                </span>
+              </div>
             </div>
 
             <div>
@@ -2197,7 +2216,7 @@ export default function HolidayListPage() {
         </div>
 
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="relative flex flex-wrap items-center gap-2">
 
           <TableToolbar
             onRefresh={
@@ -2218,18 +2237,20 @@ export default function HolidayListPage() {
           />
 
           {canAdd && (
-            <Button
-              onClick={
-                openAdd
-              }
-              className="h-10 px-4"
-            >
-              <span className="mr-1 text-lg">
-                +
-              </span>
+            <div ref={addMagnet.ref} {...addMagnet.handlers} className="inline-block will-change-transform">
+              <Button
+                onClick={
+                  openAdd
+                }
+                className="h-10 px-4 shadow-sm transition-shadow duration-200 hover:shadow-lg"
+              >
+                <span className="mr-1 text-lg leading-none transition-transform duration-300 hover:rotate-90">
+                  +
+                </span>
 
-              Add Holiday
-            </Button>
+                Add Holiday
+              </Button>
+            </div>
           )}
 
         </div>

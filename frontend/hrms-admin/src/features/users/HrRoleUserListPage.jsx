@@ -12,7 +12,11 @@ export default function HrRoleUserListPage() {
   const { roleSlug } = useParams();
   const role = ROLE_BY_SLUG[roleSlug];
   if (!role) {
-    return <div className="p-4 text-red-600 dark:text-red-400">Unknown role.</div>;
+    return (
+      <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-600 transition-opacity duration-300 dark:border-red-900/40 dark:bg-red-950/20 dark:text-red-400">
+        Unknown role.
+      </div>
+    );
   }
   return <UserListPage role={role} />;
 }

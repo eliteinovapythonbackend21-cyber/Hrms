@@ -2,6 +2,7 @@ import { useState } from "react";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import { isRequired, isNonNegativeNumber } from "@/utils/validators";
+import { useMagnetic, Motion3DStyles } from "@/hooks/use3DMotion";
 
 const RupeeIcon = () => (
   <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4">
@@ -12,6 +13,7 @@ const RupeeIcon = () => (
 export default function SalaryEditForm({ initialSalary = "", onSubmit, onReset, loading }) {
   const [salary, setSalary] = useState(initialSalary ?? "");
   const [error, setError] = useState("");
+  const submitMagnet = useMagnetic(0.2);
 
   const isUnchanged = Number(salary) === Number(initialSalary ?? 0);
 
@@ -31,7 +33,8 @@ export default function SalaryEditForm({ initialSalary = "", onSubmit, onReset, 
 
   return (
     <div>
-      <form onSubmit={handleSubmit}>
+      <Motion3DStyles />
+      <form onSubmit={handleSubmit} className="u-rise">
         <Input
           label="Salary"
           name="salary"
@@ -44,22 +47,24 @@ export default function SalaryEditForm({ initialSalary = "", onSubmit, onReset, 
           icon={<RupeeIcon />}
           required
         />
-        <Button
-          type="submit"
-          isLoading={loading}
-          disabled={isUnchanged}
-          className="w-full"
-        >
-          Update Salary
-        </Button>
+        <div ref={submitMagnet.ref} {...submitMagnet.handlers} className="w-full will-change-transform">
+          <Button
+            type="submit"
+            isLoading={loading}
+            disabled={isUnchanged}
+            className="w-full shadow-sm transition-shadow duration-200 hover:shadow-lg"
+          >
+            Update Salary
+          </Button>
+        </div>
       </form>
 
       {onReset && (
-        <div className="mt-4 border-t border-slate-100 pt-4 dark:border-slate-800">
+        <div className="u-rise mt-4 border-t border-slate-100 pt-4 dark:border-slate-800" style={{ animationDelay: "60ms" }}>
           <p className="mb-2 text-xs text-slate-400">
             Resetting sets this employee's salary to ₹0 — use with care.
           </p>
-          <Button variant="danger" onClick={onReset} className="w-full sm:w-auto">
+          <Button variant="danger" onClick={onReset} className="w-full transition-transform duration-200 hover:-translate-y-0.5 sm:w-auto">
             Reset Salary to 0
           </Button>
         </div>

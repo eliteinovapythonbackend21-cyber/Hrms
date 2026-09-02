@@ -10,6 +10,7 @@ import { validateUser } from "../userValidation";
 import { useCompanies } from "@/features/master/company/useCompanies";
 import { useCompanyBranches } from "@/features/master/branches/useBranches";
 import { masterApi } from "@/api/master.api";
+import { useMagnetic, Motion3DStyles } from "@/hooks/use3DMotion";
 
 export default function UserForm({ initialData = {}, onSubmit, loading, isAdmin = false }) {
   const [form, setForm] = useState({
@@ -25,6 +26,7 @@ export default function UserForm({ initialData = {}, onSubmit, loading, isAdmin 
     designation_id: "",
   });
   const [errors, setErrors] = useState({});
+  const submitMagnet = useMagnetic(0.2);
 
   /* =========================================================
      COMPANY / BRANCH FILTERS
@@ -201,7 +203,8 @@ export default function UserForm({ initialData = {}, onSubmit, loading, isAdmin 
 
   return (
     <form onSubmit={handleSubmit}>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
+      <Motion3DStyles />
+      <div className="u-rise grid grid-cols-1 sm:grid-cols-2 gap-x-4">
         <Input
           label="Username"
           name="username"
@@ -249,7 +252,7 @@ export default function UserForm({ initialData = {}, onSubmit, loading, isAdmin 
       </div>
 
       {isNewEmployee && (
-        <div className="mb-4 border-t border-slate-200 dark:border-white/10 pt-4">
+        <div className="u-rise mb-4 border-t border-slate-200 dark:border-white/10 pt-4">
           <p className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
             Employee record (this account will also appear in the Employees master)
           </p>
@@ -346,9 +349,11 @@ export default function UserForm({ initialData = {}, onSubmit, loading, isAdmin 
           </label>
         </div>
       )}
-      <Button type="submit" isLoading={loading} className="w-full">
-        {initialData.id ? "Update User" : "Create User"}
-      </Button>
+      <div ref={submitMagnet.ref} {...submitMagnet.handlers} className="w-full will-change-transform">
+        <Button type="submit" isLoading={loading} className="w-full shadow-sm transition-shadow duration-200 hover:shadow-lg">
+          {initialData.id ? "Update User" : "Create User"}
+        </Button>
+      </div>
     </form>
   );
 }

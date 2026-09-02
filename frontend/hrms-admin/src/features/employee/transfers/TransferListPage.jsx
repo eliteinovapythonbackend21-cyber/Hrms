@@ -10,6 +10,12 @@ import TableToolbar from "@/components/table/TableToolbar";
 import { useToast } from "@/components/feedback/Toast";
 import { useIsHrEmployee } from "@/hooks/useIsHrEmployee";
 import { useTableExport } from "@/hooks/useTableExport";
+import {
+  use3DTilt,
+  useMagnetic,
+  Motion3DStyles,
+  GridPattern,
+} from "@/hooks/use3DMotion";
 
 import { employeeLifecycleApi } from "@/api/employee.api";
 import { employeesApi } from "@/api/employees.api";
@@ -383,21 +389,29 @@ function StatCard({
   value,
   label,
 }) {
+  const { ref, handlers } = use3DTilt({ max: 9, scale: 1.02 });
+
   return (
-    <div className="rounded-xl border border-slate-200 bg-gradient-to-br from-white to-slate-50/60 p-5 shadow-sm dark:border-white/10 dark:from-primary-500/[0.06] dark:to-white/[0.02]">
-      <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-sky-50 text-sky-600 dark:bg-sky-500/10 dark:text-sky-400">
-          {icon}
-        </div>
+    <div className="u-tilt-perspective">
+      <div
+        ref={ref}
+        {...handlers}
+        className="u-tilt u-glare relative overflow-hidden rounded-xl border border-slate-200 bg-gradient-to-br from-white to-slate-50/60 p-5 shadow-sm dark:border-white/10 dark:from-primary-500/[0.06] dark:to-white/[0.02]"
+      >
+        <div className="u-tilt-content flex items-center gap-3">
+          <div className="u-float-layer flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-sky-50 text-sky-600 dark:bg-sky-500/10 dark:text-sky-400">
+            {icon}
+          </div>
 
-        <div>
-          <p className="text-2xl font-bold text-slate-900 dark:text-white">
-            {value}
-          </p>
+          <div>
+            <p className="text-2xl font-bold text-slate-900 dark:text-white">
+              {value}
+            </p>
 
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            {label}
-          </p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              {label}
+            </p>
+          </div>
         </div>
       </div>
     </div>
@@ -560,12 +574,17 @@ function DepartmentDetailsCard({
         </p>
 
         <span
-          className={`shrink-0 rounded-full px-2 py-1 text-[9px] font-semibold ${
+          className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2 py-1 text-[9px] font-semibold ${
             isActive
               ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300"
               : "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300"
           }`}
         >
+          <span
+            className={`h-1.5 w-1.5 rounded-full ${
+              isActive ? "bg-emerald-500 u-pulse" : "bg-red-500"
+            }`}
+          />
           {isActive
             ? "Active"
             : "Inactive"}
@@ -808,7 +827,7 @@ const TableIconButton = ({
       disabled={disabled}
       title={title}
       aria-label={title}
-      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${tones[tone]}`}
+      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-all duration-200 hover:-translate-y-0.5 hover:scale-110 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0 disabled:hover:scale-100 ${tones[tone]}`}
     >
       {children}
     </button>
@@ -825,6 +844,8 @@ export default function TransferListPage() {
 
   // HR-department employees: this screen is view-only.
   const { isHrEmployee: readOnly } = useIsHrEmployee();
+
+  const addMagnet = useMagnetic(0.25);
 
   /* =======================================================
      TRANSFERS
@@ -1738,8 +1759,11 @@ export default function TransferListPage() {
 
   if (isError) {
     return (
-      <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-600 dark:border-red-900/40 dark:bg-red-950/20 dark:text-red-400">
-        Failed to load transfers.
+      <div className="p-6">
+        <Motion3DStyles />
+        <div className="u-rise rounded-xl border border-red-200 bg-red-50 p-4 text-red-600 dark:border-red-900/40 dark:bg-red-950/20 dark:text-red-400">
+          Failed to load transfers.
+        </div>
       </div>
     );
   }
@@ -1750,12 +1774,17 @@ export default function TransferListPage() {
 
   return (
     <div className="min-w-0 space-y-5">
+      <Motion3DStyles />
+
       {/* ===================================================
           HEADER
       =================================================== */}
 
-      <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-        <div>
+      <div className="u-rise relative flex flex-col gap-4 overflow-hidden rounded-2xl border border-slate-200/80 bg-gradient-to-br from-white via-sky-50/40 to-white p-4 shadow-sm dark:border-white/[0.08] dark:from-sky-500/[0.08] dark:via-white/[0.02] dark:to-transparent xl:flex-row xl:items-center xl:justify-between">
+        <GridPattern id="transfer-grid" />
+        <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-sky-500/15 blur-3xl" />
+
+        <div className="relative">
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
             Transfers
           </h1>
@@ -1765,7 +1794,7 @@ export default function TransferListPage() {
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="relative flex flex-wrap items-center gap-2">
           <TableToolbar
             onRefresh={refetch}
             refreshing={isFetching}
@@ -1780,17 +1809,19 @@ export default function TransferListPage() {
               View only
             </span>
           ) : (
-          <Button
-            type="button"
-            onClick={handleAdd}
-            className="h-10 w-full px-4 sm:w-auto"
-          >
-            <span className="mr-1.5 text-lg">
-              +
-            </span>
+          <div ref={addMagnet.ref} {...addMagnet.handlers} className="inline-block w-full will-change-transform sm:w-auto">
+            <Button
+              type="button"
+              onClick={handleAdd}
+              className="h-10 w-full px-4 shadow-sm transition-shadow duration-200 hover:shadow-lg sm:w-auto"
+            >
+              <span className="mr-1.5 text-lg leading-none transition-transform duration-300 hover:rotate-90">
+                +
+              </span>
 
-            Add Transfer
-          </Button>
+              Add Transfer
+            </Button>
+          </div>
           )}
         </div>
       </div>
@@ -2591,7 +2622,7 @@ export default function TransferListPage() {
 
         <div className="grid grid-cols-1 items-start gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {paged.map(
-            (transfer) => {
+            (transfer, transferIdx) => {
               const employee =
                 employeeMap[
                   transfer.employee_id
@@ -2640,7 +2671,8 @@ export default function TransferListPage() {
               return (
                 <div
                   key={transfer.id}
-                  className="overflow-visible rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg dark:border-white/10 dark:bg-white/[0.04]"
+                  style={{ animationDelay: `${Math.min(transferIdx, 10) * 40}ms` }}
+                  className="u-rise overflow-visible rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl dark:border-white/10 dark:bg-white/[0.04]"
                 >
                   <div className="h-0.5 bg-primary-600" />
 

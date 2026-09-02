@@ -8,12 +8,14 @@ import { masterApi } from "@/api/master.api";
 import { toDateInputValue } from "@/utils/formatDate";
 import { validateEmployee } from "../employeeValidation";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { useMagnetic, Motion3DStyles } from "@/hooks/use3DMotion";
 
 const todayInputValue = toDateInputValue(new Date());
 
 export default function EmployeeForm({ initialData = {}, onSubmit, loading }) {
   const currentUser = useCurrentUser();
   const isEmployee = currentUser?.role === "employee";
+  const submitMagnet = useMagnetic(0.2);
 
   // Company/Branch are pure UI filters to narrow the Department dropdown,
   // same pattern as DesignationForm.jsx — only department_id/designation_id
@@ -217,7 +219,8 @@ export default function EmployeeForm({ initialData = {}, onSubmit, loading }) {
 
   return (
     <form onSubmit={handleSubmit}>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
+      <Motion3DStyles />
+      <div className="u-rise grid grid-cols-1 sm:grid-cols-2 gap-x-4">
         {isEdit && (
           <Input label="Employee Code" name="employee_code" value={initialData.employee_code || ""} disabled readOnly />
         )}
@@ -326,9 +329,11 @@ export default function EmployeeForm({ initialData = {}, onSubmit, loading }) {
           Active
         </label>
       </div>
-      <Button type="submit" isLoading={loading} className="w-full">
-        {initialData.id ? "Update Employee" : "Create Employee"}
-      </Button>
+      <div ref={submitMagnet.ref} {...submitMagnet.handlers} className="w-full will-change-transform">
+        <Button type="submit" isLoading={loading} className="w-full shadow-sm transition-shadow duration-200 hover:shadow-lg">
+          {initialData.id ? "Update Employee" : "Create Employee"}
+        </Button>
+      </div>
     </form>
   );
 }

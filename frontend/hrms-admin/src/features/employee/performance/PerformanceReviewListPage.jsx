@@ -23,6 +23,12 @@ import TableToolbar from "@/components/table/TableToolbar";
 import { useToast } from "@/components/feedback/Toast";
 import { useIsHrEmployee } from "@/hooks/useIsHrEmployee";
 import { useTableExport } from "@/hooks/useTableExport";
+import {
+  use3DTilt,
+  useMagnetic,
+  Motion3DStyles,
+  GridPattern,
+} from "@/hooks/use3DMotion";
 
 import {
   performanceBandLabel,
@@ -109,11 +115,220 @@ const EXPORT_COLUMNS = [
   },
 ];
 
+/* Tilt+glare stat tile used in the summary row. */
+function StatTile({ tone, label, value, hint, icon }) {
+  const { ref, handlers } = use3DTilt({ max: 9, scale: 1.02 });
+  const border = {
+    primary: "border-slate-200 dark:border-white/10",
+    emerald: "border-emerald-200/70 dark:border-emerald-500/20",
+    red: "border-rose-200/70 dark:border-rose-500/20",
+  }[tone];
+  const bg = {
+    primary: "bg-white dark:bg-white/[0.04]",
+    emerald: "bg-gradient-to-br from-emerald-50 to-emerald-100/40 dark:from-emerald-500/[0.12] dark:to-emerald-500/[0.02]",
+    red: "bg-gradient-to-br from-rose-50 to-rose-100/40 dark:from-rose-500/[0.12] dark:to-rose-500/[0.02]",
+  }[tone];
+  const valueColor = {
+    primary: "text-slate-900 dark:text-white",
+    emerald: "text-emerald-600 dark:text-emerald-400",
+    red: "text-red-600 dark:text-red-400",
+  }[tone];
+  const iconTone = {
+    primary: "bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400",
+    emerald: "bg-emerald-50 dark:bg-emerald-500/10",
+    red: "bg-red-50 dark:bg-red-500/10",
+  }[tone];
+
+  return (
+    <div className="u-tilt-perspective">
+      <div
+        ref={ref}
+        {...handlers}
+        className={`u-tilt u-glare relative h-[110px] overflow-hidden rounded-xl border px-4 py-3 shadow-sm ${border} ${bg}`}
+      >
+        <div className="u-tilt-content flex h-full items-center justify-between">
+          <div>
+            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">{label}</p>
+            <p className={`mt-1 text-2xl font-bold tracking-tight ${valueColor}`}>{value}</p>
+            <p className="mt-0.5 text-[11px] text-slate-400">{hint}</p>
+          </div>
+          <div className={`u-float-layer flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${iconTone}`}>
+            {icon}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* 3D tilt+glare review card, extracted so its tilt hook lives per-card. */
+function ReviewCard({
+  review,
+  index,
+  statusBadge,
+  getEmployeeName,
+  getEmployeeCode,
+  getCompanyName,
+  getBranchName,
+  getDepartmentName,
+  getDesignationName,
+  onEdit,
+  onDelete,
+  onReactivate,
+  reactivating,
+}) {
+  const { ref, handlers } = use3DTilt({ max: 10, scale: 1.02 });
+
+  return (
+    <div
+      className="u-tilt-perspective u-rise"
+      style={{ animationDelay: `${Math.min(index, 10) * 45}ms` }}
+    >
+      <div
+        ref={ref}
+        {...handlers}
+        className={`u-tilt u-glare relative overflow-hidden rounded-2xl border bg-white p-4 shadow-sm dark:bg-white/[0.04] ${
+          review.is_active
+            ? "border-slate-200 dark:border-white/10"
+            : "border-red-100 dark:border-red-900/30"
+        }`}
+      >
+        <div className="u-tilt-content flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h3 className="truncate font-semibold text-slate-900 dark:text-white">
+              {getEmployeeName(review)}
+            </h3>
+
+            <p className="font-mono text-[10px] text-slate-400">
+              {getEmployeeCode(review)}
+            </p>
+          </div>
+
+          {statusBadge(review.is_active)}
+        </div>
+
+        <div className="my-3 border-t border-slate-100 dark:border-white/10" />
+
+        <div className="u-tilt-content grid grid-cols-2 gap-3 text-xs">
+          <div>
+            <p className="text-slate-400">Review Period</p>
+            <p className="mt-0.5 font-medium text-slate-700 dark:text-slate-200">
+              {review.review_period || "-"}
+            </p>
+          </div>
+
+          <div>
+            <p className="text-slate-400">Hierarchy</p>
+            <p className="mt-0.5 font-medium text-slate-700 dark:text-slate-200">
+              {review.hierarchy_level || "-"}
+            </p>
+          </div>
+
+          <div>
+            <p className="text-slate-400">Company</p>
+            <p className="mt-0.5 truncate font-medium text-slate-700 dark:text-slate-200">
+              {getCompanyName(review)}
+            </p>
+          </div>
+
+          <div>
+            <p className="text-slate-400">Branch</p>
+            <p className="mt-0.5 truncate font-medium text-slate-700 dark:text-slate-200">
+              {getBranchName(review)}
+            </p>
+          </div>
+
+          <div>
+            <p className="text-slate-400">Department</p>
+            <p className="mt-0.5 truncate font-medium text-slate-700 dark:text-slate-200">
+              {getDepartmentName(review)}
+            </p>
+          </div>
+
+          <div>
+            <p className="text-slate-400">Designation</p>
+            <p className="mt-0.5 truncate font-medium text-slate-700 dark:text-slate-200">
+              {getDesignationName(review)}
+            </p>
+          </div>
+        </div>
+
+        <div className="u-tilt-content mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <div className="rounded-lg bg-slate-50 p-2 text-center transition-transform duration-200 hover:-translate-y-0.5 dark:bg-white/[0.06]">
+            <p className="text-[9px] text-slate-400">Day-to-Day</p>
+            <p className="mt-1">
+              <PerfPill score={review.day_to_day_performance} />
+            </p>
+          </div>
+
+          <div className="rounded-lg bg-slate-50 p-2 text-center transition-transform duration-200 hover:-translate-y-0.5 dark:bg-white/[0.06]">
+            <p className="text-[9px] text-slate-400">Work</p>
+            <p className="mt-1">
+              <PerfPill score={review.work_performance} />
+            </p>
+          </div>
+
+          <div className="rounded-lg bg-slate-50 p-2 text-center transition-transform duration-200 hover:-translate-y-0.5 dark:bg-white/[0.06]">
+            <p className="text-[9px] text-slate-400">Behavior</p>
+            <p className="mt-1">
+              <PerfPill score={review.behavioral_performance} />
+            </p>
+          </div>
+
+          <div className="u-float-layer rounded-lg bg-primary-50 p-2 text-center dark:bg-primary-500/10">
+            <p className="text-[9px] text-primary-500">Average</p>
+            <p className="mt-1">
+              <span
+                className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ${performanceBandClass(
+                  averagePerformanceBand(review)
+                )}`}
+              >
+                {averagePerformanceBand(review)}
+              </span>
+            </p>
+          </div>
+        </div>
+
+        <div className="u-tilt-content mt-4 flex items-center gap-2">
+          <button
+            type="button"
+            onClick={onEdit}
+            className="flex flex-1 items-center justify-center rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-50 hover:shadow-sm dark:border-white/10 dark:text-slate-200 dark:hover:bg-slate-800"
+          >
+            Edit
+          </button>
+
+          {review.is_active ? (
+            <button
+              type="button"
+              onClick={onDelete}
+              className="flex flex-1 items-center justify-center rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-600 transition-all duration-200 hover:-translate-y-0.5 hover:bg-red-50 hover:shadow-sm dark:border-red-900/40 dark:text-red-400 dark:hover:bg-red-500/10"
+            >
+              Deactivate
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={onReactivate}
+              disabled={reactivating}
+              className="flex flex-1 items-center justify-center rounded-lg border border-emerald-200 px-3 py-2 text-xs font-semibold text-emerald-600 transition-all duration-200 hover:-translate-y-0.5 hover:bg-emerald-50 hover:shadow-sm disabled:opacity-50 dark:border-emerald-900/40 dark:text-emerald-400 dark:hover:bg-emerald-500/10"
+            >
+              Reactivate
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function PerformanceReviewListPage() {
   const { showToast } = useToast();
 
   // HR-department employees: this screen is view-only.
   const { isHrEmployee: readOnly } = useIsHrEmployee();
+
+  const addMagnet = useMagnetic(0.28);
 
   // ============================================================
   // PAGE / SEARCH
@@ -573,7 +788,7 @@ export default function PerformanceReviewListPage() {
       <span
         className={
           isActive
-            ? "h-1.5 w-1.5 rounded-full bg-emerald-500"
+            ? "h-1.5 w-1.5 rounded-full bg-emerald-500 u-pulse"
             : "h-1.5 w-1.5 rounded-full bg-red-500"
         }
       />
@@ -589,7 +804,8 @@ export default function PerformanceReviewListPage() {
   if (isError) {
     return (
       <div className="p-6">
-        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-600 dark:border-red-900/40 dark:bg-red-950/20 dark:text-red-400">
+        <Motion3DStyles />
+        <div className="u-rise rounded-xl border border-red-200 bg-red-50 p-4 text-red-600 dark:border-red-900/40 dark:bg-red-950/20 dark:text-red-400">
           <h2 className="font-semibold">
             Failed to load performance reviews
           </h2>
@@ -610,15 +826,21 @@ export default function PerformanceReviewListPage() {
 
   return (
     <div className="space-y-5">
+      <Motion3DStyles />
 
       {/* ======================================================
           HEADER
       ====================================================== */}
 
-      <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary-600 text-white shadow-sm">
-            <span className="text-lg font-bold">P</span>
+      <div className="u-rise relative flex flex-col gap-4 overflow-hidden rounded-2xl border border-slate-200/80 bg-gradient-to-br from-white via-primary-50/40 to-white p-4 shadow-sm dark:border-white/[0.08] dark:from-primary-500/[0.08] dark:via-white/[0.02] dark:to-transparent xl:flex-row xl:items-center xl:justify-between">
+        <GridPattern id="performance-grid" />
+        <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-primary-500/15 blur-3xl" />
+
+        <div className="relative flex items-center gap-3">
+          <div className="u-hover-float">
+            <div className="u-float-target flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 text-white shadow-lg shadow-primary-600/30 ring-1 ring-white/20">
+              <span className="text-lg font-bold">P</span>
+            </div>
           </div>
 
           <div>
@@ -632,7 +854,7 @@ export default function PerformanceReviewListPage() {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="relative flex flex-wrap items-center gap-2">
           <TableToolbar
             onRefresh={refetch}
             refreshing={isFetching}
@@ -647,14 +869,16 @@ export default function PerformanceReviewListPage() {
               View only
             </span>
           ) : (
-          <Button
-            type="button"
-            onClick={handleAdd}
-            className="h-10 w-full px-4 sm:w-auto"
-          >
-            <span className="mr-1.5 text-lg">+</span>
-            Add Review
-          </Button>
+          <div ref={addMagnet.ref} {...addMagnet.handlers} className="inline-block w-full will-change-transform sm:w-auto">
+            <Button
+              type="button"
+              onClick={handleAdd}
+              className="h-10 w-full px-4 shadow-sm transition-shadow duration-200 hover:shadow-lg sm:w-auto"
+            >
+              <span className="mr-1.5 text-lg leading-none transition-transform duration-300 hover:rotate-90">+</span>
+              Add Review
+            </Button>
+          </div>
           )}
         </div>
       </div>
@@ -664,71 +888,27 @@ export default function PerformanceReviewListPage() {
       ====================================================== */}
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div className="h-[110px] rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
-          <div className="flex h-full items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                Total Reviews
-              </p>
-
-              <p className="mt-1 text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-                {reviews.length}
-              </p>
-
-              <p className="mt-0.5 text-[11px] text-slate-400">
-                Current page
-              </p>
-            </div>
-
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
-              <span className="text-sm font-bold">P</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="h-[110px] rounded-xl border border-emerald-200/70 bg-gradient-to-br from-emerald-50 to-emerald-100/40 px-4 py-3 shadow-sm dark:border-emerald-500/20 dark:from-emerald-500/[0.12] dark:to-emerald-500/[0.02]">
-          <div className="flex h-full items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                Active Reviews
-              </p>
-
-              <p className="mt-1 text-2xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400">
-                {activeReviews.length}
-              </p>
-
-              <p className="mt-0.5 text-[11px] text-slate-400">
-                Currently active
-              </p>
-            </div>
-
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50 dark:bg-emerald-500/10">
-              <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
-            </div>
-          </div>
-        </div>
-
-        <div className="h-[110px] rounded-xl border border-rose-200/70 bg-gradient-to-br from-rose-50 to-rose-100/40 px-4 py-3 shadow-sm dark:border-rose-500/20 dark:from-rose-500/[0.12] dark:to-rose-500/[0.02]">
-          <div className="flex h-full items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                Inactive Reviews
-              </p>
-
-              <p className="mt-1 text-2xl font-bold tracking-tight text-red-600 dark:text-red-400">
-                {inactiveReviews.length}
-              </p>
-
-              <p className="mt-0.5 text-[11px] text-slate-400">
-                Deactivated reviews
-              </p>
-            </div>
-
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-red-50 dark:bg-red-500/10">
-              <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
-            </div>
-          </div>
-        </div>
+        <StatTile
+          tone="primary"
+          label="Total Reviews"
+          value={reviews.length}
+          hint="Current page"
+          icon={<span className="text-sm font-bold">P</span>}
+        />
+        <StatTile
+          tone="emerald"
+          label="Active Reviews"
+          value={activeReviews.length}
+          hint="Currently active"
+          icon={<span className="h-2.5 w-2.5 rounded-full bg-emerald-500 u-pulse" />}
+        />
+        <StatTile
+          tone="red"
+          label="Inactive Reviews"
+          value={inactiveReviews.length}
+          hint="Deactivated reviews"
+          icon={<span className="h-2.5 w-2.5 rounded-full bg-red-500" />}
+        />
       </div>
 
       {/* ======================================================
@@ -1112,150 +1292,23 @@ export default function PerformanceReviewListPage() {
         viewMode === "card" &&
         filteredReviews.length > 0 && (
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {filteredReviews.map((review) => (
-              <div
+            {filteredReviews.map((review, i) => (
+              <ReviewCard
                 key={review.id}
-                className={`rounded-2xl border bg-white p-4 shadow-sm dark:bg-white/[0.04] ${
-                  review.is_active
-                    ? "border-slate-200 dark:border-white/10"
-                    : "border-red-100 dark:border-red-900/30"
-                }`}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <h3 className="truncate font-semibold text-slate-900 dark:text-white">
-                      {getEmployeeName(review)}
-                    </h3>
-
-                    <p className="font-mono text-[10px] text-slate-400">
-                      {getEmployeeCode(review)}
-                    </p>
-                  </div>
-
-                  {statusBadge(review.is_active)}
-                </div>
-
-                <div className="my-3 border-t border-slate-100 dark:border-white/10" />
-
-                <div className="grid grid-cols-2 gap-3 text-xs">
-                  <div>
-                    <p className="text-slate-400">Review Period</p>
-                    <p className="mt-0.5 font-medium text-slate-700 dark:text-slate-200">
-                      {review.review_period || "-"}
-                    </p>
-                  </div>
-
-                  <div>
-                    <p className="text-slate-400">Hierarchy</p>
-                    <p className="mt-0.5 font-medium text-slate-700 dark:text-slate-200">
-                      {review.hierarchy_level || "-"}
-                    </p>
-                  </div>
-
-                  <div>
-                    <p className="text-slate-400">Company</p>
-                    <p className="mt-0.5 truncate font-medium text-slate-700 dark:text-slate-200">
-                      {getCompanyName(review)}
-                    </p>
-                  </div>
-
-                  <div>
-                    <p className="text-slate-400">Branch</p>
-                    <p className="mt-0.5 truncate font-medium text-slate-700 dark:text-slate-200">
-                      {getBranchName(review)}
-                    </p>
-                  </div>
-
-                  <div>
-                    <p className="text-slate-400">Department</p>
-                    <p className="mt-0.5 truncate font-medium text-slate-700 dark:text-slate-200">
-                      {getDepartmentName(review)}
-                    </p>
-                  </div>
-
-                  <div>
-                    <p className="text-slate-400">Designation</p>
-                    <p className="mt-0.5 truncate font-medium text-slate-700 dark:text-slate-200">
-                      {getDesignationName(review)}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-                  <div className="rounded-lg bg-slate-50 p-2 text-center dark:bg-white/[0.06]">
-                    <p className="text-[9px] text-slate-400">
-                      Day-to-Day
-                    </p>
-                    <p className="mt-1">
-                      <PerfPill score={review.day_to_day_performance} />
-                    </p>
-                  </div>
-
-                  <div className="rounded-lg bg-slate-50 p-2 text-center dark:bg-white/[0.06]">
-                    <p className="text-[9px] text-slate-400">
-                      Work
-                    </p>
-                    <p className="mt-1">
-                      <PerfPill score={review.work_performance} />
-                    </p>
-                  </div>
-
-                  <div className="rounded-lg bg-slate-50 p-2 text-center dark:bg-white/[0.06]">
-                    <p className="text-[9px] text-slate-400">
-                      Behavior
-                    </p>
-                    <p className="mt-1">
-                      <PerfPill score={review.behavioral_performance} />
-                    </p>
-                  </div>
-
-                  <div className="rounded-lg bg-primary-50 p-2 text-center dark:bg-primary-500/10">
-                    <p className="text-[9px] text-primary-500">
-                      Average
-                    </p>
-                    <p className="mt-1">
-                      <span
-                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ${performanceBandClass(
-                          averagePerformanceBand(review)
-                        )}`}
-                      >
-                        {averagePerformanceBand(review)}
-                      </span>
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mt-4 flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => handleEdit(review)}
-                    className="flex flex-1 items-center justify-center rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-white/10 dark:text-slate-200 dark:hover:bg-slate-800"
-                  >
-                    Edit
-                  </button>
-
-                  {review.is_active ? (
-                    <button
-                      type="button"
-                      onClick={() => handleDelete(review)}
-                      className="flex flex-1 items-center justify-center rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 dark:border-red-900/40 dark:text-red-400 dark:hover:bg-red-500/10"
-                    >
-                      Deactivate
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => handleReactivate(review)}
-                      disabled={
-                        updatePerformanceReview.isPending
-                      }
-                      className="flex flex-1 items-center justify-center rounded-lg border border-emerald-200 px-3 py-2 text-xs font-semibold text-emerald-600 hover:bg-emerald-50 disabled:opacity-50 dark:border-emerald-900/40 dark:text-emerald-400 dark:hover:bg-emerald-500/10"
-                    >
-                      Reactivate
-                    </button>
-                  )}
-                </div>
-              </div>
+                review={review}
+                index={i}
+                statusBadge={statusBadge}
+                getEmployeeName={getEmployeeName}
+                getEmployeeCode={getEmployeeCode}
+                getCompanyName={getCompanyName}
+                getBranchName={getBranchName}
+                getDepartmentName={getDepartmentName}
+                getDesignationName={getDesignationName}
+                onEdit={() => handleEdit(review)}
+                onDelete={() => handleDelete(review)}
+                onReactivate={() => handleReactivate(review)}
+                reactivating={updatePerformanceReview.isPending}
+              />
             ))}
           </div>
         )}

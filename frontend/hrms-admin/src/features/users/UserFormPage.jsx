@@ -17,6 +17,12 @@ import LoadingSpinner from "@/components/feedback/LoadingSpinner";
 import Button from "@/components/ui/Button";
 
 import { getUser } from "@/utils/tokenHelpers";
+import {
+  use3DTilt,
+  useMagnetic,
+  Motion3DStyles,
+  GridPattern,
+} from "@/hooks/use3DMotion";
 
 // Module identity: indigo — matches UserProfilePage.
 const INDIGO = {
@@ -31,6 +37,9 @@ export default function UserFormPage() {
   const location = useLocation();
 
   const { showToast } = useToast();
+
+  const cardTilt = use3DTilt({ max: 6, scale: 1.01 });
+  const backMagnet = useMagnetic(0.25);
 
   /*
    * Edit mode
@@ -231,9 +240,12 @@ export default function UserFormPage() {
    */
   if (isEdit && loadingUser) {
     return (
-      <div className="flex justify-center py-16">
-        <LoadingSpinner />
-      </div>
+      <>
+        <Motion3DStyles />
+        <div className="flex justify-center py-16">
+          <LoadingSpinner />
+        </div>
+      </>
     );
   }
 
@@ -243,7 +255,8 @@ export default function UserFormPage() {
   if (isEdit && userError) {
     return (
       <div className="mx-auto max-w-lg py-10">
-        <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
+        <Motion3DStyles />
+        <div className="u-rise rounded-xl border border-red-200 bg-red-50 p-6 text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
           <h2 className="font-semibold">
             Failed to load user
           </h2>
@@ -294,18 +307,26 @@ export default function UserFormPage() {
 
   return (
     <div className="mx-auto max-w-lg space-y-5">
+      <Motion3DStyles />
+
       {/* =========================
           HEADER
           ========================= */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
+      <div className="u-rise relative flex flex-col gap-3 overflow-hidden rounded-2xl border border-slate-200/80 bg-gradient-to-br from-white via-indigo-50/40 to-white p-4 shadow-sm dark:border-white/[0.08] dark:from-indigo-500/[0.08] dark:via-white/[0.02] dark:to-transparent sm:flex-row sm:items-center sm:justify-between">
+        <GridPattern id="userform-grid" />
+
+        <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-indigo-500/15 blur-3xl" />
+
+        <div className="relative flex items-center gap-3">
           {/* Icon */}
-          <div
-            className={`flex h-10 w-10 items-center justify-center rounded-xl text-white shadow-sm ${INDIGO.icon}`}
-          >
-            <span className="font-bold">
-              U
-            </span>
+          <div className="u-hover-float">
+            <div
+              className={`u-float-target flex h-11 w-11 items-center justify-center rounded-xl text-white shadow-lg shadow-indigo-600/30 ring-1 ring-white/20 ${INDIGO.icon}`}
+            >
+              <span className="font-bold">
+                U
+              </span>
+            </div>
           </div>
 
           {/* Title */}
@@ -331,29 +352,43 @@ export default function UserFormPage() {
         </div>
 
         {/* Back Button */}
-        <Button
-          type="button"
-          variant="secondary"
-          onClick={handleBack}
-          className="w-full sm:w-auto"
+        <div
+          ref={backMagnet.ref}
+          {...backMagnet.handlers}
+          className="relative inline-block w-full will-change-transform sm:w-auto"
         >
-          Back
-        </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={handleBack}
+            className="w-full transition-shadow duration-200 hover:shadow-md sm:w-auto"
+          >
+            Back
+          </Button>
+        </div>
       </div>
 
       {/* =========================
           FORM CARD
           ========================= */}
-      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
-        <UserForm
-          initialData={initialData}
-          onSubmit={handleSubmit}
-          loading={
-            createUser.isPending ||
-            updateUser.isPending
-          }
-          isAdmin={isAdmin}
-        />
+      <div className="u-rise u-tilt-perspective" style={{ animationDelay: "70ms" }}>
+        <div
+          ref={cardTilt.ref}
+          {...cardTilt.handlers}
+          className="u-tilt u-glare relative overflow-hidden rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-white/[0.04]"
+        >
+          <div className="u-tilt-content">
+            <UserForm
+              initialData={initialData}
+              onSubmit={handleSubmit}
+              loading={
+                createUser.isPending ||
+                updateUser.isPending
+              }
+              isAdmin={isAdmin}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );

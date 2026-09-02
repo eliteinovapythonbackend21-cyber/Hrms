@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Button from "@/components/ui/Button";
 import { masterApi } from "@/api/master.api";
+import { useMagnetic, Motion3DStyles } from "@/hooks/use3DMotion";
 
 const initialForm = {
   company_id: "",
@@ -25,6 +26,8 @@ export default function BranchForm({
 }) {
   const [form, setForm] = useState(initialForm);
   const [errors, setErrors] = useState({});
+
+  const submitMagnet = useMagnetic(0.22);
 
   // Dedicated, active-only company fetch — deliberately separate from
   // whatever BranchListPage uses for its "All Companies" filter dropdown.
@@ -117,17 +120,29 @@ export default function BranchForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div>
-        <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
-          Branch Information
-        </h2>
+      <Motion3DStyles />
 
-        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-          Enter the branch details.
-        </p>
+      <div className="u-rise flex items-center gap-3">
+        <div className="u-hover-float">
+          <div className="u-float-target flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-primary-500 to-primary-700 text-white shadow-sm shadow-primary-600/30">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 21s7-6.1 7-12a7 7 0 10-14 0c0 5.9 7 12 7 12z" />
+              <circle cx="12" cy="9" r="2.2" />
+            </svg>
+          </div>
+        </div>
+        <div>
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
+            Branch Information
+          </h2>
+
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            Enter the branch details.
+          </p>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="u-rise grid grid-cols-1 md:grid-cols-2 gap-4" style={{ animationDelay: "60ms" }}>
         <div className="md:col-span-2">
           <label className="block text-sm font-medium mb-1">
             Company *
@@ -314,20 +329,28 @@ export default function BranchForm({
           type="button"
           variant="secondary"
           onClick={onCancel}
+          className="transition-transform duration-200 hover:-translate-y-0.5"
         >
           Cancel
         </Button>
 
-        <Button
-          type="submit"
-          disabled={isSubmitting}
+        <div
+          ref={submitMagnet.ref}
+          {...submitMagnet.handlers}
+          className="inline-block will-change-transform"
         >
-          {isSubmitting
-            ? "Saving..."
-            : initialData
-              ? "Update Branch"
-              : "Create Branch"}
-        </Button>
+          <Button
+            type="submit"
+            disabled={isSubmitting}
+            className="shadow-sm transition-shadow duration-200 hover:shadow-lg"
+          >
+            {isSubmitting
+              ? "Saving..."
+              : initialData
+                ? "Update Branch"
+                : "Create Branch"}
+          </Button>
+        </div>
       </div>
     </form>
   );
