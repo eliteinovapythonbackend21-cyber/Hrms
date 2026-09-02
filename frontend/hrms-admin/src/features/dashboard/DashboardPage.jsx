@@ -18,7 +18,6 @@ import { useLeaveStatusBreakdown } from "./useLeaveStatusBreakdown";
 import CountsSummary from "./components/CountsSummary";
 import AttendanceTrendChart from "./components/AttendanceTrendChart";
 import LeaveStatusChart from "./components/LeaveStatusChart";
-import MyStatusSummary from "./components/MyStatusSummary";
 import MyQuickLinks from "./components/MyQuickLinks";
 import MyProfileCard from "./components/MyProfileCard";
 import CheckInOutWidget from "@/features/attendance/CheckInOutWidget";
@@ -670,16 +669,6 @@ export default function DashboardPage() {
             <MyProfileCard />
           </section>
 
-          <section>
-            <SectionHeading
-              icon={<UsersIcon />}
-              tone="primary"
-              title="Your workspace"
-              subtitle="Your attendance, leave and recent HR activity"
-            />
-
-            <MyStatusSummary />
-          </section>
 
           {isCrmEmployee && (
             <section>

@@ -131,9 +131,16 @@ export default function AttendanceTable({ data, loading, sortBy, sortDir, onSort
       label: "Status",
       sortable: true,
       render: (r) => (
-        <Badge className={domainColors.attendanceStatus[r.attendance_status] || "bg-slate-100 text-slate-700 dark:bg-slate-500/20 dark:text-slate-300"}>
-          {r.attendance_status}
-        </Badge>
+        <div className="flex flex-col items-start gap-1">
+          <Badge className={domainColors.attendanceStatus[r.attendance_status] || "bg-slate-100 text-slate-700 dark:bg-slate-500/20 dark:text-slate-300"}>
+            {r.attendance_status}
+          </Badge>
+          {r.permission_over_limit && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-rose-700 ring-1 ring-inset ring-rose-500/30 dark:bg-rose-500/15 dark:text-rose-300 dark:ring-rose-400/40">
+              ⚠ Critical
+            </span>
+          )}
+        </div>
       ),
     },
   ];

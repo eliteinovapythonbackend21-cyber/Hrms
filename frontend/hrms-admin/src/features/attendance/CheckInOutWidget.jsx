@@ -142,6 +142,18 @@ function ReasonPrompt({
    SUMMARY TILE
 ========================================================= */
 
+const LoginIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="h-4 w-4">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3" />
+  </svg>
+);
+
+const LogoutIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="h-4 w-4">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
+  </svg>
+);
+
 function SummaryTile({ label, value, tone = "slate" }) {
   const tones = {
     slate: "text-slate-800 dark:text-slate-100",
@@ -397,32 +409,44 @@ export default function CheckInOutWidget() {
 
   return (
     <div className="card-elevated p-6">
-      <div className="mb-4 flex items-center justify-between gap-3">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
           Check In / Check Out
         </h2>
 
-        <span
-          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ring-inset ${
-            paused
-              ? "bg-amber-50 text-amber-700 ring-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300"
+        <div className="flex flex-wrap items-center gap-2">
+          {record?.permission_over_limit && (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-100 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-rose-700 ring-1 ring-inset ring-rose-500/30 dark:bg-rose-500/15 dark:text-rose-300 dark:ring-rose-400/40">
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-500 opacity-75" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-rose-600" />
+              </span>
+              Critical · Permission exceeded
+            </span>
+          )}
+
+          <span
+            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ring-inset ${
+              paused
+                ? "bg-amber-50 text-amber-700 ring-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300"
+                : openSession
+                ? "bg-emerald-50 text-emerald-700 ring-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300"
+                : doneForDay
+                ? "bg-slate-100 text-slate-600 ring-slate-500/15 dark:bg-white/10 dark:text-slate-300"
+                : "bg-rose-50 text-rose-700 ring-rose-500/20 dark:bg-rose-500/10 dark:text-rose-300"
+            }`}
+          >
+            {paused
+              ? `${BREAK_META[lastOutType]?.emoji || ""} On ${
+                  BREAK_META[lastOutType]?.label || "break"
+                }`
               : openSession
-              ? "bg-emerald-50 text-emerald-700 ring-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300"
+              ? "Checked in"
               : doneForDay
-              ? "bg-slate-100 text-slate-600 ring-slate-500/15 dark:bg-white/10 dark:text-slate-300"
-              : "bg-rose-50 text-rose-700 ring-rose-500/20 dark:bg-rose-500/10 dark:text-rose-300"
-          }`}
-        >
-          {paused
-            ? `${BREAK_META[lastOutType]?.emoji || ""} On ${
-                BREAK_META[lastOutType]?.label || "break"
-              }`
-            : openSession
-            ? "Checked in"
-            : doneForDay
-            ? "Done for today"
-            : "Not checked in"}
-        </span>
+              ? "Done for today"
+              : "Not checked in"}
+          </span>
+        </div>
       </div>
 
       {!employeeId && (
@@ -588,13 +612,16 @@ export default function CheckInOutWidget() {
         </div>
       )}
 
-      {/* ACTIONS */}
+      {/* ================= PRIMARY ACTION ================= */}
       {doneForDay ? (
         <div className="space-y-2">
           <p className="rounded-lg bg-slate-50 px-3 py-2.5 text-sm text-slate-600 dark:bg-white/[0.04] dark:text-slate-300">
             You have checked out for the day
             {record?.check_out
-              ? ` at ${new Date(record.check_out).toLocaleTimeString()}`
+              ? ` at ${new Date(record.check_out).toLocaleTimeString(undefined, {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}`
               : ""}
             .
           </p>
@@ -611,22 +638,21 @@ export default function CheckInOutWidget() {
         </div>
       ) : openSession ? (
         <div className="space-y-4">
-          {/* Check out for the day — first */}
-          <div className="flex justify-center">
-            <Button
-              onClick={handleEndOfDay}
-              isLoading={saving}
-              disabled={!employeeId}
-              className="h-10 rounded-lg px-6 text-sm font-semibold"
-            >
-              🏁 Check out for the day
-            </Button>
-          </div>
+          {/* CHECK OUT — big primary button */}
+          <button
+            type="button"
+            onClick={handleEndOfDay}
+            disabled={!employeeId || saving}
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-rose-500 to-rose-600 text-sm font-bold text-white shadow-lg shadow-rose-600/25 transition hover:from-rose-500 hover:to-rose-700 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <LogoutIcon />
+            {saving ? "Working…" : "Check Out"}
+          </button>
 
-          {/* Then break / permission */}
+          {/* Or check out for a break / permission */}
           <div>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-              Check out for a break / permission
+            <p className="mb-2 text-center text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+              or check out for a break / permission
             </p>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               {BREAK_OPTIONS.map((opt) => (
@@ -645,33 +671,22 @@ export default function CheckInOutWidget() {
           </div>
         </div>
       ) : (
-        <div className="flex justify-center">
-          <Button
-            onClick={handleCheckIn}
-            isLoading={saving}
-            disabled={!employeeId}
-            className="inline-flex h-10 items-center gap-2 rounded-lg px-8 text-sm font-semibold"
-          >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.4"
-              className="h-4 w-4"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="m5 12 5 5L20 7"
-              />
-            </svg>
-            {paused
-              ? `Check in — back from ${
-                  BREAK_META[lastOutType]?.label || "break"
-                }`
-              : "Check In"}
-          </Button>
-        </div>
+        /* CHECK IN — big primary button (initial or resume from break) */
+        <button
+          type="button"
+          onClick={handleCheckIn}
+          disabled={!employeeId || saving}
+          className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 text-sm font-bold text-white shadow-lg shadow-emerald-600/25 transition hover:from-emerald-500 hover:to-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <LoginIcon />
+          {saving
+            ? "Working…"
+            : paused
+            ? `Check In — resume from ${
+                BREAK_META[lastOutType]?.label || "break"
+              }`
+            : "Check In"}
+        </button>
       )}
 
       <ReasonPrompt

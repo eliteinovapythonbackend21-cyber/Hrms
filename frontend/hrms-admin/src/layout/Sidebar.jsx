@@ -413,48 +413,73 @@ export default function Sidebar() {
           <ThemeToggle collapsed={sidebarCollapsed} />
         </div>
 
-        {/* PROFILE DETAILS — below the theme selection, employee logins */}
-        {!sidebarCollapsed &&
-          user?.role === "employee" &&
-          myEmployee && (
-            <div className="shrink-0 border-t border-slate-200/80 px-3 py-3 dark:border-white/[0.08]">
-              <p className="mb-1.5 text-[9px] font-semibold uppercase tracking-[0.16em] text-slate-400 dark:text-slate-600">
-                My profile
-              </p>
-              <dl className="space-y-1 text-[10.5px] leading-tight">
-                <div className="flex justify-between gap-2">
-                  <dt className="text-slate-400 dark:text-slate-500">Code</dt>
-                  <dd className="truncate font-medium text-slate-600 dark:text-slate-300">
-                    {myEmployee.employee_code || "—"}
-                  </dd>
-                </div>
-                <div className="flex justify-between gap-2">
-                  <dt className="text-slate-400 dark:text-slate-500">Phone</dt>
-                  <dd className="truncate font-medium text-slate-600 dark:text-slate-300">
-                    {myEmployee.phone || currentUser?.mobile || "—"}
-                  </dd>
-                </div>
-                <div className="flex justify-between gap-2">
-                  <dt className="text-slate-400 dark:text-slate-500">Emergency</dt>
-                  <dd className="truncate font-medium text-slate-600 dark:text-slate-300">
-                    {currentUser?.emergency_contact_number ||
-                      myEmployee.emergency_contact_number ||
-                      "—"}
-                  </dd>
-                </div>
-              </dl>
-              <NavLink
-                to={
-                  currentUser?.employee?.id
-                    ? `/employees/${currentUser.employee.id}`
-                    : "/dashboard"
-                }
-                className="mt-2 block text-[10px] font-semibold text-primary-600 hover:underline dark:text-primary-400"
-              >
-                View full profile →
-              </NavLink>
-            </div>
-          )}
+        {/* PROFILE DETAILS — below the theme selection, all logins */}
+        {!sidebarCollapsed && (
+          <div className="shrink-0 border-t border-slate-200/80 px-3 py-3 dark:border-white/[0.08]">
+            <p className="mb-1.5 text-[9px] font-semibold uppercase tracking-[0.16em] text-slate-400 dark:text-slate-600">
+              My profile
+            </p>
+            <dl className="space-y-1 text-[10.5px] leading-tight">
+              {myEmployee ? (
+                <>
+                  <div className="flex justify-between gap-2">
+                    <dt className="text-slate-400 dark:text-slate-500">Code</dt>
+                    <dd className="truncate font-medium text-slate-600 dark:text-slate-300">
+                      {myEmployee.employee_code || "—"}
+                    </dd>
+                  </div>
+                  <div className="flex justify-between gap-2">
+                    <dt className="text-slate-400 dark:text-slate-500">Phone</dt>
+                    <dd className="truncate font-medium text-slate-600 dark:text-slate-300">
+                      {myEmployee.phone || currentUser?.mobile || "—"}
+                    </dd>
+                  </div>
+                  <div className="flex justify-between gap-2">
+                    <dt className="text-slate-400 dark:text-slate-500">Emergency</dt>
+                    <dd className="truncate font-medium text-slate-600 dark:text-slate-300">
+                      {currentUser?.emergency_contact_number ||
+                        myEmployee.emergency_contact_number ||
+                        "—"}
+                    </dd>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex justify-between gap-2">
+                    <dt className="text-slate-400 dark:text-slate-500">Email</dt>
+                    <dd className="truncate font-medium text-slate-600 dark:text-slate-300">
+                      {currentUser?.email || "—"}
+                    </dd>
+                  </div>
+                  <div className="flex justify-between gap-2">
+                    <dt className="text-slate-400 dark:text-slate-500">Mobile</dt>
+                    <dd className="truncate font-medium text-slate-600 dark:text-slate-300">
+                      {currentUser?.mobile || "—"}
+                    </dd>
+                  </div>
+                  <div className="flex justify-between gap-2">
+                    <dt className="text-slate-400 dark:text-slate-500">Role</dt>
+                    <dd className="truncate font-medium capitalize text-slate-600 dark:text-slate-300">
+                      {currentUser?.role || "—"}
+                    </dd>
+                  </div>
+                </>
+              )}
+            </dl>
+            <NavLink
+              to={
+                currentUser?.employee?.id
+                  ? `/employees/${currentUser.employee.id}`
+                  : currentUser?.id
+                  ? `/users/${currentUser.id}`
+                  : "/dashboard"
+              }
+              className="mt-2 block text-[10px] font-semibold text-primary-600 hover:underline dark:text-primary-400"
+            >
+              View full profile →
+            </NavLink>
+          </div>
+        )}
       </aside>
     </>
   );
