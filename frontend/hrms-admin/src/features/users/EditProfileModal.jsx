@@ -51,7 +51,7 @@ export default function EditProfileModal({ open, onClose, user }) {
       const profilePayload = isEmployee
         ? { emergency_contact_number: form.emergency_contact_number }
         : editable;
-      if (!isEmployee && picture) profilePayload.profile_picture = picture;
+      if (picture) profilePayload.profile_picture = picture;
       const res = await usersApi.updateProfile(user.id, profilePayload);
       setUser({ ...user, ...res.data.data });
 
@@ -72,29 +72,25 @@ export default function EditProfileModal({ open, onClose, user }) {
         <div className="u-hover-float flex items-center gap-4 mb-6">
           <div className="u-float-target relative shrink-0">
             <Avatar name={form.username} src={preview} size="lg" />
-            {!isEmployee && (
-              <label
-                title="Upload photo"
-                className="absolute -bottom-1 -right-1 flex items-center justify-center h-6 w-6 rounded-full bg-primary-600 hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-400 text-white dark:text-slate-950 ring-2 ring-white dark:ring-slate-800 cursor-pointer transition-colors"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 9l5-5 5 5M12 4v12" />
-                </svg>
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => handlePictureChange(e.target.files?.[0])}
-                />
-              </label>
-            )}
+            <label
+              title="Upload photo"
+              className="absolute -bottom-1 -right-1 flex items-center justify-center h-6 w-6 rounded-full bg-primary-600 hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-400 text-white dark:text-slate-950 ring-2 ring-white dark:ring-slate-800 cursor-pointer transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 9l5-5 5 5M12 4v12" />
+              </svg>
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => handlePictureChange(e.target.files?.[0])}
+              />
+            </label>
           </div>
           <div>
             <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Profile Picture</p>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              {isEmployee
-                ? "Contact HR to change your photo"
-                : "Click the upload icon to change your photo"}
+              Click the upload icon to change your photo
             </p>
           </div>
         </div>
