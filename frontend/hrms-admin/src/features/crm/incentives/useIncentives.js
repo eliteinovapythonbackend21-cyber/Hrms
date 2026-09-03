@@ -10,31 +10,6 @@ const api = crmApi.incentives;
 
 const unwrap = (res) => res.data?.data ?? res.data;
 
-/* ---------------- tiers ---------------- */
-
-export function useIncentiveTiers() {
-  return useQuery({
-    queryKey: ["incentive-tiers"],
-    queryFn: async () => unwrap(await api.listTiers()),
-    staleTime: 5 * 60 * 1000,
-  });
-}
-
-function useTierMutation(fn) {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: fn,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["incentive-tiers"] }),
-  });
-}
-
-export const useCreateTier = () =>
-  useTierMutation((payload) => api.createTier(payload));
-export const useUpdateTier = () =>
-  useTierMutation(({ id, payload }) => api.updateTier(id, payload));
-export const useDeactivateTier = () =>
-  useTierMutation((id) => api.deactivateTier(id));
-
 /* ---------------- run ---------------- */
 
 export function useRunIncentives() {
