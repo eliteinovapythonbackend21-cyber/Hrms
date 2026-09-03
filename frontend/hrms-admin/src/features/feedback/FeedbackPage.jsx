@@ -11,10 +11,13 @@ import {
   useUpdateFeedbackTicket,
 } from "./useFeedback";
 
+import Avatar from "@/components/ui/Avatar";
+
 import { getUser } from "@/utils/tokenHelpers";
 import { isAdmin as checkIsAdmin } from "@/constants/roles";
 import { resolveUploadUrl } from "@/utils/fileUrl";
 import { formatDateTime } from "@/utils/formatDate";
+import { useMyEmployee } from "@/hooks/useMyEmployee";
 import {
   use3DTilt,
   useMagnetic,
@@ -170,6 +173,42 @@ function StatTile({ tone, label, value, icon }) {
 }
 
 /* =========================================================
+   REPORTER (EMPLOYEE) CARD
+   Shown above the form so it's clear whose account the ticket is
+   being raised against — the backend stamps `raised_by` to this same
+   logged-in user regardless of what's submitted.
+========================================================= */
+
+function ReporterCard() {
+  const user = getUser();
+  const { employee } = useMyEmployee();
+
+  const name =
+    [employee?.first_name, employee?.last_name].filter(Boolean).join(" ") ||
+    user?.username ||
+    "Employee";
+
+  const dept = employee?.department?.department_name;
+  const desig = employee?.designation?.designation_name;
+  const code = employee?.employee_code;
+
+  return (
+    <div className="mb-5 flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-white/10 dark:bg-white/[0.04]">
+      <Avatar name={name} src={resolveUploadUrl(user?.profile_picture?.url)} size="md" />
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">{name}</p>
+        <p className="mt-0.5 truncate text-xs text-slate-500 dark:text-slate-400">
+          {[code, desig, dept].filter(Boolean).join(" · ") || user?.email || user?.role}
+        </p>
+      </div>
+      <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500 ring-1 ring-inset ring-slate-200 dark:bg-white/[0.06] dark:text-slate-400 dark:ring-white/10">
+        Reporting as you
+      </span>
+    </div>
+  );
+}
+
+/* =========================================================
    RAISE TICKET FORM
 ========================================================= */
 
@@ -228,6 +267,8 @@ function RaiseTicketForm({ onCreated }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      <ReporterCard />
+
       <div>
         <label className="mb-1.5 block text-xs font-medium text-slate-600 dark:text-slate-300">
           Bug / Issue Category <span className="text-red-500">*</span>
