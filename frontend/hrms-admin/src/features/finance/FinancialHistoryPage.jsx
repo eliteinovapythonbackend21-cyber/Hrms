@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import Badge from "@/components/ui/Badge";
 import TableToolbar from "@/components/table/TableToolbar";
 import { crmApi } from "@/api/crm.api";
+import { employeeLifecycleApi } from "@/api/employee.api";
 import { useMonthlyAttendance } from "@/features/attendance/useMonthlyAttendance";
 import { formatCurrency } from "@/utils/formatCurrency";
 import { formatDate, formatDateTime } from "@/utils/formatDate";
@@ -27,6 +28,7 @@ const STATUS_BADGE_CLASS = {
 const TYPE_BADGE_CLASS = {
   Invoice: "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400",
   Payment: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400",
+  Payroll: "bg-violet-50 text-violet-700 dark:bg-violet-500/10 dark:text-violet-400",
 };
 
 function partyName(row) {
@@ -224,22 +226,33 @@ export default function FinancialHistoryPage() {
     queryFn: async () => (await crmApi.payments.list({ per_page: 1000 })).data.data,
   });
 
-  const isLoading = invoicesQuery.isLoading || paymentsQuery.isLoading;
-  const isFetching = invoicesQuery.isFetching || paymentsQuery.isFetching;
+  // Payroll — every employee's payslip run (not CRM-only, unlike the
+  // Invoice/Payment side of this ledger which is CRM/customer invoicing),
+  // so this ledger reflects overall employee salary too.
+  const payrollQuery = useQuery({
+    queryKey: ["finance-history-payroll"],
+    queryFn: async () => (await employeeLifecycleApi.payroll.list({ per_page: 1000 })).data.data,
+  });
+
+  const isLoading = invoicesQuery.isLoading || paymentsQuery.isLoading || payrollQuery.isLoading;
+  const isFetching = invoicesQuery.isFetching || paymentsQuery.isFetching || payrollQuery.isFetching;
 
   const refetchAll = () => {
     invoicesQuery.refetch();
     paymentsQuery.refetch();
+    payrollQuery.refetch();
   };
 
   const invoices = invoicesQuery.data?.items || [];
   const payments = paymentsQuery.data?.items || [];
+  const payroll = payrollQuery.data?.items || [];
 
   /* -------------------------------------------------------
-     UNIFIED LEDGER — every Invoice + every Payment, one row
-     each, so Finance can trace amount -> invoice -> payment
-     in a single screen (a Payment already carries a summary
-     of its parent invoice).
+     UNIFIED LEDGER — every Invoice + every Payment + every
+     Payroll run, one row each, so Finance can trace amount ->
+     invoice -> payment (CRM/customer side) and see overall
+     employee salary payouts (all departments, not just CRM) in
+     the same screen.
   ------------------------------------------------------- */
   const rows = useMemo(() => {
     const invoiceRows = invoices.map((inv) => ({
@@ -266,10 +279,25 @@ export default function FinancialHistoryPage() {
       raw: pay,
     }));
 
-    return [...invoiceRows, ...paymentRows].sort(
+    const payrollRows = payroll.map((p) => ({
+      key: `payroll-${p.id}`,
+      type: "Payroll",
+      date: p.created_at,
+      reference: p.pay_month || `#${p.id}`,
+      party: p.employee
+        ? `${p.employee.first_name || ""} ${p.employee.last_name || ""}`.trim() ||
+          p.employee.employee_code
+        : `Employee #${p.employee_id}`,
+      category: p.employee?.department?.department_name || "All Employees",
+      amount: Number(p.net_salary || 0),
+      status: p.status || "Draft",
+      raw: p,
+    }));
+
+    return [...invoiceRows, ...paymentRows, ...payrollRows].sort(
       (a, b) => new Date(b.date || 0) - new Date(a.date || 0)
     );
-  }, [invoices, payments]);
+  }, [invoices, payments, payroll]);
 
   const filteredRows = useMemo(() => {
     const keyword = search.trim().toLowerCase();
@@ -293,8 +321,9 @@ export default function FinancialHistoryPage() {
         const paid = Number(inv.paid_amount || 0);
         return sum + Math.max(0, Number(inv.amount || 0) - paid);
       }, 0);
-    return { totalInvoiced, totalPaid, outstanding };
-  }, [invoices, payments]);
+    const totalPayroll = payroll.reduce((sum, p) => sum + Number(p.net_salary || 0), 0);
+    return { totalInvoiced, totalPaid, outstanding, totalPayroll };
+  }, [invoices, payments, payroll]);
 
   return (
     <div className="min-w-0 space-y-6">
@@ -305,7 +334,7 @@ export default function FinancialHistoryPage() {
           </h1>
           <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
             {tab === "ledger"
-              ? "Every invoice and payment, in one traceable ledger"
+              ? "Every invoice, payment and employee payroll run — across all departments, not just CRM"
               : "Attendance-driven salary deductions, incentives and net salary, by month"}
           </p>
         </div>
@@ -342,7 +371,7 @@ export default function FinancialHistoryPage() {
 
       {tab === "ledger" && (
       <>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <StatTile
           label="Total Invoiced"
           value={formatCurrency(summary.totalInvoiced)}
@@ -359,6 +388,11 @@ export default function FinancialHistoryPage() {
           tone={summary.outstanding > 0 ? "amber" : "emerald"}
           value={formatCurrency(summary.outstanding)}
           description="Unpaid / partially paid invoices"
+        />
+        <StatTile
+          label="Total Payroll"
+          value={formatCurrency(summary.totalPayroll)}
+          description={`${payroll.length} payslip${payroll.length === 1 ? "" : "s"} — all employees`}
         />
       </div>
 
@@ -383,6 +417,7 @@ export default function FinancialHistoryPage() {
               <option value="">All Types</option>
               <option value="Invoice">Invoice</option>
               <option value="Payment">Payment</option>
+              <option value="Payroll">Payroll</option>
             </select>
 
             <select
