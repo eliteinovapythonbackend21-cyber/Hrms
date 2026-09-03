@@ -634,8 +634,6 @@ export default function FeedbackPage() {
   const progressCount = tickets.filter((t) => t.status === "In Progress").length;
   const resolvedCount = tickets.filter((t) => t.status === "Resolved").length;
 
-  const addMagnet = useMagnetic(0.2);
-
   return (
     <div className="min-w-0 space-y-6">
       <Motion3DStyles />
@@ -661,18 +659,6 @@ export default function FeedbackPage() {
             </p>
           </div>
         </div>
-
-        {!isAdmin && (
-          <div ref={addMagnet.ref} {...addMagnet.handlers} className="relative inline-block w-full will-change-transform sm:w-auto">
-            <a
-              href="#raise-ticket"
-              className="flex h-10 w-full items-center justify-center gap-1.5 rounded-lg bg-primary-600 px-4 text-sm font-semibold text-white shadow-sm transition-shadow duration-200 hover:shadow-lg sm:w-auto"
-            >
-              <span className="text-lg leading-none transition-transform duration-300 hover:rotate-90">+</span>
-              Raise a Ticket
-            </a>
-          </div>
-        )}
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
