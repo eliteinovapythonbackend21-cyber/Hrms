@@ -179,9 +179,9 @@ export const navConfig = [
       // { label: "Vendors", path: "/finance/vendors", icon: "finance" },
       // { label: "Expenses", path: "/finance/expenses", icon: "finance" },
       // { label: "Income", path: "/finance/income", icon: "finance" },
+      { label: "Attendance", path: "/finance/attendance", icon: "attendance", roles: ["admin", ...EMPLOYEE_LIKE_ROLES] },
       { label: "Employees", path: "/master/employees", icon: "employees" },
       { label: "Payroll", path: "/employee/payroll", icon: "employeeLifecycle", roles: PAYROLL_ROLES },
-      { label: "Attendance", path: "/finance/attendance", icon: "attendance", roles: ["admin", ...EMPLOYEE_LIKE_ROLES] },
     ],
   },
   {
@@ -265,8 +265,8 @@ export const FINANCE_EMPLOYEE_NAV = {
   path: "/master/employees",
   icon: "finance",
   children: [
+    { label: "Attendance", path: "/finance/attendance", icon: "attendance" },
     { label: "Employees", path: "/master/employees", icon: "employees" },
     { label: "Payroll", path: "/employee/payroll", icon: "employeeLifecycle" },
-    { label: "Attendance", path: "/finance/attendance", icon: "attendance" },
   ],
 };
