@@ -6,8 +6,37 @@ import TableToolbar from "@/components/table/TableToolbar";
 import { crmApi } from "@/api/crm.api";
 import { employeeLifecycleApi } from "@/api/employee.api";
 import { useMonthlyAttendance } from "@/features/attendance/useMonthlyAttendance";
+import { useTableExport } from "@/hooks/useTableExport";
 import { formatCurrency } from "@/utils/formatCurrency";
 import { formatDate, formatDateTime } from "@/utils/formatDate";
+
+/* =========================================================
+   EXPORT COLUMNS
+========================================================= */
+
+const LEDGER_EXPORT_COLUMNS = [
+  { header: "Date", accessor: (r) => (r.date ? new Date(r.date).toLocaleString() : "-") },
+  { header: "Type", accessor: (r) => r.type },
+  { header: "Reference", accessor: (r) => r.reference },
+  { header: "Party / Mode", accessor: (r) => r.party },
+  { header: "Category", accessor: (r) => r.category },
+  { header: "Amount", accessor: (r) => r.amount },
+  { header: "Status", accessor: (r) => r.status },
+];
+
+const ATTENDANCE_EXPORT_COLUMNS = [
+  { header: "Employee", accessor: (r) => r.employee_name },
+  { header: "Code", accessor: (r) => r.employee_code },
+  {
+    header: "Total Deduction",
+    accessor: (r) =>
+      r.total_deduction != null
+        ? Number(r.total_deduction)
+        : Number(r.leave_deduction || 0) + Number(r.absent_deduction || 0),
+  },
+  { header: "Incentive", accessor: (r) => (r.incentive_amount != null ? Number(r.incentive_amount) : "") },
+  { header: "Net Salary", accessor: (r) => Number(r.net_salary || 0) },
+];
 
 /* =========================================================
    CONSTANTS
@@ -84,6 +113,8 @@ function AttendanceHistorySection() {
   const { data, isLoading, isFetching, refetch } = useMonthlyAttendance(month, year);
   const rows = data?.items || [];
 
+  const { exporting, exportToExcel, exportToPDF } = useTableExport();
+
   const totals = useMemo(
     () =>
       rows.reduce(
@@ -132,7 +163,22 @@ function AttendanceHistorySection() {
               <option key={y} value={y}>{y}</option>
             ))}
           </select>
-          <TableToolbar onRefresh={refetch} refreshing={isFetching} />
+          <TableToolbar
+            onRefresh={refetch}
+            refreshing={isFetching}
+            exporting={exporting}
+            onExportExcel={() =>
+              exportToExcel(rows, ATTENDANCE_EXPORT_COLUMNS, `attendance-salary-history-${year}-${String(month).padStart(2, "0")}`)
+            }
+            onExportPDF={() =>
+              exportToPDF(
+                rows,
+                ATTENDANCE_EXPORT_COLUMNS,
+                `attendance-salary-history-${year}-${String(month).padStart(2, "0")}`,
+                `Attendance & Salary History — ${MONTH_NAMES[month - 1]} ${year}`
+              )
+            }
+          />
         </div>
       </div>
 
@@ -215,6 +261,8 @@ export default function FinancialHistoryPage() {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+
+  const { exporting, exportToExcel, exportToPDF } = useTableExport();
 
   const invoicesQuery = useQuery({
     queryKey: ["finance-history-invoices"],
@@ -339,7 +387,15 @@ export default function FinancialHistoryPage() {
           </p>
         </div>
 
-        {tab === "ledger" && <TableToolbar onRefresh={refetchAll} refreshing={isFetching} />}
+        {tab === "ledger" && (
+          <TableToolbar
+            onRefresh={refetchAll}
+            refreshing={isFetching}
+            exporting={exporting}
+            onExportExcel={() => exportToExcel(filteredRows, LEDGER_EXPORT_COLUMNS, "financial-history")}
+            onExportPDF={() => exportToPDF(filteredRows, LEDGER_EXPORT_COLUMNS, "financial-history", "Financial History")}
+          />
+        )}
       </div>
 
       <div className="flex w-fit items-center gap-1 rounded-lg bg-slate-100 p-1 dark:bg-white/[0.06]">

@@ -182,6 +182,11 @@ export const navConfig = [
       { label: "Attendance", path: "/finance/attendance", icon: "attendance", roles: ["admin", ...EMPLOYEE_LIKE_ROLES] },
       { label: "Employees", path: "/master/employees", icon: "employees" },
       { label: "Payroll", path: "/employee/payroll", icon: "employeeLifecycle", roles: PAYROLL_ROLES },
+      // Combined invoice + payment + payroll ledger, across every
+      // department (not CRM-only) — same page the Finance-login sidebar
+      // links to (see FINANCE_EMPLOYEE_NAV below), just also surfaced
+      // here for admin.
+      { label: "Financial History", path: "/finance/history", icon: "finance", roles: ["admin", "finance"] },
     ],
   },
   {

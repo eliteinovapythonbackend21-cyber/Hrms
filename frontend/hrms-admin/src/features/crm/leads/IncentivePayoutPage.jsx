@@ -4,6 +4,7 @@ import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 import TableToolbar from "@/components/table/TableToolbar";
 import { useToast } from "@/components/feedback/Toast";
+import { useTableExport } from "@/hooks/useTableExport";
 
 import {
   useEmployeeIncentives,
@@ -67,6 +68,17 @@ function formatDateTime(value) {
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString();
 }
+
+const EXPORT_COLUMNS = [
+  { header: "Employee", accessor: getEmployeeName },
+  { header: "Code", accessor: (r) => r.employee?.employee_code || "" },
+  { header: "Period", accessor: (r) => `${getMonthLabel(r.month)} ${r.year}` },
+  { header: "Target", accessor: (r) => r.target_customer_count },
+  { header: "Actual", accessor: (r) => r.actual_customer_count },
+  { header: "Eligible", accessor: (r) => r.eligible_customer_count },
+  { header: "Amount", accessor: (r) => r.calculated_amount },
+  { header: "Status", accessor: (r) => r.status },
+];
 
 function getEmployeeName(record) {
   if (record?.employee) {
@@ -285,6 +297,8 @@ export default function IncentivePayoutPage() {
   // CRM-department employees: view-only screen.
   const { isCrmEmployee: readOnly } = useIsCrmEmployee();
 
+  const { exporting, exportToExcel, exportToPDF } = useTableExport();
+
   const [calcMonth, setCalcMonth] = useState(now.getMonth() + 1);
   const [calcYear, setCalcYear] = useState(now.getFullYear());
 
@@ -426,7 +440,13 @@ export default function IncentivePayoutPage() {
           </div>
         </div>
 
-        <TableToolbar onRefresh={refetch} refreshing={isFetching} />
+        <TableToolbar
+          onRefresh={refetch}
+          refreshing={isFetching}
+          exporting={exporting}
+          onExportExcel={() => exportToExcel(filtered, EXPORT_COLUMNS, "incentive-payouts")}
+          onExportPDF={() => exportToPDF(filtered, EXPORT_COLUMNS, "incentive-payouts", "Incentive Payouts")}
+        />
       </div>
 
       {/* STATS */}

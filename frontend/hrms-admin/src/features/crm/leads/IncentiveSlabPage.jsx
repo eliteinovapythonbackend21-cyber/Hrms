@@ -5,6 +5,7 @@ import Badge from "@/components/ui/Badge";
 import ConfirmDialog from "@/components/feedback/ConfirmDialog";
 import TableToolbar from "@/components/table/TableToolbar";
 import { useToast } from "@/components/feedback/Toast";
+import { useTableExport } from "@/hooks/useTableExport";
 
 import {
   useIncentiveSlabs,
@@ -40,6 +41,14 @@ function getRangeLabel(slab) {
   }
   return `${slab.min_customers} – ${slab.max_customers}`;
 }
+
+const EXPORT_COLUMNS = [
+  { header: "Range", accessor: getRangeLabel },
+  { header: "Min Extra Customers", accessor: (r) => r.min_customers },
+  { header: "Max Extra Customers", accessor: (r) => (r.max_customers ?? "No upper limit") },
+  { header: "Incentive Amount", accessor: (r) => r.incentive_amount },
+  { header: "Active", accessor: (r) => (r.is_active !== false ? "Yes" : "No") },
+];
 
 /* =========================================================
    ICONS
@@ -212,6 +221,8 @@ export default function IncentiveSlabPage() {
 
   // CRM-department employees: view-only screen.
   const { isCrmEmployee: readOnly } = useIsCrmEmployee();
+
+  const { exporting, exportToExcel, exportToPDF } = useTableExport();
 
   const {
     data: allData,
@@ -393,13 +404,19 @@ export default function IncentiveSlabPage() {
               Incentive Slabs
             </h1>
             <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
-              Incentive amounts by extra registered customer count
+              Base incentive amount by monthly registration count
             </p>
           </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <TableToolbar onRefresh={refetch} refreshing={isFetching} />
+          <TableToolbar
+            onRefresh={refetch}
+            refreshing={isFetching}
+            exporting={exporting}
+            onExportExcel={() => exportToExcel(filtered, EXPORT_COLUMNS, "incentive-slabs")}
+            onExportPDF={() => exportToPDF(filtered, EXPORT_COLUMNS, "incentive-slabs", "Incentive Slabs")}
+          />
           {readOnly ? (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-500 ring-1 ring-inset ring-slate-500/15 dark:bg-white/10 dark:text-slate-300 dark:ring-white/10">
               <span className="h-1.5 w-1.5 rounded-full bg-slate-400" />
@@ -412,6 +429,18 @@ export default function IncentiveSlabPage() {
           </Button>
           )}
         </div>
+      </div>
+
+      {/* INFO BANNER */}
+      <div className="rounded-xl border border-primary-100 bg-primary-50/60 px-4 py-3 text-xs text-primary-800 dark:border-primary-500/20 dark:bg-primary-500/[0.06] dark:text-primary-300">
+        This slab is the flat base incentive — ₹1,000 for the first 30
+        registrations a CRM employee adds via the Registration page in a
+        month. Beyond 30, each additional registration adds a further
+        0.6% of ₹1,000 (₹6) on top — that per-registration scaling can't
+        be expressed as a fixed range/amount slab, so it's calculated
+        live on the{" "}
+        <span className="font-semibold">CRM Incentives</span> screen
+        rather than defined here.
       </div>
 
       {/* STATS */}

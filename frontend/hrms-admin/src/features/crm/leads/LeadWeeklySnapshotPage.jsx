@@ -4,6 +4,7 @@ import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import TableToolbar from "@/components/table/TableToolbar";
 import { useToast } from "@/components/feedback/Toast";
+import { useTableExport } from "@/hooks/useTableExport";
 
 import {
   useLeadWeeklySnapshots,
@@ -55,6 +56,14 @@ function getInitials(name) {
   const parts = name.trim().split(/\s+/);
   return ((parts[0]?.[0] || "") + (parts[1]?.[0] || "")).toUpperCase() || name[0]?.toUpperCase();
 }
+
+const EXPORT_COLUMNS = [
+  { header: "Lead", accessor: (s) => s.lead?.lead_name || `Lead #${s.lead_id}` },
+  { header: "Week Start", accessor: (s) => formatDate(s.week_start_date) },
+  { header: "Status", accessor: (s) => s.status },
+  { header: "Follow-ups", accessor: (s) => s.follow_up_count ?? 0 },
+  { header: "Assigned To", accessor: (s) => getEmployeeDisplayName(s.assignee) },
+];
 
 // Monday of the current week, ISO date string.
 function getCurrentWeekStart() {
@@ -241,6 +250,7 @@ function SnapshotDetailsCard({ snapshot }) {
 
 export default function LeadWeeklySnapshotPage() {
   const { showToast } = useToast();
+  const { exporting, exportToExcel, exportToPDF } = useTableExport();
 
   const [weekStartDate, setWeekStartDate] = useState(getCurrentWeekStart());
   const [filterWeek, setFilterWeek] = useState("");
@@ -366,7 +376,13 @@ export default function LeadWeeklySnapshotPage() {
           </div>
         </div>
 
-        <TableToolbar onRefresh={refetch} refreshing={isFetching} />
+        <TableToolbar
+          onRefresh={refetch}
+          refreshing={isFetching}
+          exporting={exporting}
+          onExportExcel={() => exportToExcel(sorted, EXPORT_COLUMNS, "lead-weekly-snapshots")}
+          onExportPDF={() => exportToPDF(sorted, EXPORT_COLUMNS, "lead-weekly-snapshots", "Lead Weekly Snapshots")}
+        />
       </div>
 
       {/* STATS */}

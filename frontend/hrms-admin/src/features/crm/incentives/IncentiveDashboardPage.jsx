@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 
 import TableToolbar from "@/components/table/TableToolbar";
+import { useTableExport } from "@/hooks/useTableExport";
 import Button from "@/components/ui/Button";
 import { useToast } from "@/components/feedback/Toast";
 import { getUser } from "@/utils/tokenHelpers";
@@ -178,6 +179,53 @@ export default function IncentiveDashboardPage() {
     { id: "invoices", label: "Invoices" },
   ];
 
+  // Export always reflects whichever tab is currently active — the row
+  // shapes differ per tab, so both the columns and the rows sent to
+  // export are picked from this map.
+  const EXPORT_COLUMNS_BY_TAB = {
+    weekly: [
+      { header: "Employee", accessor: empName },
+      { header: "Week Start", accessor: (r) => formatDate(r.week_start_date) },
+      { header: "Week End", accessor: (r) => formatDate(r.week_end_date) },
+      { header: "Registrations", accessor: (r) => r.registration_count },
+      { header: "Target", accessor: (r) => r.target_count },
+      { header: "Eligible", accessor: (r) => r.eligible_count },
+    ],
+    monthly: [
+      { header: "Employee", accessor: empName },
+      { header: "Period", accessor: (r) => `${MONTHS[r.month - 1]} ${r.year}` },
+      { header: "Weeks", accessor: (r) => r.week_count },
+      { header: "Registrations", accessor: (r) => r.registration_count },
+      { header: "Eligible", accessor: (r) => r.eligible_count },
+      { header: "Payout", accessor: (r) => r.amount },
+      { header: "Status", accessor: (r) => r.status },
+    ],
+    yearly: [
+      { header: "Employee", accessor: empName },
+      { header: "Year", accessor: (r) => r.year },
+      { header: "Months", accessor: (r) => r.month_count },
+      { header: "Registrations", accessor: (r) => r.registration_count },
+      { header: "Eligible", accessor: (r) => r.eligible_count },
+      { header: "Total Payout", accessor: (r) => r.amount },
+    ],
+    invoices: [
+      { header: "Invoice #", accessor: (r) => r.invoice_number },
+      { header: "Employee", accessor: empName },
+      { header: "Amount", accessor: (r) => r.amount },
+      { header: "Due Date", accessor: (r) => (r.due_date ? formatDate(r.due_date) : "") },
+      { header: "Status", accessor: (r) => r.status },
+    ],
+  };
+
+  const ROWS_BY_TAB = {
+    weekly: weeklyRows,
+    monthly: monthlyRows,
+    yearly: yearlyRows,
+    invoices: invoiceRows,
+  };
+
+  const { exporting, exportToExcel, exportToPDF } = useTableExport();
+
   // Current month's registration progress toward the 30-registration flat
   // incentive, for the CRM employee's own "My Incentive" summary.
   const currentMonthRow = (summary?.monthly || []).find(
@@ -231,6 +279,18 @@ export default function IncentiveDashboardPage() {
               invoices.refetch();
             }}
             refreshing={weekly.isFetching}
+            exporting={exporting}
+            onExportExcel={() =>
+              exportToExcel(ROWS_BY_TAB[tab], EXPORT_COLUMNS_BY_TAB[tab], `crm-incentives-${tab}`)
+            }
+            onExportPDF={() =>
+              exportToPDF(
+                ROWS_BY_TAB[tab],
+                EXPORT_COLUMNS_BY_TAB[tab],
+                `crm-incentives-${tab}`,
+                `CRM Incentives — ${TABS.find((t) => t.id === tab)?.label}`
+              )
+            }
           />
 
           {canManage && (

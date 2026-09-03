@@ -5,6 +5,7 @@ import Badge from "@/components/ui/Badge";
 import ConfirmDialog from "@/components/feedback/ConfirmDialog";
 import TableToolbar from "@/components/table/TableToolbar";
 import { useToast } from "@/components/feedback/Toast";
+import { useTableExport } from "@/hooks/useTableExport";
 
 import {
   useEmployeeTargets,
@@ -120,6 +121,14 @@ function getCurrentWeekStart() {
   monday.setDate(now.getDate() + diff);
   return monday.toISOString().slice(0, 10);
 }
+
+const EXPORT_COLUMNS = [
+  { header: "Employee", accessor: getEmployeeName },
+  { header: "Period Type", accessor: (r) => r.period_type },
+  { header: "Period", accessor: getPeriodLabel },
+  { header: "Target Customers", accessor: (r) => r.target_customer_count },
+  { header: "Active", accessor: (r) => (r.is_active !== false ? "Yes" : "No") },
+];
 
 const PERIOD_TYPE_BADGE_CLASS = {
   Weekly: "bg-sky-50 text-sky-700 dark:bg-sky-500/10 dark:text-sky-400",
@@ -306,6 +315,7 @@ function TargetDetailsCard({ record }) {
 
 export default function EmployeeTargetPage() {
   const { showToast } = useToast();
+  const { exporting, exportToExcel, exportToPDF } = useTableExport();
 
   // CRM-department employees: view-only screen, scoped to their own
   // targets — not every CRM employee's.
@@ -580,7 +590,13 @@ export default function EmployeeTargetPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <TableToolbar onRefresh={refetch} refreshing={isFetching} />
+          <TableToolbar
+            onRefresh={refetch}
+            refreshing={isFetching}
+            exporting={exporting}
+            onExportExcel={() => exportToExcel(filtered, EXPORT_COLUMNS, "employee-targets")}
+            onExportPDF={() => exportToPDF(filtered, EXPORT_COLUMNS, "employee-targets", "Employee Targets")}
+          />
           {readOnly ? (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-500 ring-1 ring-inset ring-slate-500/15 dark:bg-white/10 dark:text-slate-300 dark:ring-white/10">
               <span className="h-1.5 w-1.5 rounded-full bg-slate-400" />

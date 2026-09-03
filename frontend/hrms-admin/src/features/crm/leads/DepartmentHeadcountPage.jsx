@@ -6,6 +6,22 @@ import Badge from "@/components/ui/Badge";
 import ConfirmDialog from "@/components/feedback/ConfirmDialog";
 import TableToolbar from "@/components/table/TableToolbar";
 import { useToast } from "@/components/feedback/Toast";
+import { useTableExport } from "@/hooks/useTableExport";
+
+const EXPORT_COLUMNS = [
+  { header: "Department", accessor: (r) => r.department?.department_name || "" },
+  { header: "Week Start", accessor: (r) => formatDate(r.week_start_date) },
+  { header: "Employee Count", accessor: (r) => r.employee_count },
+  {
+    header: "Updated By",
+    accessor: (r) =>
+      r.updated_by_employee
+        ? `${r.updated_by_employee.first_name || ""} ${r.updated_by_employee.last_name || ""}`.trim()
+        : "",
+  },
+  { header: "Notes", accessor: (r) => r.notes || "" },
+  { header: "Active", accessor: (r) => (r.is_active !== false ? "Yes" : "No") },
+];
 
 import {
   useDepartmentHeadcounts,
@@ -98,6 +114,8 @@ export default function DepartmentHeadcountPage() {
   const reactivateHeadcount = useReactivateDepartmentHeadcount();
 
   const employeeOptions = useCRMEmployeeOptions();
+
+  const { exporting, exportToExcel, exportToPDF } = useTableExport();
 
   /* -------------------------------------------------------
      FILTERS / STATE
@@ -267,7 +285,13 @@ export default function DepartmentHeadcountPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <TableToolbar onRefresh={refetch} refreshing={isFetching} />
+          <TableToolbar
+            onRefresh={refetch}
+            refreshing={isFetching}
+            exporting={exporting}
+            onExportExcel={() => exportToExcel(filtered, EXPORT_COLUMNS, "department-headcount")}
+            onExportPDF={() => exportToPDF(filtered, EXPORT_COLUMNS, "department-headcount", "Department Headcount")}
+          />
           <Button type="button" onClick={openAddForm} className="h-10 px-4">
             <span className="mr-1.5 text-lg">+</span>
             Record Headcount
