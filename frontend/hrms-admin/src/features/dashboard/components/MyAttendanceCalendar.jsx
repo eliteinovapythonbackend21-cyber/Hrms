@@ -402,10 +402,19 @@ export default function MyAttendanceCalendar() {
       </div>
 
       {/* LEGEND */}
-      <div className="flex flex-wrap items-center gap-3 px-4 pb-2 text-[10px] text-slate-500 dark:text-slate-400">
-        <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-emerald-500" /> Present</span>
-        <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-amber-500" /> Approved leave</span>
-        <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-violet-500" /> Holiday</span>
+      <div className="flex flex-wrap items-center gap-4 border-b border-slate-100 px-4 pb-3 pt-1 text-xs font-medium text-slate-600 dark:border-white/[0.06] dark:text-slate-300">
+        <span className="flex items-center gap-1.5">
+          <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-emerald-100 dark:ring-emerald-500/20" />
+          Present
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="h-2.5 w-2.5 rounded-full bg-amber-500 ring-2 ring-amber-100 dark:ring-amber-500/20" />
+          Approved leave
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="h-2.5 w-2.5 rounded-full bg-violet-500 ring-2 ring-violet-100 dark:ring-violet-500/20" />
+          Holiday
+        </span>
       </div>
 
       {/* WEEKDAYS */}
@@ -424,7 +433,7 @@ export default function MyAttendanceCalendar() {
       <div className="grid grid-cols-7 gap-px bg-slate-200/70 pb-2 dark:bg-white/[0.06]">
         {calendarCells.map((cell, index) => {
           if (!cell) {
-            return <div key={`empty-${index}`} className="min-h-[64px] bg-slate-50/60 dark:bg-white/[0.01]" />;
+            return <div key={`empty-${index}`} className="min-h-[68px] bg-slate-50/60 dark:bg-white/[0.01]" />;
           }
 
           const isPresent = cell.attendance && (cell.attendance.attendance_status || "Present") === "Present";
@@ -437,22 +446,76 @@ export default function MyAttendanceCalendar() {
           if (checkIn) titleParts.push(`In: ${checkIn}`);
           if (checkOut) titleParts.push(`Out: ${checkOut}`);
 
+          // A day can only carry ONE background tint / accent — priority
+          // Holiday > Approved leave > Present — so the cell's overall
+          // colour always matches what its status dot(s) say, instead of
+          // staying plain white regardless of status like before.
+          const status = cell.holiday
+            ? "holiday"
+            : cell.isLeave
+            ? "leave"
+            : isPresent
+            ? "present"
+            : null;
+
+          const STATUS_STYLES = {
+            present: {
+              bg: "bg-emerald-50/70 dark:bg-emerald-500/[0.07]",
+              border: "border-l-emerald-500",
+              dayText: "text-emerald-700 dark:text-emerald-400",
+            },
+            leave: {
+              bg: "bg-amber-50/70 dark:bg-amber-500/[0.07]",
+              border: "border-l-amber-500",
+              dayText: "text-amber-700 dark:text-amber-400",
+            },
+            holiday: {
+              bg: "bg-violet-50/70 dark:bg-violet-500/[0.07]",
+              border: "border-l-violet-500",
+              dayText: "text-violet-700 dark:text-violet-400",
+            },
+          };
+          const style = STATUS_STYLES[status];
+
           return (
             <div
               key={cell.key}
-              className={`min-h-[64px] bg-white p-1.5 dark:bg-[#0f0f16] ${isToday(cell.day) ? "ring-2 ring-inset ring-primary-400 dark:ring-primary-500" : ""}`}
+              className={`min-h-[68px] border-l-4 p-1.5 transition-colors ${
+                style ? `${style.bg} ${style.border}` : "border-l-transparent bg-white dark:bg-[#0f0f16]"
+              } ${isToday(cell.day) ? "ring-2 ring-inset ring-primary-400 dark:ring-primary-500" : ""}`}
               title={titleParts.length ? titleParts.join(" · ") : undefined}
             >
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-semibold text-slate-600 dark:text-slate-300">{cell.day}</span>
-                <div className="flex items-center gap-0.5">
-                  {isPresent && <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />}
-                  {cell.isLeave && <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />}
-                  {cell.holiday && <span className="h-1.5 w-1.5 rounded-full bg-violet-500" />}
+                <span
+                  className={`text-[11px] font-bold ${
+                    style ? style.dayText : "text-slate-600 dark:text-slate-300"
+                  }`}
+                >
+                  {cell.day}
+                </span>
+                <div className="flex items-center gap-1">
+                  {isPresent && (
+                    <span
+                      className="h-2 w-2 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-[#0f0f16]"
+                      aria-label="Present"
+                    />
+                  )}
+                  {cell.isLeave && (
+                    <span
+                      className="h-2 w-2 rounded-full bg-amber-500 ring-2 ring-white dark:ring-[#0f0f16]"
+                      aria-label="Approved leave"
+                    />
+                  )}
+                  {cell.holiday && (
+                    <span
+                      className="h-2 w-2 rounded-full bg-violet-500 ring-2 ring-white dark:ring-[#0f0f16]"
+                      aria-label="Holiday"
+                    />
+                  )}
                 </div>
               </div>
               {isPresent && cell.attendance.working_hours != null && (
-                <p className="mt-1 truncate text-[9px] font-medium text-emerald-600 dark:text-emerald-400">
+                <p className="mt-1 truncate text-[9px] font-semibold text-emerald-700 dark:text-emerald-400">
                   {cell.attendance.working_hours}h
                 </p>
               )}
@@ -462,12 +525,14 @@ export default function MyAttendanceCalendar() {
                 </p>
               )}
               {cell.isLeave && (
-                <p className="mt-1 truncate text-[9px] font-medium text-amber-600 dark:text-amber-400">
+                <p className="mt-1 truncate text-[9px] font-semibold text-amber-700 dark:text-amber-400">
                   On leave
                 </p>
               )}
               {cell.holiday && (
-                <p className="mt-1 truncate text-[9px] text-violet-600 dark:text-violet-400">{cell.holiday.name}</p>
+                <p className="mt-1 truncate text-[9px] font-semibold text-violet-700 dark:text-violet-400">
+                  {cell.holiday.name}
+                </p>
               )}
             </div>
           );
