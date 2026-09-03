@@ -274,6 +274,7 @@ function useTotal(key, listFn, params) {
 }
 
 function CrmWorkspaceCards() {
+  const registrations = useTotal("crm-registrations", crmApi.meetings.list);
   const targets = useTotal("crm-targets", crmApi.employeeTargets.list);
   const incentives = useTotal("crm-quotations", crmApi.quotations.list);
   const slabs = useTotal("crm-slabs", crmApi.incentiveSlabs.list);
@@ -281,6 +282,7 @@ function CrmWorkspaceCards() {
   const invoices = useTotal("crm-invoices", crmApi.invoices.list);
 
   const cards = [
+    { label: "Registration", path: "/crm/meetings", icon: "crm", hint: "Add / view registrations", ...registrations },
     { label: "Target", path: "/crm/leads/employees/targets", icon: "employees", hint: "Employee targets", ...targets },
     { label: "Incentive", path: "/crm/quotations", icon: "crm", hint: "Incentive records", ...incentives },
     { label: "Incentive Slabs", path: "/crm/leads/incentive-slabs", icon: "crm", hint: "Configured slabs", ...slabs },
@@ -289,6 +291,87 @@ function CrmWorkspaceCards() {
   ];
 
   return <WorkspaceCardGrid cards={cards} tone="primary" />;
+}
+
+/* ---------------------------------------------------------
+   Today's Registrations — CRM employee dashboard stat, driven by
+   Meeting rows the logged-in CRM employee added today.
+--------------------------------------------------------- */
+function isSameDay(a, b) {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
+}
+
+function TodayRegistrationsCard() {
+  const employeeId = getUser()?.employee?.id;
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["dashboard-crm-registrations-today", employeeId],
+    queryFn: async () =>
+      (
+        await crmApi.meetings.list({
+          registered_by: employeeId,
+          per_page: 1000,
+        })
+      ).data.data,
+    enabled: !!employeeId,
+    staleTime: 60_000,
+  });
+
+  const rows = data?.items || [];
+  const today = new Date();
+
+  const todayCount = rows.filter((row) => {
+    if (row.is_active === false) return false;
+    const created = row.created_at ? new Date(row.created_at) : null;
+    return created && !Number.isNaN(created.getTime()) && isSameDay(created, today);
+  }).length;
+
+  const monthCount = rows.filter((row) => {
+    if (row.is_active === false) return false;
+    const created = row.created_at ? new Date(row.created_at) : null;
+    return (
+      created &&
+      !Number.isNaN(created.getTime()) &&
+      created.getFullYear() === today.getFullYear() &&
+      created.getMonth() === today.getMonth()
+    );
+  }).length;
+
+  const tilt = use3DTilt({ max: 8, scale: 1.015 });
+
+  return (
+    <div className="u-tilt-perspective">
+      <div
+        ref={tilt.ref}
+        {...tilt.handlers}
+        className="u-tilt u-glare relative overflow-hidden rounded-2xl border border-primary-100 bg-gradient-to-br from-primary-50 to-white p-5 shadow-sm dark:border-primary-500/20 dark:from-primary-500/[0.08] dark:to-white/[0.02]"
+      >
+        <div className="u-tilt-content flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-primary-600 dark:text-primary-400">
+              Today's Registrations
+            </p>
+            <p className="mt-1 text-3xl font-bold text-slate-900 dark:text-white">
+              {isLoading ? "…" : todayCount}
+            </p>
+            <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+              {isLoading ? "Loading…" : `${monthCount} this month`}
+            </p>
+          </div>
+          <Link
+            to="/crm/meetings"
+            className="rounded-lg bg-primary-600 px-3.5 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-primary-700"
+          >
+            + Add Registration
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function HrWorkspaceCards() {
@@ -688,14 +771,15 @@ export default function DashboardPage() {
 
 
           {isCrmEmployee && (
-            <section>
+            <section className="space-y-4">
               <SectionHeading
                 icon={<GridIcon />}
                 tone="primary"
                 title="CRM workspace"
-                subtitle="Your CRM screens — targets, incentives, payouts and invoices"
+                subtitle="Your CRM screens — registrations, targets, incentives, payouts and invoices"
               />
 
+              <TodayRegistrationsCard />
               <CrmWorkspaceCards />
             </section>
           )}

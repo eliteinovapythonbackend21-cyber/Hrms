@@ -32,7 +32,7 @@ from utils import (
     with_token,
 )
 
-from .incentive_engine import employee_summary, run_period, seed_default_tiers
+from .incentive_engine import employee_summary, payable_due_date, run_period, seed_default_tiers
 
 incentives_bp = Blueprint("incentives_bp", __name__)
 
@@ -342,6 +342,7 @@ def generate_monthly_invoice(payout_id, token_response):
         monthly_payout_id=payout.id,
         invoice_number=f"INC{next_id:05d}",
         amount=payout.amount,
+        due_date=payout.due_date or payable_due_date(payout.month, payout.year),
         status="Unpaid",
         is_active=True,
     )

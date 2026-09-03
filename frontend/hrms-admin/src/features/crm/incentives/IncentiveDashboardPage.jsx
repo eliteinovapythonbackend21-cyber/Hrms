@@ -146,8 +146,10 @@ function TierEditor({ tiers, readOnly }) {
         </h3>
         <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
           A CRM employee sits in the highest tier their weekly registrations
-          reach; the weekly incentive is <b>rate × registrations above the
-          weekly target</b>.
+          reach — shown as a badge only. The <b>payable monthly incentive</b>{" "}
+          is flat: ₹1,000 for the first 30 registrations added via the
+          Registration page in a month, plus an extra 0.6% of ₹1,000 (₹6) for
+          every registration from the 31st onward.
         </p>
       </div>
 

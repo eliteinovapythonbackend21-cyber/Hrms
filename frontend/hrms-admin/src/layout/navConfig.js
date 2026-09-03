@@ -222,10 +222,13 @@ export const CRM_EMPLOYEE_NAV = {
   path: "/crm/incentives",
   icon: "crm",
   children: [
-    { label: "Target", path: "/crm/leads/employees/targets", icon: "employees" },
+    { label: "Registeration", path: "/crm/meetings", icon: "crm" },
+    { label: "Targets", path: "/crm/leads/employees/targets", icon: "employees" },
     // Tier dashboard — tier badge + weekly / monthly / yearly payouts + invoices.
     { label: "Incentives", path: "/crm/incentives", icon: "crm" },
     { label: "Incentive Slabs", path: "/crm/leads/incentive-slabs", icon: "crm" },
+    { label: "Invoices", path: "/crm/invoices", icon: "crm" },
+    { label: "Payments", path: "/crm/payments", icon: "crm" },
   ],
 };
 

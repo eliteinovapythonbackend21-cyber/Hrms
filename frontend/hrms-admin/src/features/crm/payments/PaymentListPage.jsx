@@ -17,6 +17,7 @@ import {
 } from "./usePayments";
 
 import { useInvoiceOptions } from "@/hooks/useLookupOptions";
+import { useIsCrmEmployee } from "@/hooks/useIsCrmEmployee";
 
 import { useTableExport } from "@/hooks/useTableExport";
 
@@ -841,6 +842,9 @@ export default function PaymentListPage() {
     showToast,
   } = useToast();
 
+  // CRM-department employees: this screen is view-only.
+  const { isCrmEmployee: readOnly } = useIsCrmEmployee();
+
   const {
     data: allData,
     isLoading,
@@ -1138,6 +1142,7 @@ export default function PaymentListPage() {
   ======================================================= */
 
   const handleAdd = () => {
+    if (readOnly) return;
     setEditingPayment(null);
     setModalOpen(true);
   };
@@ -1145,6 +1150,7 @@ export default function PaymentListPage() {
   const handleEdit = (
     payment
   ) => {
+    if (readOnly) return;
     setEditingPayment({
       ...payment,
 
@@ -1168,6 +1174,7 @@ export default function PaymentListPage() {
 
   const handleSubmit =
     async (payload) => {
+      if (readOnly) return;
       try {
         setSaving(true);
 
@@ -1245,6 +1252,7 @@ export default function PaymentListPage() {
 
   const confirmDeactivate =
     async () => {
+      if (readOnly) return;
       if (
         !deleteTarget?.id
       ) {
@@ -1290,6 +1298,7 @@ export default function PaymentListPage() {
 
   const handleReactivate =
     async (payment) => {
+      if (readOnly) return;
       if (!payment?.id) {
         return;
       }
@@ -1389,17 +1398,24 @@ export default function PaymentListPage() {
             }
           />
 
-          <Button
-            type="button"
-            onClick={handleAdd}
-            className="h-10 w-full px-4 sm:w-auto"
-          >
-            <span className="mr-1.5 text-lg">
-              +
+          {readOnly ? (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-500 ring-1 ring-inset ring-slate-500/15 dark:bg-white/10 dark:text-slate-300 dark:ring-white/10">
+              <span className="h-1.5 w-1.5 rounded-full bg-slate-400" />
+              View only
             </span>
+          ) : (
+            <Button
+              type="button"
+              onClick={handleAdd}
+              className="h-10 w-full px-4 sm:w-auto"
+            >
+              <span className="mr-1.5 text-lg">
+                +
+              </span>
 
-            Add Payment
-          </Button>
+              Add Payment
+            </Button>
+          )}
         </div>
       </div>
 
@@ -1838,6 +1854,7 @@ export default function PaymentListPage() {
                     </div>
                   </div>
 
+                  {!readOnly && (
                   <div className="absolute inset-x-0 bottom-0 z-30 grid h-11 grid-cols-3 gap-px border-t border-slate-100 bg-slate-100 dark:border-white/10 dark:bg-white/[0.06]">
                     <button
                       type="button"
@@ -1897,6 +1914,7 @@ export default function PaymentListPage() {
                       Details
                     </button>
                   </div>
+                  )}
                 </div>
               );
             }
@@ -2061,6 +2079,9 @@ export default function PaymentListPage() {
                       </td>
 
                       <td className="px-2 py-3">
+                        {readOnly ? (
+                          <span className="block text-right text-xs text-slate-400">—</span>
+                        ) : (
                         <div className="flex items-center justify-end gap-0.5">
                           <IconButton
                             title="Edit"
@@ -2146,6 +2167,7 @@ export default function PaymentListPage() {
                             </IconButton>
                           )}
                         </div>
+                        )}
                       </td>
                     </tr>
                   );

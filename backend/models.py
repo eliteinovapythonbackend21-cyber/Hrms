@@ -2449,18 +2449,32 @@ class FollowUp(TimestampMixin, db.Model):
 
 
 class Meeting(TimestampMixin, db.Model):
+    """Backs the CRM "Registration" screen. `registered_by` is the CRM
+    employee who added the registration (used to count today's/this
+    month's registrations for the incentive engine and the CRM employee
+    dashboard); `membership_plan` is the Gold/Silver/Bronze plan chosen
+    at registration time."""
+
     __tablename__ = "meetings"
+
+    MEMBERSHIP_PLANS = ("Gold", "Silver", "Bronze")
 
     id = db.Column(db.Integer, primary_key=True)
     customer_id = db.Column(db.Integer, db.ForeignKey("customers.id"), nullable=False)
     meeting_date = db.Column(db.DateTime, nullable=False)
     notes = db.Column(db.Text)
+    registered_by = db.Column(db.Integer, db.ForeignKey("employees.id"), nullable=True)
+    membership_plan = db.Column(db.String(20), nullable=True)
     is_active = db.Column(db.Boolean, default=True)
     customer = db.relationship("Customer")
+    registered_by_employee = db.relationship("Employee", foreign_keys=[registered_by])
 
     def to_dict(self):
         data = super().to_dict()
         data["customer"] = _summary(self.customer, ["id", "customer_name"])
+        data["registered_by_employee"] = _summary(
+            self.registered_by_employee, ["id", "employee_code", "first_name", "last_name"]
+        )
         return data
 
 
@@ -2720,6 +2734,10 @@ class MonthlyPayout(TimestampMixin, db.Model):
     registration_count = db.Column(db.Integer, nullable=False, default=0)
     eligible_count = db.Column(db.Integer, nullable=False, default=0)
     amount = db.Column(db.Numeric(12, 2), nullable=False, default=0)
+    # Incentive is marked payable on the 20th of the month following the
+    # incentive period — snapshotted here so the invoice generated from it
+    # carries the same due date.
+    due_date = db.Column(db.Date, nullable=True)
 
     status = db.Column(db.String(20), default="Pending")
     is_active = db.Column(db.Boolean, default=True)

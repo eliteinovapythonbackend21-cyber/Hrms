@@ -61,7 +61,12 @@ export const routePermissions = {
   "/crm/customers/:id": ["admin"],
   "/crm/customers": ["admin"],
   "/crm/follow-ups": ["admin"],
-  "/crm/meetings": ["admin"],
+  // "employee" here covers CRM-department employees adding their own
+  // Registrations (see meetings.py's on_create, which stamps
+  // `registered_by` to their own Employee record regardless of what's
+  // submitted) — full add/edit access, not read-only like the entries
+  // below.
+  "/crm/meetings": ["admin", "employee"],
   // "employee" here covers CRM-department employees reaching their
   // read-only Incentive / Incentive Invoice screens; the sidebar only
   // surfaces these for them, and the pages themselves hide every
@@ -70,7 +75,9 @@ export const routePermissions = {
   "/crm/invoices": ["admin", "employee"],
   // Tier-based incentive dashboard — admin (full) + CRM-dept employee (own, read-only)
   "/crm/incentives": ["admin", "employee"],
-  "/crm/payments": ["admin"],
+  // "employee" here covers CRM-department employees reaching their
+  // read-only Payments screen, same pattern as invoices/quotations above.
+  "/crm/payments": ["admin", "employee"],
   "/crm/support-tickets": ["admin"],
   "/finance/accounts": ["admin", "finance"],
   "/finance/vendors": ["admin", "finance"],

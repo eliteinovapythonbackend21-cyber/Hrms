@@ -1,6 +1,12 @@
 import GenericForm from "@/components/form/GenericForm";
 import { useCustomerOptions } from "@/hooks/useLookupOptions";
 
+const MEMBERSHIP_PLAN_OPTIONS = [
+  { value: "Gold", label: "Gold" },
+  { value: "Silver", label: "Silver" },
+  { value: "Bronze", label: "Bronze" },
+];
+
 /* =========================================================
    HELPER
 ========================================================= */
@@ -91,6 +97,14 @@ export default function MeetingForm({
     },
 
     {
+      name: "membership_plan",
+      label: "Membership Plan",
+      type: "select",
+      options: MEMBERSHIP_PLAN_OPTIONS,
+      required: true,
+    },
+
+    {
       name: "notes",
       label: "Registration Notes",
       type: "textarea",
@@ -126,6 +140,10 @@ export default function MeetingForm({
       normalizeDateForInput(
         registrationDate
       ),
+
+    membership_plan:
+      initialData?.membership_plan ||
+      "",
   };
 
   /* =======================================================

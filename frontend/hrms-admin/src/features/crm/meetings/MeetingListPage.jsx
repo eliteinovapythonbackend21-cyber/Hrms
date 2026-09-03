@@ -51,6 +51,20 @@ const EXPORT_COLUMNS = [
       r.notes || "",
   },
   {
+    header: "Membership Plan",
+    accessor: (r) =>
+      r.membership_plan || "-",
+  },
+  {
+    header: "Registered By",
+    accessor: (r) =>
+      r.registered_by_employee
+        ? `${r.registered_by_employee.first_name || ""} ${
+            r.registered_by_employee.last_name || ""
+          }`.trim()
+        : "",
+  },
+  {
     header: "Active",
     accessor: (r) =>
       r.is_active !== false
@@ -194,6 +208,24 @@ function getStatusBadgeClass(status) {
   return (
     STATUS_BADGE_CLASS[status] ||
     STATUS_BADGE_CLASS.Scheduled
+  );
+}
+
+const MEMBERSHIP_PLAN_BADGE_CLASS = {
+  Gold:
+    "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400",
+
+  Silver:
+    "bg-slate-100 text-slate-700 dark:bg-white/10 dark:text-slate-300",
+
+  Bronze:
+    "bg-orange-50 text-orange-700 dark:bg-orange-500/10 dark:text-orange-400",
+};
+
+function getMembershipPlanBadgeClass(plan) {
+  return (
+    MEMBERSHIP_PLAN_BADGE_CLASS[plan] ||
+    "bg-primary-50 text-primary-700 dark:bg-primary-500/10 dark:text-primary-400"
   );
 }
 
@@ -623,6 +655,30 @@ function RegistrationDetailsCard({
             {formatDate(
               registration?.meeting_date
             )}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-[100px_minmax(0,1fr)] gap-3">
+          <span className="text-xs text-slate-400">
+            Membership Plan
+          </span>
+
+          <span className="text-right text-xs font-semibold text-slate-700 dark:text-slate-200">
+            {registration?.membership_plan || "-"}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-[100px_minmax(0,1fr)] gap-3">
+          <span className="text-xs text-slate-400">
+            Registered By
+          </span>
+
+          <span className="break-words text-right text-xs font-medium text-slate-700 dark:text-slate-200">
+            {registration?.registered_by_employee
+              ? `${registration.registered_by_employee.first_name || ""} ${
+                  registration.registered_by_employee.last_name || ""
+                }`.trim()
+              : "-"}
           </span>
         </div>
 
@@ -1597,6 +1653,18 @@ export default function MeetingListPage() {
                             "No registration notes added."}
                         </span>
                       </div>
+
+                      {registration.membership_plan && (
+                        <div className="pt-0.5">
+                          <span
+                            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${getMembershipPlanBadgeClass(
+                              registration.membership_plan
+                            )}`}
+                          >
+                            {registration.membership_plan} Plan
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -1686,6 +1754,10 @@ export default function MeetingListPage() {
                 </th>
 
                 <th className="px-4 py-3 font-medium">
+                  Membership Plan
+                </th>
+
+                <th className="px-4 py-3 font-medium">
                   Status
                 </th>
 
@@ -1756,6 +1828,20 @@ export default function MeetingListPage() {
                           {registration.notes ||
                             "-"}
                         </span>
+                      </td>
+
+                      <td className="px-4 py-3">
+                        {registration.membership_plan ? (
+                          <span
+                            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${getMembershipPlanBadgeClass(
+                              registration.membership_plan
+                            )}`}
+                          >
+                            {registration.membership_plan}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-slate-400">-</span>
+                        )}
                       </td>
 
                       <td className="px-4 py-3">
