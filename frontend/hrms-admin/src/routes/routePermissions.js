@@ -78,7 +78,10 @@ export const routePermissions = {
   // "employee" here covers CRM-department employees reaching their
   // read-only Payments screen, same pattern as invoices/quotations above.
   "/crm/payments": ["admin", "employee"],
-  "/crm/support-tickets": ["admin"],
+  // "employee" here covers CRM-department employees raising/managing
+  // their own support tickets, same full-access pattern as Registration
+  // (meetings.py) — not read-only like invoices/quotations/payments above.
+  "/crm/support-tickets": ["admin", "employee"],
   "/finance/accounts": ["admin", "finance"],
   "/finance/vendors": ["admin", "finance"],
   "/finance/expenses": ["admin", "finance"],

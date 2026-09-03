@@ -4,12 +4,18 @@ import { useQuery } from "@tanstack/react-query";
 import Badge from "@/components/ui/Badge";
 import TableToolbar from "@/components/table/TableToolbar";
 import { crmApi } from "@/api/crm.api";
+import { useMonthlyAttendance } from "@/features/attendance/useMonthlyAttendance";
 import { formatCurrency } from "@/utils/formatCurrency";
 import { formatDate, formatDateTime } from "@/utils/formatDate";
 
 /* =========================================================
    CONSTANTS
 ========================================================= */
+
+const MONTH_NAMES = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
 
 const STATUS_BADGE_CLASS = {
   Paid: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400",
@@ -61,10 +67,149 @@ function StatTile({ label, value, tone, description }) {
 }
 
 /* =========================================================
+   ATTENDANCE & SALARY HISTORY
+   Same monthly attendance/salary/incentive figures as the Finance
+   Attendance screen, browsable by month right here so Finance has one
+   place to check both the invoice/payment ledger and the underlying
+   attendance-driven salary history that produced those incentives.
+========================================================= */
+
+function AttendanceHistorySection() {
+  const now = new Date();
+  const [month, setMonth] = useState(now.getMonth() + 1);
+  const [year, setYear] = useState(now.getFullYear());
+
+  const { data, isLoading, isFetching, refetch } = useMonthlyAttendance(month, year);
+  const rows = data?.items || [];
+
+  const totals = useMemo(
+    () =>
+      rows.reduce(
+        (acc, r) => {
+          const deduction =
+            r.total_deduction != null
+              ? Number(r.total_deduction)
+              : Number(r.leave_deduction || 0) + Number(r.absent_deduction || 0);
+          acc.deduction += deduction;
+          acc.incentive += Number(r.incentive_amount || 0);
+          acc.netSalary += Number(r.net_salary || 0);
+          return acc;
+        },
+        { deduction: 0, incentive: 0, netSalary: 0 }
+      ),
+    [rows]
+  );
+
+  const yearOptions = useMemo(() => {
+    const y = now.getFullYear();
+    return [y + 1, y, y - 1, y - 2];
+  }, [now]);
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-xs text-slate-500 dark:text-slate-400">
+          Attendance-derived salary deductions, CRM incentives, and net salary — by month.
+        </p>
+        <div className="flex items-center gap-2">
+          <select
+            value={month}
+            onChange={(e) => setMonth(Number(e.target.value))}
+            className="h-9 rounded-lg border border-slate-300 bg-white px-2.5 text-xs dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
+          >
+            {MONTH_NAMES.map((m, i) => (
+              <option key={m} value={i + 1}>{m}</option>
+            ))}
+          </select>
+          <select
+            value={year}
+            onChange={(e) => setYear(Number(e.target.value))}
+            className="h-9 rounded-lg border border-slate-300 bg-white px-2.5 text-xs dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
+          >
+            {yearOptions.map((y) => (
+              <option key={y} value={y}>{y}</option>
+            ))}
+          </select>
+          <TableToolbar onRefresh={refetch} refreshing={isFetching} />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <StatTile tone="red" label="Total Deductions" value={formatCurrency(totals.deduction)} description={`${MONTH_NAMES[month - 1]} ${year}`} />
+        <StatTile tone="emerald" label="Total Incentives" value={formatCurrency(totals.incentive)} description="CRM registration incentives" />
+        <StatTile label="Total Net Salary" value={formatCurrency(totals.netSalary)} description={`${rows.length} employee${rows.length === 1 ? "" : "s"}`} />
+      </div>
+
+      <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-white/10">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[720px] text-left text-sm">
+            <thead className="tbl-head">
+              <tr>
+                <th className="px-4 py-3 font-medium">Employee</th>
+                <th className="px-4 py-3 font-medium">Code</th>
+                <th className="px-4 py-3 text-right font-medium">Total Deduction</th>
+                <th className="px-4 py-3 text-right font-medium">Incentive</th>
+                <th className="px-4 py-3 text-right font-medium">Net Salary</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              {isLoading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <tr key={i}>
+                    {Array.from({ length: 5 }).map((__, j) => (
+                      <td key={j} className="px-4 py-4">
+                        <div className="h-4 w-full animate-pulse rounded bg-slate-100 dark:bg-white/[0.06]" />
+                      </td>
+                    ))}
+                  </tr>
+                ))
+              ) : rows.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-4 py-10 text-center text-sm text-slate-400">
+                    No attendance/salary records for {MONTH_NAMES[month - 1]} {year}.
+                  </td>
+                </tr>
+              ) : (
+                rows.map((r) => {
+                  const deduction =
+                    r.total_deduction != null
+                      ? Number(r.total_deduction)
+                      : Number(r.leave_deduction || 0) + Number(r.absent_deduction || 0);
+                  return (
+                    <tr key={r.employee_id} className="tbl-row">
+                      <td className="whitespace-nowrap px-4 py-3 font-medium text-slate-800 dark:text-slate-100">
+                        {r.employee_name || "-"}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 font-mono text-xs text-slate-500 dark:text-slate-400">
+                        {r.employee_code || "-"}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 text-right font-semibold text-red-600 dark:text-red-400">
+                        {formatCurrency(deduction)}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 text-right text-emerald-600 dark:text-emerald-400">
+                        {r.incentive_amount != null ? formatCurrency(r.incentive_amount) : "—"}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 text-right font-bold text-slate-900 dark:text-white">
+                        {formatCurrency(r.net_salary || 0)}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* =========================================================
    PAGE
 ========================================================= */
 
 export default function FinancialHistoryPage() {
+  const [tab, setTab] = useState("ledger");
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -159,13 +304,44 @@ export default function FinancialHistoryPage() {
             Financial History
           </h1>
           <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
-            Every invoice and payment, in one traceable ledger
+            {tab === "ledger"
+              ? "Every invoice and payment, in one traceable ledger"
+              : "Attendance-driven salary deductions, incentives and net salary, by month"}
           </p>
         </div>
 
-        <TableToolbar onRefresh={refetchAll} refreshing={isFetching} />
+        {tab === "ledger" && <TableToolbar onRefresh={refetchAll} refreshing={isFetching} />}
       </div>
 
+      <div className="flex w-fit items-center gap-1 rounded-lg bg-slate-100 p-1 dark:bg-white/[0.06]">
+        <button
+          type="button"
+          onClick={() => setTab("ledger")}
+          className={`rounded-md px-3 py-1.5 text-xs font-medium transition ${
+            tab === "ledger"
+              ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
+              : "text-slate-500 hover:text-slate-700 dark:text-slate-400"
+          }`}
+        >
+          Invoice &amp; Payment Ledger
+        </button>
+        <button
+          type="button"
+          onClick={() => setTab("attendance")}
+          className={`rounded-md px-3 py-1.5 text-xs font-medium transition ${
+            tab === "attendance"
+              ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
+              : "text-slate-500 hover:text-slate-700 dark:text-slate-400"
+          }`}
+        >
+          Attendance &amp; Salary History
+        </button>
+      </div>
+
+      {tab === "attendance" && <AttendanceHistorySection />}
+
+      {tab === "ledger" && (
+      <>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <StatTile
           label="Total Invoiced"
@@ -293,6 +469,8 @@ export default function FinancialHistoryPage() {
           Showing {filteredRows.length} record{filteredRows.length === 1 ? "" : "s"}.
         </p>
       </div>
+      </>
+      )}
     </div>
   );
 }

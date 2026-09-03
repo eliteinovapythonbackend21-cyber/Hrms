@@ -10,6 +10,7 @@ import { useIsCrmEmployee } from "@/hooks/useIsCrmEmployee";
 
 import {
   useRunIncentives,
+  useRunPayoutNow,
   useWeeklyIncentives,
   useMonthlyPayouts,
   useYearlyPayouts,
@@ -120,6 +121,7 @@ export default function IncentiveDashboardPage() {
   const invoices = useIncentiveInvoiceList({ per_page: 500 });
 
   const runMut = useRunIncentives();
+  const runPayoutMut = useRunPayoutNow();
   const genMut = useGenerateIncentiveInvoice();
 
   const weeklyRows = weekly.data?.items || [];
@@ -142,6 +144,15 @@ export default function IncentiveDashboardPage() {
       );
     } catch (e) {
       showToast(e?.response?.data?.message || "Run failed", "error");
+    }
+  };
+
+  const runPayoutNow = async () => {
+    try {
+      const res = await runPayoutMut.mutateAsync({ month, year });
+      showToast(res.data?.message || "Payout run complete", "success");
+    } catch (e) {
+      showToast(e?.response?.data?.message || "Payout run failed", "error");
     }
   };
 
@@ -225,11 +236,24 @@ export default function IncentiveDashboardPage() {
           {canManage && (
             <Button
               type="button"
+              variant="secondary"
               onClick={runNow}
               isLoading={runMut.isPending}
               className="h-10 px-4"
             >
               Run for {MONTHS[month - 1]} {year}
+            </Button>
+          )}
+
+          {canManage && (
+            <Button
+              type="button"
+              onClick={runPayoutNow}
+              isLoading={runPayoutMut.isPending}
+              title="Invoice + settle this period now (via Razorpay when configured, else an internal settlement) — same as the automated 20th-of-the-month run, on demand"
+              className="h-10 px-4"
+            >
+              Run Payout Now
             </Button>
           )}
         </div>

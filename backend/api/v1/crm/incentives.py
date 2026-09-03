@@ -32,7 +32,13 @@ from utils import (
     with_token,
 )
 
-from .incentive_engine import employee_summary, payable_due_date, run_period, seed_default_tiers
+from .incentive_engine import (
+    employee_summary,
+    payable_due_date,
+    process_payout_for_period,
+    run_period,
+    seed_default_tiers,
+)
 
 incentives_bp = Blueprint("incentives_bp", __name__)
 
@@ -198,6 +204,36 @@ def run_incentive_period(token_response):
     result = run_period(month, year)
     return jsonify({
         "message": f"Incentives recomputed for {month}/{year}",
+        "data": result,
+        "token_response": token_response,
+    }), 200
+
+
+@incentives_bp.route("/run-payout", methods=["POST"])
+@jwt_required()
+@with_token
+def run_payout_now(token_response):
+    """Admin-only "Run Payout Now": invoices every payable amount for the
+    given period and settles it — via a real Razorpay payout when
+    configured, otherwise an internal settlement — exactly like the
+    automated 20th-of-the-month run, but on demand for any period. Safe
+    to click again later (already-Paid invoices aren't double-paid)."""
+    if not _can_manage(get_current_user()):
+        return jsonify({"message": "Admin privileges required"}), 403
+
+    data = request.get_json(silent=True) or {}
+    try:
+        month = int(data.get("month"))
+        year = int(data.get("year"))
+    except (TypeError, ValueError):
+        return jsonify({"message": "month and year are required integers"}), 400
+    if not 1 <= month <= 12:
+        return jsonify({"message": "month must be 1-12"}), 400
+
+    result = process_payout_for_period(month, year, force=True)
+    return jsonify({
+        "message": f"Payout run for {month}/{year} — "
+        f"{result['invoices_created']} invoice(s), {result['payments_created']} payment(s)",
         "data": result,
         "token_response": token_response,
     }), 200

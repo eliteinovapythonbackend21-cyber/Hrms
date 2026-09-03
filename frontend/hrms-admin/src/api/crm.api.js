@@ -72,6 +72,7 @@ export const crmApi = {
     updateTier: (id, payload) => axiosClient.put(C.INCENTIVE_TIERS_ITEM(id), payload),
     deactivateTier: (id) => axiosClient.delete(C.INCENTIVE_TIERS_ITEM(id)),
     run: (month, year) => axiosClient.post(C.INCENTIVE_RUN, { month, year }),
+    runPayout: (month, year) => axiosClient.post(C.INCENTIVE_RUN_PAYOUT, { month, year }),
     weekly: (params) => axiosClient.get(C.INCENTIVE_WEEKLY, { params }),
     monthly: (params) => axiosClient.get(C.INCENTIVE_MONTHLY, { params }),
     yearly: (params) => axiosClient.get(C.INCENTIVE_YEARLY, { params }),

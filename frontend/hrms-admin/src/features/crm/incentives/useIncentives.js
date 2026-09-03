@@ -25,6 +25,22 @@ export function useRunIncentives() {
   });
 }
 
+// Admin-only "Run Payout Now" — invoices + settles (Razorpay when
+// configured, else an internal settlement) the given period on demand,
+// same as the automated 20th-of-the-month run.
+export function useRunPayoutNow() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ month, year }) => api.runPayout(month, year),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["incentive-monthly"] });
+      qc.invalidateQueries({ queryKey: ["incentive-yearly"] });
+      qc.invalidateQueries({ queryKey: ["incentive-summary"] });
+      qc.invalidateQueries({ queryKey: ["incentive-invoices"] });
+    },
+  });
+}
+
 /* ---------------- reads ---------------- */
 
 export function useWeeklyIncentives(params, options = {}) {

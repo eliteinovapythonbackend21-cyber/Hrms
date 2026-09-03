@@ -27,7 +27,7 @@ support_tickets_bp = register_crud_blueprint(
         "customer_id",
         "lead_id",
         "raised_by",
-        "assigned_to"
+        "assigned_to",
         "subject",
         "description",
         "status",

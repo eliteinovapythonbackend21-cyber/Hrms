@@ -241,6 +241,7 @@ export const CRM_EMPLOYEE_NAV = {
     { label: "Incentive Slabs", path: "/crm/leads/incentive-slabs", icon: "crm" },
     { label: "Invoices", path: "/crm/invoices", icon: "crm" },
     { label: "Payments", path: "/crm/payments", icon: "crm" },
+    { label: "Support Tickets", path: "/crm/support-tickets", icon: "crm" },
   ],
 };
 

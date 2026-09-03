@@ -380,29 +380,27 @@ def run_period(month, year, auto_invoice=True):
 # end-to-end with zero manual entry either way, just without an actual
 # gateway payout until those are configured.
 
-def auto_process_due_payouts(today=None):
-    """Idempotent — safe to call on every request. On/after the 20th of
-    month M, the incentive period that just became payable is (M-1, its
-    year); this recomputes it (registrations may have kept coming in
-    right up to the 20th), invoices every payable amount, and
-    immediately auto-settles each invoice with a system Payment row —
-    all without any admin action. A period is only ever processed once
-    (see IncentivePayoutRun's unique (month, year) guard)."""
+def process_payout_for_period(month, year, today=None, force=False):
+    """Recomputes the period, invoices every payable amount, and settles
+    each invoice — via a real Razorpay payout when configured, else an
+    internal settlement — creating zero manual invoice/payment entries
+    either way. Idempotent per (month, year) via IncentivePayoutRun,
+    unless `force=True` (admin "Run Payout Now" / manual testing), which
+    clears any existing run record first so the period can be reprocessed
+    — new/changed registrations are picked up and any not-yet-paid
+    invoice gets a fresh settlement attempt; already-Paid invoices are
+    left alone (no double payment)."""
     today = today or date.today()
 
-    if today.day < 20:
-        return None  # nothing becomes payable before the 20th
-
-    period_month = today.month - 1
-    period_year = today.year
-    if period_month < 1:
-        period_month = 12
-        period_year -= 1
-
-    if IncentivePayoutRun.query.filter_by(month=period_month, year=period_year).first():
+    existing_run = IncentivePayoutRun.query.filter_by(month=month, year=year).first()
+    if existing_run and not force:
         return None  # already processed this period
 
-    result = run_period(period_month, period_year, auto_invoice=True)
+    if existing_run and force:
+        db.session.delete(existing_run)
+        db.session.flush()
+
+    result = run_period(month, year, auto_invoice=True)
 
     payments_created = 0
     invoices = Invoice.query.filter(
@@ -410,8 +408,8 @@ def auto_process_due_payouts(today=None):
         Invoice.status == "Unpaid",
         Invoice.is_active == True,
     ).join(MonthlyPayout, Invoice.monthly_payout_id == MonthlyPayout.id).filter(
-        MonthlyPayout.month == period_month,
-        MonthlyPayout.year == period_year,
+        MonthlyPayout.month == month,
+        MonthlyPayout.year == year,
     ).all()
 
     from .razorpay_gateway import pay_incentive
@@ -461,8 +459,8 @@ def auto_process_due_payouts(today=None):
         payments_created += 1
 
     run_record = IncentivePayoutRun(
-        month=period_month,
-        year=period_year,
+        month=month,
+        year=year,
         invoices_created=result.get("invoices_created", 0),
         payments_created=payments_created,
     )
@@ -470,11 +468,33 @@ def auto_process_due_payouts(today=None):
     db.session.commit()
 
     return {
-        "month": period_month,
-        "year": period_year,
+        "month": month,
+        "year": year,
         **result,
         "payments_created": payments_created,
     }
+
+
+def auto_process_due_payouts(today=None):
+    """Idempotent — safe to call on every request. On/after the 20th of
+    month M, the incentive period that just became payable is (M-1, its
+    year); this recomputes it (registrations may have kept coming in
+    right up to the 20th), invoices every payable amount, and
+    immediately auto-settles each invoice with a system Payment row —
+    all without any admin action. A period is only ever processed once
+    (see IncentivePayoutRun's unique (month, year) guard)."""
+    today = today or date.today()
+
+    if today.day < 20:
+        return None  # nothing becomes payable before the 20th
+
+    period_month = today.month - 1
+    period_year = today.year
+    if period_month < 1:
+        period_month = 12
+        period_year -= 1
+
+    return process_payout_for_period(period_month, period_year, today=today)
 
 
 def employee_summary(employee_id, year):

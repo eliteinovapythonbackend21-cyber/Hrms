@@ -154,6 +154,7 @@ export const API = {
     INCENTIVE_TIERS: "/incentives/tiers",
     INCENTIVE_TIERS_ITEM: (id) => `/incentives/tiers/${id}`,
     INCENTIVE_RUN: "/incentives/run",
+    INCENTIVE_RUN_PAYOUT: "/incentives/run-payout",
     INCENTIVE_WEEKLY: "/incentives/weekly",
     INCENTIVE_MONTHLY: "/incentives/monthly",
     INCENTIVE_YEARLY: "/incentives/yearly",
