@@ -110,7 +110,7 @@ const WEEKDAY_LABELS = [
 const COUNTRY_OPTIONS = [
   {
     code: "IN",
-    label: "India",
+    label: "India (Tamil Nadu)",
   },
   {
     code: "US",

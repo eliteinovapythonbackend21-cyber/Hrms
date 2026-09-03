@@ -41,42 +41,136 @@ organization_bp = register_crud_blueprint(
 
 
 # ============================================================
-# INDIA GOVERNMENT HOLIDAYS
+# INDIA (TAMIL NADU) GOVERNMENT HOLIDAYS
+#
+# The company operates out of Tamil Nadu, so "IN" resolves to the
+# Tamil Nadu Government's gazetted holiday list (as notified by
+# the TN Government Public Department) rather than the generic
+# central-government list — Pongal / Thiruvalluvar Day / Uzhavar
+# Thirunal / Tamil New Year replace holidays that aren't observed
+# in TN (Ram Navami, Mahavir Jayanti, Buddha Purnima, Guru Nanak's
+# Birthday, Id-ul-Fitr as a standalone gazetted day, etc.).
 # ============================================================
 
 INDIA_CENTRAL_GAZETTED_HOLIDAYS = {
+    2025: [
+        {
+            "date": "2025-01-01",
+            "name": "New Year's Day",
+        },
+        {
+            "date": "2025-01-14",
+            "name": "Pongal (Thai Pongal)",
+        },
+        {
+            "date": "2025-01-15",
+            "name": "Thiruvalluvar Day",
+        },
+        {
+            "date": "2025-01-16",
+            "name": "Uzhavar Thirunal (Mattu Pongal)",
+        },
+        {
+            "date": "2025-01-26",
+            "name": "Republic Day",
+        },
+        {
+            "date": "2025-03-31",
+            "name": "Ramzan (Id-ul-Fitr)",
+        },
+        {
+            "date": "2025-04-14",
+            "name": "Tamil New Year (Puthandu)",
+        },
+        {
+            "date": "2025-04-18",
+            "name": "Good Friday",
+        },
+        {
+            "date": "2025-05-01",
+            "name": "May Day",
+        },
+        {
+            "date": "2025-06-07",
+            "name": "Bakrid (Id-ul-Zuha)",
+        },
+        {
+            "date": "2025-07-06",
+            "name": "Muharram",
+        },
+        {
+            "date": "2025-08-15",
+            "name": "Independence Day",
+        },
+        {
+            "date": "2025-08-16",
+            "name": "Krishna Jayanthi (Gokulashtami)",
+        },
+        {
+            "date": "2025-08-27",
+            "name": "Vinayakar Chathurthi",
+        },
+        {
+            "date": "2025-09-05",
+            "name": "Milad-un-Nabi (Id-e-Milad)",
+        },
+        {
+            "date": "2025-10-02",
+            "name": "Gandhi Jayanthi",
+        },
+        {
+            "date": "2025-10-02",
+            "name": "Ayutha Pooja / Vijayadasami",
+        },
+        {
+            "date": "2025-10-21",
+            "name": "Deepavali",
+        },
+        {
+            "date": "2025-12-25",
+            "name": "Christmas",
+        },
+    ],
     2026: [
+        {
+            "date": "2026-01-01",
+            "name": "New Year's Day",
+        },
+        {
+            "date": "2026-01-14",
+            "name": "Pongal (Thai Pongal)",
+        },
+        {
+            "date": "2026-01-15",
+            "name": "Thiruvalluvar Day",
+        },
+        {
+            "date": "2026-01-16",
+            "name": "Uzhavar Thirunal (Mattu Pongal)",
+        },
         {
             "date": "2026-01-26",
             "name": "Republic Day",
         },
         {
-            "date": "2026-03-04",
-            "name": "Holi",
-        },
-        {
             "date": "2026-03-21",
-            "name": "Id-ul-Fitr",
-        },
-        {
-            "date": "2026-03-26",
-            "name": "Ram Navami",
-        },
-        {
-            "date": "2026-03-31",
-            "name": "Mahavir Jayanti",
+            "name": "Ramzan (Id-ul-Fitr)",
         },
         {
             "date": "2026-04-03",
             "name": "Good Friday",
         },
         {
+            "date": "2026-04-14",
+            "name": "Tamil New Year (Puthandu)",
+        },
+        {
             "date": "2026-05-01",
-            "name": "Buddha Purnima",
+            "name": "May Day",
         },
         {
             "date": "2026-05-27",
-            "name": "Id-ul-Zuha (Bakrid)",
+            "name": "Bakrid (Id-ul-Zuha)",
         },
         {
             "date": "2026-06-26",
@@ -88,41 +182,74 @@ INDIA_CENTRAL_GAZETTED_HOLIDAYS = {
         },
         {
             "date": "2026-08-26",
-            "name": "Milad-un-Nabi / Id-e-Milad",
+            "name": "Milad-un-Nabi (Id-e-Milad)",
         },
         {
             "date": "2026-09-04",
-            "name": "Janmashtami",
+            "name": "Krishna Jayanthi (Gokulashtami)",
+        },
+        {
+            "date": "2026-09-14",
+            "name": "Vinayakar Chathurthi",
         },
         {
             "date": "2026-10-02",
-            "name": "Mahatma Gandhi's Birthday",
+            "name": "Gandhi Jayanthi",
         },
         {
             "date": "2026-10-20",
-            "name": "Dussehra (Vijay Dashmi)",
+            "name": "Ayutha Pooja / Vijayadasami",
         },
         {
             "date": "2026-11-08",
-            "name": "Diwali (Deepavali)",
-        },
-        {
-            "date": "2026-11-24",
-            "name": "Guru Nanak's Birthday",
+            "name": "Deepavali",
         },
         {
             "date": "2026-12-25",
-            "name": "Christmas Day",
+            "name": "Christmas",
         },
-    ]
+    ],
 }
 
 
+# Fallback set used only when a year isn't in the curated TN list
+# above and the request can't reach an external provider — these
+# are the fixed-date TN/national holidays that never move.
 INDIA_FIXED_NATIONAL_HOLIDAYS = [
+    {
+        "month": 1,
+        "day": 1,
+        "name": "New Year's Day",
+    },
+    {
+        "month": 1,
+        "day": 14,
+        "name": "Pongal (Thai Pongal)",
+    },
+    {
+        "month": 1,
+        "day": 15,
+        "name": "Thiruvalluvar Day",
+    },
+    {
+        "month": 1,
+        "day": 16,
+        "name": "Uzhavar Thirunal (Mattu Pongal)",
+    },
     {
         "month": 1,
         "day": 26,
         "name": "Republic Day",
+    },
+    {
+        "month": 4,
+        "day": 14,
+        "name": "Tamil New Year (Puthandu)",
+    },
+    {
+        "month": 5,
+        "day": 1,
+        "name": "May Day",
     },
     {
         "month": 8,
@@ -132,7 +259,12 @@ INDIA_FIXED_NATIONAL_HOLIDAYS = [
     {
         "month": 10,
         "day": 2,
-        "name": "Mahatma Gandhi's Birthday",
+        "name": "Gandhi Jayanthi",
+    },
+    {
+        "month": 12,
+        "day": 25,
+        "name": "Christmas",
     },
 ]
 
@@ -480,15 +612,15 @@ def sync_government_holidays(
     db.session.commit()
 
     source = (
-        "Government of India central "
-        "gazetted holiday list"
+        "Tamil Nadu Government gazetted "
+        "holiday list"
         if (
             country_code == "IN"
             and year in
             INDIA_CENTRAL_GAZETTED_HOLIDAYS
         )
         else (
-            "India fixed national fallback"
+            "Tamil Nadu fixed holiday fallback"
             if country_code == "IN"
             else "Nager.Date"
         )
