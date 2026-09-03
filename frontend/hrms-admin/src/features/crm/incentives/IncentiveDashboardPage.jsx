@@ -96,6 +96,82 @@ function DataGrid({ columns, rows, empty }) {
 }
 
 /* =========================================================
+   RECORD CARD — same `columns` config DataGrid uses (label +
+   optional render(row)), just laid out as a card instead of a
+   table row. Keeps every tab's card view in sync with its table
+   view for free — no separate per-tab card markup to maintain.
+========================================================= */
+
+function RecordCard({ row, columns }) {
+  const titleCol = columns.find((c) => c.key === "emp") || columns[0];
+  const statusCol = columns.find((c) => c.key === "status");
+  const amountCol = columns.find((c) => c.key === "amount");
+  const actionsCol = columns.find((c) => c.key === "actions");
+  const restCols = columns.filter(
+    (c) => c !== titleCol && c !== statusCol && c !== amountCol && c !== actionsCol
+  );
+
+  const renderVal = (c) => (c.render ? c.render(row) : row[c.key] ?? "—");
+
+  return (
+    <div className="card flex flex-col p-4">
+      <div className="flex items-start justify-between gap-2">
+        <p className="min-w-0 truncate text-sm font-semibold text-slate-900 dark:text-white">
+          {renderVal(titleCol)}
+        </p>
+        {statusCol && renderVal(statusCol)}
+      </div>
+
+      {restCols.length > 0 && (
+        <>
+          <div className="my-3 border-t border-slate-100 dark:border-white/[0.06]" />
+          <div className="flex-1 space-y-2 text-xs">
+            {restCols.map((c) => (
+              <div key={c.key} className="flex items-center justify-between gap-3">
+                <span className="shrink-0 text-slate-400">{c.label}</span>
+                <span className="truncate text-right font-medium text-slate-700 dark:text-slate-200">
+                  {renderVal(c)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {amountCol && (
+        <div className="mt-3 flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2.5 dark:bg-white/[0.04]">
+          <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+            {amountCol.label}
+          </span>
+          <span className="text-lg font-bold text-slate-900 dark:text-white">
+            {row.amount != null ? formatCurrency(row.amount) : "—"}
+          </span>
+        </div>
+      )}
+
+      {actionsCol && <div className="mt-3 flex justify-end">{renderVal(actionsCol)}</div>}
+    </div>
+  );
+}
+
+function CardGrid({ columns, rows, empty }) {
+  if (!rows?.length) {
+    return (
+      <div className="card p-10 text-center text-sm text-slate-500 dark:text-slate-400">
+        {empty}
+      </div>
+    );
+  }
+  return (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      {rows.map((row, i) => (
+        <RecordCard key={row.id ?? i} row={row} columns={columns} />
+      ))}
+    </div>
+  );
+}
+
+/* =========================================================
    PAGE
 ========================================================= */
 
@@ -110,6 +186,7 @@ export default function IncentiveDashboardPage() {
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
   const [tab, setTab] = useState("weekly");
+  const [viewMode, setViewMode] = useState("table");
 
   const { data: summary } = useIncentiveSummary(
     { year },
@@ -363,152 +440,187 @@ export default function IncentiveDashboardPage() {
         </div>
       )}
 
-      {/* TABS */}
-      <div className="flex w-fit items-center gap-1 rounded-lg bg-slate-100 p-1 dark:bg-white/[0.06]">
-        {TABS.map((t) => (
+      {/* TABS + VIEW TOGGLE */}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex w-fit items-center gap-1 rounded-lg bg-slate-100 p-1 dark:bg-white/[0.06]">
+          {TABS.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => setTab(t.id)}
+              className={`rounded-md px-3 py-1.5 text-xs font-medium transition ${
+                tab === t.id
+                  ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
+                  : "text-slate-500 hover:text-slate-700 dark:text-slate-400"
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex items-center rounded-lg bg-slate-100 p-1 dark:bg-white/[0.06]">
           <button
-            key={t.id}
             type="button"
-            onClick={() => setTab(t.id)}
-            className={`rounded-md px-3 py-1.5 text-xs font-medium transition ${
-              tab === t.id
+            onClick={() => setViewMode("card")}
+            className={`rounded-md px-3 py-1.5 text-xs font-medium ${
+              viewMode === "card"
                 ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
-                : "text-slate-500 hover:text-slate-700 dark:text-slate-400"
+                : "text-slate-500 dark:text-slate-400"
             }`}
           >
-            {t.label}
+            Card
           </button>
-        ))}
+          <button
+            type="button"
+            onClick={() => setViewMode("table")}
+            className={`rounded-md px-3 py-1.5 text-xs font-medium ${
+              viewMode === "table"
+                ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
+                : "text-slate-500 dark:text-slate-400"
+            }`}
+          >
+            Table
+          </button>
+        </div>
       </div>
 
-      {tab === "weekly" && (
-        <DataGrid
-          empty={`No weekly incentive rows for ${MONTHS[month - 1]} ${year}. ${
-            canManage ? "Run the calculation above." : ""
-          }`}
-          rows={weeklyRows}
-          columns={[
-            { key: "emp", label: "Employee", render: empName },
-            {
-              key: "week",
-              label: "Week",
-              render: (r) =>
-                `${formatDate(r.week_start_date)} – ${formatDate(
-                  r.week_end_date
-                )}`,
-            },
-            { key: "registration_count", label: "Regs", align: "right" },
-            { key: "target_count", label: "Target", align: "right" },
-            { key: "eligible_count", label: "Eligible", align: "right" },
-          ]}
-        />
-      )}
+      {tab === "weekly" && (() => {
+        const columns = [
+          { key: "emp", label: "Employee", render: empName },
+          {
+            key: "week",
+            label: "Week",
+            render: (r) =>
+              `${formatDate(r.week_start_date)} – ${formatDate(
+                r.week_end_date
+              )}`,
+          },
+          { key: "registration_count", label: "Regs", align: "right" },
+          { key: "target_count", label: "Target", align: "right" },
+          { key: "eligible_count", label: "Eligible", align: "right" },
+        ];
+        const empty = `No weekly incentive rows for ${MONTHS[month - 1]} ${year}. ${
+          canManage ? "Run the calculation above." : ""
+        }`;
+        return viewMode === "card" ? (
+          <CardGrid empty={empty} rows={weeklyRows} columns={columns} />
+        ) : (
+          <DataGrid empty={empty} rows={weeklyRows} columns={columns} />
+        );
+      })()}
 
-      {tab === "monthly" && (
-        <DataGrid
-          empty={`No monthly payouts for ${year}.`}
-          rows={monthlyRows}
-          columns={[
-            { key: "emp", label: "Employee", render: empName },
-            {
-              key: "period",
-              label: "Period",
-              render: (r) => `${MONTHS[r.month - 1]} ${r.year}`,
-            },
-            { key: "week_count", label: "Weeks", align: "right" },
-            { key: "registration_count", label: "Regs", align: "right" },
-            { key: "eligible_count", label: "Eligible", align: "right" },
-            {
-              key: "amount",
-              label: "Payout",
-              align: "right",
-              render: (r) => (
-                <span className="font-semibold text-emerald-600 dark:text-emerald-400">
-                  {formatCurrency(r.amount)}
-                </span>
-              ),
-            },
-            {
-              key: "status",
-              label: "Status",
-              render: (r) => <StatusPill value={r.status} />,
-            },
-            ...(canManage
-              ? [
-                  {
-                    key: "actions",
-                    label: "",
-                    align: "right",
-                    render: (r) =>
-                      Number(r.amount) > 0 && r.status !== "Invoiced" ? (
-                        <button
-                          type="button"
-                          disabled={genMut.isPending}
-                          onClick={() => generate(r.id)}
-                          className="rounded-md bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700 ring-1 ring-inset ring-blue-500/15 transition hover:bg-blue-100 disabled:opacity-40 dark:bg-blue-500/10 dark:text-blue-300 dark:ring-blue-400/20"
-                        >
-                          Generate invoice
-                        </button>
-                      ) : (
-                        <span className="text-xs text-slate-400">—</span>
-                      ),
-                  },
-                ]
-              : []),
-          ]}
-        />
-      )}
+      {tab === "monthly" && (() => {
+        const columns = [
+          { key: "emp", label: "Employee", render: empName },
+          {
+            key: "period",
+            label: "Period",
+            render: (r) => `${MONTHS[r.month - 1]} ${r.year}`,
+          },
+          { key: "week_count", label: "Weeks", align: "right" },
+          { key: "registration_count", label: "Regs", align: "right" },
+          { key: "eligible_count", label: "Eligible", align: "right" },
+          {
+            key: "amount",
+            label: "Payout",
+            align: "right",
+            render: (r) => (
+              <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                {formatCurrency(r.amount)}
+              </span>
+            ),
+          },
+          {
+            key: "status",
+            label: "Status",
+            render: (r) => <StatusPill value={r.status} />,
+          },
+          ...(canManage
+            ? [
+                {
+                  key: "actions",
+                  label: "",
+                  align: "right",
+                  render: (r) =>
+                    Number(r.amount) > 0 && r.status !== "Invoiced" ? (
+                      <button
+                        type="button"
+                        disabled={genMut.isPending}
+                        onClick={() => generate(r.id)}
+                        className="rounded-md bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700 ring-1 ring-inset ring-blue-500/15 transition hover:bg-blue-100 disabled:opacity-40 dark:bg-blue-500/10 dark:text-blue-300 dark:ring-blue-400/20"
+                      >
+                        Generate invoice
+                      </button>
+                    ) : (
+                      <span className="text-xs text-slate-400">—</span>
+                    ),
+                },
+              ]
+            : []),
+        ];
+        const empty = `No monthly payouts for ${year}.`;
+        return viewMode === "card" ? (
+          <CardGrid empty={empty} rows={monthlyRows} columns={columns} />
+        ) : (
+          <DataGrid empty={empty} rows={monthlyRows} columns={columns} />
+        );
+      })()}
 
-      {tab === "yearly" && (
-        <DataGrid
-          empty={`No yearly payouts for ${year}.`}
-          rows={yearlyRows}
-          columns={[
-            { key: "emp", label: "Employee", render: empName },
-            { key: "year", label: "Year", align: "right" },
-            { key: "month_count", label: "Months", align: "right" },
-            { key: "registration_count", label: "Regs", align: "right" },
-            { key: "eligible_count", label: "Eligible", align: "right" },
-            {
-              key: "amount",
-              label: "Total payout",
-              align: "right",
-              render: (r) => (
-                <span className="font-semibold text-emerald-600 dark:text-emerald-400">
-                  {formatCurrency(r.amount)}
-                </span>
-              ),
-            },
-          ]}
-        />
-      )}
+      {tab === "yearly" && (() => {
+        const columns = [
+          { key: "emp", label: "Employee", render: empName },
+          { key: "year", label: "Year", align: "right" },
+          { key: "month_count", label: "Months", align: "right" },
+          { key: "registration_count", label: "Regs", align: "right" },
+          { key: "eligible_count", label: "Eligible", align: "right" },
+          {
+            key: "amount",
+            label: "Total payout",
+            align: "right",
+            render: (r) => (
+              <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                {formatCurrency(r.amount)}
+              </span>
+            ),
+          },
+        ];
+        const empty = `No yearly payouts for ${year}.`;
+        return viewMode === "card" ? (
+          <CardGrid empty={empty} rows={yearlyRows} columns={columns} />
+        ) : (
+          <DataGrid empty={empty} rows={yearlyRows} columns={columns} />
+        );
+      })()}
 
-      {tab === "invoices" && (
-        <DataGrid
-          empty="No incentive invoices yet."
-          rows={invoiceRows}
-          columns={[
-            { key: "invoice_number", label: "Invoice #" },
-            { key: "emp", label: "Employee", render: empName },
-            {
-              key: "amount",
-              label: "Amount",
-              align: "right",
-              render: (r) => formatCurrency(r.amount),
-            },
-            {
-              key: "due_date",
-              label: "Due",
-              render: (r) => (r.due_date ? formatDate(r.due_date) : "—"),
-            },
-            {
-              key: "status",
-              label: "Status",
-              render: (r) => <StatusPill value={r.status} />,
-            },
-          ]}
-        />
-      )}
+      {tab === "invoices" && (() => {
+        const columns = [
+          { key: "invoice_number", label: "Invoice #" },
+          { key: "emp", label: "Employee", render: empName },
+          {
+            key: "amount",
+            label: "Amount",
+            align: "right",
+            render: (r) => formatCurrency(r.amount),
+          },
+          {
+            key: "due_date",
+            label: "Due",
+            render: (r) => (r.due_date ? formatDate(r.due_date) : "—"),
+          },
+          {
+            key: "status",
+            label: "Status",
+            render: (r) => <StatusPill value={r.status} />,
+          },
+        ];
+        const empty = "No incentive invoices yet.";
+        return viewMode === "card" ? (
+          <CardGrid empty={empty} rows={invoiceRows} columns={columns} />
+        ) : (
+          <DataGrid empty={empty} rows={invoiceRows} columns={columns} />
+        );
+      })()}
     </div>
   );
 }

@@ -60,6 +60,36 @@ const TYPE_BADGE_CLASS = {
   Payroll: "bg-violet-50 text-violet-700 dark:bg-violet-500/10 dark:text-violet-400",
 };
 
+const TYPE_ICON_TONE = {
+  Invoice: "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400",
+  Payment: "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400",
+  Payroll: "bg-violet-50 text-violet-600 dark:bg-violet-500/10 dark:text-violet-400",
+};
+
+const InvoiceIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h4M9 8h1m-4.5 12h13a1.5 1.5 0 001.5-1.5V7.121a1.5 1.5 0 00-.44-1.06l-3.622-3.622a1.5 1.5 0 00-1.06-.439H5.5A1.5 1.5 0 004 3.5v15A1.5 1.5 0 005.5 20z" />
+  </svg>
+);
+const PaymentIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+    <rect x="3" y="6" width="18" height="12" rx="2" />
+    <path strokeLinecap="round" d="M3 10h18" />
+  </svg>
+);
+const PayrollIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+    <circle cx="12" cy="8" r="3.2" />
+    <path strokeLinecap="round" strokeLinejoin="round" d="M5 20c1-3.5 4-5.5 7-5.5s6 2 7 5.5" />
+  </svg>
+);
+const TYPE_ICON = { Invoice: InvoiceIcon, Payment: PaymentIcon, Payroll: PayrollIcon };
+
+function RowTypeIcon({ type, className }) {
+  const Comp = TYPE_ICON[type] || InvoiceIcon;
+  return <Comp className={className} />;
+}
+
 function partyName(row) {
   if (row.employee) {
     return (
@@ -93,6 +123,77 @@ function StatTile({ label, value, tone, description }) {
       {description && (
         <p className="mt-0.5 text-[11px] text-slate-400 dark:text-slate-500">{description}</p>
       )}
+    </div>
+  );
+}
+
+/* =========================================================
+   LEDGER CARD
+========================================================= */
+
+function LedgerCard({ row }) {
+  return (
+    <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-shadow duration-200 hover:shadow-md dark:border-white/10 dark:bg-white/[0.04]">
+      <div
+        className={`absolute inset-x-0 top-0 h-0.5 ${
+          row.status === "Paid"
+            ? "bg-emerald-500"
+            : row.status === "Overdue"
+            ? "bg-red-500"
+            : row.status === "Draft"
+            ? "bg-slate-300 dark:bg-slate-600"
+            : "bg-amber-500"
+        }`}
+      />
+
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${TYPE_ICON_TONE[row.type] || TYPE_ICON_TONE.Invoice}`}>
+            <RowTypeIcon type={row.type} className="h-4.5 w-4.5" />
+          </div>
+          <div className="min-w-0">
+            <p className="truncate font-mono text-sm font-semibold text-slate-900 dark:text-white">
+              {row.reference}
+            </p>
+            <p className="mt-0.5 truncate text-[11px] text-slate-400">
+              {row.type === "Invoice" ? formatDateTime(row.date) : formatDate(row.date)}
+            </p>
+          </div>
+        </div>
+        <Badge className={STATUS_BADGE_CLASS[row.status] || STATUS_BADGE_CLASS.Draft}>
+          {row.status}
+        </Badge>
+      </div>
+
+      <div className="my-3 border-t border-slate-100 dark:border-slate-800" />
+
+      <div className="space-y-2 text-xs">
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-slate-400">Type</span>
+          <Badge className={TYPE_BADGE_CLASS[row.type]}>{row.type}</Badge>
+        </div>
+        <div className="flex items-center justify-between gap-3">
+          <span className="shrink-0 text-slate-400">Party / Mode</span>
+          <span className="truncate text-right font-medium text-slate-700 dark:text-slate-200">
+            {row.party}
+          </span>
+        </div>
+        <div className="flex items-center justify-between gap-3">
+          <span className="shrink-0 text-slate-400">Category</span>
+          <span className="truncate text-right text-slate-600 dark:text-slate-300">
+            {row.category}
+          </span>
+        </div>
+      </div>
+
+      <div className="mt-3 flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2.5 dark:bg-white/[0.04]">
+        <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+          Amount
+        </span>
+        <span className="text-lg font-bold text-slate-900 dark:text-white">
+          {formatCurrency(row.amount)}
+        </span>
+      </div>
     </div>
   );
 }
@@ -258,6 +359,7 @@ function AttendanceHistorySection() {
 
 export default function FinancialHistoryPage() {
   const [tab, setTab] = useState("ledger");
+  const [viewMode, setViewMode] = useState("card");
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -487,43 +589,91 @@ export default function FinancialHistoryPage() {
               <option value="Overdue">Overdue</option>
               <option value="Draft">Draft</option>
             </select>
+
+            <div className="flex items-center rounded-lg bg-slate-100 p-1 dark:bg-white/[0.06]">
+              <button
+                type="button"
+                onClick={() => setViewMode("card")}
+                className={`rounded-md px-3 py-1.5 text-xs font-medium ${
+                  viewMode === "card"
+                    ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
+                    : "text-slate-500 dark:text-slate-400"
+                }`}
+              >
+                Card
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("table")}
+                className={`rounded-md px-3 py-1.5 text-xs font-medium ${
+                  viewMode === "table"
+                    ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
+                    : "text-slate-500 dark:text-slate-400"
+                }`}
+              >
+                Table
+              </button>
+            </div>
           </div>
         </div>
 
-        <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-white/10">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[860px] text-left text-sm">
-              <thead className="tbl-head">
-                <tr>
-                  <th className="px-4 py-3 font-medium">Date</th>
-                  <th className="px-4 py-3 font-medium">Type</th>
-                  <th className="px-4 py-3 font-medium">Reference</th>
-                  <th className="px-4 py-3 font-medium">Party / Mode</th>
-                  <th className="px-4 py-3 font-medium">Category</th>
-                  <th className="px-4 py-3 text-right font-medium">Amount</th>
-                  <th className="px-4 py-3 font-medium">Status</th>
-                </tr>
-              </thead>
-
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {isLoading ? (
-                  Array.from({ length: 6 }).map((_, i) => (
-                    <tr key={i}>
-                      {Array.from({ length: 7 }).map((__, j) => (
-                        <td key={j} className="px-4 py-4">
-                          <div className="h-4 w-full animate-pulse rounded bg-slate-100 dark:bg-white/[0.06]" />
-                        </td>
-                      ))}
-                    </tr>
-                  ))
-                ) : filteredRows.length === 0 ? (
+        {isLoading ? (
+          viewMode === "card" ? (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="h-[200px] animate-pulse rounded-2xl bg-slate-100 dark:bg-white/[0.06]" />
+              ))}
+            </div>
+          ) : (
+            <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-white/10">
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[860px] text-left text-sm">
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                    {Array.from({ length: 6 }).map((_, i) => (
+                      <tr key={i}>
+                        {Array.from({ length: 7 }).map((__, j) => (
+                          <td key={j} className="px-4 py-4">
+                            <div className="h-4 w-full animate-pulse rounded bg-slate-100 dark:bg-white/[0.06]" />
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )
+        ) : filteredRows.length === 0 ? (
+          <div className="flex min-h-[160px] flex-col items-center justify-center rounded-xl border border-slate-200 bg-white px-6 py-10 text-center dark:border-white/10 dark:bg-white/[0.04]">
+            <h3 className="text-sm font-semibold text-slate-800 dark:text-white">No financial records found</h3>
+            <p className="mt-1 max-w-sm text-xs text-slate-500 dark:text-slate-400">
+              No invoices, payments or payroll runs match your current search or filters.
+            </p>
+          </div>
+        ) : viewMode === "card" ? (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {filteredRows.map((row) => (
+              <LedgerCard key={row.key} row={row} />
+            ))}
+          </div>
+        ) : (
+          <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-white/10">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[860px] text-left text-sm">
+                <thead className="tbl-head">
                   <tr>
-                    <td colSpan={7} className="px-4 py-10 text-center text-sm text-slate-400">
-                      No financial records found.
-                    </td>
+                    <th className="px-4 py-3 font-medium">Date</th>
+                    <th className="px-4 py-3 font-medium">Type</th>
+                    <th className="px-4 py-3 font-medium">Reference</th>
+                    <th className="px-4 py-3 font-medium">Party / Mode</th>
+                    <th className="px-4 py-3 font-medium">Category</th>
+                    <th className="px-4 py-3 text-right font-medium">Amount</th>
+                    <th className="px-4 py-3 font-medium">Status</th>
                   </tr>
-                ) : (
-                  filteredRows.map((row) => (
+                </thead>
+
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                  {filteredRows.map((row) => (
                     <tr key={row.key} className="tbl-row">
                       <td className="whitespace-nowrap px-4 py-3 text-slate-600 dark:text-slate-300">
                         {row.type === "Invoice" ? formatDateTime(row.date) : formatDate(row.date)}
@@ -549,12 +699,12 @@ export default function FinancialHistoryPage() {
                         </Badge>
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
+        )}
 
         <p className="mt-3 text-xs text-slate-400 dark:text-slate-500">
           Showing {filteredRows.length} record{filteredRows.length === 1 ? "" : "s"}.
