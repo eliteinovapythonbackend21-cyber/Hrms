@@ -6,6 +6,12 @@ import { holidayApi, masterApi } from "@/api/master.api";
 import { getUser } from "@/utils/tokenHelpers";
 import { useCompanies } from "@/features/master/company/useCompanies";
 import { useCompanyBranches } from "@/features/master/branches/useBranches";
+import {
+  use3DTilt,
+  useMagnetic,
+  Motion3DStyles,
+  GridPattern,
+} from "@/hooks/use3DMotion";
 
 const MONTH_NAMES = [
   "January", "February", "March", "April", "May", "June",
@@ -38,6 +44,79 @@ function dateKey(value) {
 
   return String(value).slice(0, 10);
 }
+
+/* =========================================================
+   STAT TILE
+========================================================= */
+
+function StatTile({ tone, label, value, icon }) {
+  const { ref, handlers } = use3DTilt({ max: 9, scale: 1.02 });
+
+  const styles = {
+    emerald: {
+      border: "border-emerald-100 dark:border-emerald-900/30",
+      icon: "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400",
+      value: "text-emerald-600 dark:text-emerald-400",
+    },
+    primary: {
+      border: "border-slate-200 dark:border-white/10",
+      icon: "bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400",
+      value: "text-primary-600 dark:text-primary-400",
+    },
+    amber: {
+      border: "border-amber-100 dark:border-amber-900/30",
+      icon: "bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400",
+      value: "text-amber-600 dark:text-amber-400",
+    },
+  }[tone];
+
+  return (
+    <div className="u-tilt-perspective">
+      <div
+        ref={ref}
+        {...handlers}
+        className={`u-tilt u-glare relative overflow-hidden rounded-xl border bg-white px-3 py-2.5 shadow-sm dark:bg-white/[0.04] ${styles.border}`}
+      >
+        <div className="u-tilt-content flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            <p className={`text-lg font-bold ${styles.value}`}>{value}</p>
+            <p className="truncate text-[10px] text-slate-500 dark:text-slate-400">{label}</p>
+          </div>
+          <div className={`u-float-layer flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${styles.icon}`}>
+            {icon}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const DaysIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+  </svg>
+);
+const HoursIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <circle cx="12" cy="12" r="9" />
+    <path strokeLinecap="round" d="M12 7v5l3 2" />
+  </svg>
+);
+const LeaveIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <rect x="3" y="5" width="18" height="16" rx="2" />
+    <path strokeLinecap="round" d="M16 3v4M8 3v4M3 11h18" />
+  </svg>
+);
+const CalendarHeroIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <rect x="3" y="5" width="18" height="16" rx="2" />
+    <path strokeLinecap="round" d="M16 3v4M8 3v4M3 11h18" />
+    <circle cx="8" cy="15" r="1.2" fill="currentColor" stroke="none" />
+    <circle cx="12" cy="15" r="1.2" fill="currentColor" stroke="none" />
+    <circle cx="16" cy="15" r="1.2" fill="currentColor" stroke="none" />
+  </svg>
+);
 
 // Calendar rendering (calendar cell generation, legend, grid) intentionally
 // mirrors the pattern in features/holidays/HolidayListPage.jsx, trimmed down
@@ -283,36 +362,56 @@ export default function MyAttendanceCalendar() {
   const isToday = (day) =>
     year === today.getFullYear() && month === today.getMonth() && day === today.getDate();
 
+  const prevMagnet = useMagnetic(0.3);
+  const nextMagnet = useMagnetic(0.3);
+
   return (
     <div className="card-elevated overflow-hidden">
-      <div className="flex flex-col gap-3 border-b border-slate-200/80 px-4 py-3 sm:flex-row sm:items-center sm:justify-between dark:border-white/[0.08]">
-        <div>
-          <h3 className="text-sm font-semibold text-slate-800 dark:text-white">Your Calendar</h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            Attendance, holidays and approved leaves for the month
-          </p>
+      <Motion3DStyles />
+
+      {/* HEADER */}
+      <div className="u-rise relative flex flex-col gap-3 overflow-hidden border-b border-slate-200/80 bg-gradient-to-br from-white via-primary-50/40 to-white px-4 py-3 dark:border-white/[0.08] dark:from-primary-500/[0.08] dark:via-white/[0.02] dark:to-transparent sm:flex-row sm:items-center sm:justify-between">
+        <GridPattern id="my-calendar-grid" />
+        <div className="pointer-events-none absolute -right-12 -top-12 h-32 w-32 rounded-full bg-primary-500/15 blur-3xl" />
+
+        <div className="relative flex items-center gap-2.5">
+          <div className="u-hover-float">
+            <div className="u-float-target flex h-9 w-9 items-center justify-center rounded-xl bg-primary-600 text-white shadow-sm shadow-primary-600/30">
+              <CalendarHeroIcon />
+            </div>
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold text-slate-800 dark:text-white">Your Calendar</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Attendance, holidays and approved leaves for the month
+            </p>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={goToPrevMonth}
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition-colors hover:bg-slate-50 dark:border-white/10 dark:text-slate-400 dark:hover:bg-white/5"
-            aria-label="Previous month"
-          >
-            ‹
-          </button>
+        <div className="relative flex items-center gap-2">
+          <div ref={prevMagnet.ref} {...prevMagnet.handlers} className="inline-block will-change-transform">
+            <button
+              type="button"
+              onClick={goToPrevMonth}
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-500 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary-200 hover:bg-primary-50 hover:text-primary-600 dark:border-white/10 dark:text-slate-400 dark:hover:bg-white/5"
+              aria-label="Previous month"
+            >
+              ‹
+            </button>
+          </div>
           <span className="min-w-[110px] text-center text-xs font-bold text-slate-700 dark:text-slate-200">
             {MONTH_NAMES[month]} {year}
           </span>
-          <button
-            type="button"
-            onClick={goToNextMonth}
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition-colors hover:bg-slate-50 dark:border-white/10 dark:text-slate-400 dark:hover:bg-white/5"
-            aria-label="Next month"
-          >
-            ›
-          </button>
+          <div ref={nextMagnet.ref} {...nextMagnet.handlers} className="inline-block will-change-transform">
+            <button
+              type="button"
+              onClick={goToNextMonth}
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-500 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary-200 hover:bg-primary-50 hover:text-primary-600 dark:border-white/10 dark:text-slate-400 dark:hover:bg-white/5"
+              aria-label="Next month"
+            >
+              ›
+            </button>
+          </div>
         </div>
       </div>
 
@@ -381,24 +480,24 @@ export default function MyAttendanceCalendar() {
 
       {/* SUMMARY */}
       <div className="grid grid-cols-3 gap-3 px-4 py-3">
-        <div className="stat-tile stat-tile-success !p-2.5 text-center">
-          <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
-            {isLoading ? "-" : monthSummary.daysWorked}
-          </p>
-          <p className="text-[10px] text-slate-500 dark:text-slate-400">Days worked</p>
-        </div>
-        <div className="stat-tile stat-tile-primary !p-2.5 text-center">
-          <p className="text-lg font-bold text-primary-600 dark:text-primary-400">
-            {isLoading ? "-" : monthSummary.totalHours}
-          </p>
-          <p className="text-[10px] text-slate-500 dark:text-slate-400">Hours logged</p>
-        </div>
-        <div className="stat-tile stat-tile-warn !p-2.5 text-center">
-          <p className="text-lg font-bold text-amber-600 dark:text-amber-400">
-            {isLoading ? "-" : monthSummary.leaveDays}
-          </p>
-          <p className="text-[10px] text-slate-500 dark:text-slate-400">Approved leave days</p>
-        </div>
+        <StatTile
+          tone="emerald"
+          label="Days worked"
+          value={isLoading ? "-" : monthSummary.daysWorked}
+          icon={<DaysIcon />}
+        />
+        <StatTile
+          tone="primary"
+          label="Hours logged"
+          value={isLoading ? "-" : monthSummary.totalHours}
+          icon={<HoursIcon />}
+        />
+        <StatTile
+          tone="amber"
+          label="Approved leave days"
+          value={isLoading ? "-" : monthSummary.leaveDays}
+          icon={<LeaveIcon />}
+        />
       </div>
 
       {/* LEGEND */}
@@ -480,11 +579,15 @@ export default function MyAttendanceCalendar() {
           return (
             <div
               key={cell.key}
-              className={`min-h-[68px] border-l-4 p-1.5 transition-colors ${
+              style={{ animationDelay: `${Math.min(index, 20) * 15}ms` }}
+              className={`u-rise relative min-h-[68px] border-l-4 p-1.5 transition-all duration-200 hover:z-10 hover:-translate-y-0.5 hover:shadow-md ${
                 style ? `${style.bg} ${style.border}` : "border-l-transparent bg-white dark:bg-[#0f0f16]"
               } ${isToday(cell.day) ? "ring-2 ring-inset ring-primary-400 dark:ring-primary-500" : ""}`}
               title={titleParts.length ? titleParts.join(" · ") : undefined}
             >
+              {isToday(cell.day) && (
+                <span className="u-pulse absolute right-1 top-1 h-1.5 w-1.5 bg-primary-500" />
+              )}
               <div className="flex items-center justify-between">
                 <span
                   className={`text-[11px] font-bold ${
