@@ -208,6 +208,7 @@ function RaiseTicketForm({ onCreated }) {
   const [description, setDescription] = useState("");
   const [screenshot, setScreenshot] = useState(null);
   const [preview, setPreview] = useState(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const handleFileChange = (file) => {
     if (!file) {
@@ -294,23 +295,49 @@ function RaiseTicketForm({ onCreated }) {
 
         {preview ? (
           <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-white/10 dark:bg-white/[0.04]">
-            <img
-              src={preview}
-              alt="Screenshot preview"
-              className="h-16 w-16 shrink-0 rounded-lg object-cover ring-1 ring-slate-200 dark:ring-white/10"
-            />
+            <button
+              type="button"
+              onClick={() => setPreviewOpen(true)}
+              title="Preview screenshot"
+              className="shrink-0"
+            >
+              <img
+                src={preview}
+                alt="Screenshot preview"
+                className="h-16 w-16 rounded-lg object-cover ring-1 ring-slate-200 transition hover:opacity-90 dark:ring-white/10"
+              />
+            </button>
             <div className="min-w-0 flex-1">
               <p className="truncate text-xs font-medium text-slate-700 dark:text-slate-200">
                 {screenshot?.name}
               </p>
-              <button
-                type="button"
-                onClick={() => handleFileChange(null)}
-                className="mt-1 text-xs font-semibold text-red-500 hover:underline"
-              >
-                Remove
-              </button>
+              <div className="mt-1 flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setPreviewOpen(true)}
+                  className="text-xs font-semibold text-primary-600 hover:underline dark:text-primary-400"
+                >
+                  Preview
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleFileChange(null)}
+                  className="text-xs font-semibold text-red-500 hover:underline"
+                >
+                  Remove
+                </button>
+              </div>
             </div>
+
+            {previewOpen && (
+              <Modal open={previewOpen} onClose={() => setPreviewOpen(false)} title="Screenshot Preview" size="lg">
+                <img
+                  src={preview}
+                  alt="Screenshot preview"
+                  className="w-full rounded-lg object-contain"
+                />
+              </Modal>
+            )}
           </div>
         ) : (
           <label className="flex h-24 cursor-pointer flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 text-center transition-colors hover:border-primary-300 hover:bg-primary-50/40 dark:border-slate-600 dark:bg-white/[0.04] dark:hover:bg-white/[0.06]">
