@@ -1230,12 +1230,6 @@ export default function InvoiceListPage() {
      HANDLERS
   ======================================================= */
 
-  const handleAdd = () => {
-    if (readOnly) return;
-    setEditingInvoice(null);
-    setModalOpen(true);
-  };
-
   const handleEdit = (
     invoice
   ) => {
@@ -1532,24 +1526,13 @@ export default function InvoiceListPage() {
             }
           />
 
-          {readOnly ? (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-500 ring-1 ring-inset ring-slate-500/15 dark:bg-white/10 dark:text-slate-300 dark:ring-white/10">
-              <span className="h-1.5 w-1.5 rounded-full bg-slate-400" />
-              View only
-            </span>
-          ) : (
-            <Button
-              type="button"
-              onClick={handleAdd}
-              className="h-10 w-full px-4 sm:w-auto"
-            >
-              <span className="mr-1.5 text-lg">
-                +
-              </span>
-
-              Add Invoice
-            </Button>
-          )}
+          <span
+            className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-500 ring-1 ring-inset ring-slate-500/15 dark:bg-white/10 dark:text-slate-300 dark:ring-white/10"
+            title="Invoices are generated automatically — a CRM incentive invoice is raised once an employee's monthly registrations cross the flat-rule threshold; there's no manual Add Invoice flow."
+          >
+            <span className="h-1.5 w-1.5 rounded-full bg-slate-400" />
+            {readOnly ? "View only" : "Auto-generated"}
+          </span>
         </div>
       </div>
 
