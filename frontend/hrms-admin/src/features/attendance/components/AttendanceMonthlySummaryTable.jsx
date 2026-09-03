@@ -1,5 +1,12 @@
 import { useMemo, useState } from "react";
 import { formatCurrency } from "@/utils/formatCurrency";
+import { formatDate } from "@/utils/formatDate";
+
+const INVOICE_STATUS_CLASS = {
+  Unpaid: "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400",
+  Paid: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400",
+  Overdue: "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400",
+};
 
 export default function AttendanceMonthlySummaryTable({
   data = [],
@@ -132,7 +139,7 @@ export default function AttendanceMonthlySummaryTable({
                   "Leave Deduction",
                   "Absent Deduction",
                   "Total Deduction",
-                  "Incentive (CRM)",
+                  "Incentive / Invoice",
                   "Net Salary",
                 ].map((heading) => (
                   <th
@@ -285,7 +292,7 @@ export default function AttendanceMonthlySummaryTable({
               />
 
               <SortableHeader
-                label="Incentive (CRM)"
+                label="Incentive / Invoice"
                 sortKey="incentive_amount"
                 sortIcon={getSortIcon("incentive_amount")}
                 onSort={handleSort}
@@ -468,6 +475,41 @@ export default function AttendanceMonthlySummaryTable({
                                 : "Slab"}
                             </span>
                           )}
+
+                        {/* INVOICE DETAILS */}
+                        {item.incentive_invoice_number ? (
+                          <div className="mt-1.5 flex flex-col items-end gap-0.5 border-t border-dashed border-slate-200 pt-1.5 dark:border-slate-700">
+                            <span className="font-mono text-[10px] font-medium text-slate-600 dark:text-slate-300">
+                              {item.incentive_invoice_number}
+                            </span>
+                            <div className="flex items-center gap-1">
+                              <span
+                                className={`rounded-full px-1.5 py-px text-[9px] font-semibold uppercase tracking-wide ${
+                                  INVOICE_STATUS_CLASS[item.incentive_invoice_status] ||
+                                  "bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-slate-300"
+                                }`}
+                              >
+                                {item.incentive_invoice_status || "Unpaid"}
+                              </span>
+                              {item.incentive_invoice_due_date && (
+                                <span className="text-[9px] text-slate-400 dark:text-slate-500">
+                                  Due {formatDate(item.incentive_invoice_due_date)}
+                                </span>
+                              )}
+                            </div>
+                            {item.incentive_invoice_paid_amount > 0 && (
+                              <span className="text-[9px] text-emerald-600 dark:text-emerald-400">
+                                {formatCurrency(item.incentive_invoice_paid_amount)} paid
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          Number(item.incentive_amount) > 0 && (
+                            <span className="mt-1.5 border-t border-dashed border-slate-200 pt-1.5 text-[9px] text-slate-400 dark:border-slate-700 dark:text-slate-500">
+                              Not invoiced yet
+                            </span>
+                          )
+                        )}
                       </div>
                     ) : (
                       <span className="text-xs text-slate-400 dark:text-slate-500">

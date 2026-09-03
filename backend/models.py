@@ -882,6 +882,13 @@ class Attendance(TimestampMixin, db.Model):
         incentive_source = None
         incentive_registrations = None
         incentive_eligible = None
+        # Invoice details for the incentive — surfaced alongside the
+        # amount so Finance can see whether it's actually been invoiced
+        # (and paid) rather than just a calculated figure.
+        incentive_invoice_number = None
+        incentive_invoice_status = None
+        incentive_invoice_due_date = None
+        incentive_invoice_paid_amount = None
         if is_crm:
             # Prefer the tier-based monthly payout (crm/incentives engine);
             # fall back to the legacy slab-based EmployeeIncentive rows so
@@ -899,6 +906,21 @@ class Attendance(TimestampMixin, db.Model):
                 incentive_registrations = payout.registration_count
                 incentive_eligible = payout.eligible_count
                 incentive_source = "tier"
+
+                invoice = Invoice.query.filter(
+                    Invoice.monthly_payout_id == payout.id,
+                    Invoice.is_active == True,
+                ).order_by(Invoice.id.desc()).first()
+
+                if invoice is not None:
+                    incentive_invoice_number = invoice.invoice_number
+                    incentive_invoice_status = invoice.status
+                    incentive_invoice_due_date = (
+                        invoice.due_date.isoformat() if invoice.due_date else None
+                    )
+                    incentive_invoice_paid_amount = round(
+                        float(sum((p.amount or 0) for p in invoice.payments)), 2
+                    )
             else:
                 incentive_rows = EmployeeIncentive.query.filter(
                     EmployeeIncentive.employee_id == employee.id,
@@ -944,6 +966,10 @@ class Attendance(TimestampMixin, db.Model):
             "incentive_source": incentive_source,
             "incentive_registrations": incentive_registrations,
             "incentive_eligible": incentive_eligible,
+            "incentive_invoice_number": incentive_invoice_number,
+            "incentive_invoice_status": incentive_invoice_status,
+            "incentive_invoice_due_date": incentive_invoice_due_date,
+            "incentive_invoice_paid_amount": incentive_invoice_paid_amount,
             "net_salary": net_salary,
         }
 

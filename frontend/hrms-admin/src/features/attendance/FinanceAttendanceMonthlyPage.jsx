@@ -251,6 +251,10 @@ export default function FinanceAttendanceMonthlyPage() {
       "Absent Deduction",
       "Total Deduction",
       "Incentive (CRM)",
+      "Invoice Number",
+      "Invoice Status",
+      "Invoice Due Date",
+      "Invoice Paid Amount",
       "Net Salary",
     ];
 
@@ -282,6 +286,12 @@ export default function FinanceAttendanceMonthlyPage() {
         item.incentive_amount != null
           ? Number(item.incentive_amount).toFixed(2)
           : "N/A",
+        item.incentive_invoice_number || "-",
+        item.incentive_invoice_status || "-",
+        item.incentive_invoice_due_date || "-",
+        item.incentive_invoice_paid_amount != null
+          ? Number(item.incentive_invoice_paid_amount).toFixed(2)
+          : "-",
         Number(item.net_salary || 0).toFixed(2),
       ];
     });
@@ -298,6 +308,10 @@ export default function FinanceAttendanceMonthlyPage() {
       summary.absentDeduction.toFixed(2),
       summary.totalDeduction.toFixed(2),
       summary.incentive.toFixed(2),
+      "",
+      "",
+      "",
+      "",
       summary.netSalary.toFixed(2),
     ]);
 
@@ -507,7 +521,13 @@ export default function FinanceAttendanceMonthlyPage() {
         formatCurrency(absentDeduction),
         formatCurrency(totalDeduction),
         item.incentive_amount != null
-          ? formatCurrency(Number(item.incentive_amount))
+          ? `${formatCurrency(Number(item.incentive_amount))}${
+              item.incentive_invoice_number
+                ? ` (${item.incentive_invoice_number} · ${item.incentive_invoice_status || "Unpaid"})`
+                : Number(item.incentive_amount) > 0
+                ? " (not invoiced)"
+                : ""
+            }`
           : "N/A",
         formatCurrency(item.net_salary || 0),
       ];
