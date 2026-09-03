@@ -3,6 +3,7 @@ import { useState } from "react";
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 import Modal from "@/components/ui/Modal";
+import Avatar from "@/components/ui/Avatar";
 import { useToast } from "@/components/feedback/Toast";
 
 import {
@@ -11,19 +12,11 @@ import {
   useUpdateFeedbackTicket,
 } from "./useFeedback";
 
-import Avatar from "@/components/ui/Avatar";
-
 import { getUser } from "@/utils/tokenHelpers";
 import { isAdmin as checkIsAdmin } from "@/constants/roles";
 import { resolveUploadUrl } from "@/utils/fileUrl";
 import { formatDateTime } from "@/utils/formatDate";
 import { useMyEmployee } from "@/hooks/useMyEmployee";
-import {
-  use3DTilt,
-  useMagnetic,
-  Motion3DStyles,
-  GridPattern,
-} from "@/hooks/use3DMotion";
 
 /* =========================================================
    CONSTANTS
@@ -127,7 +120,6 @@ const ResolvedStatIcon = () => (
 ========================================================= */
 
 function StatTile({ tone, label, value, icon }) {
-  const { ref, handlers } = use3DTilt({ max: 9, scale: 1.02 });
   const styles = {
     primary: {
       border: "border-slate-200 dark:border-white/10",
@@ -152,20 +144,16 @@ function StatTile({ tone, label, value, icon }) {
   }[tone];
 
   return (
-    <div className="u-tilt-perspective">
-      <div
-        ref={ref}
-        {...handlers}
-        className={`u-tilt u-glare relative h-[100px] overflow-hidden rounded-xl border bg-white px-4 py-3 shadow-sm dark:bg-white/[0.04] ${styles.border}`}
-      >
-        <div className="u-tilt-content flex h-full items-center justify-between">
-          <div className="min-w-0">
-            <p className="truncate text-xs font-medium text-slate-500 dark:text-slate-400">{label}</p>
-            <p className={`mt-1 text-2xl font-bold tracking-tight ${styles.value}`}>{value}</p>
-          </div>
-          <div className={`u-float-layer flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${styles.icon}`}>
-            {icon}
-          </div>
+    <div
+      className={`relative h-[100px] overflow-hidden rounded-xl border bg-white px-4 py-3 shadow-sm transition-shadow duration-200 hover:shadow-md dark:bg-white/[0.04] ${styles.border}`}
+    >
+      <div className="flex h-full items-center justify-between">
+        <div className="min-w-0">
+          <p className="truncate text-xs font-medium text-slate-500 dark:text-slate-400">{label}</p>
+          <p className={`mt-1 text-2xl font-bold tracking-tight ${styles.value}`}>{value}</p>
+        </div>
+        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${styles.icon}`}>
+          {icon}
         </div>
       </div>
     </div>
@@ -220,8 +208,6 @@ function RaiseTicketForm({ onCreated }) {
   const [description, setDescription] = useState("");
   const [screenshot, setScreenshot] = useState(null);
   const [preview, setPreview] = useState(null);
-
-  const submitMagnet = useMagnetic(0.2);
 
   const handleFileChange = (file) => {
     if (!file) {
@@ -281,10 +267,10 @@ function RaiseTicketForm({ onCreated }) {
                 key={option}
                 type="button"
                 onClick={() => setCategory(option)}
-                className={`flex items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left text-sm font-medium transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm ${
+                className={`flex items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left text-sm font-medium transition-colors duration-150 ${
                   active
-                    ? "border-primary-500 bg-primary-50 text-primary-700 shadow-sm dark:border-primary-500 dark:bg-primary-500/10 dark:text-primary-400"
-                    : "border-slate-300 bg-white text-slate-600 dark:border-slate-600 dark:bg-white/[0.06] dark:text-slate-300"
+                    ? "border-primary-500 bg-primary-50 text-primary-700 dark:border-primary-500 dark:bg-primary-500/10 dark:text-primary-400"
+                    : "border-slate-300 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-600 dark:bg-white/[0.06] dark:text-slate-300"
                 }`}
               >
                 <span
@@ -363,15 +349,13 @@ function RaiseTicketForm({ onCreated }) {
       </div>
 
       <div className="flex justify-end">
-        <div ref={submitMagnet.ref} {...submitMagnet.handlers} className="inline-block will-change-transform">
-          <Button
-            type="submit"
-            isLoading={createTicket.isPending}
-            className="h-10 px-5 shadow-sm transition-shadow duration-200 hover:shadow-lg"
-          >
-            Submit Feedback
-          </Button>
-        </div>
+        <Button
+          type="submit"
+          isLoading={createTicket.isPending}
+          className="h-10 px-5"
+        >
+          Submit Feedback
+        </Button>
       </div>
     </form>
   );
@@ -505,108 +489,95 @@ function UpdateTicketModal({ ticket, open, onClose }) {
    TICKET CARD
 ========================================================= */
 
-function TicketCard({ ticket, isAdmin, onManage, index }) {
-  const { ref, handlers } = use3DTilt({ max: 8, scale: 1.015 });
-
+function TicketCard({ ticket, isAdmin, onManage }) {
   return (
-    <div
-      className="u-tilt-perspective u-rise"
-      style={{ animationDelay: `${Math.min(index, 10) * 45}ms` }}
-    >
+    <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-shadow duration-200 hover:shadow-md dark:border-white/10 dark:bg-white/[0.04]">
       <div
-        ref={ref}
-        {...handlers}
-        className="u-tilt u-glare relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-white/[0.04]"
-      >
-        <div
-          className={`absolute inset-x-0 top-0 h-0.5 ${
-            ticket.status === "Resolved"
-              ? "bg-emerald-500"
-              : ticket.status === "In Progress"
-              ? "bg-amber-500"
-              : "bg-slate-300 dark:bg-slate-600"
-          }`}
-        />
+        className={`absolute inset-x-0 top-0 h-0.5 ${
+          ticket.status === "Resolved"
+            ? "bg-emerald-500"
+            : ticket.status === "In Progress"
+            ? "bg-amber-500"
+            : "bg-slate-300 dark:bg-slate-600"
+        }`}
+      />
 
-        <div className="u-tilt-content">
-          <div className="flex items-start justify-between gap-2">
-            <div className="flex min-w-0 items-center gap-2.5">
-              <div className="u-float-layer relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ring-1 ring-inset ring-black/5 dark:ring-white/10">
-                <span className={`flex h-full w-full items-center justify-center rounded-xl ${CATEGORY_ICON_TONE[ticket.category] || CATEGORY_ICON_TONE["Other Bugs/Issues"]}`}>
-                  <CategoryIcon category={ticket.category} className="h-4.5 w-4.5" />
-                </span>
-                <span
-                  className={`absolute -bottom-1 -right-1 h-3 w-3 rounded-full border-2 border-white dark:border-slate-900 ${
-                    STATUS_DOT_CLASS[ticket.status] || STATUS_DOT_CLASS.Open
-                  } ${ticket.status === "In Progress" ? "u-pulse" : ""}`}
-                />
-              </div>
-              <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">
-                  {ticket.ticket_number || `#${ticket.id}`}
-                </p>
-                <p className="mt-0.5 truncate text-[11px] text-slate-400">
-                  {formatDateTime(ticket.created_at)}
-                  {isAdmin && ticket.raised_by_user?.username
-                    ? ` · ${ticket.raised_by_user.username}`
-                    : ""}
-                </p>
-              </div>
-            </div>
-            <Badge className={STATUS_BADGE_CLASS[ticket.status] || STATUS_BADGE_CLASS.Open}>
-              {ticket.status}
-            </Badge>
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ring-1 ring-inset ring-black/5 dark:ring-white/10">
+            <span className={`flex h-full w-full items-center justify-center rounded-xl ${CATEGORY_ICON_TONE[ticket.category] || CATEGORY_ICON_TONE["Other Bugs/Issues"]}`}>
+              <CategoryIcon category={ticket.category} className="h-4.5 w-4.5" />
+            </span>
+            <span
+              className={`absolute -bottom-1 -right-1 h-3 w-3 rounded-full border-2 border-white dark:border-slate-900 ${
+                STATUS_DOT_CLASS[ticket.status] || STATUS_DOT_CLASS.Open
+              }`}
+            />
           </div>
-
-          <div className="mt-2.5">
-            <Badge className={CATEGORY_BADGE_CLASS[ticket.category] || CATEGORY_BADGE_CLASS["Other Bugs/Issues"]}>
-              {ticket.category}
-            </Badge>
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">
+              {ticket.ticket_number || `#${ticket.id}`}
+            </p>
+            <p className="mt-0.5 truncate text-[11px] text-slate-400">
+              {formatDateTime(ticket.created_at)}
+              {isAdmin && ticket.raised_by_user?.username
+                ? ` · ${ticket.raised_by_user.username}`
+                : ""}
+            </p>
           </div>
-
-          <p className="mt-3 line-clamp-3 text-sm text-slate-600 dark:text-slate-300">
-            {ticket.description}
-          </p>
-
-          {ticket.screenshot_url && (
-            <a
-              href={resolveUploadUrl(ticket.screenshot_url)}
-              target="_blank"
-              rel="noreferrer"
-              className="mt-3 inline-block"
-            >
-              <img
-                src={resolveUploadUrl(ticket.screenshot_url)}
-                alt="Screenshot"
-                className="h-16 w-16 rounded-lg object-cover ring-1 ring-slate-200 transition hover:opacity-90 dark:ring-white/10"
-              />
-            </a>
-          )}
-
-          {ticket.admin_response && (
-            <div className="mt-3 rounded-lg border border-emerald-100 bg-emerald-50/60 p-2.5 dark:border-emerald-900/30 dark:bg-emerald-500/10">
-              <p className="text-[10px] font-semibold uppercase tracking-wide text-emerald-600 dark:text-emerald-400">
-                Admin update
-              </p>
-              <p className="mt-0.5 whitespace-pre-wrap text-xs text-emerald-800 dark:text-emerald-200">
-                {ticket.admin_response}
-              </p>
-            </div>
-          )}
-
-          {isAdmin && (
-            <div className="mt-3 flex justify-end">
-              <button
-                type="button"
-                onClick={() => onManage(ticket)}
-                className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary-200 hover:bg-primary-50 hover:text-primary-600 dark:border-white/10 dark:text-slate-200 dark:hover:border-primary-500/40 dark:hover:bg-primary-500/10 dark:hover:text-primary-400"
-              >
-                Manage
-              </button>
-            </div>
-          )}
         </div>
+        <Badge className={STATUS_BADGE_CLASS[ticket.status] || STATUS_BADGE_CLASS.Open}>
+          {ticket.status}
+        </Badge>
       </div>
+
+      <div className="mt-2.5">
+        <Badge className={CATEGORY_BADGE_CLASS[ticket.category] || CATEGORY_BADGE_CLASS["Other Bugs/Issues"]}>
+          {ticket.category}
+        </Badge>
+      </div>
+
+      <p className="mt-3 line-clamp-3 text-sm text-slate-600 dark:text-slate-300">
+        {ticket.description}
+      </p>
+
+      {ticket.screenshot_url && (
+        <a
+          href={resolveUploadUrl(ticket.screenshot_url)}
+          target="_blank"
+          rel="noreferrer"
+          className="mt-3 inline-block"
+        >
+          <img
+            src={resolveUploadUrl(ticket.screenshot_url)}
+            alt="Screenshot"
+            className="h-16 w-16 rounded-lg object-cover ring-1 ring-slate-200 transition hover:opacity-90 dark:ring-white/10"
+          />
+        </a>
+      )}
+
+      {ticket.admin_response && (
+        <div className="mt-3 rounded-lg border border-emerald-100 bg-emerald-50/60 p-2.5 dark:border-emerald-900/30 dark:bg-emerald-500/10">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-emerald-600 dark:text-emerald-400">
+            Admin update
+          </p>
+          <p className="mt-0.5 whitespace-pre-wrap text-xs text-emerald-800 dark:text-emerald-200">
+            {ticket.admin_response}
+          </p>
+        </div>
+      )}
+
+      {isAdmin && (
+        <div className="mt-3 flex justify-end">
+          <button
+            type="button"
+            onClick={() => onManage(ticket)}
+            className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:border-primary-200 hover:bg-primary-50 hover:text-primary-600 dark:border-white/10 dark:text-slate-200 dark:hover:border-primary-500/40 dark:hover:bg-primary-500/10 dark:hover:text-primary-400"
+          >
+            Manage
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -636,17 +607,10 @@ export default function FeedbackPage() {
 
   return (
     <div className="min-w-0 space-y-6">
-      <Motion3DStyles />
-
-      <div className="u-rise relative flex flex-col gap-4 overflow-hidden rounded-2xl border border-slate-200/80 bg-gradient-to-br from-white via-primary-50/40 to-white p-4 shadow-sm dark:border-white/[0.08] dark:from-primary-500/[0.08] dark:via-white/[0.02] dark:to-transparent sm:p-5 xl:flex-row xl:items-center xl:justify-between">
-        <GridPattern id="feedback-grid" />
-        <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-primary-500/15 blur-3xl" />
-
-        <div className="relative flex items-center gap-3">
-          <div className="u-hover-float">
-            <div className="u-float-target flex h-11 w-11 items-center justify-center rounded-xl bg-primary-600 text-white shadow-lg shadow-primary-600/30 ring-1 ring-white/20">
-              <TicketStatIcon />
-            </div>
+      <div className="flex flex-col gap-4 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm dark:border-white/[0.08] dark:bg-white/[0.04] sm:p-5 xl:flex-row xl:items-center xl:justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary-600 text-white shadow-sm">
+            <TicketStatIcon />
           </div>
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
@@ -669,7 +633,7 @@ export default function FeedbackPage() {
       </div>
 
       {!isAdmin && (
-        <div id="raise-ticket" className="u-rise scroll-mt-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
+        <div id="raise-ticket" className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
           <div className="mb-4 flex items-center gap-2.5">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
               <FeatureBugIcon className="h-4.5 w-4.5" />
@@ -723,11 +687,10 @@ export default function FeedbackPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {tickets.map((ticket, i) => (
+          {tickets.map((ticket) => (
             <TicketCard
               key={ticket.id}
               ticket={ticket}
-              index={i}
               isAdmin={isAdmin}
               onManage={setManagingTicket}
             />
