@@ -86,6 +86,10 @@ export default function EmployeeForm({ initialData = {}, onSubmit, loading }) {
     pf_number: initialData.pf_number || "",
     esi_number: initialData.esi_number || "",
     account_number: initialData.account_number || "",
+    // IFSC alongside the account number is what a RazorpayX fund account
+    // needs to actually pay this employee's incentive payout — optional,
+    // the automated payout falls back to an internal settlement without it.
+    bank_ifsc: initialData.bank_ifsc || "",
     status: initialData.status !== undefined ? initialData.status : true,
   });
 
@@ -322,6 +326,7 @@ export default function EmployeeForm({ initialData = {}, onSubmit, loading }) {
         <Input label="PF Number" name="pf_number" value={form.pf_number} onChange={handleChange} error={errors.pf_number} disabled={isEmployee} />
         <Input label="ESI Number" name="esi_number" value={form.esi_number} onChange={handleChange} error={errors.esi_number} disabled={isEmployee} />
         <Input label="Account Number" name="account_number" value={form.account_number} onChange={handleChange} error={errors.account_number} disabled={isEmployee} />
+        <Input label="Bank IFSC" name="bank_ifsc" value={form.bank_ifsc} onChange={handleChange} error={errors.bank_ifsc} disabled={isEmployee} placeholder="e.g. HDFC0001234" />
       </div>
       <div className="mb-4">
         <label className="inline-flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">

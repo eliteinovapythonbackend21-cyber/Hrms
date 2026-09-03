@@ -12,3 +12,4 @@ openpyxl
 cloudinary
 reportlab
 requests
+razorpay

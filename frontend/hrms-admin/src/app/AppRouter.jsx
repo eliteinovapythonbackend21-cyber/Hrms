@@ -92,6 +92,7 @@ import VendorListPage from "@/features/finance/vendors/VendorListPage";
 import ExpenseListPage from "@/features/finance/expenses/ExpenseListPage";
 import IncomeListPage from "@/features/finance/income/IncomeListPage";
 import FinanceAttendanceMonthlyPage from "@/features/attendance/FinanceAttendanceMonthlyPage";
+import FinancialHistoryPage from "@/features/finance/FinancialHistoryPage";
 
 // Reports
 import ReportsPage from "@/features/reports/ReportsPage";
@@ -211,6 +212,7 @@ export default function AppRouter() {
         <Route path="/finance/income" element={<RoleGuard><IncomeListPage /></RoleGuard>} />
          
         <Route path="/finance/attendance" element={<RoleGuard><FinanceAttendanceMonthlyPage /></RoleGuard>} />
+        <Route path="/finance/history" element={<RoleGuard><FinancialHistoryPage /></RoleGuard>} />
 
         {/* Reports */}
         <Route path="/reports" element={<RoleGuard><ReportsPage /></RoleGuard>} />

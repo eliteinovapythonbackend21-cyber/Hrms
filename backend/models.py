@@ -603,6 +603,15 @@ class Employee(TimestampMixin, db.Model):
     pf_number = db.Column(db.String(30))
     esi_number = db.Column(db.String(30))
     account_number = db.Column(db.String(30))
+    # IFSC alongside account_number is what a RazorpayX fund account needs
+    # to actually pay this employee (see api/v1/crm/razorpay_gateway.py) —
+    # optional, so the automated incentive payout keeps working (falling
+    # back to an internal settlement) for anyone without it on file yet.
+    bank_ifsc = db.Column(db.String(15))
+    # Cached once created so a payout doesn't recreate the Razorpay
+    # Contact/Fund Account (and doesn't re-hit their API) every month.
+    razorpay_contact_id = db.Column(db.String(60))
+    razorpay_fund_account_id = db.Column(db.String(60))
     status = db.Column(db.Boolean, default=True)
     is_active = db.Column(db.Boolean, default=True)
     # profile_picture = db.Column(JSONB, nullable=True)
@@ -890,10 +899,46 @@ class Attendance(TimestampMixin, db.Model):
         incentive_invoice_due_date = None
         incentive_invoice_paid_amount = None
         if is_crm:
-            # Prefer the tier-based monthly payout (crm/incentives engine);
-            # fall back to the legacy slab-based EmployeeIncentive rows so
-            # older data still shows. Either way the incentive is ADDED to
-            # the CRM employee's take-home pay below.
+            # Computed LIVE from this month's actual Registration
+            # (Meeting) rows every time this runs, rather than reading a
+            # MonthlyPayout snapshot that's only refreshed when the CRM
+            # Incentives screen's "Run" button (or the automated 20th-of-
+            # next-month payout) has executed for this exact month — that
+            # snapshot going stale is why Finance was seeing ₹0.00 /
+            # "0 eligible / 0 reg" for CRM employees who clearly had
+            # registrations. Same flat rule as incentive_engine.py:
+            # Rs.1,000 for the first 30 registrations in the month, +0.6%
+            # of Rs.1,000 (Rs.6) per registration from the 31st onward.
+            days_in_month_local = monthrange(year, month)[1]
+            month_start = datetime(year, month, 1)
+            month_end = datetime(year, month, days_in_month_local) + timedelta(days=1)
+
+            incentive_registrations = (
+                db.session.query(db.func.count(Meeting.id))
+                .filter(
+                    Meeting.registered_by == employee.id,
+                    Meeting.is_active == True,
+                    Meeting.created_at >= month_start,
+                    Meeting.created_at < month_end,
+                )
+                .scalar()
+                or 0
+            )
+
+            target_count = 30
+            incentive_eligible = max(0, incentive_registrations - target_count)
+            if incentive_registrations > 0:
+                extra_rate = 0.006 * 1000.0  # 0.6% of Rs.1,000 per registration past 30
+                incentive_amount = round(1000.0 + incentive_eligible * extra_rate, 2)
+                incentive_source = "tier"
+            else:
+                incentive_amount = 0.0
+                incentive_source = "none"
+
+            # Invoice/payment details are still read from whatever the CRM
+            # incentive engine has actually generated for this month (the
+            # amount above no longer depends on it existing) so Finance can
+            # see real invoice/payment status when one has been raised.
             payout = MonthlyPayout.query.filter(
                 MonthlyPayout.employee_id == employee.id,
                 MonthlyPayout.month == month,
@@ -902,11 +947,6 @@ class Attendance(TimestampMixin, db.Model):
             ).first()
 
             if payout is not None:
-                incentive_amount = round(float(payout.amount or 0), 2)
-                incentive_registrations = payout.registration_count
-                incentive_eligible = payout.eligible_count
-                incentive_source = "tier"
-
                 invoice = Invoice.query.filter(
                     Invoice.monthly_payout_id == payout.id,
                     Invoice.is_active == True,
@@ -921,20 +961,22 @@ class Attendance(TimestampMixin, db.Model):
                     incentive_invoice_paid_amount = round(
                         float(sum((p.amount or 0) for p in invoice.payments)), 2
                     )
-            else:
+
+            if incentive_invoice_number is None:
+                # No legacy fallback needed once live computation covers
+                # everything, but EmployeeIncentive rows (pre-flat-rule
+                # data) still count toward "has this been invoiced before".
                 incentive_rows = EmployeeIncentive.query.filter(
                     EmployeeIncentive.employee_id == employee.id,
                     EmployeeIncentive.month == month,
                     EmployeeIncentive.year == year,
                     EmployeeIncentive.is_active == True,
                 ).all()
-                incentive_amount = round(
-                    sum(float(r.calculated_amount or 0) for r in incentive_rows), 2
-                )
-                incentive_eligible = sum(
-                    int(r.eligible_customer_count or 0) for r in incentive_rows
-                )
-                incentive_source = "slab" if incentive_rows else "none"
+                if incentive_rows and incentive_amount == 0.0:
+                    incentive_amount = round(
+                        sum(float(r.calculated_amount or 0) for r in incentive_rows), 2
+                    )
+                    incentive_source = "slab"
 
         net_salary = round(
             gross_salary - total_deduction + (incentive_amount or 0.0), 2
@@ -2811,6 +2853,27 @@ class YearlyPayout(TimestampMixin, db.Model):
         return data
 
 
+class IncentivePayoutRun(TimestampMixin, db.Model):
+    """One row per (month, year) incentive period once its automated
+    payout has run — the idempotency guard for
+    incentive_engine.auto_process_due_payouts(), so a period is never
+    invoiced/paid twice even though the check re-runs on every request
+    on/after the 20th."""
+
+    __tablename__ = "incentive_payout_runs"
+
+    id = db.Column(db.Integer, primary_key=True)
+    month = db.Column(db.Integer, nullable=False)
+    year = db.Column(db.Integer, nullable=False)
+    invoices_created = db.Column(db.Integer, default=0)
+    payments_created = db.Column(db.Integer, default=0)
+    ran_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+    __table_args__ = (
+        db.UniqueConstraint("month", "year", name="uq_incentive_payout_run_period"),
+    )
+
+
 class Quotation(TimestampMixin, db.Model):
     __tablename__ = "quotations"
 
@@ -2899,6 +2962,11 @@ class Payment(TimestampMixin, db.Model):
     amount = db.Column(db.Numeric(12, 2), nullable=False)
     payment_date = db.Column(db.Date, nullable=False)
     mode = db.Column(db.String(30))
+    # Set when this payment was actually sent through a payment gateway
+    # (currently: Razorpay) rather than entered/settled manually — see
+    # api/v1/crm/razorpay_gateway.py / incentive_engine.py.
+    gateway = db.Column(db.String(30))
+    gateway_reference = db.Column(db.String(80))
     is_active = db.Column(db.Boolean, default=True)
     invoice = db.relationship("Invoice", back_populates="payments")
 

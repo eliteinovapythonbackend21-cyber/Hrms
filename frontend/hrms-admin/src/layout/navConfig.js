@@ -268,5 +268,9 @@ export const FINANCE_EMPLOYEE_NAV = {
     { label: "Attendance", path: "/finance/attendance", icon: "attendance" },
     { label: "Employees", path: "/master/employees", icon: "employees" },
     { label: "Payroll", path: "/employee/payroll", icon: "employeeLifecycle" },
+    // Combined invoice + payment ledger — a dedicated section since this
+    // is the Finance login and needs somewhere to check payment/invoice
+    // history, distinct from the CRM-only Invoices/Payments screens.
+    { label: "Financial History", path: "/finance/history", icon: "finance" },
   ],
 };

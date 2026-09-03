@@ -40,10 +40,12 @@ from models import (
     Employee,
     EmployeeIncentive,
     EmployeeTarget,
+    IncentivePayoutRun,
     IncentiveTier,
     Invoice,
     Meeting,
     MonthlyPayout,
+    Payment,
     WeeklyIncentive,
     YearlyPayout,
 )
@@ -361,6 +363,117 @@ def run_period(month, year, auto_invoice=True):
         "employees_processed": len(employee_ids),
         "weeks_per_employee": len(mondays),
         "invoices_created": invoices_created,
+    }
+
+
+# ------------------------------------------------------------------ automated payout
+#
+# No manual invoice creation, payment entry, or incentive calculation is
+# needed from the backend team: this makes the whole chain
+#   registrations -> incentive amount -> invoice -> payment
+# self-driving. Real money movement goes through RazorpayX
+# (razorpay_gateway.pay_incentive) when RAZORPAY_KEY_ID / _KEY_SECRET /
+# _ACCOUNT_NUMBER are set as environment variables (never hardcoded —
+# see config.py) and the employee has bank details on file; otherwise —
+# the default, credential-free state — the invoice is still settled
+# internally (a Payment row dated today) so the workflow completes
+# end-to-end with zero manual entry either way, just without an actual
+# gateway payout until those are configured.
+
+def auto_process_due_payouts(today=None):
+    """Idempotent — safe to call on every request. On/after the 20th of
+    month M, the incentive period that just became payable is (M-1, its
+    year); this recomputes it (registrations may have kept coming in
+    right up to the 20th), invoices every payable amount, and
+    immediately auto-settles each invoice with a system Payment row —
+    all without any admin action. A period is only ever processed once
+    (see IncentivePayoutRun's unique (month, year) guard)."""
+    today = today or date.today()
+
+    if today.day < 20:
+        return None  # nothing becomes payable before the 20th
+
+    period_month = today.month - 1
+    period_year = today.year
+    if period_month < 1:
+        period_month = 12
+        period_year -= 1
+
+    if IncentivePayoutRun.query.filter_by(month=period_month, year=period_year).first():
+        return None  # already processed this period
+
+    result = run_period(period_month, period_year, auto_invoice=True)
+
+    payments_created = 0
+    invoices = Invoice.query.filter(
+        Invoice.invoice_type == "Incentive",
+        Invoice.status == "Unpaid",
+        Invoice.is_active == True,
+    ).join(MonthlyPayout, Invoice.monthly_payout_id == MonthlyPayout.id).filter(
+        MonthlyPayout.month == period_month,
+        MonthlyPayout.year == period_year,
+    ).all()
+
+    from .razorpay_gateway import pay_incentive
+
+    for invoice in invoices:
+        already_paid = sum((p.amount or 0) for p in invoice.payments)
+        remaining = float(invoice.amount or 0) - float(already_paid or 0)
+        if remaining <= 0:
+            continue
+
+        employee = invoice.employee
+        pay_result = (
+            pay_incentive(employee, remaining, reference_id=invoice.invoice_number)
+            if employee is not None
+            else {"status": "skipped", "reason": "no_employee"}
+        )
+
+        if pay_result["status"] == "success":
+            mode, gateway, gateway_reference = "Razorpay", "razorpay", pay_result.get("payout_id")
+        else:
+            # Not configured, no bank details on file, or the gateway call
+            # itself failed — either way the invoice still gets settled
+            # internally so "no manual payment entry" holds. `mode` stays
+            # short (column is 30 chars); the full reason/error is kept
+            # in gateway_reference for anyone who needs to see why.
+            reason_labels = {
+                "not_configured": "Auto (no Razorpay)",
+                "no_bank_details": "Auto (no bank info)",
+                "no_employee": "Auto (no employee)",
+            }
+            reason = pay_result.get("reason") or "gateway error"
+            mode = reason_labels.get(reason, "Auto (gateway error)")
+            gateway = None
+            gateway_reference = (pay_result.get("error") or reason)[:80]
+
+        payment = Payment(
+            invoice_id=invoice.id,
+            amount=remaining,
+            payment_date=today,
+            mode=mode,
+            gateway=gateway,
+            gateway_reference=gateway_reference,
+            is_active=True,
+        )
+        db.session.add(payment)
+        invoice.status = "Paid"
+        payments_created += 1
+
+    run_record = IncentivePayoutRun(
+        month=period_month,
+        year=period_year,
+        invoices_created=result.get("invoices_created", 0),
+        payments_created=payments_created,
+    )
+    db.session.add(run_record)
+    db.session.commit()
+
+    return {
+        "month": period_month,
+        "year": period_year,
+        **result,
+        "payments_created": payments_created,
     }
 
 

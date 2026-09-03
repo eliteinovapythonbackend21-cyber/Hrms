@@ -388,6 +388,7 @@ def create_employee(token_response):
         pf_number=data.get("pf_number"),
         esi_number=data.get("esi_number"),
         account_number=data.get("account_number"),
+        bank_ifsc=data.get("bank_ifsc"),
         status=_parse_bool(data.get("status")) if data.get("status") is not None else True,
     )
 
@@ -463,7 +464,7 @@ def update_employee(employee_id, token_response):
             linked_user.role = role_name
             linked_user.role_id = role_obj.id
 
-    for field in ["employee_code", "department_id", "designation_id", "first_name", "last_name", "gender", "dob", "phone", "emergency_contact", "address", "city", "state", "country", "pincode", "joining_date", "pf_number", "esi_number", "account_number"]:
+    for field in ["employee_code", "department_id", "designation_id", "first_name", "last_name", "gender", "dob", "phone", "emergency_contact", "address", "city", "state", "country", "pincode", "joining_date", "pf_number", "esi_number", "account_number", "bank_ifsc"]:
         if field in data:
             setattr(employee, field, data[field] or None)
 

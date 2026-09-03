@@ -1,7 +1,8 @@
 import os
+from datetime import date
 from urllib.parse import urlparse
 
-from flask import Flask
+from flask import Flask, request
 
 if os.name == "nt":
     os.add_dll_directory(r"C:\Program Files\PostgreSQL\18\bin")
@@ -38,6 +39,43 @@ jwt.init_app(app)
 
 for bp, prefix in blueprints:
     app.register_blueprint(bp, url_prefix=f"/api/v1{prefix}")
+
+
+# ==================================================================
+#  AUTOMATED CRM INCENTIVE PAYOUT
+#
+# No cron/task-queue infra exists in this deployment, so the "runs
+# automatically on the 20th of every month" requirement is driven
+# opportunistically off real traffic instead: the first API request
+# that lands on/after the 20th triggers it. auto_process_due_payouts()
+# is idempotent (IncentivePayoutRun guards it), so this is safe to
+# attempt repeatedly — _last_auto_payout_check just avoids paying the
+# cost of that idempotency check on every single request within the
+# same day.
+# ==================================================================
+
+_last_auto_payout_check = None
+
+
+@app.before_request
+def _maybe_run_auto_incentive_payout():
+    global _last_auto_payout_check
+
+    if not request.path.startswith("/api/v1/"):
+        return
+
+    today = date.today()
+    if today.day < 20 or _last_auto_payout_check == today:
+        return
+    _last_auto_payout_check = today
+
+    from api.v1.crm.incentive_engine import auto_process_due_payouts
+    try:
+        auto_process_due_payouts(today)
+    except Exception:
+        # Never let a payout-processing hiccup break the actual request
+        # the user is waiting on; it'll simply retry on the next request.
+        db.session.rollback()
 
 
 @app.route("/")

@@ -28,6 +28,15 @@ import { crmApi } from "@/api/crm.api";
 const PAGE_SIZE = 10;
 const CARD_PAGE_SIZE = 6;
 
+// Stable reference for the Add-Registration modal's `initialData` — an
+// inline `{}` literal in the JSX below would be a brand-new object on
+// every MeetingListPage render, which defeated MeetingForm's own
+// memoization of its normalized initial data and reset the in-progress
+// form (most visibly clearing the picked Customer) whenever anything
+// else on this page re-rendered (e.g. useCustomerOptions() refetching
+// in the background after the native date picker took window focus).
+const EMPTY_REGISTRATION = {};
+
 const CARD_HEIGHT = "h-[270px]";
 
 const EXPORT_COLUMNS = [
@@ -2037,7 +2046,8 @@ export default function MeetingListPage() {
           }
           formId="meetings-form"
           initialData={
-            editingMeeting || {}
+            editingMeeting ||
+            EMPTY_REGISTRATION
           }
           onSubmit={
             handleSubmit
