@@ -13,6 +13,7 @@ import ResetPasswordPage from "@/features/auth/ResetPasswordPage";
 
 // Dashboard
 import DashboardPage from "@/features/dashboard/DashboardPage";
+import FeedbackPage from "@/features/feedback/FeedbackPage";
 import MyCalendarPage from "@/features/dashboard/MyCalendarPage";
 
 // Users
@@ -114,6 +115,7 @@ export default function AppRouter() {
         }
       >
         <Route path="/dashboard" element={<RoleGuard><DashboardPage /></RoleGuard>} />
+        <Route path="/feedback" element={<RoleGuard><FeedbackPage /></RoleGuard>} />
 
         {/* Users */}
         <Route path="/users" element={<Navigate to="/users/employees" replace />} />

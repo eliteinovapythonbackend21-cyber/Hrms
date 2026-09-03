@@ -2910,6 +2910,47 @@ class SupportTicket(TimestampMixin, db.Model):
         return data
 
 
+class FeedbackTicket(TimestampMixin, db.Model):
+    """Bug/feedback ticket raised from the "Feedback" screen every login
+    (admin and every employee-like role alike) sees on the sidebar. Anyone
+    authenticated can raise one; only an admin can move it through the
+    workflow (status + resolution note)."""
+
+    __tablename__ = "feedback_tickets"
+
+    CATEGORIES = ("Feature Bug", "Internal Bug", "Other Bugs/Issues")
+    STATUSES = ("Open", "In Progress", "Resolved")
+
+    id = db.Column(db.Integer, primary_key=True)
+    ticket_number = db.Column(db.String(20), unique=True)
+    raised_by = db.Column(db.Integer, db.ForeignKey("base_users.id"), nullable=False)
+    category = db.Column(db.String(30), nullable=False)
+    description = db.Column(db.Text, nullable=False)
+    screenshot_url = db.Column(db.String(255), nullable=True)
+    status = db.Column(db.String(20), default="Open")
+    # Admin's note on the action taken / resolution — shown back to the
+    # employee alongside the current status.
+    admin_response = db.Column(db.Text, nullable=True)
+    resolved_by = db.Column(db.Integer, db.ForeignKey("base_users.id"), nullable=True)
+    resolved_at = db.Column(db.DateTime, nullable=True)
+    is_active = db.Column(db.Boolean, default=True)
+
+    raised_by_user = db.relationship("BaseUser", foreign_keys=[raised_by])
+    resolved_by_user = db.relationship("BaseUser", foreign_keys=[resolved_by])
+
+    def to_dict(self):
+        data = super().to_dict()
+        data["raised_by_user"] = _summary(
+            self.raised_by_user, ["id", "username", "email", "role"]
+        )
+        data["resolved_by_user"] = (
+            _summary(self.resolved_by_user, ["id", "username", "email"])
+            if self.resolved_by_user
+            else None
+        )
+        return data
+
+
 class SupportTicketHistory(TimestampMixin, db.Model):
     __tablename__ = "support_ticket_history"
 

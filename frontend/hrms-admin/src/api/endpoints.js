@@ -12,6 +12,12 @@ export const API = {
     RESET_PASSWORD: "/auth/reset-password",
     CHANGE_PASSWORD: "/auth/change-password",
   },
+  FEEDBACK: {
+    LIST: "/feedback/",
+    CREATE: "/feedback/",
+    GET: (id) => `/feedback/${id}`,
+    UPDATE: (id) => `/feedback/${id}`,
+  },
   USERS: {
     LIST: "/users/",
     CREATE: "/users/",

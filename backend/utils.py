@@ -71,6 +71,10 @@ def handle_image_upload(file, allowed_extensions):
     return handle_upload(file, allowed_extensions, folder="hrms/profile_pictures", resource_type="image")
 
 
+def handle_feedback_screenshot_upload(file, allowed_extensions):
+    return handle_upload(file, allowed_extensions, folder="hrms/feedback_screenshots", resource_type="image")
+
+
 def handle_document_upload(file, allowed_extensions):
     # type="authenticated" — required for PDFs: Cloudinary blocks public
     # (type="upload") delivery of PDF/ZIP files account-wide as a security

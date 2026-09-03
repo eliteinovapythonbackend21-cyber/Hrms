@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import { navConfig, CRM_EMPLOYEE_NAV, HR_EMPLOYEE_NAV, FINANCE_EMPLOYEE_NAV } from "./navConfig";
+import { navConfig, CRM_EMPLOYEE_NAV, HR_EMPLOYEE_NAV, FINANCE_EMPLOYEE_NAV, FEEDBACK_NAV } from "./navConfig";
 import { useUI } from "@/context/UIContext";
 import { getUser } from "@/utils/tokenHelpers";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
@@ -31,6 +31,7 @@ const Icon = ({ name, className = "h-5 w-5" }) => {
     crm: "M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4-4m4 4a4 4 0 10-4-4",
     finance: "M12 8c-1.657 0-3 .672-3 1.5S10.343 11 12 11s3 .672 3 1.5-1.343 1.5-3 1.5m0-6c1.11 0 2.08.402 2.599 1M12 8V6m0 8v2m0-10a9 9 0 100 18 9 9 0 000-18z",
     reports: "M9 17v-6h2v6H9zm4 0v-9h2v9h-2zM5 17V11h2v6H5zM3 21h18M4 4h16v13a1 1 0 01-1 1H5a1 1 0 01-1-1V4z",
+    feedback: "M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5zM8 10h.01M12 10h.01M16 10h.01",
     collapse: "M15 19l-7-7 7-7",
     expand: "M9 5l7 7-7 7",
   };
@@ -218,6 +219,7 @@ export default function Sidebar() {
     ...(isCrmEmployee ? [CRM_EMPLOYEE_NAV] : []),
     ...(isHrEmployee ? [HR_EMPLOYEE_NAV] : []),
     ...(isFinanceEmployee ? [FINANCE_EMPLOYEE_NAV] : []),
+    ...(!FEEDBACK_NAV.roles || FEEDBACK_NAV.roles.includes(user?.role) ? [FEEDBACK_NAV] : []),
   ];
 
   return (

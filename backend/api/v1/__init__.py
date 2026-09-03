@@ -11,6 +11,7 @@ from .dashboard import dashboard_bp
 from .employee_lifecycle import lifecycle_blueprints
 from .crm import crm_blueprints
 from .finance import finance_blueprints
+from .feedback import feedback_bp
 
 blueprints = [
     (user_bp, "/users"),
@@ -23,6 +24,7 @@ blueprints = [
     (leave_bp, "/leaves"),
     (role_bp, "/roles"),
     (dashboard_bp, "/dashboard"),
+    (feedback_bp, "/feedback"),
     *lifecycle_blueprints,
     *crm_blueprints,
     *finance_blueprints,

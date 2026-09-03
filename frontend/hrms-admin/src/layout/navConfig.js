@@ -213,6 +213,18 @@ export const navConfig = [
   //   roles: ["admin", "finance", "HR Director", "HR Manager"],
   // },
 ];
+
+// Feedback/bug tickets — open to every login. Rendered separately, after
+// every other section (including the CRM/HR/Finance department-employee
+// ones below), so it always sits last in the sidebar regardless of role.
+// Admin sees and resolves every ticket; everyone else only sees (and can
+// raise) their own.
+export const FEEDBACK_NAV = {
+  label: "Feedback",
+  path: "/feedback",
+  icon: "feedback",
+  roles: ["admin", ...EMPLOYEE_LIKE_ROLES],
+};
 // Department-scoped employee nav groups. A role="employee" login whose
 // Employee record sits in the "CRM" / "HR" department gets these extra
 // (read-only) sections in the sidebar — and the Dashboard surfaces the
