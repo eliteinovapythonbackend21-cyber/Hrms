@@ -22,6 +22,7 @@ import EmployeeSubList from "@/components/EmployeeSubList";
 
 import { employeeLifecycleApi } from "@/api/employee.api";
 import { getUser } from "@/utils/tokenHelpers";
+import { useIsFinanceEmployee } from "@/hooks/useIsFinanceEmployee";
 import { use3DTilt, Motion3DStyles } from "@/hooks/use3DMotion";
 
 const SKY = {
@@ -313,6 +314,18 @@ export default function EmployeeDetailPage() {
     String(currentUser?.employee?.id ?? "") === String(id);
 
   /*
+   * FINANCE VIEW
+   *
+   * A Finance-department "employee" login reaching this page from their
+   * org-wide Employees list is read-only there too — the backend only
+   * allows admin-or-self to actually save an edit (see
+   * update_employee/_authorize_employee_action), so hide the Edit button
+   * rather than let it 403 on save.
+   */
+
+  const { isFinanceEmployee } = useIsFinanceEmployee();
+
+  /*
    * CRM RESTRICTION
    *
    * Normal employee pages:
@@ -331,7 +344,7 @@ export default function EmployeeDetailPage() {
    */
 
   const canEdit =
-    (!restricted || fromCrm) && !isSelfView;
+    (!restricted || fromCrm) && !isSelfView && !isFinanceEmployee;
 
   const canViewPayslip =
     !restricted && !isSelfView;

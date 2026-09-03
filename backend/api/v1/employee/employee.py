@@ -35,6 +35,25 @@ def _authorize_employee_action(employee):
     return False, None, (jsonify({"message": "Employee is not associated with this user id"}), 403)
 
 
+def _authorize_employee_view(employee):
+    """Same as _authorize_employee_action, plus a Finance-department
+    "employee" login — used only by read-only GET routes (detail /
+    salary / payslip), since the Finance sidebar's org-wide Employees
+    list (see the list route above) needs to open each row's detail
+    page. Never use this for a write/action route — it must stay
+    admin-or-self only."""
+    current_user = _get_current_user()
+    if not current_user:
+        return False, None, (jsonify({"message": "Invalid token"}), 401)
+    if (
+        _is_admin(current_user)
+        or employee.user_id == current_user.id
+        or is_finance_department_user(current_user)
+    ):
+        return True, current_user, None
+    return False, None, (jsonify({"message": "Employee is not associated with this user id"}), 403)
+
+
 def _fetch_employee(employee_id):
     if employee_id is None:
         return None, (jsonify({"message": "employee_id is required"}), 400)
@@ -273,7 +292,7 @@ def get_employee(employee_id, token_response):
     employee, error_response = _fetch_employee(employee_id)
     if error_response:
         return error_response
-    authorized, current_user, error_response = _authorize_employee_action(employee)
+    authorized, current_user, error_response = _authorize_employee_view(employee)
     if not authorized:
         return error_response
     return jsonify({"message": "Employee fetched", "data": employee.to_dict(), "token_response": get_jwt()}), 200
@@ -526,7 +545,7 @@ def get_employee_salary(employee_id, token_response):
     employee, error_response = _fetch_employee(employee_id)
     if error_response:
         return error_response
-    authorized, current_user, error_response = _authorize_employee_action(employee)
+    authorized, current_user, error_response = _authorize_employee_view(employee)
     if not authorized:
         return error_response
 
@@ -591,7 +610,7 @@ def get_employee_payslip(employee_id, token_response):
     employee, error_response = _fetch_employee(employee_id)
     if error_response:
         return error_response
-    authorized, current_user, error_response = _authorize_employee_action(employee)
+    authorized, current_user, error_response = _authorize_employee_view(employee)
     if not authorized:
         return error_response
 
@@ -1160,7 +1179,7 @@ def employee_attendance(employee_id, token_response):
     employee, error_response = _fetch_employee(employee_id)
     if error_response:
         return error_response
-    authorized, current_user, error_response = _authorize_employee_action(employee)
+    authorized, current_user, error_response = _authorize_employee_view(employee)
     if not authorized:
         return error_response
 
