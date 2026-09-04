@@ -14,4 +14,5 @@ export const feedbackApi = {
     }),
   // Status / admin_response updates are plain JSON (admin-only, no file).
   update: (id, payload) => axiosClient.put(API.FEEDBACK.UPDATE(id), payload),
+  deactivate: (id) => axiosClient.delete(API.FEEDBACK.UPDATE(id)),
 };
