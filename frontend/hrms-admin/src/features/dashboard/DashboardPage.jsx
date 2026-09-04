@@ -805,7 +805,11 @@ export default function DashboardPage() {
            shortcuts, personal analytics, and recent activity.
         =================================================== */
         <div className="space-y-6">
-          {/* CHECK-IN / CHECK-OUT — right on the dashboard, above everything */}
+          {/* CHECK-IN / CHECK-OUT — right on the dashboard, above
+              everything. For CRM employees, "Add Registration" sits
+              right next to it (side-by-side on larger screens, stacked
+              on mobile) instead of further down in the CRM workspace
+              section, since it's the other action they take daily. */}
           <section>
             <SectionHeading
               icon={<UsersIcon />}
@@ -814,7 +818,14 @@ export default function DashboardPage() {
               subtitle="Mark your attendance for today"
             />
 
-            <CheckInOutWidget />
+            {isCrmEmployee ? (
+              <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
+                <CheckInOutWidget />
+                <TodayRegistrationsCard />
+              </div>
+            ) : (
+              <CheckInOutWidget />
+            )}
           </section>
 
           {isCrmEmployee && (
@@ -826,7 +837,6 @@ export default function DashboardPage() {
                 subtitle="Your CRM screens — registrations, targets, incentives, payouts and invoices"
               />
 
-              <TodayRegistrationsCard />
               <CrmWorkspaceCards />
             </section>
           )}
