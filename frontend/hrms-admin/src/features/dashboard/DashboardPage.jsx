@@ -19,7 +19,6 @@ import CountsSummary from "./components/CountsSummary";
 import AttendanceTrendChart from "./components/AttendanceTrendChart";
 import LeaveStatusChart from "./components/LeaveStatusChart";
 import MyQuickLinks from "./components/MyQuickLinks";
-import MyProfileCard from "./components/MyProfileCard";
 import CheckInOutWidget from "@/features/attendance/CheckInOutWidget";
 import { useMyEmployee } from "@/hooks/useMyEmployee";
 import RadialStat from "./components/RadialStat";
@@ -464,6 +463,39 @@ export default function DashboardPage() {
     user?.username ||
     "User";
 
+  // Company / Branch / Department / Designation for the header chip row.
+  // Matches the same lookup pattern used elsewhere (e.g. TransferListPage):
+  // company/branch live on the employee's Department, designation is its
+  // own relation. Only shown for employee logins with a linked record.
+  const orgChips = !isAdmin && myEmployee
+    ? [
+        {
+          label: "Company",
+          value:
+            myEmployee.department?.company?.name ||
+            myEmployee.company?.name,
+        },
+        {
+          label: "Branch",
+          value:
+            myEmployee.department?.branch?.name ||
+            myEmployee.branch?.name,
+        },
+        {
+          label: "Department",
+          value:
+            myEmployee.department?.department_name ||
+            myEmployee.department?.name,
+        },
+        {
+          label: "Designation",
+          value:
+            myEmployee.designation?.designation_name ||
+            myEmployee.designation?.name,
+        },
+      ].filter((chip) => chip.value)
+    : [];
+
   const stats = useDashboardStats({
     enabled: isAdmin,
   });
@@ -569,6 +601,26 @@ export default function DashboardPage() {
                   ? "Here’s what’s happening across your HR workspace today."
                   : "Your attendance, leave and recent HR activity at a glance."}
               </p>
+
+              {/* Company / Branch / Department / Designation — compact
+                  chips, not a separate profile section, so the header
+                  carries the employee's organisation context without
+                  spending extra page space on it. */}
+              {orgChips.length > 0 && (
+                <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                  {orgChips.map((chip) => (
+                    <span
+                      key={chip.label}
+                      className="inline-flex items-center gap-1 rounded-full bg-white/70 px-2.5 py-1 text-[10px] font-medium text-slate-600 ring-1 ring-inset ring-slate-200 dark:bg-white/[0.06] dark:text-slate-300 dark:ring-white/10"
+                    >
+                      <span className="text-slate-400 dark:text-slate-500">
+                        {chip.label}:
+                      </span>
+                      {chip.value}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
@@ -743,6 +795,14 @@ export default function DashboardPage() {
       ) : (
         /* ===================================================
            EMPLOYEE DASHBOARD
+
+           "My profile" (personal/contact/organisation details) has
+           been removed here on purpose — it duplicated the Employee
+           Profile screen and didn't match what this page's own
+           subtitle promises ("Your attendance, leave and recent HR
+           activity at a glance"). Every section below now earns its
+           place against that promise: check-in/out, workspace
+           shortcuts, personal analytics, and recent activity.
         =================================================== */
         <div className="space-y-6">
           {/* CHECK-IN / CHECK-OUT — right on the dashboard, above everything */}
@@ -756,19 +816,6 @@ export default function DashboardPage() {
 
             <CheckInOutWidget />
           </section>
-
-          {/* PROFILE */}
-          <section>
-            <SectionHeading
-              icon={<UsersIcon />}
-              tone="accent"
-              title="My profile"
-              subtitle="Your personal, contact and organisation details"
-            />
-
-            <MyProfileCard />
-          </section>
-
 
           {isCrmEmployee && (
             <section className="space-y-4">

@@ -240,6 +240,16 @@ export default function CheckInOutWidget() {
   const permCap = settings?.max_permission_minutes_per_day ?? 60;
   const requiredHours = settings?.required_hours_per_day ?? 8;
 
+  // Can the Check In button be pressed right now? Either the very first
+  // check-in of the day, or resuming from a break/permission — anything
+  // that is NOT an open (actively-checked-in) session and NOT already
+  // done for the day.
+  const canCheckIn = !openSession && !doneForDay;
+
+  // Can the Check Out button be pressed right now? Only while an open
+  // session is running (break/permission checkouts are separate chips).
+  const canCheckOut = openSession;
+
   /* ---- submit helpers ---- */
   const baseGeo = () => ({
     latitude: coords.latitude,
@@ -472,10 +482,124 @@ export default function CheckInOutWidget() {
         </div>
       )}
 
-      {/* CHECK-IN / CHECK-OUT OF THE DAY — always shown first, above the
-          summary tiles and the break/permission controls. */}
+      {/* DONE FOR THE DAY — short banner, buttons below are disabled */}
+      {doneForDay && (
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-slate-50 px-3 py-2.5 text-sm text-slate-600 dark:bg-white/[0.04] dark:text-slate-300">
+          <span>
+            You have checked out for the day
+            {record?.check_out
+              ? ` at ${new Date(record.check_out).toLocaleTimeString(undefined, {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}`
+              : ""}
+            .
+          </span>
+          <button
+            type="button"
+            onClick={doReset}
+            disabled={resetDay.isPending}
+            className="shrink-0 text-xs font-semibold text-rose-600 hover:underline disabled:opacity-50 dark:text-rose-400"
+          >
+            {resetDay.isPending
+              ? "Resetting…"
+              : "Made a mistake? Reset today's attendance"}
+          </button>
+        </div>
+      )}
+
+      {/* ================= PRIMARY ACTIONS — Check In + Check Out,
+          shown together right under the title. Only one is ever
+          clickable at a time; the inactive one is simply disabled so
+          both actions are always visible in one place. ================= */}
+      <div className="flex flex-col gap-3 sm:flex-row">
+        {(() => {
+          const checkInDisabled = !employeeId || saving || !canCheckIn;
+          return (
+            <button
+              type="button"
+              onClick={handleCheckIn}
+              disabled={checkInDisabled}
+              className={`inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-lg px-5 text-sm font-semibold transition ${
+                checkInDisabled
+                  ? "cursor-not-allowed bg-slate-100 text-slate-400 dark:bg-white/5 dark:text-slate-600"
+                  : "bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-sm shadow-emerald-600/20 hover:from-emerald-500 hover:to-emerald-700"
+              }`}
+            >
+              <LoginIcon />
+              {saving
+                ? "Working…"
+                : paused
+                ? `Check In — resume from ${
+                    BREAK_META[lastOutType]?.label || "break"
+                  }`
+                : "Check In"}
+            </button>
+          );
+        })()}
+
+        {(() => {
+          const checkOutDisabled = !employeeId || saving || !canCheckOut;
+          return (
+            <button
+              type="button"
+              onClick={handleEndOfDay}
+              disabled={checkOutDisabled}
+              className={`inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-lg px-5 text-sm font-semibold transition ${
+                checkOutDisabled
+                  ? "cursor-not-allowed bg-slate-100 text-slate-400 dark:bg-white/5 dark:text-slate-600"
+                  : "bg-gradient-to-r from-rose-500 to-rose-600 text-white shadow-sm shadow-rose-600/20 hover:from-rose-500 hover:to-rose-700"
+              }`}
+            >
+              <LogoutIcon />
+              {saving ? "Working…" : "Check Out"}
+            </button>
+          );
+        })()}
+      </div>
+
+      {/* Or check out for a break / permission — only while an open
+          session is actually running. */}
+      {openSession && (
+        <div className="mt-4">
+          <p className="mb-2 text-center text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+            or check out for a break / permission
+          </p>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {BREAK_OPTIONS.map((opt) => (
+              <button
+                key={opt.type}
+                type="button"
+                disabled={!employeeId || saving}
+                onClick={() => handleBreak(opt.type)}
+                className="flex flex-col items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 py-3 text-xs font-semibold text-slate-700 transition hover:-translate-y-0.5 hover:border-primary-300 hover:bg-primary-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-200 dark:hover:border-primary-500/40 dark:hover:bg-primary-500/10"
+              >
+                <span className="text-xl leading-none">{opt.emoji}</span>
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {record && !doneForDay && (
+        <div className="mt-3 text-right">
+          <button
+            type="button"
+            onClick={doReset}
+            disabled={resetDay.isPending}
+            className="text-[11px] font-medium text-slate-400 hover:text-rose-600 hover:underline disabled:opacity-50 dark:text-slate-500 dark:hover:text-rose-400"
+          >
+            {resetDay.isPending ? "Resetting…" : "Reset today's attendance"}
+          </button>
+        </div>
+      )}
+
+      {/* CHECK-IN / CHECK-OUT OF THE DAY — recorded times, shown right
+          after the action buttons so today's result is immediately
+          visible in front of the summary tiles below. */}
       {record && (
-        <div className="mb-4 grid grid-cols-2 gap-3">
+        <div className="mt-4 grid grid-cols-2 gap-3">
           <div className="rounded-xl border border-emerald-200/70 bg-emerald-50/60 p-3 dark:border-emerald-500/20 dark:bg-emerald-500/[0.06]">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-emerald-700/70 dark:text-emerald-300/70">
               Check in
@@ -528,9 +652,10 @@ export default function CheckInOutWidget() {
         </div>
       )}
 
-      {/* TODAY SUMMARY — below the day's check-in / check-out */}
+      {/* TODAY SUMMARY — Working / Permission / Lunch / Tea / Nap /
+          Late-OT, below the check-in / check-out buttons and times. */}
       {record && (
-        <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+        <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
           <SummaryTile
             label="Working"
             value={`${(record.working_hours ?? 0).toFixed(2)}h`}
@@ -568,7 +693,7 @@ export default function CheckInOutWidget() {
       )}
 
       {/* CURRENT TIME — check-in / check-out are always stamped "now" */}
-      <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3 dark:border-white/10 dark:bg-white/[0.04]">
+      <div className="mt-4 flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3 dark:border-white/10 dark:bg-white/[0.04]">
         <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
           Current time
         </span>
@@ -584,7 +709,7 @@ export default function CheckInOutWidget() {
         automatically.
       </p>
 
-      <div className="mb-4">
+      <div className="mt-4">
         {geoLoading && (
           <p className="text-xs text-slate-500 dark:text-slate-400">
             Detecting location…
@@ -598,96 +723,6 @@ export default function CheckInOutWidget() {
           </p>
         )}
       </div>
-
-      {record && !doneForDay && (
-        <div className="mb-3 text-right">
-          <button
-            type="button"
-            onClick={doReset}
-            disabled={resetDay.isPending}
-            className="text-[11px] font-medium text-slate-400 hover:text-rose-600 hover:underline disabled:opacity-50 dark:text-slate-500 dark:hover:text-rose-400"
-          >
-            {resetDay.isPending ? "Resetting…" : "Reset today's attendance"}
-          </button>
-        </div>
-      )}
-
-      {/* ================= PRIMARY ACTION ================= */}
-      {doneForDay ? (
-        <div className="space-y-2">
-          <p className="rounded-lg bg-slate-50 px-3 py-2.5 text-sm text-slate-600 dark:bg-white/[0.04] dark:text-slate-300">
-            You have checked out for the day
-            {record?.check_out
-              ? ` at ${new Date(record.check_out).toLocaleTimeString(undefined, {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}`
-              : ""}
-            .
-          </p>
-          <button
-            type="button"
-            onClick={doReset}
-            disabled={resetDay.isPending}
-            className="text-xs font-semibold text-rose-600 hover:underline disabled:opacity-50 dark:text-rose-400"
-          >
-            {resetDay.isPending
-              ? "Resetting…"
-              : "Made a mistake? Reset today's attendance"}
-          </button>
-        </div>
-      ) : openSession ? (
-        <div className="space-y-4">
-          {/* CHECK OUT — big primary button */}
-          <button
-            type="button"
-            onClick={handleEndOfDay}
-            disabled={!employeeId || saving}
-            className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-rose-500 to-rose-600 px-5 text-sm font-semibold text-white shadow-sm shadow-rose-600/20 transition hover:from-rose-500 hover:to-rose-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
-          >
-            <LogoutIcon />
-            {saving ? "Working…" : "Check Out"}
-          </button>
-
-          {/* Or check out for a break / permission */}
-          <div>
-            <p className="mb-2 text-center text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-              or check out for a break / permission
-            </p>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-              {BREAK_OPTIONS.map((opt) => (
-                <button
-                  key={opt.type}
-                  type="button"
-                  disabled={!employeeId || saving}
-                  onClick={() => handleBreak(opt.type)}
-                  className="flex flex-col items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 py-3 text-xs font-semibold text-slate-700 transition hover:-translate-y-0.5 hover:border-primary-300 hover:bg-primary-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-200 dark:hover:border-primary-500/40 dark:hover:bg-primary-500/10"
-                >
-                  <span className="text-xl leading-none">{opt.emoji}</span>
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      ) : (
-        /* CHECK IN — big primary button (initial or resume from break) */
-        <button
-          type="button"
-          onClick={handleCheckIn}
-          disabled={!employeeId || saving}
-          className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-emerald-500 to-emerald-600 px-5 text-sm font-semibold text-white shadow-sm shadow-emerald-600/20 transition hover:from-emerald-500 hover:to-emerald-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
-        >
-          <LoginIcon />
-          {saving
-            ? "Working…"
-            : paused
-            ? `Check In — resume from ${
-                BREAK_META[lastOutType]?.label || "break"
-              }`
-            : "Check In"}
-        </button>
-      )}
 
       <ReasonPrompt
         open={!!prompt}

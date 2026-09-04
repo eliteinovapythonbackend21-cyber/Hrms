@@ -786,6 +786,19 @@ def deactivate_feedback(ticket_id, token_response):
 
     admin_user = is_admin(current_user)
 
+    # The ticket's owner can only withdraw it while it's still sitting in
+    # EDITABLE_STATUS ("Open") — i.e. before an admin has picked it up.
+    # Once an admin has moved it to "In Progress" / "Resolved", only the
+    # admin can deactivate it. This mirrors the same restriction already
+    # enforced on owner edits above in update_feedback.
+    if not admin_user and ticket.status != EDITABLE_STATUS:
+        return jsonify({
+            "message": (
+                f"Only tickets with status '{EDITABLE_STATUS}' can be "
+                "deactivated by the employee who raised them."
+            )
+        }), 400
+
     ticket.is_active = False
 
     try:

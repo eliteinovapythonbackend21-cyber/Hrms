@@ -946,104 +946,136 @@ function UpdateTicketModal({ ticket, open, onClose }) {
 }
 
 /* =========================================================
-   HOVER DETAIL OVERLAY (shared by card + table views)
+   HOVER TRIGGER (shared by card + table views)
 
-   Absolutely positioned within a `relative` trigger element, faded
-   in via group-hover. Shows the full, un-clamped ticket details.
+   Same pattern as TransferListPage's DepartmentHoverTrigger: the
+   hover/focus group is scoped to a NAMED group ("group/ticket") on
+   a small trigger element, not the whole card/row. That's what
+   keeps the panel from popping up when hovering unrelated things
+   like the Edit/Manage/Deactivate buttons — only hovering (or
+   focusing) the wrapped trigger reveals it. Positioned below the
+   trigger (`top-full` + `mt-2`), not stacked on top of it, and
+   toggled via invisible/visible (not just opacity) so it never
+   intercepts clicks while hidden.
 ========================================================= */
 
-function TicketHoverDetails({ ticket }) {
+function TicketHoverTrigger({ children, panel, align = "left" }) {
+  const alignClasses = {
+    left: "left-0",
+    center: "left-1/2 -translate-x-1/2",
+    right: "right-0",
+  };
+
   return (
-    <div className="pointer-events-none absolute inset-x-0 top-0 z-20 origin-top scale-95 opacity-0 transition-all duration-150 group-hover:pointer-events-auto group-hover:scale-100 group-hover:opacity-100">
-      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl dark:border-white/10 dark:bg-slate-800">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="text-sm font-semibold text-slate-900 dark:text-white">
-              {ticket.ticket_number || `#${ticket.id}`}
-            </p>
-            <p className="mt-0.5 text-[11px] text-slate-400">
-              {ticket.created_at ? formatDateTime(ticket.created_at) : "-"}
-            </p>
-          </div>
-          <Badge className={STATUS_BADGE_CLASS[ticket.status] || STATUS_BADGE_CLASS.Open}>
-            {ticket.status || "Open"}
-          </Badge>
+    <div tabIndex={0} className="group/ticket relative inline-flex max-w-full outline-none">
+      <div className="max-w-full">{children}</div>
+
+      <div
+        className={`pointer-events-none invisible absolute top-full z-[100] mt-2 opacity-0 transition-all duration-150 group-hover/ticket:pointer-events-auto group-hover/ticket:visible group-hover/ticket:opacity-100 group-focus/ticket:pointer-events-auto group-focus/ticket:visible group-focus/ticket:opacity-100 ${alignClasses[align]}`}
+      >
+        {panel}
+      </div>
+    </div>
+  );
+}
+
+/* =========================================================
+   HOVER DETAIL PANEL CONTENT
+
+   The actual card shown by TicketHoverTrigger. Shows the full,
+   un-clamped ticket details.
+========================================================= */
+
+function TicketDetailsPanel({ ticket }) {
+  return (
+    <div className="w-[320px] max-w-[calc(100vw-32px)] rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-2xl dark:border-white/10 dark:bg-slate-800">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-sm font-semibold text-slate-900 dark:text-white">
+            {ticket.ticket_number || `#${ticket.id}`}
+          </p>
+          <p className="mt-0.5 text-[11px] text-slate-400">
+            {ticket.created_at ? formatDateTime(ticket.created_at) : "-"}
+          </p>
         </div>
+        <Badge className={STATUS_BADGE_CLASS[ticket.status] || STATUS_BADGE_CLASS.Open}>
+          {ticket.status || "Open"}
+        </Badge>
+      </div>
 
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          <Badge className="bg-primary-50 text-primary-700 dark:bg-primary-500/10 dark:text-primary-400">
-            {ticket.category || "-"}
-          </Badge>
-          <Badge className="bg-slate-100 text-slate-700 dark:bg-white/10 dark:text-slate-300">
-            {ticket.subcategory || "General HRMS Query"}
-          </Badge>
+      <div className="mt-2 flex flex-wrap gap-1.5">
+        <Badge className="bg-primary-50 text-primary-700 dark:bg-primary-500/10 dark:text-primary-400">
+          {ticket.category || "-"}
+        </Badge>
+        <Badge className="bg-slate-100 text-slate-700 dark:bg-white/10 dark:text-slate-300">
+          {ticket.subcategory || "General HRMS Query"}
+        </Badge>
+      </div>
+
+      <div className="mt-3 grid grid-cols-3 gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs dark:border-white/10 dark:bg-white/[0.03]">
+        <div>
+          <p className="text-[10px] font-semibold uppercase text-slate-400">Employee</p>
+          <p className="mt-0.5 truncate text-slate-700 dark:text-slate-200">
+            {ticket.employee || "-"}
+          </p>
         </div>
-
-        <div className="mt-3 grid grid-cols-3 gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs dark:border-white/10 dark:bg-white/[0.03]">
-          <div>
-            <p className="text-[10px] font-semibold uppercase text-slate-400">Employee</p>
-            <p className="mt-0.5 truncate text-slate-700 dark:text-slate-200">
-              {ticket.employee || "-"}
-            </p>
-          </div>
-          <div>
-            <p className="text-[10px] font-semibold uppercase text-slate-400">ID</p>
-            <p className="mt-0.5 truncate text-slate-700 dark:text-slate-200">
-              {ticket.employee_id || "-"}
-            </p>
-          </div>
-          <div>
-            <p className="text-[10px] font-semibold uppercase text-slate-400">Name</p>
-            <p className="mt-0.5 truncate text-slate-700 dark:text-slate-200">
-              {ticket.name || ticket.raised_by_user?.username || "-"}
-            </p>
-          </div>
+        <div>
+          <p className="text-[10px] font-semibold uppercase text-slate-400">ID</p>
+          <p className="mt-0.5 truncate text-slate-700 dark:text-slate-200">
+            {ticket.employee_id || "-"}
+          </p>
         </div>
+        <div>
+          <p className="text-[10px] font-semibold uppercase text-slate-400">Name</p>
+          <p className="mt-0.5 truncate text-slate-700 dark:text-slate-200">
+            {ticket.name || ticket.raised_by_user?.username || "-"}
+          </p>
+        </div>
+      </div>
 
-        {ticket.purpose && ticket.purpose.trim() !== "-" && (
-          <div className="mt-3">
-            <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
-              Purpose
-            </p>
-            <p className="mt-0.5 text-sm font-semibold text-slate-800 dark:text-white">
-              {ticket.purpose}
-            </p>
-          </div>
-        )}
-
+      {ticket.purpose && ticket.purpose.trim() !== "-" && (
         <div className="mt-3">
           <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
-            Description
+            Purpose
           </p>
-          <p className="mt-0.5 whitespace-pre-wrap text-sm leading-5 text-slate-600 dark:text-slate-300">
-            {ticket.description || "-"}
+          <p className="mt-0.5 text-sm font-semibold text-slate-800 dark:text-white">
+            {ticket.purpose}
           </p>
         </div>
+      )}
 
-        {ticket.screenshot_url && (
-          <div className="mt-3">
-            <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
-              Screenshot
-            </p>
-            <img
-              src={resolveUploadUrl(ticket.screenshot_url)}
-              alt="Ticket screenshot"
-              className="h-24 w-24 rounded-lg object-cover ring-1 ring-slate-200 dark:ring-white/10"
-            />
-          </div>
-        )}
-
-        {ticket.admin_response && (
-          <div className="mt-3 rounded-lg border border-emerald-100 bg-emerald-50/60 px-3 py-2 dark:border-emerald-900/30 dark:bg-emerald-500/10">
-            <p className="text-[10px] font-semibold uppercase tracking-wide text-emerald-600 dark:text-emerald-400">
-              Admin Update
-            </p>
-            <p className="mt-0.5 whitespace-pre-wrap text-xs leading-5 text-emerald-800 dark:text-emerald-200">
-              {ticket.admin_response}
-            </p>
-          </div>
-        )}
+      <div className="mt-3">
+        <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+          Description
+        </p>
+        <p className="mt-0.5 max-h-[140px] overflow-y-auto whitespace-pre-wrap text-sm leading-5 text-slate-600 dark:text-slate-300">
+          {ticket.description || "-"}
+        </p>
       </div>
+
+      {ticket.screenshot_url && (
+        <div className="mt-3">
+          <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+            Screenshot
+          </p>
+          <img
+            src={resolveUploadUrl(ticket.screenshot_url)}
+            alt="Ticket screenshot"
+            className="h-24 w-24 rounded-lg object-cover ring-1 ring-slate-200 dark:ring-white/10"
+          />
+        </div>
+      )}
+
+      {ticket.admin_response && (
+        <div className="mt-3 rounded-lg border border-emerald-100 bg-emerald-50/60 px-3 py-2 dark:border-emerald-900/30 dark:bg-emerald-500/10">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-emerald-600 dark:text-emerald-400">
+            Admin Update
+          </p>
+          <p className="mt-0.5 whitespace-pre-wrap text-xs leading-5 text-emerald-800 dark:text-emerald-200">
+            {ticket.admin_response}
+          </p>
+        </div>
+      )}
     </div>
   );
 }
@@ -1085,10 +1117,24 @@ function TicketActions({ ticket, isAdmin, onManage, onEdit, onDeactivate }) {
       >
         Edit
       </button>
+      {/* Same rule as Edit: an employee can only withdraw their own
+          ticket while it's still "Open" — once an admin has picked it
+          up (In Progress / Resolved), only the admin can deactivate
+          it. Enforced server-side too, in deactivate_feedback. */}
       <button
         type="button"
-        onClick={() => onDeactivate(ticket)}
-        className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600 transition-colors hover:bg-red-50 dark:border-red-900/40 dark:text-red-400 dark:hover:bg-red-500/10"
+        onClick={() => canEdit && onDeactivate(ticket)}
+        disabled={!canEdit}
+        title={
+          canEdit
+            ? "Deactivate ticket"
+            : `Only "${EDITABLE_STATUS}" tickets can be deactivated`
+        }
+        className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors ${
+          canEdit
+            ? "border-red-200 text-red-600 hover:bg-red-50 dark:border-red-900/40 dark:text-red-400 dark:hover:bg-red-500/10"
+            : "cursor-not-allowed border-slate-100 text-slate-300 dark:border-white/5 dark:text-slate-600"
+        }`}
       >
         Deactivate
       </button>
@@ -1106,19 +1152,23 @@ function TicketCard({ ticket, isAdmin, onManage, onEdit, onDeactivate }) {
   const hasPurpose = ticket.purpose && ticket.purpose.trim() !== "-";
 
   return (
-    <div className="group relative">
-      <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-3.5 shadow-sm transition-shadow duration-200 hover:shadow-md dark:border-white/10 dark:bg-white/[0.04]">
-        <div
-          className={`absolute inset-x-0 top-0 h-0.5 ${
-            ticket.status === "Resolved"
-              ? "bg-emerald-500"
-              : ticket.status === "In Progress"
-              ? "bg-amber-500"
-              : "bg-slate-300 dark:bg-slate-600"
-          }`}
-        />
+    <div className="relative rounded-2xl border border-slate-200 bg-white p-3.5 shadow-sm transition-shadow duration-200 hover:shadow-md dark:border-white/10 dark:bg-white/[0.04]">
+      <div
+        className={`absolute inset-x-0 top-0 h-0.5 rounded-t-2xl ${
+          ticket.status === "Resolved"
+            ? "bg-emerald-500"
+            : ticket.status === "In Progress"
+            ? "bg-amber-500"
+            : "bg-slate-300 dark:bg-slate-600"
+        }`}
+      />
 
-        <div className="flex items-start justify-between gap-3">
+      <div className="flex items-start justify-between gap-3">
+        {/* Hovering/focusing the ticket number + timestamp is what
+            reveals the full-detail panel — scoped to just this
+            trigger, so hovering Edit/Manage/Deactivate below never
+            triggers it. */}
+        <TicketHoverTrigger align="left" panel={<TicketDetailsPanel ticket={ticket} />}>
           <div className="flex min-w-0 items-center gap-2.5">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
               <TicketIcon className="h-4.5 w-4.5" />
@@ -1133,100 +1183,98 @@ function TicketCard({ ticket, isAdmin, onManage, onEdit, onDeactivate }) {
               </p>
             </div>
           </div>
+        </TicketHoverTrigger>
 
-          <Badge className={STATUS_BADGE_CLASS[ticket.status] || STATUS_BADGE_CLASS.Open}>
-            {ticket.status || "Open"}
-          </Badge>
-        </div>
-
-        <div className="mt-2.5 flex flex-wrap gap-1.5">
-          <Badge className="bg-primary-50 text-primary-700 dark:bg-primary-500/10 dark:text-primary-400">
-            {ticket.category || "-"}
-          </Badge>
-          <Badge className="bg-slate-100 text-slate-700 dark:bg-white/10 dark:text-slate-300">
-            {ticket.subcategory || "General HRMS Query"}
-          </Badge>
-        </div>
-
-        <div className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 dark:border-white/10 dark:bg-white/[0.03]">
-          <p className="text-xs text-slate-600 dark:text-slate-300">
-            <span className="font-semibold uppercase tracking-wide text-[10px] text-slate-400">
-              Employee:{" "}
-            </span>
-            {ticket.employee || "-"}
-          </p>
-          <p className="text-xs text-slate-600 dark:text-slate-300">
-            <span className="font-semibold uppercase tracking-wide text-[10px] text-slate-400">
-              ID:{" "}
-            </span>
-            {ticket.employee_id || "-"}
-          </p>
-          <p className="text-xs text-slate-600 dark:text-slate-300">
-            <span className="font-semibold uppercase tracking-wide text-[10px] text-slate-400">
-              Name:{" "}
-            </span>
-            {ticket.name || ticket.raised_by_user?.username || "-"}
-          </p>
-        </div>
-
-        {hasPurpose && (
-          <div className="mt-2.5">
-            <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
-              Purpose
-            </p>
-            <p className="text-sm font-semibold text-slate-800 dark:text-white">
-              {ticket.purpose}
-            </p>
-          </div>
-        )}
-
-        <div className="mt-2.5">
-          <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
-            Description
-          </p>
-          <p className="line-clamp-3 text-sm leading-5 text-slate-600 dark:text-slate-300">
-            {ticket.description || "-"}
-          </p>
-        </div>
-
-        {ticket.screenshot_url && (
-          <a
-            href={resolveUploadUrl(ticket.screenshot_url)}
-            target="_blank"
-            rel="noreferrer"
-            className="mt-2.5 inline-block"
-          >
-            <img
-              src={resolveUploadUrl(ticket.screenshot_url)}
-              alt="Ticket screenshot"
-              className="h-12 w-12 rounded-md object-cover ring-1 ring-slate-200 transition hover:opacity-90 dark:ring-white/10"
-            />
-          </a>
-        )}
-
-        {ticket.admin_response && (
-          <div className="mt-2.5 rounded-lg border border-emerald-100 bg-emerald-50/60 px-3 py-2 dark:border-emerald-900/30 dark:bg-emerald-500/10">
-            <p className="text-[10px] font-semibold uppercase tracking-wide text-emerald-600 dark:text-emerald-400">
-              Admin Update
-            </p>
-            <p className="whitespace-pre-wrap text-xs leading-5 text-emerald-800 dark:text-emerald-200">
-              {ticket.admin_response}
-            </p>
-          </div>
-        )}
-
-        <div className="mt-2.5 flex justify-end border-t border-slate-100 pt-2 dark:border-white/10">
-          <TicketActions
-            ticket={ticket}
-            isAdmin={isAdmin}
-            onManage={onManage}
-            onEdit={onEdit}
-            onDeactivate={onDeactivate}
-          />
-        </div>
+        <Badge className={STATUS_BADGE_CLASS[ticket.status] || STATUS_BADGE_CLASS.Open}>
+          {ticket.status || "Open"}
+        </Badge>
       </div>
 
-      <TicketHoverDetails ticket={ticket} />
+      <div className="mt-2.5 flex flex-wrap gap-1.5">
+        <Badge className="bg-primary-50 text-primary-700 dark:bg-primary-500/10 dark:text-primary-400">
+          {ticket.category || "-"}
+        </Badge>
+        <Badge className="bg-slate-100 text-slate-700 dark:bg-white/10 dark:text-slate-300">
+          {ticket.subcategory || "General HRMS Query"}
+        </Badge>
+      </div>
+
+      <div className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 dark:border-white/10 dark:bg-white/[0.03]">
+        <p className="text-xs text-slate-600 dark:text-slate-300">
+          <span className="font-semibold uppercase tracking-wide text-[10px] text-slate-400">
+            Employee:{" "}
+          </span>
+          {ticket.employee || "-"}
+        </p>
+        <p className="text-xs text-slate-600 dark:text-slate-300">
+          <span className="font-semibold uppercase tracking-wide text-[10px] text-slate-400">
+            ID:{" "}
+          </span>
+          {ticket.employee_id || "-"}
+        </p>
+        <p className="text-xs text-slate-600 dark:text-slate-300">
+          <span className="font-semibold uppercase tracking-wide text-[10px] text-slate-400">
+            Name:{" "}
+          </span>
+          {ticket.name || ticket.raised_by_user?.username || "-"}
+        </p>
+      </div>
+
+      {hasPurpose && (
+        <div className="mt-2.5">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+            Purpose
+          </p>
+          <p className="text-sm font-semibold text-slate-800 dark:text-white">
+            {ticket.purpose}
+          </p>
+        </div>
+      )}
+
+      <div className="mt-2.5">
+        <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+          Description
+        </p>
+        <p className="line-clamp-3 text-sm leading-5 text-slate-600 dark:text-slate-300">
+          {ticket.description || "-"}
+        </p>
+      </div>
+
+      {ticket.screenshot_url && (
+        <a
+          href={resolveUploadUrl(ticket.screenshot_url)}
+          target="_blank"
+          rel="noreferrer"
+          className="mt-2.5 inline-block"
+        >
+          <img
+            src={resolveUploadUrl(ticket.screenshot_url)}
+            alt="Ticket screenshot"
+            className="h-12 w-12 rounded-md object-cover ring-1 ring-slate-200 transition hover:opacity-90 dark:ring-white/10"
+          />
+        </a>
+      )}
+
+      {ticket.admin_response && (
+        <div className="mt-2.5 rounded-lg border border-emerald-100 bg-emerald-50/60 px-3 py-2 dark:border-emerald-900/30 dark:bg-emerald-500/10">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-emerald-600 dark:text-emerald-400">
+            Admin Update
+          </p>
+          <p className="whitespace-pre-wrap text-xs leading-5 text-emerald-800 dark:text-emerald-200">
+            {ticket.admin_response}
+          </p>
+        </div>
+      )}
+
+      <div className="mt-2.5 flex justify-end border-t border-slate-100 pt-2 dark:border-white/10">
+        <TicketActions
+          ticket={ticket}
+          isAdmin={isAdmin}
+          onManage={onManage}
+          onEdit={onEdit}
+          onDeactivate={onDeactivate}
+        />
+      </div>
     </div>
   );
 }
@@ -1268,12 +1316,18 @@ function TicketTable({ tickets, isAdmin, onManage, onEdit, onDeactivate }) {
           {tickets.map((ticket) => (
             <tr
               key={ticket.id}
-              className="group relative transition-colors hover:bg-slate-50 dark:hover:bg-white/[0.03]"
+              className="transition-colors hover:bg-slate-50 dark:hover:bg-white/[0.03]"
             >
-              <td className="whitespace-nowrap px-4 py-3">
-                <p className="font-semibold text-slate-900 dark:text-white">
-                  {ticket.ticket_number || `#${ticket.id}`}
-                </p>
+              <td className="relative whitespace-nowrap px-4 py-3">
+                {/* Same scoped trigger as the card view — hovering
+                    the ticket number reveals the panel; hovering
+                    Edit/Manage/Deactivate in the Actions cell does
+                    not, since it's a separate, unrelated group. */}
+                <TicketHoverTrigger align="left" panel={<TicketDetailsPanel ticket={ticket} />}>
+                  <p className="font-semibold text-slate-900 dark:text-white">
+                    {ticket.ticket_number || `#${ticket.id}`}
+                  </p>
+                </TicketHoverTrigger>
               </td>
               <td className="px-4 py-3">
                 <Badge className="bg-primary-50 text-primary-700 dark:bg-primary-500/10 dark:text-primary-400">
@@ -1294,7 +1348,7 @@ function TicketTable({ tickets, isAdmin, onManage, onEdit, onDeactivate }) {
               <td className="whitespace-nowrap px-4 py-3 text-slate-500 dark:text-slate-400">
                 {ticket.created_at ? formatDateTime(ticket.created_at) : "-"}
               </td>
-              <td className="relative whitespace-nowrap px-4 py-3 text-right">
+              <td className="whitespace-nowrap px-4 py-3 text-right">
                 <div className="inline-flex justify-end">
                   <TicketActions
                     ticket={ticket}
@@ -1304,8 +1358,6 @@ function TicketTable({ tickets, isAdmin, onManage, onEdit, onDeactivate }) {
                     onDeactivate={onDeactivate}
                   />
                 </div>
-
-                <TicketHoverDetails ticket={ticket} />
               </td>
             </tr>
           ))}
