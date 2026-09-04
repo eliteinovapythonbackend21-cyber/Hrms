@@ -165,7 +165,7 @@ export const navConfig = [
       { label: "Incentive Payouts", path: "/crm/leads/payouts", icon: "crm" },
       { label: "Invoices", path: "/crm/invoices", icon: "crm" },
       { label: "Payments", path: "/crm/payments", icon: "crm" },
-      { label: "Support Tickets", path: "/crm/support-tickets", icon: "crm" },
+      { label: "CRM Support Tickets", path: "/crm/support-tickets", icon: "crm" },
       
     ],
   },
@@ -225,7 +225,7 @@ export const navConfig = [
 // Admin sees and resolves every ticket; everyone else only sees (and can
 // raise) their own.
 export const FEEDBACK_NAV = {
-  label: "Feedback",
+  label: "Support Tickets",
   path: "/feedback",
   icon: "feedback",
   roles: ["admin", ...EMPLOYEE_LIKE_ROLES],
@@ -246,7 +246,7 @@ export const CRM_EMPLOYEE_NAV = {
     { label: "Incentive Slabs", path: "/crm/leads/incentive-slabs", icon: "crm" },
     { label: "Invoices", path: "/crm/invoices", icon: "crm" },
     { label: "Payments", path: "/crm/payments", icon: "crm" },
-    { label: "Support Tickets", path: "/crm/support-tickets", icon: "crm" },
+    { label: "CRM Support Tickets", path: "/crm/support-tickets", icon: "crm" },
   ],
 };
 
