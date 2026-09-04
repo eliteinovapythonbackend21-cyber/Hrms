@@ -558,17 +558,36 @@ def update_feedback(ticket_id, token_response):
 
     history_parts = []
 
+    # Once an admin has left a response, that's a signal they're already
+    # working the ticket — even if they haven't moved status off "Open"
+    # yet. From that point on, the owner can no longer edit or withdraw
+    # it, matching the same reasoning as the status gate below.
+    admin_has_engaged = bool(ticket.admin_response)
+
     # ------------------------------------------------------------------------
     # OWNER EDIT (non-admin): category / reason / purpose / description
     # ------------------------------------------------------------------------
 
     if not admin_user:
 
-        if ticket.status != EDITABLE_STATUS:
+        editable_fields_requested = any(
+            field in data
+            for field in (
+                "category",
+                "reason",
+                "purpose",
+                "description",
+            )
+        )
+
+        if editable_fields_requested and (
+            ticket.status != EDITABLE_STATUS or admin_has_engaged
+        ):
             return jsonify({
                 "message": (
                     f"Only tickets with status '{EDITABLE_STATUS}' "
-                    "can be edited"
+                    "that an admin hasn't responded to yet can be "
+                    "edited"
                 )
             }), 400
 
@@ -699,13 +718,29 @@ def update_feedback(ticket_id, token_response):
             )
 
     # ------------------------------------------------------------------------
-    # ADMIN: ACTIVE / INACTIVE UPDATE
+    # ACTIVE / INACTIVE UPDATE — admin OR the ticket's owner.
+    #
+    # This is what powers "Reactivate" (turning a withdrawn ticket back
+    # on) for both roles, mirroring the DELETE route's owner-or-admin
+    # permission model. Deactivating via this path is still gated the
+    # same way as deactivate_feedback below; reactivating (is_active
+    # going back to True) has no such gate.
     # ------------------------------------------------------------------------
 
-    if admin_user and "is_active" in data:
+    if "is_active" in data and (admin_user or owns_ticket):
         next_active = (
             data.get("is_active") is not False
         )
+
+        if not admin_user and not next_active:
+            if ticket.status != EDITABLE_STATUS or admin_has_engaged:
+                return jsonify({
+                    "message": (
+                        f"Only tickets with status '{EDITABLE_STATUS}' "
+                        "that an admin hasn't responded to yet can be "
+                        "deactivated by the employee who raised them."
+                    )
+                }), 400
 
         if ticket.is_active != next_active:
             ticket.is_active = next_active
@@ -787,15 +822,19 @@ def deactivate_feedback(ticket_id, token_response):
     admin_user = is_admin(current_user)
 
     # The ticket's owner can only withdraw it while it's still sitting in
-    # EDITABLE_STATUS ("Open") — i.e. before an admin has picked it up.
-    # Once an admin has moved it to "In Progress" / "Resolved", only the
-    # admin can deactivate it. This mirrors the same restriction already
-    # enforced on owner edits above in update_feedback.
-    if not admin_user and ticket.status != EDITABLE_STATUS:
+    # EDITABLE_STATUS ("Open") AND before an admin has left a response —
+    # a response is a sign the admin is already working the ticket even
+    # if they haven't moved status off "Open" yet. Once either is no
+    # longer true, only the admin can deactivate it. Mirrors the same
+    # restriction enforced on owner edits in update_feedback.
+    if not admin_user and (
+        ticket.status != EDITABLE_STATUS or ticket.admin_response
+    ):
         return jsonify({
             "message": (
-                f"Only tickets with status '{EDITABLE_STATUS}' can be "
-                "deactivated by the employee who raised them."
+                f"Only tickets with status '{EDITABLE_STATUS}' that "
+                "an admin hasn't responded to yet can be deactivated "
+                "by the employee who raised them."
             )
         }), 400
 

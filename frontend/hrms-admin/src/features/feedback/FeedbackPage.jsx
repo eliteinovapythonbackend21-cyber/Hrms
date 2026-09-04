@@ -1087,8 +1087,30 @@ function TicketDetailsPanel({ ticket }) {
    Owner  -> "Edit" (only while EDITABLE_STATUS) + "Deactivate"
 ========================================================= */
 
-function TicketActions({ ticket, isAdmin, onManage, onEdit, onDeactivate }) {
-  const canEdit = ticket.status === EDITABLE_STATUS;
+function TicketActions({ ticket, isAdmin, onManage, onEdit, onDeactivate, onReactivate }) {
+  const isActive = ticket.is_active !== false;
+
+  // Owner can edit/deactivate only while the ticket is Open AND the
+  // admin hasn't left a response yet — a response is a sign the admin
+  // is already working it, even before they've moved status off Open.
+  const canEdit =
+    isActive && ticket.status === EDITABLE_STATUS && !ticket.admin_response;
+
+  // A deactivated (withdrawn/removed) ticket only ever offers one
+  // action — bringing it back — for either an admin or its owner,
+  // mirroring TransferListPage's Reactivate button for inactive rows.
+  if (!isActive) {
+    return (
+      <button
+        type="button"
+        onClick={() => onReactivate(ticket)}
+        title="Reactivate ticket"
+        className="rounded-lg border border-emerald-200 px-3 py-1.5 text-xs font-semibold text-emerald-600 transition-colors hover:bg-emerald-50 dark:border-emerald-900/40 dark:text-emerald-400 dark:hover:bg-emerald-500/10"
+      >
+        Reactivate
+      </button>
+    );
+  }
 
   if (isAdmin) {
     return (
@@ -1108,7 +1130,11 @@ function TicketActions({ ticket, isAdmin, onManage, onEdit, onDeactivate }) {
         type="button"
         onClick={() => canEdit && onEdit(ticket)}
         disabled={!canEdit}
-        title={canEdit ? "Edit ticket" : `Only "${EDITABLE_STATUS}" tickets can be edited`}
+        title={
+          canEdit
+            ? "Edit ticket"
+            : `Only "${EDITABLE_STATUS}" tickets an admin hasn't responded to yet can be edited`
+        }
         className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors ${
           canEdit
             ? "border-slate-200 text-slate-700 hover:border-primary-200 hover:bg-primary-50 hover:text-primary-600 dark:border-white/10 dark:text-slate-200 dark:hover:border-primary-500/40 dark:hover:bg-primary-500/10 dark:hover:text-primary-400"
@@ -1118,9 +1144,8 @@ function TicketActions({ ticket, isAdmin, onManage, onEdit, onDeactivate }) {
         Edit
       </button>
       {/* Same rule as Edit: an employee can only withdraw their own
-          ticket while it's still "Open" — once an admin has picked it
-          up (In Progress / Resolved), only the admin can deactivate
-          it. Enforced server-side too, in deactivate_feedback. */}
+          ticket while it's still "Open" and an admin hasn't responded
+          yet. Enforced server-side too, in deactivate_feedback. */}
       <button
         type="button"
         onClick={() => canEdit && onDeactivate(ticket)}
@@ -1128,7 +1153,7 @@ function TicketActions({ ticket, isAdmin, onManage, onEdit, onDeactivate }) {
         title={
           canEdit
             ? "Deactivate ticket"
-            : `Only "${EDITABLE_STATUS}" tickets can be deactivated`
+            : `Only "${EDITABLE_STATUS}" tickets an admin hasn't responded to yet can be deactivated`
         }
         className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors ${
           canEdit
@@ -1146,16 +1171,25 @@ function TicketActions({ ticket, isAdmin, onManage, onEdit, onDeactivate }) {
    TICKET CARD
 ========================================================= */
 
-function TicketCard({ ticket, isAdmin, onManage, onEdit, onDeactivate }) {
+function TicketCard({ ticket, isAdmin, onManage, onEdit, onDeactivate, onReactivate }) {
   // Treat a blank/placeholder purpose as "no purpose", so we don't
   // waste a full row on a label + dash.
   const hasPurpose = ticket.purpose && ticket.purpose.trim() !== "-";
+  const isActive = ticket.is_active !== false;
 
   return (
-    <div className="relative rounded-2xl border border-slate-200 bg-white p-3.5 shadow-sm transition-shadow duration-200 hover:shadow-md dark:border-white/10 dark:bg-white/[0.04]">
+    <div
+      className={`relative rounded-2xl border bg-white p-3.5 shadow-sm transition-shadow duration-200 hover:shadow-md dark:bg-white/[0.04] ${
+        isActive
+          ? "border-slate-200 dark:border-white/10"
+          : "border-slate-200 opacity-75 dark:border-white/10"
+      }`}
+    >
       <div
         className={`absolute inset-x-0 top-0 h-0.5 rounded-t-2xl ${
-          ticket.status === "Resolved"
+          !isActive
+            ? "bg-slate-300 dark:bg-slate-600"
+            : ticket.status === "Resolved"
             ? "bg-emerald-500"
             : ticket.status === "In Progress"
             ? "bg-amber-500"
@@ -1185,9 +1219,16 @@ function TicketCard({ ticket, isAdmin, onManage, onEdit, onDeactivate }) {
           </div>
         </TicketHoverTrigger>
 
-        <Badge className={STATUS_BADGE_CLASS[ticket.status] || STATUS_BADGE_CLASS.Open}>
-          {ticket.status || "Open"}
-        </Badge>
+        <div className="flex shrink-0 flex-col items-end gap-1">
+          <Badge className={STATUS_BADGE_CLASS[ticket.status] || STATUS_BADGE_CLASS.Open}>
+            {ticket.status || "Open"}
+          </Badge>
+          {!isActive && (
+            <Badge className="bg-slate-100 text-slate-500 dark:bg-white/10 dark:text-slate-400">
+              Inactive
+            </Badge>
+          )}
+        </div>
       </div>
 
       <div className="mt-2.5 flex flex-wrap gap-1.5">
@@ -1273,6 +1314,7 @@ function TicketCard({ ticket, isAdmin, onManage, onEdit, onDeactivate }) {
           onManage={onManage}
           onEdit={onEdit}
           onDeactivate={onDeactivate}
+          onReactivate={onReactivate}
         />
       </div>
     </div>
@@ -1283,7 +1325,7 @@ function TicketCard({ ticket, isAdmin, onManage, onEdit, onDeactivate }) {
    TICKET TABLE
 ========================================================= */
 
-function TicketTable({ tickets, isAdmin, onManage, onEdit, onDeactivate }) {
+function TicketTable({ tickets, isAdmin, onManage, onEdit, onDeactivate, onReactivate }) {
   return (
     <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
       <table className="min-w-full divide-y divide-slate-200 text-sm dark:divide-white/10">
@@ -1313,54 +1355,68 @@ function TicketTable({ tickets, isAdmin, onManage, onEdit, onDeactivate }) {
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100 dark:divide-white/5">
-          {tickets.map((ticket) => (
-            <tr
-              key={ticket.id}
-              className="transition-colors hover:bg-slate-50 dark:hover:bg-white/[0.03]"
-            >
-              <td className="relative whitespace-nowrap px-4 py-3">
-                {/* Same scoped trigger as the card view — hovering
-                    the ticket number reveals the panel; hovering
-                    Edit/Manage/Deactivate in the Actions cell does
-                    not, since it's a separate, unrelated group. */}
-                <TicketHoverTrigger align="left" panel={<TicketDetailsPanel ticket={ticket} />}>
-                  <p className="font-semibold text-slate-900 dark:text-white">
-                    {ticket.ticket_number || `#${ticket.id}`}
-                  </p>
-                </TicketHoverTrigger>
-              </td>
-              <td className="px-4 py-3">
-                <Badge className="bg-primary-50 text-primary-700 dark:bg-primary-500/10 dark:text-primary-400">
-                  {ticket.category || "-"}
-                </Badge>
-              </td>
-              <td className="max-w-[220px] truncate px-4 py-3 text-slate-600 dark:text-slate-300">
-                {ticket.subcategory || "General HRMS Query"}
-              </td>
-              <td className="whitespace-nowrap px-4 py-3 text-slate-600 dark:text-slate-300">
-                {ticket.employee || "-"}
-              </td>
-              <td className="whitespace-nowrap px-4 py-3">
-                <Badge className={STATUS_BADGE_CLASS[ticket.status] || STATUS_BADGE_CLASS.Open}>
-                  {ticket.status || "Open"}
-                </Badge>
-              </td>
-              <td className="whitespace-nowrap px-4 py-3 text-slate-500 dark:text-slate-400">
-                {ticket.created_at ? formatDateTime(ticket.created_at) : "-"}
-              </td>
-              <td className="whitespace-nowrap px-4 py-3 text-right">
-                <div className="inline-flex justify-end">
-                  <TicketActions
-                    ticket={ticket}
-                    isAdmin={isAdmin}
-                    onManage={onManage}
-                    onEdit={onEdit}
-                    onDeactivate={onDeactivate}
-                  />
-                </div>
-              </td>
-            </tr>
-          ))}
+          {tickets.map((ticket) => {
+            const isActive = ticket.is_active !== false;
+
+            return (
+              <tr
+                key={ticket.id}
+                className={`transition-colors hover:bg-slate-50 dark:hover:bg-white/[0.03] ${
+                  isActive ? "" : "opacity-60"
+                }`}
+              >
+                <td className="relative whitespace-nowrap px-4 py-3">
+                  {/* Same scoped trigger as the card view — hovering
+                      the ticket number reveals the panel; hovering
+                      Edit/Manage/Deactivate in the Actions cell does
+                      not, since it's a separate, unrelated group. */}
+                  <TicketHoverTrigger align="left" panel={<TicketDetailsPanel ticket={ticket} />}>
+                    <p className="font-semibold text-slate-900 dark:text-white">
+                      {ticket.ticket_number || `#${ticket.id}`}
+                    </p>
+                  </TicketHoverTrigger>
+                </td>
+                <td className="px-4 py-3">
+                  <Badge className="bg-primary-50 text-primary-700 dark:bg-primary-500/10 dark:text-primary-400">
+                    {ticket.category || "-"}
+                  </Badge>
+                </td>
+                <td className="max-w-[220px] truncate px-4 py-3 text-slate-600 dark:text-slate-300">
+                  {ticket.subcategory || "General HRMS Query"}
+                </td>
+                <td className="whitespace-nowrap px-4 py-3 text-slate-600 dark:text-slate-300">
+                  {ticket.employee || "-"}
+                </td>
+                <td className="whitespace-nowrap px-4 py-3">
+                  <div className="flex flex-wrap items-center gap-1">
+                    <Badge className={STATUS_BADGE_CLASS[ticket.status] || STATUS_BADGE_CLASS.Open}>
+                      {ticket.status || "Open"}
+                    </Badge>
+                    {!isActive && (
+                      <Badge className="bg-slate-100 text-slate-500 dark:bg-white/10 dark:text-slate-400">
+                        Inactive
+                      </Badge>
+                    )}
+                  </div>
+                </td>
+                <td className="whitespace-nowrap px-4 py-3 text-slate-500 dark:text-slate-400">
+                  {ticket.created_at ? formatDateTime(ticket.created_at) : "-"}
+                </td>
+                <td className="whitespace-nowrap px-4 py-3 text-right">
+                  <div className="inline-flex justify-end">
+                    <TicketActions
+                      ticket={ticket}
+                      isAdmin={isAdmin}
+                      onManage={onManage}
+                      onEdit={onEdit}
+                      onDeactivate={onDeactivate}
+                      onReactivate={onReactivate}
+                    />
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
@@ -1376,8 +1432,15 @@ export default function FeedbackPage() {
   const isAdmin = checkIsAdmin(user);
   const { showToast } = useToast();
   const deactivateTicket = useDeactivateFeedbackTicket();
+  // Reactivate reuses the same update mutation with { is_active: true },
+  // same pattern as TransferListPage's handleReactivate.
+  const reactivateTicket = useUpdateFeedbackTicket();
 
   const [statusFilter, setStatusFilter] = useState("");
+  // "active" | "inactive" | "all" — mirrors TransferListPage's
+  // statusFilter for is_active, kept separate from the workflow
+  // statusFilter above (Open/In Progress/Resolved).
+  const [activeFilter, setActiveFilter] = useState("active");
   const [viewMode, setViewMode] = useState("card"); // "card" | "table"
   const [showAddTicket, setShowAddTicket] = useState(false);
   const [managingTicket, setManagingTicket] = useState(null);
@@ -1386,8 +1449,9 @@ export default function FeedbackPage() {
   const { data, isLoading, refetch } = useFeedbackTickets({
     per_page: 200,
     status: statusFilter || undefined,
-    // Deactivated (withdrawn) tickets shouldn't linger in the list.
-    is_active: true,
+    // "all" omits the filter entirely so both show up.
+    is_active:
+      activeFilter === "all" ? undefined : activeFilter === "active",
   });
 
   const tickets = data?.items || [];
@@ -1407,8 +1471,40 @@ export default function FeedbackPage() {
       await deactivateTicket.mutateAsync(ticket.id);
       showToast("Support ticket deactivated", "success");
     } catch (error) {
+      // If the server never actually received a request (error.response
+      // is undefined), this failed before any network call — almost
+      // always a missing/misnamed method on feedbackApi (e.g.
+      // `feedbackApi.deactivate` doesn't exist yet). Surface the real
+      // JS error message in that case instead of a generic one, so it's
+      // obvious what to fix.
+      const message = error?.response
+        ? error.response.data?.message || "Failed to deactivate support ticket"
+        : error?.message || "Failed to deactivate support ticket";
+
+      showToast(message, "error");
+
+      if (!error?.response) {
+        // eslint-disable-next-line no-console
+        console.error(
+          "Deactivate ticket failed before any network request was sent:",
+          error
+        );
+      }
+    }
+  };
+
+  const handleReactivate = async (ticket) => {
+    try {
+      await reactivateTicket.mutateAsync({
+        id: ticket.id,
+        payload: { is_active: true },
+      });
+      showToast("Support ticket reactivated", "success");
+    } catch (error) {
       showToast(
-        error?.response?.data?.message || "Failed to deactivate support ticket",
+        error?.response?.data?.message ||
+          error?.message ||
+          "Failed to reactivate support ticket",
         "error"
       );
     }
@@ -1500,6 +1596,23 @@ export default function FeedbackPage() {
           </div>
 
           <div className="flex items-center rounded-lg bg-slate-100 p-1 dark:bg-white/[0.06]">
+            {["active", "inactive", "all"].map((option) => (
+              <button
+                key={option}
+                type="button"
+                onClick={() => setActiveFilter(option)}
+                className={`whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-medium capitalize transition ${
+                  activeFilter === option
+                    ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
+                    : "text-slate-500 hover:text-slate-700 dark:text-slate-400"
+                }`}
+              >
+                {option}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex items-center rounded-lg bg-slate-100 p-1 dark:bg-white/[0.06]">
             <button
               type="button"
               onClick={() => setViewMode("card")}
@@ -1561,6 +1674,7 @@ export default function FeedbackPage() {
           onManage={setManagingTicket}
           onEdit={setEditingTicket}
           onDeactivate={handleDeactivate}
+          onReactivate={handleReactivate}
         />
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -1572,6 +1686,7 @@ export default function FeedbackPage() {
               onManage={setManagingTicket}
               onEdit={setEditingTicket}
               onDeactivate={handleDeactivate}
+              onReactivate={handleReactivate}
             />
           ))}
         </div>
