@@ -3016,6 +3016,8 @@ class FeedbackTicket(TimestampMixin, db.Model):
         "Other Bugs/Issues",
     )
 
+    CATEGORIES = MAIN_CATEGORIES
+
     SUBCATEGORIES = (
         "Login / Password Issue",
         "Account Locked / Access Issue",
@@ -3063,8 +3065,6 @@ class FeedbackTicket(TimestampMixin, db.Model):
         "Other / Miscellaneous",
     )
 
-    CATEGORIES = SUBCATEGORIES
-
     STATUSES = (
         "Open",
         "In Progress",
@@ -3087,8 +3087,9 @@ class FeedbackTicket(TimestampMixin, db.Model):
         db.ForeignKey("employees.id"),
         nullable=True,
     )
-
     category = db.Column(db.String(120), nullable=False)
+    subcategory = db.Column(db.String(120), nullable=True)
+
     purpose = db.Column(db.String(255), nullable=True)
     description = db.Column(db.Text, nullable=False)
     screenshot_url = db.Column(db.String(500), nullable=True)

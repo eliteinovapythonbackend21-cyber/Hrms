@@ -19,15 +19,26 @@ import { formatDateTime } from "@/utils/formatDate";
 import { useMyEmployee } from "@/hooks/useMyEmployee";
 
 /* =========================================================
-   HRMS SUPPORT TICKET REASONS
+   TOP-LEVEL BUG CATEGORIES
 
-   These are the detailed ticket reasons shown in the "Support
-   Ticket Reason" dropdown. They are sent to the API as `category`
-   and validated server-side against feedback_routes.py's
-   CATEGORY_OPTIONS (must stay in sync with that list).
+   Sent to the API as `category`. Validated server-side against
+   feedback_routes.py's CATEGORY_OPTIONS (must stay in sync).
 ========================================================= */
 
-const CATEGORY_OPTIONS = [
+const MAIN_CATEGORY_OPTIONS = [
+  "Feature Bug",
+  "Internal Bug",
+  "Other Bugs/Issues",
+];
+
+/* =========================================================
+   DETAILED TICKET REASONS
+
+   Sent to the API as `reason`. Validated server-side against
+   feedback_routes.py's REASON_OPTIONS (must stay in sync).
+========================================================= */
+
+const REASON_OPTIONS = [
   "Login / Password Issue",
   "Account Locked / Access Issue",
   "Employee Profile Update",
@@ -262,6 +273,7 @@ function AddTicketModal({ open, onClose, onCreated }) {
     "";
 
   const [category, setCategory] = useState("");
+  const [reason, setReason] = useState("");
   const [purpose, setPurpose] = useState("");
   const [description, setDescription] = useState("");
   const [screenshot, setScreenshot] = useState(null);
@@ -270,6 +282,7 @@ function AddTicketModal({ open, onClose, onCreated }) {
 
   const resetForm = () => {
     setCategory("");
+    setReason("");
     setPurpose("");
     setDescription("");
     setScreenshot(null);
@@ -303,6 +316,11 @@ function AddTicketModal({ open, onClose, onCreated }) {
     event.preventDefault();
 
     if (!category) {
+      showToast("Please select a category", "error");
+      return;
+    }
+
+    if (!reason) {
       showToast("Please select a support ticket reason", "error");
       return;
     }
@@ -323,6 +341,7 @@ function AddTicketModal({ open, onClose, onCreated }) {
         employee_id: employeeId,
         name: employeeName,
         category,
+        reason,
         purpose: purpose.trim(),
         description: description.trim(),
       };
@@ -395,20 +414,38 @@ function AddTicketModal({ open, onClose, onCreated }) {
           </div>
         </div>
 
-        <div>
-          <FieldLabel required>Support Ticket Reason</FieldLabel>
-          <select
-            value={category}
-            onChange={(event) => setCategory(event.target.value)}
-            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
-          >
-            <option value="">Select a reason</option>
-            {CATEGORY_OPTIONS.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div>
+            <FieldLabel required>Category</FieldLabel>
+            <select
+              value={category}
+              onChange={(event) => setCategory(event.target.value)}
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
+            >
+              <option value="">Select a category</option>
+              {MAIN_CATEGORY_OPTIONS.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <FieldLabel required>Support Ticket Reason</FieldLabel>
+            <select
+              value={reason}
+              onChange={(event) => setReason(event.target.value)}
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
+            >
+              <option value="">Select a reason</option>
+              {REASON_OPTIONS.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         <div>
@@ -616,13 +653,22 @@ function UpdateTicketModal({ ticket, open, onClose }) {
         </div>
 
         <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-white/[0.02]">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                Category
+              </p>
+              <p className="mt-1 text-sm text-slate-700 dark:text-slate-200">
+                {ticket.category || "-"}
+              </p>
+            </div>
+
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
                 Reason
               </p>
               <p className="mt-1 text-sm text-slate-700 dark:text-slate-200">
-                {ticket.category || "-"}
+                {ticket.subcategory || "-"}
               </p>
             </div>
 
@@ -724,8 +770,12 @@ function UpdateTicketModal({ ticket, open, onClose }) {
 ========================================================= */
 
 function TicketCard({ ticket, isAdmin, onManage }) {
+  // Treat a blank/placeholder purpose as "no purpose", so we don't
+  // waste a full row on a label + dash.
+  const hasPurpose = ticket.purpose && ticket.purpose.trim() !== "-";
+
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-shadow duration-200 hover:shadow-md dark:border-white/10 dark:bg-white/[0.04]">
+    <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-3.5 shadow-sm transition-shadow duration-200 hover:shadow-md dark:border-white/10 dark:bg-white/[0.04]">
       <div
         className={`absolute inset-x-0 top-0 h-0.5 ${
           ticket.status === "Resolved"
@@ -737,16 +787,16 @@ function TicketCard({ ticket, isAdmin, onManage }) {
       />
 
       <div className="flex items-start justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
-            <TicketIcon className="h-5 w-5" />
+        <div className="flex min-w-0 items-center gap-2.5">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
+            <TicketIcon className="h-4.5 w-4.5" />
           </div>
 
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">
               {ticket.ticket_number || `#${ticket.id}`}
             </p>
-            <p className="mt-0.5 truncate text-[11px] text-slate-400">
+            <p className="truncate text-[11px] text-slate-400">
               {ticket.created_at ? formatDateTime(ticket.created_at) : "-"}
             </p>
           </div>
@@ -757,57 +807,52 @@ function TicketCard({ ticket, isAdmin, onManage }) {
         </Badge>
       </div>
 
-      <div className="mt-4">
+      <div className="mt-2.5 flex flex-wrap gap-1.5">
         <Badge className="bg-primary-50 text-primary-700 dark:bg-primary-500/10 dark:text-primary-400">
-          {ticket.category || "General HRMS Query"}
+          {ticket.category || "-"}
+        </Badge>
+        <Badge className="bg-slate-100 text-slate-700 dark:bg-white/10 dark:text-slate-300">
+          {ticket.subcategory || "General HRMS Query"}
         </Badge>
       </div>
 
-      <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-white/10 dark:bg-white/[0.03]">
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
-              Employee
-            </p>
-            <p className="mt-1 truncate text-xs font-medium text-slate-700 dark:text-slate-200">
-              {ticket.employee || "-"}
-            </p>
-          </div>
+      <div className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 dark:border-white/10 dark:bg-white/[0.03]">
+        <p className="text-xs text-slate-600 dark:text-slate-300">
+          <span className="font-semibold uppercase tracking-wide text-[10px] text-slate-400">
+            Employee:{" "}
+          </span>
+          {ticket.employee || "-"}
+        </p>
+        <p className="text-xs text-slate-600 dark:text-slate-300">
+          <span className="font-semibold uppercase tracking-wide text-[10px] text-slate-400">
+            ID:{" "}
+          </span>
+          {ticket.employee_id || "-"}
+        </p>
+        <p className="text-xs text-slate-600 dark:text-slate-300">
+          <span className="font-semibold uppercase tracking-wide text-[10px] text-slate-400">
+            Name:{" "}
+          </span>
+          {ticket.name || ticket.raised_by_user?.username || "-"}
+        </p>
+      </div>
 
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
-              Employee ID
-            </p>
-            <p className="mt-1 truncate text-xs font-medium text-slate-700 dark:text-slate-200">
-              {ticket.employee_id || "-"}
-            </p>
-          </div>
-
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
-              Name
-            </p>
-            <p className="mt-1 truncate text-xs font-medium text-slate-700 dark:text-slate-200">
-              {ticket.name || ticket.raised_by_user?.username || "-"}
-            </p>
-          </div>
+      {hasPurpose && (
+        <div className="mt-2.5">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+            Purpose
+          </p>
+          <p className="text-sm font-semibold text-slate-800 dark:text-white">
+            {ticket.purpose}
+          </p>
         </div>
-      </div>
+      )}
 
-      <div className="mt-4">
-        <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
-          Purpose
-        </p>
-        <p className="mt-1 text-sm font-semibold text-slate-800 dark:text-white">
-          {ticket.purpose || "-"}
-        </p>
-      </div>
-
-      <div className="mt-3">
+      <div className="mt-2.5">
         <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
           Description
         </p>
-        <p className="mt-1 line-clamp-4 text-sm leading-6 text-slate-600 dark:text-slate-300">
+        <p className="line-clamp-3 text-sm leading-5 text-slate-600 dark:text-slate-300">
           {ticket.description || "-"}
         </p>
       </div>
@@ -817,29 +862,29 @@ function TicketCard({ ticket, isAdmin, onManage }) {
           href={resolveUploadUrl(ticket.screenshot_url)}
           target="_blank"
           rel="noreferrer"
-          className="mt-4 inline-block"
+          className="mt-2.5 inline-block"
         >
           <img
             src={resolveUploadUrl(ticket.screenshot_url)}
             alt="Ticket screenshot"
-            className="h-16 w-16 rounded-lg object-cover ring-1 ring-slate-200 transition hover:opacity-90 dark:ring-white/10"
+            className="h-12 w-12 rounded-md object-cover ring-1 ring-slate-200 transition hover:opacity-90 dark:ring-white/10"
           />
         </a>
       )}
 
       {ticket.admin_response && (
-        <div className="mt-4 rounded-xl border border-emerald-100 bg-emerald-50/60 p-3 dark:border-emerald-900/30 dark:bg-emerald-500/10">
+        <div className="mt-2.5 rounded-lg border border-emerald-100 bg-emerald-50/60 px-3 py-2 dark:border-emerald-900/30 dark:bg-emerald-500/10">
           <p className="text-[10px] font-semibold uppercase tracking-wide text-emerald-600 dark:text-emerald-400">
             Admin Update
           </p>
-          <p className="mt-1 whitespace-pre-wrap text-xs leading-5 text-emerald-800 dark:text-emerald-200">
+          <p className="whitespace-pre-wrap text-xs leading-5 text-emerald-800 dark:text-emerald-200">
             {ticket.admin_response}
           </p>
         </div>
       )}
 
       {isAdmin && (
-        <div className="mt-4 flex justify-end border-t border-slate-100 pt-3 dark:border-white/10">
+        <div className="mt-2.5 flex justify-end border-t border-slate-100 pt-2 dark:border-white/10">
           <button
             type="button"
             onClick={() => onManage(ticket)}

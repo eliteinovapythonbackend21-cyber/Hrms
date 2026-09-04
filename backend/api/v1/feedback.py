@@ -20,13 +20,24 @@ from utils import (
 feedback_bp = Blueprint("feedback_bp", __name__)
 
 
-MAIN_CATEGORY_OPTIONS = [
+# ============================================================================
+# TOP-LEVEL BUG CATEGORIES — sent/received as `category`
+# ============================================================================
+
+CATEGORY_OPTIONS = [
     "Feature Bug",
     "Internal Bug",
     "Other Bugs/Issues",
 ]
 
-CATEGORY_OPTIONS = [
+
+# ============================================================================
+# DETAILED TICKET REASONS — sent/received as `reason`
+#
+# Shown in the "Support Ticket Reason" dropdown on the Add Ticket form.
+# ============================================================================
+
+REASON_OPTIONS = [
     "Login / Password Issue",
     "Account Locked / Access Issue",
     "Employee Profile Update",
@@ -82,6 +93,7 @@ STATUS_OPTIONS = [
 
 
 FeedbackTicket.CATEGORIES = tuple(CATEGORY_OPTIONS)
+FeedbackTicket.SUBCATEGORIES = tuple(REASON_OPTIONS)
 FeedbackTicket.STATUSES = tuple(STATUS_OPTIONS)
 
 
@@ -158,10 +170,15 @@ def _add_history(
 
 
 def _validate_category(category):
-    """Validate against the detailed ticket reasons shown in the
-    'Support Ticket Reason' dropdown on the Add Ticket form."""
+    """Validate against the top-level bug categories."""
 
     return category in CATEGORY_OPTIONS
+
+
+def _validate_reason(reason):
+    """Validate against the detailed ticket reasons."""
+
+    return reason in REASON_OPTIONS
 
 
 def _parse_bool(value):
@@ -194,12 +211,20 @@ def list_feedback(token_response):
             FeedbackTicket.raised_by == current_user.id
         )
 
-    # Optional category filter.
+    # Optional main-category filter.
     category = request.args.get("category")
 
     if category:
         query = query.filter(
             FeedbackTicket.category == category
+        )
+
+    # Optional detailed-reason filter.
+    reason = request.args.get("reason")
+
+    if reason:
+        query = query.filter(
+            FeedbackTicket.subcategory == reason
         )
 
     # Optional status filter.
@@ -232,7 +257,7 @@ def list_feedback(token_response):
 
 
 # ============================================================================
-# GET TICKET CATEGORIES
+# GET TICKET CATEGORIES / REASONS / STATUSES
 # ============================================================================
 
 @feedback_bp.route("/categories", methods=["GET"])
@@ -248,7 +273,11 @@ def list_feedback_categories(token_response):
 
     return jsonify({
         "message": "Support ticket categories fetched",
-        "data": CATEGORY_OPTIONS,
+        "data": {
+            "categories": CATEGORY_OPTIONS,
+            "reasons": REASON_OPTIONS,
+            "statuses": STATUS_OPTIONS,
+        },
         "token_response": token_response,
     }), 200
 
@@ -315,6 +344,10 @@ def create_feedback(token_response):
         data.get("category") or ""
     ).strip()
 
+    reason = (
+        data.get("reason") or ""
+    ).strip()
+
     purpose = (
         data.get("purpose") or ""
     ).strip()
@@ -327,9 +360,11 @@ def create_feedback(token_response):
     # CATEGORY VALIDATION
     # ------------------------------------------------------------------------
     #
-    # The Add Ticket form's "Support Ticket Reason" dropdown sends one of
-    # the detailed reasons below (e.g. "Attendance Issue",
-    # "Payroll / Salary Issue", etc.) as `category`.
+    # The Add Ticket form sends the top-level bug type as `category`:
+    #
+    #   Feature Bug
+    #   Internal Bug
+    #   Other Bugs/Issues
     # ------------------------------------------------------------------------
 
     if not _validate_category(category):
@@ -337,6 +372,22 @@ def create_feedback(token_response):
             "message": (
                 "category must be one of: "
                 + ", ".join(CATEGORY_OPTIONS)
+            )
+        }), 400
+
+    # ------------------------------------------------------------------------
+    # REASON VALIDATION
+    # ------------------------------------------------------------------------
+    #
+    # The Add Ticket form sends the detailed reason as `reason`
+    # (e.g. "Attendance Issue", "Payroll / Salary Issue").
+    # ------------------------------------------------------------------------
+
+    if not _validate_reason(reason):
+        return jsonify({
+            "message": (
+                "reason must be one of: "
+                + ", ".join(REASON_OPTIONS)
             )
         }), 400
 
@@ -398,6 +449,7 @@ def create_feedback(token_response):
         raised_by=current_user.id,
         employee_id=employee.id,
         category=category,
+        subcategory=reason,
         purpose=purpose,
         description=description,
         screenshot_url=screenshot_url,
@@ -416,8 +468,8 @@ def create_feedback(token_response):
             action="Created",
             performed_by=current_user.id,
             notes=(
-                f"Support ticket created under "
-                f"category '{category}'."
+                f"Support ticket created under category "
+                f"'{category}', reason '{reason}'."
             ),
         )
 
