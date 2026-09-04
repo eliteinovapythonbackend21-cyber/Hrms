@@ -140,6 +140,11 @@ export function useCreateFeedbackTicket() {
 
 /* =========================================================
    UPDATE SUPPORT TICKET
+
+   Used by BOTH:
+     - Admin: { status, admin_response }
+     - Ticket owner (employee): { category, reason, purpose, description }
+       — only while the ticket is still "Open" (enforced server-side).
 ========================================================= */
 
 export function useUpdateFeedbackTicket() {
@@ -183,6 +188,40 @@ export function useUpdateFeedbackTicket() {
           ],
         });
       }
+    },
+  });
+}
+
+/* =========================================================
+   DEACTIVATE (WITHDRAW) SUPPORT TICKET
+
+   Calls DELETE /feedback/<id> — usable by the ticket's owner
+   (withdrawing their own ticket) or by an admin. Mirrors the
+   deactivate hooks used for Performance/Training records.
+
+   NOTE: assumes `feedbackApi.deactivate(id)` exists and hits the
+   backend's DELETE /<id> (or /<id>/deactivate) route. Add it to
+   feedback.api.js if it isn't there yet, e.g.:
+
+     deactivate: (id) => apiClient.delete(`/feedback/${id}`),
+========================================================= */
+
+export function useDeactivateFeedbackTicket() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id) => {
+      return feedbackApi.deactivate(id);
+    },
+
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: SUPPORT_TICKETS_KEY,
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: LEGACY_FEEDBACK_KEY,
+      });
     },
   });
 }

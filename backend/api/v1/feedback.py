@@ -92,6 +92,13 @@ STATUS_OPTIONS = [
 ]
 
 
+# Owner (non-admin) edits are only allowed while the ticket sits in this
+# status — once an admin has picked it up (In Progress/Resolved), the
+# reporter can no longer change the underlying category/reason/purpose/
+# description out from under them.
+EDITABLE_STATUS = "Open"
+
+
 FeedbackTicket.CATEGORIES = tuple(CATEGORY_OPTIONS)
 FeedbackTicket.SUBCATEGORIES = tuple(REASON_OPTIONS)
 FeedbackTicket.STATUSES = tuple(STATUS_OPTIONS)
@@ -189,6 +196,19 @@ def _parse_bool(value):
         "1",
         "yes",
     }
+
+
+def _owns_ticket(user, ticket):
+    """Whether the given user is the one who raised this ticket."""
+
+    return bool(user) and ticket.raised_by == user.id
+
+
+def _can_manage_ticket(user, ticket):
+    """Whether the user is allowed to edit/deactivate this ticket at
+    all — either as an admin, or as the person who raised it."""
+
+    return is_admin(user) or _owns_ticket(user, ticket)
 
 
 
@@ -491,6 +511,18 @@ def create_feedback(token_response):
 
 # ============================================================================
 # UPDATE TICKET
+#
+# Two distinct actors use this same route, gated by role:
+#
+#   - Admin: manages status / admin_response / is_active (unchanged
+#     from before).
+#   - Ticket owner (non-admin): can edit category / reason / purpose /
+#     description of their OWN ticket, but only while it is still
+#     "Open" (EDITABLE_STATUS) — once picked up by an admin they can no
+#     longer change the underlying report out from under them.
+#
+# Field values are assigned via plain attribute setattr (same pattern
+# as performance.py's update_performance), not constructor kwargs.
 # ============================================================================
 
 @feedback_bp.route("/<int:ticket_id>", methods=["PUT"])
@@ -504,12 +536,6 @@ def update_feedback(ticket_id, token_response):
             "message": "Invalid token",
         }), 401
 
-    # Only admins can update tickets.
-    if not is_admin(current_user):
-        return jsonify({
-            "message": "Admin privileges required",
-        }), 403
-
     ticket, error_response = fetch_or_404(
         FeedbackTicket,
         ticket_id,
@@ -518,6 +544,14 @@ def update_feedback(ticket_id, token_response):
     if error_response:
         return error_response
 
+    admin_user = is_admin(current_user)
+    owns_ticket = _owns_ticket(current_user, ticket)
+
+    if not admin_user and not owns_ticket:
+        return jsonify({
+            "message": "You do not have permission to update this ticket",
+        }), 403
+
     data = request.get_json(
         silent=True
     ) or {}
@@ -525,10 +559,91 @@ def update_feedback(ticket_id, token_response):
     history_parts = []
 
     # ------------------------------------------------------------------------
-    # STATUS UPDATE
+    # OWNER EDIT (non-admin): category / reason / purpose / description
     # ------------------------------------------------------------------------
 
-    if "status" in data:
+    if not admin_user:
+
+        if ticket.status != EDITABLE_STATUS:
+            return jsonify({
+                "message": (
+                    f"Only tickets with status '{EDITABLE_STATUS}' "
+                    "can be edited"
+                )
+            }), 400
+
+        if "category" in data:
+            category = (
+                data.get("category") or ""
+            ).strip()
+
+            if not _validate_category(category):
+                return jsonify({
+                    "message": (
+                        "category must be one of: "
+                        + ", ".join(CATEGORY_OPTIONS)
+                    )
+                }), 400
+
+            if ticket.category != category:
+                ticket.category = category
+                history_parts.append(
+                    f"Category changed to '{category}'."
+                )
+
+        if "reason" in data:
+            reason = (
+                data.get("reason") or ""
+            ).strip()
+
+            if not _validate_reason(reason):
+                return jsonify({
+                    "message": (
+                        "reason must be one of: "
+                        + ", ".join(REASON_OPTIONS)
+                    )
+                }), 400
+
+            if ticket.subcategory != reason:
+                ticket.subcategory = reason
+                history_parts.append(
+                    f"Reason changed to '{reason}'."
+                )
+
+        if "purpose" in data:
+            purpose = (
+                data.get("purpose") or ""
+            ).strip()
+
+            if not purpose:
+                return jsonify({
+                    "message": "purpose cannot be empty",
+                }), 400
+
+            ticket.purpose = purpose
+
+        if "description" in data:
+            description = (
+                data.get("description") or ""
+            ).strip()
+
+            if not description:
+                return jsonify({
+                    "message": "description cannot be empty",
+                }), 400
+
+            ticket.description = description
+
+        if history_parts:
+            history_parts.append(
+                "Ticket edited by employee."
+            )
+
+    # ------------------------------------------------------------------------
+    # ADMIN: STATUS UPDATE
+    # ------------------------------------------------------------------------
+
+    if admin_user and "status" in data:
         status = (
             data.get("status") or ""
         ).strip()
@@ -562,10 +677,10 @@ def update_feedback(ticket_id, token_response):
             )
 
     # ------------------------------------------------------------------------
-    # ADMIN RESPONSE UPDATE
+    # ADMIN: RESPONSE UPDATE
     # ------------------------------------------------------------------------
 
-    if "admin_response" in data:
+    if admin_user and "admin_response" in data:
         response = (
             data.get("admin_response") or ""
         ).strip()
@@ -584,10 +699,10 @@ def update_feedback(ticket_id, token_response):
             )
 
     # ------------------------------------------------------------------------
-    # ACTIVE / INACTIVE UPDATE
+    # ADMIN: ACTIVE / INACTIVE UPDATE
     # ------------------------------------------------------------------------
 
-    if "is_active" in data:
+    if admin_user and "is_active" in data:
         next_active = (
             data.get("is_active") is not False
         )
@@ -625,6 +740,77 @@ def update_feedback(ticket_id, token_response):
 
     return jsonify({
         "message": "Support ticket updated",
+        "data": _serialize_ticket(ticket),
+        "token_response": token_response,
+    }), 200
+
+
+# ============================================================================
+# DEACTIVATE TICKET
+#
+# Registered at BOTH:
+#   DELETE /<id>              (matches the CRUD-factory convention used
+#                               elsewhere in this codebase)
+#   DELETE /<id>/deactivate   (matches performance_bp's / training_bp's
+#                               convention)
+#
+# Both point at the same handler — whichever shape the frontend calls,
+# it works. Callable by the ticket's owner (withdrawing their own
+# ticket) or by an admin.
+# ============================================================================
+
+@feedback_bp.route("/<int:ticket_id>", methods=["DELETE"])
+@feedback_bp.route("/<int:ticket_id>/deactivate", methods=["DELETE"])
+@jwt_required()
+@with_token
+def deactivate_feedback(ticket_id, token_response):
+    current_user = get_current_user()
+
+    if not current_user:
+        return jsonify({
+            "message": "Invalid token",
+        }), 401
+
+    ticket, error_response = fetch_or_404(
+        FeedbackTicket,
+        ticket_id,
+    )
+
+    if error_response:
+        return error_response
+
+    if not _can_manage_ticket(current_user, ticket):
+        return jsonify({
+            "message": "You do not have permission to deactivate this ticket",
+        }), 403
+
+    admin_user = is_admin(current_user)
+
+    ticket.is_active = False
+
+    try:
+        _add_history(
+            ticket=ticket,
+            action="Deactivated",
+            performed_by=current_user.id,
+            notes=(
+                "Ticket deactivated by admin."
+                if admin_user
+                else "Ticket deactivated by employee."
+            ),
+        )
+
+        db.session.commit()
+
+    except IntegrityError as exc:
+        db.session.rollback()
+
+        return handle_integrity_error(
+            exc
+        )
+
+    return jsonify({
+        "message": "Support ticket deactivated",
         "data": _serialize_ticket(ticket),
         "token_response": token_response,
     }), 200
