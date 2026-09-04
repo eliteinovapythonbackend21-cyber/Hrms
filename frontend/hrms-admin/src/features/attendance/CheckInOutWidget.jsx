@@ -522,7 +522,7 @@ export default function CheckInOutWidget() {
               disabled={checkInDisabled}
               className={`inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-lg px-5 text-sm font-semibold transition ${
                 checkInDisabled
-                  ? "cursor-not-allowed bg-slate-100 text-slate-400 dark:bg-white/5 dark:text-slate-600"
+                  ? "cursor-not-allowed border border-slate-200 bg-slate-100 text-slate-400 dark:border-white/10 dark:bg-white/5 dark:text-slate-600"
                   : "bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-sm shadow-emerald-600/20 hover:from-emerald-500 hover:to-emerald-700"
               }`}
             >
@@ -547,7 +547,7 @@ export default function CheckInOutWidget() {
               disabled={checkOutDisabled}
               className={`inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-lg px-5 text-sm font-semibold transition ${
                 checkOutDisabled
-                  ? "cursor-not-allowed bg-slate-100 text-slate-400 dark:bg-white/5 dark:text-slate-600"
+                  ? "cursor-not-allowed border border-slate-200 bg-slate-100 text-slate-400 dark:border-white/10 dark:bg-white/5 dark:text-slate-600"
                   : "bg-gradient-to-r from-rose-500 to-rose-600 text-white shadow-sm shadow-rose-600/20 hover:from-rose-500 hover:to-rose-700"
               }`}
             >
@@ -558,46 +558,10 @@ export default function CheckInOutWidget() {
         })()}
       </div>
 
-      {/* Or check out for a break / permission — only while an open
-          session is actually running. */}
-      {openSession && (
-        <div className="mt-4">
-          <p className="mb-2 text-center text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-            or check out for a break / permission
-          </p>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-            {BREAK_OPTIONS.map((opt) => (
-              <button
-                key={opt.type}
-                type="button"
-                disabled={!employeeId || saving}
-                onClick={() => handleBreak(opt.type)}
-                className="flex flex-col items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 py-3 text-xs font-semibold text-slate-700 transition hover:-translate-y-0.5 hover:border-primary-300 hover:bg-primary-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-200 dark:hover:border-primary-500/40 dark:hover:bg-primary-500/10"
-              >
-                <span className="text-xl leading-none">{opt.emoji}</span>
-                {opt.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {record && !doneForDay && (
-        <div className="mt-3 text-right">
-          <button
-            type="button"
-            onClick={doReset}
-            disabled={resetDay.isPending}
-            className="text-[11px] font-medium text-slate-400 hover:text-rose-600 hover:underline disabled:opacity-50 dark:text-slate-500 dark:hover:text-rose-400"
-          >
-            {resetDay.isPending ? "Resetting…" : "Reset today's attendance"}
-          </button>
-        </div>
-      )}
-
       {/* CHECK-IN / CHECK-OUT OF THE DAY — recorded times, shown right
           after the action buttons so today's result is immediately
-          visible in front of the summary tiles below. */}
+          visible in front of the break/permission chips and summary
+          tiles below. */}
       {record && (
         <div className="mt-4 grid grid-cols-2 gap-3">
           <div className="rounded-xl border border-emerald-200/70 bg-emerald-50/60 p-3 dark:border-emerald-500/20 dark:bg-emerald-500/[0.06]">
@@ -649,6 +613,44 @@ export default function CheckInOutWidget() {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Or check out for a break / permission — only while an open
+          session is actually running. Placed below the recorded
+          Check In / Check Out card, not directly under the buttons. */}
+      {openSession && (
+        <div className="mt-4">
+          <p className="mb-2 text-center text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+            or check out for a break / permission
+          </p>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {BREAK_OPTIONS.map((opt) => (
+              <button
+                key={opt.type}
+                type="button"
+                disabled={!employeeId || saving}
+                onClick={() => handleBreak(opt.type)}
+                className="flex flex-col items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 py-3 text-xs font-semibold text-slate-700 transition hover:-translate-y-0.5 hover:border-primary-300 hover:bg-primary-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-200 dark:hover:border-primary-500/40 dark:hover:bg-primary-500/10"
+              >
+                <span className="text-xl leading-none">{opt.emoji}</span>
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {record && !doneForDay && (
+        <div className="mt-3 text-right">
+          <button
+            type="button"
+            onClick={doReset}
+            disabled={resetDay.isPending}
+            className="text-[11px] font-medium text-slate-400 hover:text-rose-600 hover:underline disabled:opacity-50 dark:text-slate-500 dark:hover:text-rose-400"
+          >
+            {resetDay.isPending ? "Resetting…" : "Reset today's attendance"}
+          </button>
         </div>
       )}
 
