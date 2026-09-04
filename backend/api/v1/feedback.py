@@ -20,14 +20,13 @@ from utils import (
 feedback_bp = Blueprint("feedback_bp", __name__)
 
 
-CATEGORY_OPTIONS = [
+MAIN_CATEGORY_OPTIONS = [
     "Feature Bug",
     "Internal Bug",
     "Other Bugs/Issues",
 ]
 
-
-SUBCATEGORY_OPTIONS = [
+CATEGORY_OPTIONS = [
     "Login / Password Issue",
     "Account Locked / Access Issue",
     "Employee Profile Update",
@@ -159,7 +158,8 @@ def _add_history(
 
 
 def _validate_category(category):
-    """Validate against the TOP-LEVEL ticket categories."""
+    """Validate against the detailed ticket reasons shown in the
+    'Support Ticket Reason' dropdown on the Add Ticket form."""
 
     return category in CATEGORY_OPTIONS
 
@@ -327,13 +327,9 @@ def create_feedback(token_response):
     # CATEGORY VALIDATION
     # ------------------------------------------------------------------------
     #
-    # The Add Ticket form sends:
-    #
-    #   Feature Bug
-    #   Internal Bug
-    #   Other Bugs/Issues
-    #
-    # Only these values are valid as the ticket's top-level category.
+    # The Add Ticket form's "Support Ticket Reason" dropdown sends one of
+    # the detailed reasons below (e.g. "Attendance Issue",
+    # "Payroll / Salary Issue", etc.) as `category`.
     # ------------------------------------------------------------------------
 
     if not _validate_category(category):

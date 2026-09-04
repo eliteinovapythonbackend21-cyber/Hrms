@@ -20,6 +20,11 @@ import { useMyEmployee } from "@/hooks/useMyEmployee";
 
 /* =========================================================
    HRMS SUPPORT TICKET REASONS
+
+   These are the detailed ticket reasons shown in the "Support
+   Ticket Reason" dropdown. They are sent to the API as `category`
+   and validated server-side against feedback_routes.py's
+   CATEGORY_OPTIONS (must stay in sync with that list).
 ========================================================= */
 
 const CATEGORY_OPTIONS = [

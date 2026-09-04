@@ -3016,8 +3016,6 @@ class FeedbackTicket(TimestampMixin, db.Model):
         "Other Bugs/Issues",
     )
 
-    CATEGORIES = MAIN_CATEGORIES
-
     SUBCATEGORIES = (
         "Login / Password Issue",
         "Account Locked / Access Issue",
@@ -3064,6 +3062,8 @@ class FeedbackTicket(TimestampMixin, db.Model):
         "General HRMS Query",
         "Other / Miscellaneous",
     )
+
+    CATEGORIES = SUBCATEGORIES
 
     STATUSES = (
         "Open",
