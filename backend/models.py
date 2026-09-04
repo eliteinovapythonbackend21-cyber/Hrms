@@ -3005,63 +3005,246 @@ class SupportTicket(TimestampMixin, db.Model):
 
 
 class FeedbackTicket(TimestampMixin, db.Model):
-    """Bug/feedback ticket raised from the "Feedback" screen every login
-    (admin and every employee-like role alike) sees on the sidebar. Anyone
-    authenticated can raise one; only an admin can move it through the
-    workflow (status + resolution note)."""
+    """HRMS support ticket raised by an authenticated user."""
 
     __tablename__ = "feedback_tickets"
 
-    CATEGORIES = ("Feature Bug", "Internal Bug", "Other Bugs/Issues")
-    STATUSES = ("Open", "In Progress", "Resolved")
+   
+    MAIN_CATEGORIES = (
+        "Feature Bug",
+        "Internal Bug",
+        "Other Bugs/Issues",
+    )
+
+    CATEGORIES = MAIN_CATEGORIES
+
+    SUBCATEGORIES = (
+        "Login / Password Issue",
+        "Account Locked / Access Issue",
+        "Employee Profile Update",
+        "Employee Master Data Correction",
+        "New Employee Creation",
+        "Employee Exit / Deactivation",
+        "Attendance Issue",
+        "Attendance Regularization",
+        "Leave Balance Issue",
+        "Leave Application Issue",
+        "Leave Approval Issue",
+        "Holiday / Calendar Issue",
+        "Shift / Roster Issue",
+        "Work From Home / Remote Work Issue",
+        "Overtime Issue",
+        "Payroll / Salary Issue",
+        "Payslip Issue",
+        "Tax / TDS Issue",
+        "Reimbursement Issue",
+        "Expense Claim Issue",
+        "Loan / Advance Issue",
+        "Bank Account / Payment Details Update",
+        "Benefits / Insurance Issue",
+        "Performance Management Issue",
+        "Appraisal / Rating Issue",
+        "Training / Learning Issue",
+        "Recruitment / Hiring Issue",
+        "Onboarding Issue",
+        "Employee Documents Issue",
+        "HR Letter / Certificate Request",
+        "Organization / Department Change",
+        "Manager / Reporting Structure Change",
+        "Transfer / Location Change",
+        "Notification / Email Issue",
+        "Mobile App Issue",
+        "HRMS System Error",
+        "Data / Report Issue",
+        "Integration Issue",
+        "Approval Workflow Issue",
+        "Permission / Role Access Request",
+        "Feature / Configuration Request",
+        "HR Policy / Process Clarification",
+        "General HRMS Query",
+        "Other / Miscellaneous",
+    )
+
+    STATUSES = (
+        "Open",
+        "In Progress",
+        "Resolved",
+    )
 
     id = db.Column(db.Integer, primary_key=True)
-    ticket_number = db.Column(db.String(20), unique=True)
-    raised_by = db.Column(db.Integer, db.ForeignKey("base_users.id"), nullable=False)
-    category = db.Column(db.String(30), nullable=False)
-    description = db.Column(db.Text, nullable=False)
-    screenshot_url = db.Column(db.String(255), nullable=True)
-    status = db.Column(db.String(20), default="Open")
-    # Admin's note on the action taken / resolution — shown back to the
-    # employee alongside the current status.
-    admin_response = db.Column(db.Text, nullable=True)
-    resolved_by = db.Column(db.Integer, db.ForeignKey("base_users.id"), nullable=True)
-    resolved_at = db.Column(db.DateTime, nullable=True)
-    is_active = db.Column(db.Boolean, default=True)
+    ticket_number = db.Column(db.String(20), unique=True, nullable=True)
 
-    raised_by_user = db.relationship("BaseUser", foreign_keys=[raised_by])
-    resolved_by_user = db.relationship("BaseUser", foreign_keys=[resolved_by])
+    # User account that actually raised the ticket.
+    raised_by = db.Column(
+        db.Integer,
+        db.ForeignKey("base_users.id"),
+        nullable=False,
+    )
+
+    # Employee record connected to the logged-in user.
+    employee_id = db.Column(
+        db.Integer,
+        db.ForeignKey("employees.id"),
+        nullable=True,
+    )
+
+    category = db.Column(db.String(120), nullable=False)
+    purpose = db.Column(db.String(255), nullable=True)
+    description = db.Column(db.Text, nullable=False)
+    screenshot_url = db.Column(db.String(500), nullable=True)
+
+    status = db.Column(
+        db.String(20),
+        nullable=False,
+        default="Open",
+    )
+
+    # Admin's latest action / resolution note.
+    admin_response = db.Column(db.Text, nullable=True)
+
+    resolved_by = db.Column(
+        db.Integer,
+        db.ForeignKey("base_users.id"),
+        nullable=True,
+    )
+
+    resolved_at = db.Column(
+        db.DateTime,
+        nullable=True,
+    )
+
+    is_active = db.Column(
+        db.Boolean,
+        nullable=False,
+        default=True,
+    )
+
+    raised_by_user = db.relationship(
+        "BaseUser",
+        foreign_keys=[raised_by],
+    )
+
+    resolved_by_user = db.relationship(
+        "BaseUser",
+        foreign_keys=[resolved_by],
+    )
+
+    employee = db.relationship(
+        "Employee",
+        foreign_keys=[employee_id],
+    )
+
+    history = db.relationship(
+        "SupportTicketHistory",
+        back_populates="ticket",
+        cascade="all, delete-orphan",
+        order_by="SupportTicketHistory.id.asc()",
+    )
 
     def to_dict(self):
         data = super().to_dict()
+
         data["raised_by_user"] = _summary(
-            self.raised_by_user, ["id", "username", "email", "role"]
+            self.raised_by_user,
+            ["id", "username", "email", "role"],
         )
+
         data["resolved_by_user"] = (
-            _summary(self.resolved_by_user, ["id", "username", "email"])
+            _summary(
+                self.resolved_by_user,
+                ["id", "username", "email"],
+            )
             if self.resolved_by_user
             else None
         )
+
+        employee_name = (
+            f"{self.employee.first_name or ''} "
+            f"{self.employee.last_name or ''}".strip()
+            if self.employee
+            else None
+        )
+
+        data["employee"] = (
+            self.employee.employee_code
+            if self.employee
+            else (
+                self.raised_by_user.username
+                if self.raised_by_user
+                else None
+            )
+        )
+
+        data["employee_details"] = (
+            _summary(
+                self.employee,
+                [
+                    "id",
+                    "employee_code",
+                    "first_name",
+                    "last_name",
+                ],
+            )
+            if self.employee
+            else None
+        )
+
+        data["employee_id"] = self.employee_id
+
+        data["name"] = employee_name or (
+            self.raised_by_user.username
+            if self.raised_by_user
+            else None
+        )
+
+        data["history"] = [
+            item.to_dict()
+            for item in self.history
+        ]
+
         return data
 
 
 class SupportTicketHistory(TimestampMixin, db.Model):
+    """Audit trail for support-ticket creation and admin updates."""
+
     __tablename__ = "support_ticket_history"
 
     id = db.Column(db.Integer, primary_key=True)
-    ticket_id = db.Column(db.Integer, db.ForeignKey("support_tickets.id"), nullable=False)
-    action = db.Column(db.String(50), nullable=False)
-    performed_by = db.Column(db.Integer, db.ForeignKey("base_users.id"), nullable=True)
-    notes = db.Column(db.Text, nullable=True)
-    is_active = db.Column(db.Boolean, default=True)
+    ticket_id = db.Column(
+        db.Integer,
+        db.ForeignKey("feedback_tickets.id"),
+        nullable=False,
+    )
 
-    ticket = db.relationship("SupportTicket")
-    performer = db.relationship("BaseUser", foreign_keys=[performed_by])
+    action = db.Column(db.String(50), nullable=False)
+    performed_by = db.Column(
+        db.Integer,
+        db.ForeignKey("base_users.id"),
+        nullable=True,
+    )
+    notes = db.Column(db.Text, nullable=True)
+    is_active = db.Column(db.Boolean, nullable=False, default=True)
+
+    ticket = db.relationship(
+        "FeedbackTicket",
+        foreign_keys=[ticket_id],
+        back_populates="history",
+    )
+
+    performer = db.relationship(
+        "BaseUser",
+        foreign_keys=[performed_by],
+    )
 
     def to_dict(self):
         data = super().to_dict()
-        data["performer"] = _summary(self.performer, ["id", "username", "email"])
+        data["performer"] = _summary(
+            self.performer,
+            ["id", "username", "email"],
+        )
         return data
+
 
 
 # ===========================================================================

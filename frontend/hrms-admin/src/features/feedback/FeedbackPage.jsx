@@ -19,28 +19,64 @@ import { formatDateTime } from "@/utils/formatDate";
 import { useMyEmployee } from "@/hooks/useMyEmployee";
 
 /* =========================================================
-   CONSTANTS
+   HRMS SUPPORT TICKET REASONS
 ========================================================= */
 
-const CATEGORY_OPTIONS = ["Feature Bug", "Internal Bug", "Other Bugs/Issues"];
+const CATEGORY_OPTIONS = [
+  "Login / Password Issue",
+  "Account Locked / Access Issue",
+  "Employee Profile Update",
+  "Employee Master Data Correction",
+  "New Employee Creation",
+  "Employee Exit / Deactivation",
+  "Attendance Issue",
+  "Attendance Regularization",
+  "Leave Balance Issue",
+  "Leave Application Issue",
+  "Leave Approval Issue",
+  "Holiday / Calendar Issue",
+  "Shift / Roster Issue",
+  "Work From Home / Remote Work Issue",
+  "Overtime Issue",
+  "Payroll / Salary Issue",
+  "Payslip Issue",
+  "Tax / TDS Issue",
+  "Reimbursement Issue",
+  "Expense Claim Issue",
+  "Loan / Advance Issue",
+  "Bank Account / Payment Details Update",
+  "Benefits / Insurance Issue",
+  "Performance Management Issue",
+  "Appraisal / Rating Issue",
+  "Training / Learning Issue",
+  "Recruitment / Hiring Issue",
+  "Onboarding Issue",
+  "Employee Documents Issue",
+  "HR Letter / Certificate Request",
+  "Organization / Department Change",
+  "Manager / Reporting Structure Change",
+  "Transfer / Location Change",
+  "Notification / Email Issue",
+  "Mobile App Issue",
+  "HRMS System Error",
+  "Data / Report Issue",
+  "Integration Issue",
+  "Approval Workflow Issue",
+  "Permission / Role Access Request",
+  "Feature / Configuration Request",
+  "HR Policy / Process Clarification",
+  "General HRMS Query",
+  "Other / Miscellaneous",
+];
+
 const STATUS_OPTIONS = ["Open", "In Progress", "Resolved"];
-
-const CATEGORY_BADGE_CLASS = {
-  "Feature Bug": "bg-sky-50 text-sky-700 dark:bg-sky-500/10 dark:text-sky-400",
-  "Internal Bug": "bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400",
-  "Other Bugs/Issues": "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400",
-};
-
-const CATEGORY_ICON_TONE = {
-  "Feature Bug": "bg-sky-50 text-sky-600 dark:bg-sky-500/10 dark:text-sky-400",
-  "Internal Bug": "bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400",
-  "Other Bugs/Issues": "bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400",
-};
 
 const STATUS_BADGE_CLASS = {
   Open: "bg-slate-100 text-slate-700 dark:bg-white/10 dark:text-slate-300",
-  "In Progress": "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400",
-  Resolved: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400",
+  "In Progress":
+    "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400",
+  Resolved:
+    "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400",
 };
 
 const STATUS_DOT_CLASS = {
@@ -53,64 +89,87 @@ const STATUS_DOT_CLASS = {
    ICONS
 ========================================================= */
 
-// Feature Bug — sparkle (a feature not behaving as designed)
-const FeatureBugIcon = ({ className = "h-5 w-5" }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="m12 3-1.2 5.8L5 10l5.8 1.2L12 17l1.2-5.8L19 10l-5.8-1.2Z" />
-    <path strokeLinecap="round" strokeLinejoin="round" d="m19 16-.6 2.4L16 19l2.4.6L19 22l.6-2.4L22 19l-2.4-.6Z" />
+const TicketIcon = ({ className = "h-5 w-5" }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className={className}
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    strokeWidth={1.8}
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M4 7.5A2.5 2.5 0 016.5 5h11A2.5 2.5 0 0120 7.5v9a2.5 2.5 0 01-2.5 2.5h-11A2.5 2.5 0 014 16.5v-9z"
+    />
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M8 9h8M8 12h6M8 15h4"
+    />
   </svg>
 );
 
-// Internal Bug — literal bug glyph
-const InternalBugIcon = ({ className = "h-5 w-5" }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-    <rect x="8" y="8" width="8" height="10" rx="4" />
-    <path strokeLinecap="round" d="M9 8V6a3 3 0 016 0v2M4 12h4M16 12h4M5 17l3-1.5M19 17l-3-1.5M5 8l3 2M19 8l-3 2M12 8V4" />
-  </svg>
-);
-
-// Other Bugs/Issues — warning triangle
-const OtherIssueIcon = ({ className = "h-5 w-5" }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M10.3 3.5h3.4L21 17.2a1.5 1.5 0 01-1.3 2.3H4.3A1.5 1.5 0 013 17.2z" />
-    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4M12 17h.01" />
-  </svg>
-);
-
-const CATEGORY_ICON = {
-  "Feature Bug": FeatureBugIcon,
-  "Internal Bug": InternalBugIcon,
-  "Other Bugs/Issues": OtherIssueIcon,
-};
-
-function CategoryIcon({ category, className }) {
-  const Comp = CATEGORY_ICON[category] || OtherIssueIcon;
-  return <Comp className={className} />;
-}
-
-const TicketStatIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+const PlusIcon = ({ className = "h-4 w-4" }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className={className}
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    strokeWidth={2}
+  >
+    <path strokeLinecap="round" strokeLinejoin="round" d="M12 5v14M5 12h14" />
   </svg>
 );
 
 const OpenStatIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className="h-5 w-5"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    strokeWidth={2}
+  >
     <circle cx="12" cy="12" r="9" />
     <path strokeLinecap="round" d="M12 7v5l3 2" />
   </svg>
 );
 
 const ProgressStatIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className="h-5 w-5"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    strokeWidth={2}
+  >
     <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 1.5" />
-    <path strokeLinecap="round" strokeLinejoin="round" d="M4 12a8 8 0 0113.66-5.66M20 12a8 8 0 01-13.66 5.66" />
-    <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v4h4M20 20v-4h-4" />
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M4 12a8 8 0 0113.66-5.66M20 12a8 8 0 01-13.66 5.66"
+    />
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M4 4v4h4M20 20v-4h-4"
+    />
   </svg>
 );
 
 const ResolvedStatIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className="h-5 w-5"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    strokeWidth={2}
+  >
     <path strokeLinecap="round" strokeLinejoin="round" d="M5 12l4 4L19 6" />
   </svg>
 );
@@ -149,10 +208,17 @@ function StatTile({ tone, label, value, icon }) {
     >
       <div className="flex h-full items-center justify-between">
         <div className="min-w-0">
-          <p className="truncate text-xs font-medium text-slate-500 dark:text-slate-400">{label}</p>
-          <p className={`mt-1 text-2xl font-bold tracking-tight ${styles.value}`}>{value}</p>
+          <p className="truncate text-xs font-medium text-slate-500 dark:text-slate-400">
+            {label}
+          </p>
+          <p className={`mt-1 text-2xl font-bold tracking-tight ${styles.value}`}>
+            {value}
+          </p>
         </div>
-        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${styles.icon}`}>
+
+        <div
+          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${styles.icon}`}
+        >
           {icon}
         </div>
       </div>
@@ -161,54 +227,56 @@ function StatTile({ tone, label, value, icon }) {
 }
 
 /* =========================================================
-   REPORTER (EMPLOYEE) CARD
-   Shown above the form so it's clear whose account the ticket is
-   being raised against — the backend stamps `raised_by` to this same
-   logged-in user regardless of what's submitted.
+   FORM FIELD
 ========================================================= */
 
-function ReporterCard() {
-  const user = getUser();
-  const { employee } = useMyEmployee();
-
-  const name =
-    [employee?.first_name, employee?.last_name].filter(Boolean).join(" ") ||
-    user?.username ||
-    "Employee";
-
-  const dept = employee?.department?.department_name;
-  const desig = employee?.designation?.designation_name;
-  const code = employee?.employee_code;
-
+function FieldLabel({ children, required = false }) {
   return (
-    <div className="mb-5 flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-white/10 dark:bg-white/[0.04]">
-      <Avatar name={name} src={resolveUploadUrl(user?.profile_picture?.url)} size="md" />
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">{name}</p>
-        <p className="mt-0.5 truncate text-xs text-slate-500 dark:text-slate-400">
-          {[code, desig, dept].filter(Boolean).join(" · ") || user?.email || user?.role}
-        </p>
-      </div>
-      <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500 ring-1 ring-inset ring-slate-200 dark:bg-white/[0.06] dark:text-slate-400 dark:ring-white/10">
-        Reporting as you
-      </span>
-    </div>
+    <label className="mb-1.5 block text-xs font-medium text-slate-600 dark:text-slate-300">
+      {children}
+      {required && <span className="ml-1 text-red-500">*</span>}
+    </label>
   );
 }
 
 /* =========================================================
-   RAISE TICKET FORM
+   ADD TICKET MODAL
 ========================================================= */
 
-function RaiseTicketForm({ onCreated }) {
+function AddTicketModal({ open, onClose, onCreated }) {
   const { showToast } = useToast();
   const createTicket = useCreateFeedbackTicket();
+  const user = getUser();
+  const { employee } = useMyEmployee();
+
+  const employeeCode = employee?.employee_code || "";
+  const employeeId = employee?.id || "";
+  const employeeName =
+    [employee?.first_name, employee?.last_name].filter(Boolean).join(" ") ||
+    user?.username ||
+    "";
 
   const [category, setCategory] = useState("");
+  const [purpose, setPurpose] = useState("");
   const [description, setDescription] = useState("");
   const [screenshot, setScreenshot] = useState(null);
   const [preview, setPreview] = useState(null);
   const [previewOpen, setPreviewOpen] = useState(false);
+
+  const resetForm = () => {
+    setCategory("");
+    setPurpose("");
+    setDescription("");
+    setScreenshot(null);
+    setPreview(null);
+    setPreviewOpen(false);
+  };
+
+  const handleClose = () => {
+    if (createTicket.isPending) return;
+    resetForm();
+    onClose();
+  };
 
   const handleFileChange = (file) => {
     if (!file) {
@@ -216,175 +284,257 @@ function RaiseTicketForm({ onCreated }) {
       setPreview(null);
       return;
     }
+
+    if (!file.type?.startsWith("image/")) {
+      showToast("Please select an image file", "error");
+      return;
+    }
+
     setScreenshot(file);
     setPreview(URL.createObjectURL(file));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (event) => {
+    event.preventDefault();
 
     if (!category) {
-      showToast("Please select a bug/issue category", "error");
+      showToast("Please select a support ticket reason", "error");
       return;
     }
+
+    if (!purpose.trim()) {
+      showToast("Please enter the ticket purpose", "error");
+      return;
+    }
+
     if (!description.trim()) {
-      showToast("Please describe the issue", "error");
+      showToast("Please enter the ticket description", "error");
       return;
     }
 
     try {
-      const payload = { category, description: description.trim() };
-      if (screenshot) payload.screenshot = screenshot;
+      const payload = {
+        employee: employeeCode,
+        employee_id: employeeId,
+        name: employeeName,
+        category,
+        purpose: purpose.trim(),
+        description: description.trim(),
+      };
+
+      if (screenshot) {
+        payload.screenshot = screenshot;
+      }
 
       await createTicket.mutateAsync(payload);
 
-      showToast("Feedback submitted — a ticket has been raised", "success");
-      setCategory("");
-      setDescription("");
-      setScreenshot(null);
-      setPreview(null);
-      onCreated?.();
+      showToast("Support ticket created successfully", "success");
+      resetForm();
+      await onCreated?.();
+      onClose();
     } catch (error) {
       showToast(
-        error?.response?.data?.message || "Failed to submit feedback",
+        error?.response?.data?.message || "Failed to create support ticket",
         "error"
       );
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <ReporterCard />
+    <Modal open={open} onClose={handleClose} title="Add Support Ticket" size="lg">
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-white/[0.03]">
+          <div className="mb-4 flex items-center gap-3">
+            <Avatar
+              name={employeeName || user?.username || "Employee"}
+              src={resolveUploadUrl(user?.profile_picture?.url)}
+              size="md"
+            />
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                Employee Details
+              </p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                These details are taken from the logged-in account.
+              </p>
+            </div>
+          </div>
 
-      <div>
-        <label className="mb-1.5 block text-xs font-medium text-slate-600 dark:text-slate-300">
-          Bug / Issue Category <span className="text-red-500">*</span>
-        </label>
-        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
-          {CATEGORY_OPTIONS.map((option) => {
-            const active = category === option;
-            return (
-              <button
-                key={option}
-                type="button"
-                onClick={() => setCategory(option)}
-                className={`flex items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left text-sm font-medium transition-colors duration-150 ${
-                  active
-                    ? "border-primary-500 bg-primary-50 text-primary-700 dark:border-primary-500 dark:bg-primary-500/10 dark:text-primary-400"
-                    : "border-slate-300 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-600 dark:bg-white/[0.06] dark:text-slate-300"
-                }`}
-              >
-                <span
-                  className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
-                    active ? "bg-white text-primary-600 dark:bg-slate-900/40 dark:text-primary-400" : CATEGORY_ICON_TONE[option]
-                  }`}
-                >
-                  <CategoryIcon category={option} className="h-4 w-4" />
-                </span>
-                {option}
-              </button>
-            );
-          })}
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div>
+              <FieldLabel>Employee</FieldLabel>
+              <input
+                value={employeeCode || "Not Available"}
+                readOnly
+                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-500 outline-none dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-400"
+              />
+            </div>
+
+            <div>
+              <FieldLabel>Employee ID</FieldLabel>
+              <input
+                value={employeeId || "Not Available"}
+                readOnly
+                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-500 outline-none dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-400"
+              />
+            </div>
+
+            <div>
+              <FieldLabel>Name</FieldLabel>
+              <input
+                value={employeeName || "Not Available"}
+                readOnly
+                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-500 outline-none dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-400"
+              />
+            </div>
+          </div>
         </div>
-      </div>
 
-      <div>
-        <label className="mb-1.5 block text-xs font-medium text-slate-600 dark:text-slate-300">
-          Screenshot (optional)
-        </label>
+        <div>
+          <FieldLabel required>Support Ticket Reason</FieldLabel>
+          <select
+            value={category}
+            onChange={(event) => setCategory(event.target.value)}
+            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
+          >
+            <option value="">Select a reason</option>
+            {CATEGORY_OPTIONS.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        </div>
 
-        {preview ? (
-          <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-white/10 dark:bg-white/[0.04]">
-            <button
-              type="button"
-              onClick={() => setPreviewOpen(true)}
-              title="Preview screenshot"
-              className="shrink-0"
+        <div>
+          <FieldLabel required>Purpose</FieldLabel>
+          <input
+            value={purpose}
+            onChange={(event) => setPurpose(event.target.value)}
+            placeholder="Enter the purpose of this support ticket"
+            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
+          />
+        </div>
+
+        <div>
+          <FieldLabel required>Description</FieldLabel>
+          <textarea
+            rows={6}
+            value={description}
+            onChange={(event) => setDescription(event.target.value)}
+            placeholder="Describe the issue or request in detail..."
+            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
+          />
+        </div>
+
+        <div>
+          <FieldLabel>Upload Screenshot</FieldLabel>
+
+          {preview ? (
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-white/10 dark:bg-white/[0.03]">
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setPreviewOpen(true)}
+                  className="shrink-0"
+                  title="Preview screenshot"
+                >
+                  <img
+                    src={preview}
+                    alt="Screenshot preview"
+                    className="h-16 w-16 rounded-lg object-cover ring-1 ring-slate-200 transition hover:opacity-90 dark:ring-white/10"
+                  />
+                </button>
+
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-xs font-medium text-slate-700 dark:text-slate-200">
+                    {screenshot?.name}
+                  </p>
+
+                  <div className="mt-1 flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setPreviewOpen(true)}
+                      className="text-xs font-semibold text-primary-600 hover:underline dark:text-primary-400"
+                    >
+                      Preview
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleFileChange(null)}
+                      className="text-xs font-semibold text-red-500 hover:underline"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <label className="flex h-24 cursor-pointer flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 text-center transition hover:border-primary-300 hover:bg-primary-50/40 dark:border-slate-600 dark:bg-white/[0.04] dark:hover:bg-white/[0.06]">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white text-primary-600 shadow-sm ring-1 ring-slate-200 dark:bg-white/[0.06] dark:text-primary-400 dark:ring-white/10">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"
+                  />
+                </svg>
+              </div>
+              <span className="text-xs text-slate-500 dark:text-slate-400">
+                <span className="font-semibold text-primary-600 dark:text-primary-400">
+                  Upload a screenshot
+                </span>{" "}
+                of the issue (optional)
+              </span>
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(event) => handleFileChange(event.target.files?.[0])}
+              />
+            </label>
+          )}
+
+          {previewOpen && (
+            <Modal
+              open={previewOpen}
+              onClose={() => setPreviewOpen(false)}
+              title="Screenshot Preview"
+              size="lg"
             >
               <img
                 src={preview}
                 alt="Screenshot preview"
-                className="h-16 w-16 rounded-lg object-cover ring-1 ring-slate-200 transition hover:opacity-90 dark:ring-white/10"
+                className="max-h-[70vh] w-full rounded-lg object-contain"
               />
-            </button>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-xs font-medium text-slate-700 dark:text-slate-200">
-                {screenshot?.name}
-              </p>
-              <div className="mt-1 flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => setPreviewOpen(true)}
-                  className="text-xs font-semibold text-primary-600 hover:underline dark:text-primary-400"
-                >
-                  Preview
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleFileChange(null)}
-                  className="text-xs font-semibold text-red-500 hover:underline"
-                >
-                  Remove
-                </button>
-              </div>
-            </div>
+            </Modal>
+          )}
+        </div>
 
-            {previewOpen && (
-              <Modal open={previewOpen} onClose={() => setPreviewOpen(false)} title="Screenshot Preview" size="lg">
-                <img
-                  src={preview}
-                  alt="Screenshot preview"
-                  className="w-full rounded-lg object-contain"
-                />
-              </Modal>
-            )}
-          </div>
-        ) : (
-          <label className="flex h-24 cursor-pointer flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 text-center transition-colors hover:border-primary-300 hover:bg-primary-50/40 dark:border-slate-600 dark:bg-white/[0.04] dark:hover:bg-white/[0.06]">
-            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-white text-primary-600 shadow-sm ring-1 ring-slate-200 dark:bg-white/[0.06] dark:text-primary-400 dark:ring-white/10">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" />
-              </svg>
-            </span>
-            <span className="text-xs text-slate-500 dark:text-slate-400">
-              <span className="font-semibold text-primary-600 dark:text-primary-400">
-                Upload a screenshot
-              </span>{" "}
-              of the issue
-            </span>
-            <input
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => handleFileChange(e.target.files?.[0])}
-            />
-          </label>
-        )}
-      </div>
+        <div className="flex justify-end gap-2 border-t border-slate-200 pt-4 dark:border-white/10">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={handleClose}
+            disabled={createTicket.isPending}
+          >
+            Cancel
+          </Button>
 
-      <div>
-        <label className="mb-1.5 block text-xs font-medium text-slate-600 dark:text-slate-300">
-          Description <span className="text-red-500">*</span>
-        </label>
-        <textarea
-          rows={4}
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder="Describe the bug or issue you encountered in detail..."
-          className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
-        />
-      </div>
-
-      <div className="flex justify-end">
-        <Button
-          type="submit"
-          isLoading={createTicket.isPending}
-          className="h-10 px-5"
-        >
-          Submit Feedback
-        </Button>
-      </div>
-    </form>
+          <Button type="submit" isLoading={createTicket.isPending}>
+            Add Ticket
+          </Button>
+        </div>
+      </form>
+    </Modal>
   );
 }
 
@@ -400,16 +550,22 @@ function UpdateTicketModal({ ticket, open, onClose }) {
   const [response, setResponse] = useState(ticket?.admin_response || "");
 
   const handleSave = async () => {
+    if (!ticket) return;
+
     try {
       await updateTicket.mutateAsync({
         id: ticket.id,
-        payload: { status, admin_response: response },
+        payload: {
+          status,
+          admin_response: response.trim() || null,
+        },
       });
-      showToast("Ticket updated", "success");
+
+      showToast("Support ticket updated", "success");
       onClose();
     } catch (error) {
       showToast(
-        error?.response?.data?.message || "Failed to update ticket",
+        error?.response?.data?.message || "Failed to update support ticket",
         "error"
       );
     }
@@ -418,56 +574,104 @@ function UpdateTicketModal({ ticket, open, onClose }) {
   if (!ticket) return null;
 
   return (
-    <Modal open={open} onClose={onClose} title={`Ticket ${ticket.ticket_number || `#${ticket.id}`}`} size="lg">
-      <div className="space-y-4">
-        <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm dark:border-white/10 dark:bg-white/[0.04]">
-          <div className="flex items-center gap-2.5">
-            <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${CATEGORY_ICON_TONE[ticket.category]}`}>
-              <CategoryIcon category={ticket.category} className="h-4.5 w-4.5" />
-            </span>
-            <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-slate-800 dark:text-white">
-                {ticket.category}
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={`Ticket ${ticket.ticket_number || `#${ticket.id}`}`}
+      size="lg"
+    >
+      <div className="space-y-5">
+        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-white/[0.03]">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
+            Employee Details
+          </p>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div>
+              <p className="text-[11px] text-slate-400">Employee</p>
+              <p className="mt-1 text-sm font-semibold text-slate-800 dark:text-white">
+                {ticket.employee || "-"}
               </p>
-              <p className="text-[11px] text-slate-400">{formatDateTime(ticket.created_at)}</p>
+            </div>
+
+            <div>
+              <p className="text-[11px] text-slate-400">Employee ID</p>
+              <p className="mt-1 text-sm font-semibold text-slate-800 dark:text-white">
+                {ticket.employee_id || "-"}
+              </p>
+            </div>
+
+            <div>
+              <p className="text-[11px] text-slate-400">Name</p>
+              <p className="mt-1 text-sm font-semibold text-slate-800 dark:text-white">
+                {ticket.name || ticket.raised_by_user?.username || "-"}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-white/[0.02]">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                Reason
+              </p>
+              <p className="mt-1 text-sm text-slate-700 dark:text-slate-200">
+                {ticket.category || "-"}
+              </p>
+            </div>
+
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                Created
+              </p>
+              <p className="mt-1 text-sm text-slate-700 dark:text-slate-200">
+                {ticket.created_at ? formatDateTime(ticket.created_at) : "-"}
+              </p>
             </div>
           </div>
 
-          <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
-            Reported by
-          </p>
-          <p className="mt-0.5 font-medium text-slate-800 dark:text-slate-100">
-            {ticket.raised_by_user?.username || "-"}
-          </p>
+          <div className="mt-4">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+              Purpose
+            </p>
+            <p className="mt-1 text-sm text-slate-700 dark:text-slate-200">
+              {ticket.purpose || "-"}
+            </p>
+          </div>
 
-          <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
-            Description
-          </p>
-          <p className="mt-0.5 whitespace-pre-wrap text-slate-700 dark:text-slate-200">
-            {ticket.description}
-          </p>
+          <div className="mt-4">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+              Description
+            </p>
+            <p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-slate-700 dark:text-slate-200">
+              {ticket.description || "-"}
+            </p>
+          </div>
 
           {ticket.screenshot_url && (
-            <a
-              href={resolveUploadUrl(ticket.screenshot_url)}
-              target="_blank"
-              rel="noreferrer"
-              className="mt-3 inline-block"
-            >
-              <img
-                src={resolveUploadUrl(ticket.screenshot_url)}
-                alt="Screenshot"
-                className="h-32 rounded-lg object-cover ring-1 ring-slate-200 transition hover:opacity-90 dark:ring-white/10"
-              />
-            </a>
+            <div className="mt-4">
+              <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                Screenshot
+              </p>
+              <a
+                href={resolveUploadUrl(ticket.screenshot_url)}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <img
+                  src={resolveUploadUrl(ticket.screenshot_url)}
+                  alt="Ticket screenshot"
+                  className="h-32 rounded-lg object-cover ring-1 ring-slate-200 transition hover:opacity-90 dark:ring-white/10"
+                />
+              </a>
+            </div>
           )}
         </div>
 
         <div>
-          <label className="mb-1.5 block text-xs font-medium text-slate-600 dark:text-slate-300">
-            Status
-          </label>
-          <div className="grid grid-cols-3 gap-2">
+          <FieldLabel>Status</FieldLabel>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
             {STATUS_OPTIONS.map((option) => (
               <button
                 key={option}
@@ -487,24 +691,22 @@ function UpdateTicketModal({ ticket, open, onClose }) {
         </div>
 
         <div>
-          <label className="mb-1.5 block text-xs font-medium text-slate-600 dark:text-slate-300">
-            Resolution / Update Note
-          </label>
+          <FieldLabel>Resolution / Update Note</FieldLabel>
           <textarea
-            rows={3}
+            rows={4}
             value={response}
-            onChange={(e) => setResponse(e.target.value)}
-            placeholder="What action was taken / how was this resolved..."
-            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
+            onChange={(event) => setResponse(event.target.value)}
+            placeholder="Enter the action taken or resolution details..."
+            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
           />
         </div>
 
-        <div className="flex justify-end gap-2 pt-2">
+        <div className="flex justify-end gap-2 border-t border-slate-200 pt-4 dark:border-white/10">
           <Button type="button" variant="secondary" onClick={onClose}>
             Cancel
           </Button>
           <Button type="button" isLoading={updateTicket.isPending} onClick={handleSave}>
-            Save
+            Save Changes
           </Button>
         </div>
       </div>
@@ -529,73 +731,110 @@ function TicketCard({ ticket, isAdmin, onManage }) {
         }`}
       />
 
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex min-w-0 items-center gap-2.5">
-          <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ring-1 ring-inset ring-black/5 dark:ring-white/10">
-            <span className={`flex h-full w-full items-center justify-center rounded-xl ${CATEGORY_ICON_TONE[ticket.category] || CATEGORY_ICON_TONE["Other Bugs/Issues"]}`}>
-              <CategoryIcon category={ticket.category} className="h-4.5 w-4.5" />
-            </span>
-            <span
-              className={`absolute -bottom-1 -right-1 h-3 w-3 rounded-full border-2 border-white dark:border-slate-900 ${
-                STATUS_DOT_CLASS[ticket.status] || STATUS_DOT_CLASS.Open
-              }`}
-            />
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
+            <TicketIcon className="h-5 w-5" />
           </div>
+
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">
               {ticket.ticket_number || `#${ticket.id}`}
             </p>
             <p className="mt-0.5 truncate text-[11px] text-slate-400">
-              {formatDateTime(ticket.created_at)}
-              {isAdmin && ticket.raised_by_user?.username
-                ? ` · ${ticket.raised_by_user.username}`
-                : ""}
+              {ticket.created_at ? formatDateTime(ticket.created_at) : "-"}
             </p>
           </div>
         </div>
+
         <Badge className={STATUS_BADGE_CLASS[ticket.status] || STATUS_BADGE_CLASS.Open}>
-          {ticket.status}
+          {ticket.status || "Open"}
         </Badge>
       </div>
 
-      <div className="mt-2.5">
-        <Badge className={CATEGORY_BADGE_CLASS[ticket.category] || CATEGORY_BADGE_CLASS["Other Bugs/Issues"]}>
-          {ticket.category}
+      <div className="mt-4">
+        <Badge className="bg-primary-50 text-primary-700 dark:bg-primary-500/10 dark:text-primary-400">
+          {ticket.category || "General HRMS Query"}
         </Badge>
       </div>
 
-      <p className="mt-3 line-clamp-3 text-sm text-slate-600 dark:text-slate-300">
-        {ticket.description}
-      </p>
+      <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-white/10 dark:bg-white/[0.03]">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+              Employee
+            </p>
+            <p className="mt-1 truncate text-xs font-medium text-slate-700 dark:text-slate-200">
+              {ticket.employee || "-"}
+            </p>
+          </div>
+
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+              Employee ID
+            </p>
+            <p className="mt-1 truncate text-xs font-medium text-slate-700 dark:text-slate-200">
+              {ticket.employee_id || "-"}
+            </p>
+          </div>
+
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+              Name
+            </p>
+            <p className="mt-1 truncate text-xs font-medium text-slate-700 dark:text-slate-200">
+              {ticket.name || ticket.raised_by_user?.username || "-"}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-4">
+        <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+          Purpose
+        </p>
+        <p className="mt-1 text-sm font-semibold text-slate-800 dark:text-white">
+          {ticket.purpose || "-"}
+        </p>
+      </div>
+
+      <div className="mt-3">
+        <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+          Description
+        </p>
+        <p className="mt-1 line-clamp-4 text-sm leading-6 text-slate-600 dark:text-slate-300">
+          {ticket.description || "-"}
+        </p>
+      </div>
 
       {ticket.screenshot_url && (
         <a
           href={resolveUploadUrl(ticket.screenshot_url)}
           target="_blank"
           rel="noreferrer"
-          className="mt-3 inline-block"
+          className="mt-4 inline-block"
         >
           <img
             src={resolveUploadUrl(ticket.screenshot_url)}
-            alt="Screenshot"
+            alt="Ticket screenshot"
             className="h-16 w-16 rounded-lg object-cover ring-1 ring-slate-200 transition hover:opacity-90 dark:ring-white/10"
           />
         </a>
       )}
 
       {ticket.admin_response && (
-        <div className="mt-3 rounded-lg border border-emerald-100 bg-emerald-50/60 p-2.5 dark:border-emerald-900/30 dark:bg-emerald-500/10">
+        <div className="mt-4 rounded-xl border border-emerald-100 bg-emerald-50/60 p-3 dark:border-emerald-900/30 dark:bg-emerald-500/10">
           <p className="text-[10px] font-semibold uppercase tracking-wide text-emerald-600 dark:text-emerald-400">
-            Admin update
+            Admin Update
           </p>
-          <p className="mt-0.5 whitespace-pre-wrap text-xs text-emerald-800 dark:text-emerald-200">
+          <p className="mt-1 whitespace-pre-wrap text-xs leading-5 text-emerald-800 dark:text-emerald-200">
             {ticket.admin_response}
           </p>
         </div>
       )}
 
       {isAdmin && (
-        <div className="mt-3 flex justify-end">
+        <div className="mt-4 flex justify-end border-t border-slate-100 pt-3 dark:border-white/10">
           <button
             type="button"
             onClick={() => onManage(ticket)}
@@ -618,6 +857,7 @@ export default function FeedbackPage() {
   const isAdmin = checkIsAdmin(user);
 
   const [statusFilter, setStatusFilter] = useState("");
+  const [showAddTicket, setShowAddTicket] = useState(false);
   const [managingTicket, setManagingTicket] = useState(null);
 
   const { data, isLoading, refetch } = useFeedbackTickets({
@@ -626,65 +866,82 @@ export default function FeedbackPage() {
   });
 
   const tickets = data?.items || [];
-
   const totalCount = data?.total ?? tickets.length;
-  const openCount = tickets.filter((t) => t.status === "Open").length;
-  const progressCount = tickets.filter((t) => t.status === "In Progress").length;
-  const resolvedCount = tickets.filter((t) => t.status === "Resolved").length;
+  const openCount = tickets.filter((ticket) => ticket.status === "Open").length;
+  const progressCount = tickets.filter((ticket) => ticket.status === "In Progress").length;
+  const resolvedCount = tickets.filter((ticket) => ticket.status === "Resolved").length;
 
   return (
     <div className="min-w-0 space-y-6">
       <div className="flex flex-col gap-4 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm dark:border-white/[0.08] dark:bg-white/[0.04] sm:p-5 xl:flex-row xl:items-center xl:justify-between">
         <div className="flex items-center gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary-600 text-white shadow-sm">
-            <TicketStatIcon />
+            <TicketIcon />
           </div>
+
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-              Feedback
+              Support Ticket
             </h1>
             <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
               {isAdmin
-                ? "Every bug / feedback ticket raised by employees"
-                : "Report a bug or issue — track its status right here"}
+                ? "Manage employee support tickets and track resolutions"
+                : "Create and track your support tickets"}
             </p>
           </div>
         </div>
+
+        <Button
+          type="button"
+          onClick={() => setShowAddTicket(true)}
+          className="h-10 px-4"
+        >
+          <span className="mr-2">
+            <PlusIcon />
+          </span>
+          Add Ticket
+        </Button>
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatTile tone="primary" label="Total Tickets" value={totalCount} icon={<TicketStatIcon />} />
+        <StatTile
+          tone="primary"
+          label="Total Tickets"
+          value={totalCount}
+          icon={<TicketIcon />}
+        />
         <StatTile tone="slate" label="Open" value={openCount} icon={<OpenStatIcon />} />
-        <StatTile tone="amber" label="In Progress" value={progressCount} icon={<ProgressStatIcon />} />
-        <StatTile tone="emerald" label="Resolved" value={resolvedCount} icon={<ResolvedStatIcon />} />
+        <StatTile
+          tone="amber"
+          label="In Progress"
+          value={progressCount}
+          icon={<ProgressStatIcon />}
+        />
+        <StatTile
+          tone="emerald"
+          label="Resolved"
+          value={resolvedCount}
+          icon={<ResolvedStatIcon />}
+        />
       </div>
 
-      {!isAdmin && (
-        <div id="raise-ticket" className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
-          <div className="mb-4 flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
-              <FeatureBugIcon className="h-4.5 w-4.5" />
-            </div>
-            <h2 className="text-sm font-semibold text-slate-800 dark:text-white">
-              Raise a Ticket
-            </h2>
-          </div>
-          <RaiseTicketForm onCreated={refetch} />
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="text-sm font-semibold text-slate-800 dark:text-white">
+            {isAdmin ? "All Support Tickets" : "My Support Tickets"}
+          </h2>
+          <p className="mt-0.5 text-xs text-slate-400">
+            View ticket details, attachments and current status
+          </p>
         </div>
-      )}
 
-      <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-slate-800 dark:text-white">
-          {isAdmin ? "All Tickets" : "My Tickets"}
-        </h2>
-
-        <div className="flex items-center rounded-lg bg-slate-100 p-1 dark:bg-white/[0.06]">
+        <div className="flex items-center overflow-x-auto rounded-lg bg-slate-100 p-1 dark:bg-white/[0.06]">
           {["", ...STATUS_OPTIONS].map((option) => (
             <button
               key={option || "all"}
               type="button"
               onClick={() => setStatusFilter(option)}
-              className={`rounded-md px-3 py-1.5 text-xs font-medium transition ${
+              className={`whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-medium transition ${
                 statusFilter === option
                   ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
                   : "text-slate-500 hover:text-slate-700 dark:text-slate-400"
@@ -697,20 +954,28 @@ export default function FeedbackPage() {
       </div>
 
       {isLoading ? (
-        <div className="py-10 text-center text-sm text-slate-400">Loading...</div>
+        <div className="rounded-xl border border-slate-200 bg-white py-12 text-center text-sm text-slate-400 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
+          Loading support tickets...
+        </div>
       ) : tickets.length === 0 ? (
-        <div className="flex min-h-[160px] flex-col items-center justify-center rounded-xl border border-slate-200 bg-white px-6 py-10 text-center shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
-          <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-slate-100 text-slate-400 dark:bg-white/10 dark:text-slate-500">
-            <TicketStatIcon />
+        <div className="flex min-h-[220px] flex-col items-center justify-center rounded-xl border border-slate-200 bg-white px-6 py-10 text-center shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
+          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-400 dark:bg-white/10 dark:text-slate-500">
+            <TicketIcon />
           </div>
           <h3 className="text-sm font-semibold text-slate-800 dark:text-white">
-            No tickets found
+            No support tickets found
           </h3>
           <p className="mt-1 max-w-sm text-xs text-slate-500 dark:text-slate-400">
             {isAdmin
-              ? "No feedback has been raised yet."
-              : "Raise a ticket above if you run into a bug or issue."}
+              ? "No support tickets have been raised yet."
+              : "Click Add Ticket to raise a new support request."}
           </p>
+          <Button type="button" onClick={() => setShowAddTicket(true)} className="mt-4">
+            <span className="mr-2">
+              <PlusIcon />
+            </span>
+            Add Ticket
+          </Button>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -724,6 +989,12 @@ export default function FeedbackPage() {
           ))}
         </div>
       )}
+
+      <AddTicketModal
+        open={showAddTicket}
+        onClose={() => setShowAddTicket(false)}
+        onCreated={refetch}
+      />
 
       <UpdateTicketModal
         key={managingTicket?.id ?? "none"}
