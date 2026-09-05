@@ -5,6 +5,11 @@ from extensions import db
 from models import EmployeeTarget
 from utils import ensure_crm_employee, fetch_or_404, get_current_user, is_admin, register_crud_blueprint, with_token
 
+# Global default quota per cadence — used whenever an admin creates a
+# target without an explicit target_customer_count (10 weekly rolls up
+# to 40 monthly, 120 quarterly). Mirrors incentive_engine.PERIOD_TARGETS.
+DEFAULT_PERIOD_TARGETS = {"Weekly": 10, "Monthly": 40, "Quarterly": 120}
+
 
 def _validate_target(item, data):
     employee, error_response = ensure_crm_employee(data.get("employee_id"))
@@ -25,6 +30,9 @@ def _validate_target(item, data):
 
     if period_type == "Weekly" and not data.get("week_start_date"):
         return jsonify({"message": "week_start_date is required for a Weekly target"}), 400
+
+    if "target_customer_count" not in data or data.get("target_customer_count") in (None, ""):
+        item.target_customer_count = DEFAULT_PERIOD_TARGETS.get(period_type, EmployeeTarget.DEFAULT_TARGET)
 
     return None
 

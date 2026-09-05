@@ -77,6 +77,14 @@ export function useCustomerOptions() {
   return (data?.items || []).map((c) => ({ value: c.id, label: c.customer_name }));
 }
 
+export function useMembershipPlanOptions() {
+  const { data } = useQuery({
+    queryKey: ["lookup", "membership-plans"],
+    queryFn: async () => (await crmApi.membershipPlans.list(ACTIVE_ONLY)).data.data,
+  });
+  return (data?.items || []).map((p) => ({ value: p.name, label: `${p.name} (₹${Number(p.rate || 0).toLocaleString("en-IN")})` }));
+}
+
 export function useLeadOptions() {
   const { data } = useQuery({
     queryKey: ["lookup", "leads"],

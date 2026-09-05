@@ -1,29 +1,42 @@
-"""CRM incentive engine — flat monthly registration incentive.
+"""CRM incentive engine — plan-based Weekly/Monthly/Quarterly incentive.
 
 Registrations are the Registration-page (Meeting) records a CRM
 employee adds (`Meeting.registered_by`), not raw Customer rows.
 
-Per employee, per calendar month:
+Per employee, per period (Weekly/Monthly/Quarterly):
 
-    monthly_count = active Registration rows added by the employee that month
-    base_amount   = INCENTIVE_BASE_AMOUNT (Rs. 1,000) once monthly_count >= 1,
-                    covering the first INCENTIVE_TARGET_COUNT (30) registrations
-    extra_count   = max(0, monthly_count - INCENTIVE_TARGET_COUNT)
-    extra_amount  = extra_count * (INCENTIVE_EXTRA_RATE_PERCENT/100 * INCENTIVE_BASE_AMOUNT)
-                    i.e. +0.6% of Rs. 1,000 (Rs. 6) per registration past the 30th
-    monthly_amount = base_amount + extra_amount
+    period_target = the employee's EmployeeTarget for that period, or the
+                     PERIOD_TARGETS default (10 / 40 / 120) when none is set
+    registrations = active Meeting rows added by the employee in the
+                     period, ordered chronologically
+    total_count   = len(registrations)
+
+    Eligibility gate (must ALL hold, else amount = 0):
+      - total_count >= 10 (MIN_ELIGIBLE_REGISTRATIONS)
+      - for at least one membership plan, that plan's registration count
+        in the period >= PLAN_ELIGIBILITY_PCT[plan] * period_target
+        (Silver 50%, Gold 30%, Diamond 20%)
+
+    Amount: only registrations AFTER the first `period_target` of them
+    (chronologically) can earn incentive — and only if their plan passed
+    its own eligibility gate above. Each qualifying registration earns
+    INCENTIVE_RATE_PERCENT (6%) of that plan's current MembershipPlan.rate.
 
 Per employee, per ISO week (Mon-Sun; a week belongs to the month its
-Monday falls in) a WeeklyIncentive row is still kept for the weekly
-breakdown / tier badge shown on the CRM employee Incentive screen —
-IncentiveTier only decides that badge, it no longer drives the payable
-amount, which is always the flat monthly formula above.
+Monday falls in) a WeeklyIncentive row is kept for the weekly
+breakdown; IncentiveTier is unrelated (a separate, older "performance
+badge" concept) and is no longer consulted by this calculation.
 
-MonthlyPayout.amount = the flat monthly formula (not a sum of weekly
-amounts, since the 30-registration threshold is monthly, not weekly).
+MonthlyPayout.amount = the Monthly-period formula above (independent of
+the sum of weekly amounts, since eligibility/target are period-specific).
 YearlyPayout  = sum of the 12 MonthlyPayout rows.
 EmployeeIncentive (legacy monthly table) is mirrored so the Finance
 Attendance "Incentive (CRM)" column keeps working.
+
+Quarterly figures are computed on demand (see `quarterly_summary` below)
+for the CRM dashboard's Weekly/Monthly/Quarterly toggle — there is no
+persisted QuarterlyPayout table; only the existing 20th-of-month payout
+cadence (Monthly) triggers real invoicing/payment.
 
 Payment schedule: MonthlyPayout.due_date is the 20th of the month
 following the incentive period, and an "Incentive" Invoice is
@@ -44,36 +57,100 @@ from models import (
     IncentiveTier,
     Invoice,
     Meeting,
+    MembershipPlan,
     MonthlyPayout,
     Payment,
     WeeklyIncentive,
     YearlyPayout,
 )
 
-# Defaults C from the plan — admin edits these on the Incentive Tiers screen.
-# Kept only to resolve the weekly "tier" badge shown on the CRM employee
-# Incentive screen; the payable amount itself uses the flat formula below.
+# Defaults for the (separate, unrelated) employee-performance tier badge
+# shown on the CRM employee Incentive screen. Not used by the payable
+# amount calculation below.
 DEFAULT_TIERS = [
     {"name": "Bronze", "min_registrations": 5, "rate_per_registration": 50, "sort_order": 1},
     {"name": "Silver", "min_registrations": 10, "rate_per_registration": 75, "sort_order": 2},
     {"name": "Gold", "min_registrations": 15, "rate_per_registration": 100, "sort_order": 3},
 ]
 
-# ------------------------------------------------------------------ flat rule
-INCENTIVE_TARGET_COUNT = 30          # registrations covered by the flat base amount
-INCENTIVE_BASE_AMOUNT = 1000.0       # Rs. paid for the first 30 registrations in a month
-INCENTIVE_EXTRA_RATE_PERCENT = 0.6   # % of INCENTIVE_BASE_AMOUNT added per registration past 30
+# ------------------------------------------------------------------ plan-based rule
+PERIOD_TARGETS = {"Weekly": 10, "Monthly": 40, "Quarterly": 120}
+MIN_ELIGIBLE_REGISTRATIONS = 10
+PLAN_ELIGIBILITY_PCT = {"Silver": 0.50, "Gold": 0.30, "Diamond": 0.20}
+INCENTIVE_RATE_PERCENT = 6.0  # % of a plan's rate, per qualifying registration
+
+
+def _plan_rates():
+    return {
+        row.name: float(row.rate or 0)
+        for row in MembershipPlan.query.filter_by(is_active=True).all()
+    }
+
+
+def compute_period_incentive(employee_id, start, end, target, plan_rates=None):
+    """Core plan-based formula for one employee over [start, end).
+
+    Returns a dict: total, target, eligible (bool), amount, breakdown
+    (per-plan incentive amount for registrations that qualified)."""
+    plan_rates = plan_rates if plan_rates is not None else _plan_rates()
+
+    rows = (
+        Meeting.query.filter(
+            Meeting.registered_by == employee_id,
+            Meeting.is_active == True,
+            Meeting.created_at >= start,
+            Meeting.created_at < end,
+        )
+        .order_by(Meeting.created_at.asc())
+        .all()
+    )
+
+    total = len(rows)
+    result = {"total": total, "target": target, "eligible": False, "amount": 0.0, "breakdown": {}}
+
+    if total < MIN_ELIGIBLE_REGISTRATIONS:
+        return result
+
+    plan_counts = {}
+    for row in rows:
+        plan_counts[row.membership_plan] = plan_counts.get(row.membership_plan, 0) + 1
+
+    eligible_plans = {
+        plan
+        for plan, count in plan_counts.items()
+        if count >= PLAN_ELIGIBILITY_PCT.get(plan, 1.0) * target
+    }
+
+    result["eligible"] = bool(eligible_plans)
+    if not eligible_plans:
+        return result
+
+    beyond_target_rows = rows[target:]
+    amount = 0.0
+    breakdown = {}
+    for row in beyond_target_rows:
+        if row.membership_plan not in eligible_plans:
+            continue
+        rate = plan_rates.get(row.membership_plan, 0.0)
+        incentive = round((INCENTIVE_RATE_PERCENT / 100) * rate, 2)
+        amount += incentive
+        breakdown[row.membership_plan] = round(breakdown.get(row.membership_plan, 0.0) + incentive, 2)
+
+    result["amount"] = round(amount, 2)
+    result["breakdown"] = breakdown
+    return result
 
 
 def compute_monthly_incentive_amount(count):
-    """Rs. amount for a given monthly registration count, per the flat
-    rule: Rs.1,000 for the first 30 registrations, then +0.6% of
-    Rs.1,000 (Rs.6) for every registration from the 31st onward."""
+    """Backward-compatible helper retained for any external caller that
+    only has a raw count (no plan breakdown) — approximates the old flat
+    rule's shape but is NOT used by rebuild_monthly_payout anymore, which
+    calls compute_period_incentive with the real per-plan breakdown."""
     if count <= 0:
         return 0.0
-    extra = max(0, count - INCENTIVE_TARGET_COUNT)
-    extra_rate = (INCENTIVE_EXTRA_RATE_PERCENT / 100) * INCENTIVE_BASE_AMOUNT
-    return round(INCENTIVE_BASE_AMOUNT + extra * extra_rate, 2)
+    target = PERIOD_TARGETS["Monthly"]
+    extra = max(0, count - target)
+    return round(extra * (INCENTIVE_RATE_PERCENT / 100) * 1000.0, 2)
 
 
 def payable_due_date(month, year):
@@ -169,7 +246,29 @@ def _weekly_target(employee_id, monday):
         week_start_date=monday,
         is_active=True,
     ).first()
-    return row.target_customer_count if row else 0
+    return row.target_customer_count if row else PERIOD_TARGETS["Weekly"]
+
+
+def _monthly_target(employee_id, month, year):
+    row = EmployeeTarget.query.filter_by(
+        employee_id=employee_id,
+        period_type="Monthly",
+        month=month,
+        year=year,
+        is_active=True,
+    ).first()
+    return row.target_customer_count if row else PERIOD_TARGETS["Monthly"]
+
+
+def _quarterly_target(employee_id, quarter, year):
+    row = EmployeeTarget.query.filter_by(
+        employee_id=employee_id,
+        period_type="Quarterly",
+        quarter=quarter,
+        year=year,
+        is_active=True,
+    ).first()
+    return row.target_customer_count if row else PERIOD_TARGETS["Quarterly"]
 
 
 # ------------------------------------------------------------------ recompute
@@ -185,10 +284,16 @@ def recompute_week(employee_id, monday, commit=False):
         return None  # nothing to record for an empty week
 
     target = _weekly_target(employee_id, monday)
-    tier = IncentiveTier.resolve(count)            # decision B: raw weekly count
-    eligible = max(0, count - target)              # decision A: above target
-    rate = float(tier.rate_per_registration) if tier else 0.0
-    amount = round(rate * eligible, 2)
+    # The weekly "tier" badge is a separate, older performance-badge
+    # concept — kept only for display, unrelated to the payable amount.
+    tier = IncentiveTier.resolve(count)
+
+    start = datetime.combine(monday, time.min)
+    end = datetime.combine(monday + timedelta(days=7), time.min)
+    calc = compute_period_incentive(employee_id, start, end, target)
+
+    eligible = max(0, count - target)
+    amount = calc["amount"]
 
     iso_year, iso_week, _ = monday.isocalendar()
 
@@ -208,7 +313,7 @@ def recompute_week(employee_id, monday, commit=False):
     row.eligible_count = eligible
     row.tier_id = tier.id if tier else None
     row.tier_name = tier.name if tier else None
-    row.rate_per_registration = rate
+    row.rate_per_registration = 0.0
     row.amount = amount
     row.is_active = True
 
@@ -228,12 +333,19 @@ def rebuild_monthly_payout(employee_id, month, year, commit=False):
         and w.week_start_date.year == year
     ]
 
-    # Registration count and payable amount both come from the flat
-    # monthly rule (not summed weekly amounts — the 30-registration
-    # threshold is monthly, and weeks can spill across month boundaries).
-    reg = _monthly_registration_count(employee_id, month, year)
-    eligible = max(0, reg - INCENTIVE_TARGET_COUNT)
-    amount = compute_monthly_incentive_amount(reg)
+    # Registration count and payable amount both come from the
+    # plan-based Monthly-period rule (not summed weekly amounts — the
+    # target/eligibility is evaluated per calendar month, and weeks can
+    # spill across month boundaries).
+    days_in_month = monthrange(year, month)[1]
+    start = datetime.combine(date(year, month, 1), time.min)
+    end = datetime.combine(date(year, month, days_in_month) + timedelta(days=1), time.min)
+    target = _monthly_target(employee_id, month, year)
+    calc = compute_period_incentive(employee_id, start, end, target)
+
+    reg = calc["total"]
+    eligible = max(0, reg - target)
+    amount = calc["amount"]
 
     payout = MonthlyPayout.query.filter_by(
         employee_id=employee_id, month=month, year=year
@@ -254,7 +366,7 @@ def rebuild_monthly_payout(employee_id, month, year, commit=False):
     if amount > 0 and payout.status == "Pending":
         payout.status = "Approved"
 
-    _mirror_employee_incentive(employee_id, month, year, amount, reg, eligible, rows)
+    _mirror_employee_incentive(employee_id, month, year, amount, reg, eligible, rows, target)
 
     if commit:
         db.session.commit()
@@ -291,7 +403,7 @@ def _auto_generate_invoice(payout):
     return invoice, True
 
 
-def _mirror_employee_incentive(employee_id, month, year, amount, reg, eligible, weekly_rows):
+def _mirror_employee_incentive(employee_id, month, year, amount, reg, eligible, weekly_rows, target):
     rec = EmployeeIncentive.query.filter_by(
         employee_id=employee_id, month=month, year=year
     ).first()
@@ -301,7 +413,7 @@ def _mirror_employee_incentive(employee_id, month, year, amount, reg, eligible, 
         rec = EmployeeIncentive(employee_id=employee_id, month=month, year=year)
         db.session.add(rec)
 
-    rec.target_customer_count = INCENTIVE_TARGET_COUNT
+    rec.target_customer_count = target
     rec.actual_customer_count = reg
     rec.eligible_customer_count = eligible
     rec.calculated_amount = amount
@@ -525,4 +637,121 @@ def employee_summary(employee_id, year):
         "weekly": [w.to_dict() for w in weekly],
         "monthly": [m.to_dict() for m in monthly],
         "yearly": yearly.to_dict() if yearly else None,
+    }
+
+
+def dashboard_period_summary(employee_id, period_type, today=None):
+    """CURRENT Weekly/Monthly/Quarterly incentive snapshot for the CRM
+    dashboard's period toggle — target, actual registrations, the
+    per-week/per-month breakdown, the plan-based incentive slab amount,
+    payout status, and whether the linked invoice is Paid (unpaid
+    incentive invoices are never surfaced here, matching the CRM
+    Incentive Invoice list's Paid-only visibility rule)."""
+    today = today or date.today()
+
+    if period_type == "Weekly":
+        monday = monday_of(today)
+        start = datetime.combine(monday, time.min)
+        end = datetime.combine(monday + timedelta(days=7), time.min)
+        target = _weekly_target(employee_id, monday)
+        calc = compute_period_incentive(employee_id, start, end, target)
+        weekly_row = WeeklyIncentive.query.filter_by(
+            employee_id=employee_id, week_start_date=monday
+        ).first()
+
+        return {
+            "period_type": "Weekly",
+            "target_registration": target,
+            "actual_registration": calc["total"],
+            "incentive_slab": calc["breakdown"],
+            "incentive_amount": calc["amount"],
+            "incentive_payout": {
+                "status": weekly_row.status if weekly_row else "Pending",
+                "amount": float(weekly_row.amount) if weekly_row else calc["amount"],
+            },
+            # Weekly periods aren't individually invoiced — only the
+            # Monthly payout generates a real Invoice.
+            "incentive_invoice_paid": False,
+        }
+
+    if period_type == "Monthly":
+        month, year = today.month, today.year
+        target = _monthly_target(employee_id, month, year)
+        days_in_month = monthrange(year, month)[1]
+        start = datetime.combine(date(year, month, 1), time.min)
+        end = datetime.combine(date(year, month, days_in_month) + timedelta(days=1), time.min)
+        calc = compute_period_incentive(employee_id, start, end, target)
+
+        weeks = [_weekly_registration_count(employee_id, monday) for monday in weeks_touching_month(month, year)]
+        weeks = (weeks + [0, 0, 0, 0])[:4]
+
+        payout = MonthlyPayout.query.filter_by(employee_id=employee_id, month=month, year=year).first()
+        invoice = (
+            Invoice.query.filter_by(monthly_payout_id=payout.id, is_active=True).first()
+            if payout
+            else None
+        )
+
+        return {
+            "period_type": "Monthly",
+            "target_registration": target,
+            "actual_registration": calc["total"],
+            "week_breakdown": weeks,
+            "incentive_slab": calc["breakdown"],
+            "incentive_amount": calc["amount"],
+            "incentive_payout": {
+                "status": payout.status if payout else "Pending",
+                "due_date": (
+                    payout.due_date.isoformat()
+                    if payout and payout.due_date
+                    else payable_due_date(month, year).isoformat()
+                ),
+                "amount": float(payout.amount) if payout else calc["amount"],
+            },
+            "incentive_invoice_paid": bool(invoice and invoice.status == "Paid"),
+        }
+
+    # Quarterly
+    quarter = (today.month - 1) // 3 + 1
+    year = today.year
+    start_month = (quarter - 1) * 3 + 1
+    quarter_months = [((start_month + i - 1) % 12) + 1 for i in range(3)]
+    quarter_years = [year + ((start_month + i - 1) // 12) for i in range(3)]
+
+    start = datetime.combine(date(quarter_years[0], quarter_months[0], 1), time.min)
+    end_month, end_year = quarter_months[-1] + 1, quarter_years[-1]
+    if end_month > 12:
+        end_month, end_year = 1, end_year + 1
+    end = datetime.combine(date(end_year, end_month, 1), time.min)
+
+    target = _quarterly_target(employee_id, quarter, year)
+    calc = compute_period_incentive(employee_id, start, end, target)
+
+    months = [
+        _monthly_registration_count(employee_id, m, y)
+        for m, y in zip(quarter_months, quarter_years)
+    ]
+
+    monthly_payouts = [
+        MonthlyPayout.query.filter_by(employee_id=employee_id, month=m, year=y).first()
+        for m, y in zip(quarter_months, quarter_years)
+    ]
+    existing_payouts = [p for p in monthly_payouts if p]
+    invoices_paid = [
+        bool(Invoice.query.filter_by(monthly_payout_id=p.id, is_active=True, status="Paid").first())
+        for p in existing_payouts
+    ]
+    all_paid = bool(existing_payouts) and all(invoices_paid)
+
+    return {
+        "period_type": "Quarterly",
+        "target_registration": target,
+        "actual_registration": calc["total"],
+        "month_breakdown": months,
+        "incentive_slab": calc["breakdown"],
+        "incentive_amount": calc["amount"],
+        "incentive_payout": {
+            "status": "Paid" if all_paid else "Pending",
+        },
+        "incentive_invoice_paid": all_paid,
     }

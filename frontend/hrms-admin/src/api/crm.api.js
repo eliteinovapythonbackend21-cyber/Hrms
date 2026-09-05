@@ -57,6 +57,13 @@ export const crmApi = {
     reactivate: (id) => axiosClient.put(C.INCENTIVE_SLABS_ITEM(id), { is_active: true }),
   },
 
+  membershipPlans: {
+    ...createCrudApi({ listUrl: C.MEMBERSHIP_PLANS, itemUrl: C.MEMBERSHIP_PLANS_ITEM }),
+    update: (id, payload) => axiosClient.put(C.MEMBERSHIP_PLANS_ITEM(id), payload),
+    deactivate: (id) => axiosClient.put(C.MEMBERSHIP_PLANS_ITEM(id), { is_active: false }),
+    reactivate: (id) => axiosClient.put(C.MEMBERSHIP_PLANS_ITEM(id), { is_active: true }),
+  },
+
   employeeIncentives: {
     ...createCrudApi({ listUrl: C.EMPLOYEE_INCENTIVES, itemUrl: C.EMPLOYEE_INCENTIVES_ITEM }),
     update: (id, payload) => axiosClient.put(C.EMPLOYEE_INCENTIVES_ITEM(id), payload),
@@ -77,6 +84,7 @@ export const crmApi = {
     monthly: (params) => axiosClient.get(C.INCENTIVE_MONTHLY, { params }),
     yearly: (params) => axiosClient.get(C.INCENTIVE_YEARLY, { params }),
     summary: (params) => axiosClient.get(C.INCENTIVE_SUMMARY, { params }),
+    periodSummary: (params) => axiosClient.get(C.INCENTIVE_PERIOD_SUMMARY, { params }),
     generateInvoice: (payoutId) =>
       axiosClient.post(C.INCENTIVE_MONTHLY_INVOICE(payoutId)),
     invoices: (params) => axiosClient.get(C.INCENTIVE_INVOICES, { params }),

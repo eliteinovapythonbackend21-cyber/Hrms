@@ -499,6 +499,7 @@ def register_crud_blueprint(
     filter_fields=None,
     own_employee_scope_field=None,
     view_grant=None,
+    base_query_filter=None,
 ):
     """Factory that builds a Blueprint exposing GET (list) / GET (detail) /
     POST (create) / PUT (edit, only if `editable`) / DELETE (soft-delete
@@ -526,6 +527,12 @@ def register_crud_blueprint(
     aren't admin — regardless of what the client sends. Without this, an
     "open" list endpoint would show every employee's records to any
     logged-in employee.
+
+    base_query_filter: optional `callable(query) -> query` applied to the
+    list endpoint's base query before search/filter_fields/is_active are
+    layered on — e.g. permanently hiding rows that should never be
+    listable regardless of any query param (unlike filter_fields, which
+    only filters when the client passes that param).
     """
     from extensions import db
 
@@ -573,6 +580,8 @@ def register_crud_blueprint(
             return guard
 
         query = model.query
+        if base_query_filter:
+            query = base_query_filter(query)
 
         if own_employee_scope_field and not is_admin(get_current_user()):
             from models import Employee

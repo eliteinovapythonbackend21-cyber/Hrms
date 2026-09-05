@@ -293,6 +293,142 @@ function CrmWorkspaceCards() {
 }
 
 /* ---------------------------------------------------------
+   Weekly / Monthly / Quarterly incentive breakdown — CRM employee's
+   own current-period target, registrations, incentive slab/amount,
+   payout status, and (Paid-only) invoice flag. Backed by
+   GET /incentives/period-summary (incentive_engine.dashboard_period_summary).
+--------------------------------------------------------- */
+const PERIOD_TABS = ["Weekly", "Monthly", "Quarterly"];
+
+function StatBlock({ label, value }) {
+  return (
+    <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 dark:border-white/10 dark:bg-white/[0.03]">
+      <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">{label}</p>
+      <p className="mt-0.5 text-sm font-bold text-slate-800 dark:text-white">{value}</p>
+    </div>
+  );
+}
+
+function CrmPeriodSummaryCard() {
+  const [period, setPeriod] = useState("Weekly");
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["crm-incentive-period-summary", period],
+    queryFn: async () => (await crmApi.incentives.periodSummary({ period })).data.data,
+    staleTime: 60_000,
+  });
+
+  const breakdownLabels =
+    period === "Monthly"
+      ? ["1st Week", "2nd Week", "3rd Week", "4th Week"]
+      : period === "Quarterly"
+      ? ["1st Month", "2nd Month", "3rd Month"]
+      : [];
+
+  const breakdownValues =
+    period === "Monthly" ? data?.week_breakdown : period === "Quarterly" ? data?.month_breakdown : [];
+
+  const slabEntries = data?.incentive_slab ? Object.entries(data.incentive_slab) : [];
+
+  return (
+    <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm dark:border-white/[0.08] dark:bg-white/[0.04]">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h3 className="text-sm font-semibold text-slate-800 dark:text-white">
+            Weekly / Monthly / Quarterly Incentive
+          </h3>
+          <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+            Your current-period target, registrations and incentive figures
+          </p>
+        </div>
+
+        <div className="flex items-center rounded-lg bg-slate-100 p-1 dark:bg-white/[0.06]">
+          {PERIOD_TABS.map((tab) => (
+            <button
+              key={tab}
+              type="button"
+              onClick={() => setPeriod(tab)}
+              className={`rounded-md px-3 py-1.5 text-xs font-semibold transition ${
+                period === tab
+                  ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
+                  : "text-slate-500 dark:text-slate-400"
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {isLoading ? (
+        <div className="mt-4 py-6 text-center text-xs text-slate-400">Loading...</div>
+      ) : (
+        <div className="mt-4 space-y-3">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <StatBlock label="Target Registration" value={data?.target_registration ?? 0} />
+            <StatBlock label="Registered" value={data?.actual_registration ?? 0} />
+            <StatBlock
+              label="Incentive Amount"
+              value={`₹${Number(data?.incentive_amount || 0).toLocaleString("en-IN")}`}
+            />
+            <StatBlock label="Incentive Payout" value={data?.incentive_payout?.status || "Pending"} />
+          </div>
+
+          {breakdownLabels.length > 0 && (
+            <div
+              className={`grid grid-cols-2 gap-2 ${
+                breakdownLabels.length === 4 ? "sm:grid-cols-4" : "sm:grid-cols-3"
+              }`}
+            >
+              {breakdownLabels.map((label, index) => (
+                <StatBlock key={label} label={label} value={breakdownValues?.[index] ?? 0} />
+              ))}
+            </div>
+          )}
+
+          <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 dark:border-white/10 dark:bg-white/[0.03]">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+              Incentive Slab (per plan)
+            </p>
+            {slabEntries.length > 0 ? (
+              <div className="mt-1 flex flex-wrap gap-1.5">
+                {slabEntries.map(([plan, amount]) => (
+                  <span
+                    key={plan}
+                    className="rounded-full bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-700 dark:bg-primary-500/10 dark:text-primary-400"
+                  >
+                    {plan}: ₹{Number(amount).toLocaleString("en-IN")}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-1 text-xs text-slate-400">
+                {data?.eligible === false
+                  ? "Not yet eligible for this period."
+                  : "No qualifying registrations yet."}
+              </p>
+            )}
+          </div>
+
+          <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs dark:border-white/10 dark:bg-white/[0.03]">
+            <span className="font-medium text-slate-500 dark:text-slate-400">Incentive Invoice</span>
+            <span
+              className={`font-semibold ${
+                data?.incentive_invoice_paid
+                  ? "text-emerald-600 dark:text-emerald-400"
+                  : "text-slate-400"
+              }`}
+            >
+              {data?.incentive_invoice_paid ? "Paid" : "Not available until paid"}
+            </span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------
    Today's Registrations — CRM employee dashboard stat, driven by
    Meeting rows the logged-in CRM employee added today.
 --------------------------------------------------------- */
@@ -838,6 +974,7 @@ export default function DashboardPage() {
               />
 
               <CrmWorkspaceCards />
+              <CrmPeriodSummaryCard />
             </section>
           )}
 

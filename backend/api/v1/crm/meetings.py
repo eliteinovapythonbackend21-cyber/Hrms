@@ -39,11 +39,12 @@ def _attribute_registration(item, data):
         item.registered_by = own_employee.id
 
     plan = (item.membership_plan or "").strip()
-    if plan and plan not in Meeting.MEMBERSHIP_PLANS:
+    valid_plans = Meeting.membership_plan_options()
+    if plan and plan not in valid_plans:
         return jsonify({
             "message": (
                 "membership_plan must be one of: "
-                + ", ".join(Meeting.MEMBERSHIP_PLANS)
+                + ", ".join(valid_plans)
             )
         }), 400
     item.membership_plan = plan or None

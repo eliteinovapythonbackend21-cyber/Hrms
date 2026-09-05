@@ -2516,16 +2516,49 @@ class FollowUp(TimestampMixin, db.Model):
         return data
 
 
+class MembershipPlan(TimestampMixin, db.Model):
+    """Manageable CRM membership plan (Silver/Gold/Diamond) with a price
+    — admin-editable via /crm/membership-plans. `Meeting.membership_plan`
+    stores the plan NAME (not a FK) so historical registrations keep
+    their label even if a plan is later renamed/deactivated; the
+    incentive engine looks up the current `rate` by name at calculation
+    time."""
+
+    __tablename__ = "membership_plans"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(30), nullable=False, unique=True)
+    rate = db.Column(db.Numeric(12, 2), nullable=False, default=0)
+    is_active = db.Column(db.Boolean, default=True)
+
+    def to_dict(self):
+        data = super().to_dict()
+        if self.rate is not None:
+            data["rate"] = float(self.rate)
+        return data
+
+
 class Meeting(TimestampMixin, db.Model):
     """Backs the CRM "Registration" screen. `registered_by` is the CRM
     employee who added the registration (used to count today's/this
     month's registrations for the incentive engine and the CRM employee
-    dashboard); `membership_plan` is the Gold/Silver/Bronze plan chosen
-    at registration time."""
+    dashboard); `membership_plan` is the Silver/Gold/Diamond plan name
+    chosen at registration time (see MembershipPlan for pricing)."""
 
     __tablename__ = "meetings"
 
-    MEMBERSHIP_PLANS = ("Gold", "Silver", "Bronze")
+    MEMBERSHIP_PLANS = ("Silver", "Gold", "Diamond")
+
+    @classmethod
+    def membership_plan_options(cls):
+        """Active MembershipPlan names, falling back to the static tuple
+        above only if the table is empty (e.g. before the seed migration
+        has run)."""
+        names = [
+            row.name
+            for row in MembershipPlan.query.filter_by(is_active=True).all()
+        ]
+        return tuple(names) if names else cls.MEMBERSHIP_PLANS
 
     id = db.Column(db.Integer, primary_key=True)
     customer_id = db.Column(db.Integer, db.ForeignKey("customers.id"), nullable=False)

@@ -221,14 +221,14 @@ function getStatusBadgeClass(status) {
 }
 
 const MEMBERSHIP_PLAN_BADGE_CLASS = {
-  Gold:
-    "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400",
-
   Silver:
     "bg-slate-100 text-slate-700 dark:bg-white/10 dark:text-slate-300",
 
-  Bronze:
-    "bg-orange-50 text-orange-700 dark:bg-orange-500/10 dark:text-orange-400",
+  Gold:
+    "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400",
+
+  Diamond:
+    "bg-sky-50 text-sky-700 dark:bg-sky-500/10 dark:text-sky-400",
 };
 
 function getMembershipPlanBadgeClass(plan) {

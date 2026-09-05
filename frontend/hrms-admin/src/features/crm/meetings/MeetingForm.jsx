@@ -1,13 +1,7 @@
 import { useMemo } from "react";
 
 import GenericForm from "@/components/form/GenericForm";
-import { useCustomerOptions } from "@/hooks/useLookupOptions";
-
-const MEMBERSHIP_PLAN_OPTIONS = [
-  { value: "Gold", label: "Gold" },
-  { value: "Silver", label: "Silver" },
-  { value: "Bronze", label: "Bronze" },
-];
+import { useCustomerOptions, useMembershipPlanOptions } from "@/hooks/useLookupOptions";
 
 /* =========================================================
    HELPER
@@ -82,6 +76,9 @@ export default function MeetingForm({
   const customerOptions =
     useCustomerOptions();
 
+  const membershipPlanOptions =
+    useMembershipPlanOptions();
+
   const fields = [
     {
       name: "customer_id",
@@ -102,7 +99,7 @@ export default function MeetingForm({
       name: "membership_plan",
       label: "Membership Plan",
       type: "select",
-      options: MEMBERSHIP_PLAN_OPTIONS,
+      options: membershipPlanOptions,
       required: true,
     },
 

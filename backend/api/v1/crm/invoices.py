@@ -31,6 +31,14 @@ def _generate_invoice_number(item, data):
     return None
 
 
+def _hide_unpaid_incentive_invoices(query):
+    """Incentive-linked invoices only ever appear here once Paid —
+    Customer invoices are unaffected."""
+    return query.filter(
+        db.or_(Invoice.invoice_type != "Incentive", Invoice.status == "Paid")
+    )
+
+
 invoices_bp = register_crud_blueprint(
     "invoices_bp",
     Invoice,
@@ -54,6 +62,7 @@ invoices_bp = register_crud_blueprint(
     deletable=False,
     admin_only=False,
     on_create=_generate_invoice_number,
+    base_query_filter=_hide_unpaid_incentive_invoices,
 )
 
 

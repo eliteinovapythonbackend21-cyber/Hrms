@@ -33,6 +33,7 @@ from utils import (
 )
 
 from .incentive_engine import (
+    dashboard_period_summary,
     employee_summary,
     payable_due_date,
     process_payout_for_period,
@@ -346,6 +347,31 @@ def incentive_summary(token_response):
     }), 200
 
 
+@incentives_bp.route("/period-summary", methods=["GET"])
+@jwt_required()
+@with_token
+def incentive_period_summary(token_response):
+    """CRM dashboard's Weekly / Monthly / Quarterly toggle — current-
+    period target, registrations, incentive slab/amount, payout and
+    (Paid-only) invoice status for one employee."""
+    scope, err = _resolve_scope(get_current_user())
+    if err:
+        return err
+
+    if scope is None:
+        return jsonify({"message": "employee_id is required for this view"}), 400
+
+    period_type = (request.args.get("period") or "Monthly").strip().title()
+    if period_type not in ("Weekly", "Monthly", "Quarterly"):
+        return jsonify({"message": "period must be one of Weekly, Monthly, Quarterly"}), 400
+
+    return jsonify({
+        "message": "Incentive period summary fetched",
+        "data": dashboard_period_summary(scope, period_type),
+        "token_response": token_response,
+    }), 200
+
+
 # ------------------------------------------------------------------ invoice
 
 @incentives_bp.route("/monthly/<int:payout_id>/invoice", methods=["POST"])
@@ -401,10 +427,11 @@ def list_incentive_invoices(token_response):
     if err:
         return err
 
-    q = Invoice.query.filter(Invoice.invoice_type == "Incentive")
+    # Incentive invoices are only ever shown once payment has actually
+    # gone through — an Unpaid/Invoiced incentive record stays hidden
+    # from this list entirely until its status flips to Paid.
+    q = Invoice.query.filter(Invoice.invoice_type == "Incentive", Invoice.status == "Paid")
     if scope is not None:
         q = q.filter(Invoice.employee_id == scope)
-    if request.args.get("status"):
-        q = q.filter(Invoice.status == request.args.get("status"))
 
     return _paginated(q.order_by(Invoice.id.desc()))

@@ -84,6 +84,7 @@ import LeadWeeklySnapshotPage from "@/features/crm/leads/LeadWeeklySnapshotPage"
 import DepartmentHeadcountPage from "@/features/crm/leads/DepartmentHeadcountPage";
 import EmployeeTargetPage from "@/features/crm/leads/EmployeeTargetPage";
 import IncentiveSlabPage from "@/features/crm/leads/IncentiveSlabPage";
+import MembershipPlanListPage from "@/features/crm/membershipPlans/MembershipPlanListPage";
 import IncentivePayoutPage from "@/features/crm/leads/IncentivePayoutPage";
 import IncentiveDashboardPage from "@/features/crm/incentives/IncentiveDashboardPage";
 
@@ -203,6 +204,7 @@ export default function AppRouter() {
         <Route path="/crm/leads/employees/headcount" element={<RoleGuard><DepartmentHeadcountPage /></RoleGuard>} />
         <Route path="/crm/leads/employees/targets" element={<RoleGuard><EmployeeTargetPage /></RoleGuard>} />
         <Route path="/crm/leads/incentive-slabs" element={<RoleGuard><IncentiveSlabPage /></RoleGuard>} />
+        <Route path="/crm/membership-plans" element={<RoleGuard><MembershipPlanListPage /></RoleGuard>} />
         <Route path="/crm/leads/payouts" element={<RoleGuard><IncentivePayoutPage /></RoleGuard>} />
         <Route path="/crm/incentives" element={<RoleGuard><IncentiveDashboardPage /></RoleGuard>} />
 

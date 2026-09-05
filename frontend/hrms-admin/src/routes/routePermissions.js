@@ -83,6 +83,8 @@ export const routePermissions = {
   // their own support tickets, same full-access pattern as Registration
   // (meetings.py) — not read-only like invoices/quotations/payments above.
   "/crm/support-tickets": ["admin", "employee"],
+  // Admin-only — manages membership plan names/prices (Silver/Gold/Diamond).
+  "/crm/membership-plans": ["admin"],
   "/finance/accounts": ["admin", "finance"],
   "/finance/vendors": ["admin", "finance"],
   "/finance/expenses": ["admin", "finance"],
