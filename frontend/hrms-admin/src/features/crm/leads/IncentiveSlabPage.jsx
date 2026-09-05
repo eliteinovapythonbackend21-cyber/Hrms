@@ -24,6 +24,7 @@ import { useIsCrmEmployee } from "@/hooks/useIsCrmEmployee";
 
 const CARD_PAGE_SIZE = 6;
 const TABLE_PAGE_SIZE = 10;
+const PERIOD_TYPES = ["Weekly", "Monthly", "Quarterly"];
 
 /* =========================================================
    HELPERS
@@ -43,6 +44,7 @@ function getRangeLabel(slab) {
 }
 
 const EXPORT_COLUMNS = [
+  { header: "Period", accessor: (r) => r.period_type || "Monthly" },
   { header: "Range", accessor: getRangeLabel },
   { header: "Min Extra Customers", accessor: (r) => r.min_customers },
   { header: "Max Extra Customers", accessor: (r) => (r.max_customers ?? "No upper limit") },
@@ -224,13 +226,15 @@ export default function IncentiveSlabPage() {
 
   const { exporting, exportToExcel, exportToPDF } = useTableExport();
 
+  const [periodFilter, setPeriodFilter] = useState("Weekly");
+
   const {
     data: allData,
     isLoading,
     isFetching,
     isError,
     refetch,
-  } = useIncentiveSlabs({ page: 1, per_page: 1000 });
+  } = useIncentiveSlabs({ page: 1, per_page: 1000, period_type: periodFilter });
 
   const allSlabs = allData?.items || [];
 
@@ -254,6 +258,7 @@ export default function IncentiveSlabPage() {
   const [mutatingId, setMutatingId] = useState(null);
 
   const [formState, setFormState] = useState({
+    period_type: "Weekly",
     min_customers: "",
     max_customers: "",
     incentive_amount: "",
@@ -304,7 +309,7 @@ export default function IncentiveSlabPage() {
   const openAddForm = () => {
     if (readOnly) return;
     setEditingSlab(null);
-    setFormState({ min_customers: "", max_customers: "", incentive_amount: "" });
+    setFormState({ period_type: periodFilter, min_customers: "", max_customers: "", incentive_amount: "" });
     setFormOpen(true);
   };
 
@@ -312,6 +317,7 @@ export default function IncentiveSlabPage() {
     if (readOnly) return;
     setEditingSlab(slab);
     setFormState({
+      period_type: slab.period_type || "Monthly",
       min_customers: slab.min_customers ?? "",
       max_customers: slab.max_customers ?? "",
       incentive_amount: slab.incentive_amount ?? "",
@@ -324,6 +330,7 @@ export default function IncentiveSlabPage() {
     if (readOnly) return;
 
     const payload = {
+      period_type: formState.period_type || "Monthly",
       min_customers: Number(formState.min_customers) || 0,
       max_customers: formState.max_customers === "" ? null : Number(formState.max_customers),
       incentive_amount: Number(formState.incentive_amount) || 0,
@@ -431,18 +438,41 @@ export default function IncentiveSlabPage() {
         </div>
       </div>
 
-      {/* INFO BANNER */}
-      <div className="rounded-xl border border-primary-100 bg-primary-50/60 px-4 py-3 text-xs text-primary-800 dark:border-primary-500/20 dark:bg-primary-500/[0.06] dark:text-primary-300">
-        These slabs power the older{" "}
-        <span className="font-semibold">Incentive Payouts</span> screen only —
-        a flat amount paid once an employee's monthly registrations exceed
-        their target by the slab's range. The main{" "}
-        <span className="font-semibold">CRM Incentives</span> screen uses a
-        different, newer rule instead: Weekly/Monthly/Quarterly targets of
-        10/40/120, gated by a minimum of 10 registrations and each membership
-        plan's eligibility share (Silver 50% · Gold 30% · Diamond 20% of
-        target), paying 6% of that plan's price per registration past the
-        period target — configured via Membership Plans, not here.
+      {/* INFO BANNER — admin only, not shown on the CRM employee's view-only screen */}
+      {!readOnly && (
+        <div className="rounded-xl border border-primary-100 bg-primary-50/60 px-4 py-3 text-xs text-primary-800 dark:border-primary-500/20 dark:bg-primary-500/[0.06] dark:text-primary-300">
+          These slabs power the older{" "}
+          <span className="font-semibold">Incentive Payouts</span> screen only —
+          a flat amount paid once an employee's registrations exceed their
+          target by the slab's range. The main{" "}
+          <span className="font-semibold">CRM Incentives</span> screen uses a
+          different, newer rule instead: Weekly/Monthly/Quarterly targets of
+          10/40/120, gated by a minimum of 10 registrations and each membership
+          plan's eligibility share (Silver 50% · Gold 30% · Diamond 20% of
+          target), paying 6% of that plan's price per registration past the
+          period target — configured via Membership Plans, not here.
+        </div>
+      )}
+
+      {/* PERIOD TYPE TABS */}
+      <div className="flex w-fit items-center rounded-lg bg-slate-100 p-1 dark:bg-white/[0.06]">
+        {PERIOD_TYPES.map((period) => (
+          <button
+            key={period}
+            type="button"
+            onClick={() => {
+              setPeriodFilter(period);
+              setPage(1);
+            }}
+            className={`rounded-md px-3 py-1.5 text-xs font-medium transition ${
+              periodFilter === period
+                ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
+                : "text-slate-500 hover:text-slate-700 dark:text-slate-400"
+            }`}
+          >
+            {period}
+          </button>
+        ))}
       </div>
 
       {/* STATS */}
@@ -795,6 +825,23 @@ export default function IncentiveSlabPage() {
             </div>
 
             <form onSubmit={handleFormSubmit} className="space-y-3">
+              <div>
+                <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">
+                  Period Type
+                </label>
+                <select
+                  value={formState.period_type}
+                  onChange={(e) => setFormState((s) => ({ ...s, period_type: e.target.value }))}
+                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
+                >
+                  {PERIOD_TYPES.map((p) => (
+                    <option key={p} value={p}>
+                      {p}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               <div>
                 <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">
                   Min Extra Customers

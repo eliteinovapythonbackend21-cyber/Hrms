@@ -9,8 +9,9 @@ from utils import fetch_or_404, get_current_user, is_admin, register_crud_bluepr
 incentive_slabs_bp = register_crud_blueprint(
     "incentive_slabs_bp",
     IncentiveSlab,
-    create_fields=["min_customers", "max_customers", "incentive_amount", "is_active"],
+    create_fields=["period_type", "min_customers", "max_customers", "incentive_amount", "is_active"],
     search_fields=[],
+    filter_fields=["period_type"],
     url_prefix_singular="",          # CHANGED from "incentive-slabs"
     editable=True,
     deletable=False,

@@ -2584,9 +2584,22 @@ class Meeting(TimestampMixin, db.Model):
 
 
 class IncentiveSlab(TimestampMixin, db.Model):
+    """Legacy flat-amount slab used only by EmployeeIncentive.calculate_for_period
+    (the older /employee-incentives "Incentive Payouts" screen) — unrelated to
+    the newer CRM Incentives engine (incentive_engine.py), which computes 6%
+    of a MembershipPlan's rate per qualifying registration instead of a fixed
+    slab amount. `period_type` groups slabs into the three ranges an admin
+    manages on the Incentive Slabs screen (Weekly 0-10/11+, Monthly 0-40/41+,
+    Quarterly 0-120/121+) — kept for display/legacy-payout parity with the
+    new engine's period targets, even though only "Monthly" slabs are
+    actually consulted by calculate_for_period today."""
+
     __tablename__ = "incentive_slabs"
 
+    PERIOD_TYPES = ("Weekly", "Monthly", "Quarterly")
+
     id = db.Column(db.Integer, primary_key=True)
+    period_type = db.Column(db.String(20), nullable=False, default="Monthly")
     min_customers = db.Column(db.Integer, nullable=False)
     max_customers = db.Column(db.Integer, nullable=True)  # NULL = no upper bound
     incentive_amount = db.Column(db.Numeric(12, 2), nullable=False)
@@ -2676,7 +2689,10 @@ class EmployeeIncentive(TimestampMixin, db.Model):
         period_start = date(year, month, 1)
         period_end = date(year, month, days_in_month)
 
-        slabs = IncentiveSlab.query.filter(IncentiveSlab.is_active == True).order_by(
+        slabs = IncentiveSlab.query.filter(
+            IncentiveSlab.is_active == True,
+            IncentiveSlab.period_type == "Monthly",
+        ).order_by(
             IncentiveSlab.min_customers
         ).all()
 
