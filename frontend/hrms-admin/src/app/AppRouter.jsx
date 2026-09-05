@@ -47,6 +47,7 @@ import DepartmentListPage from "@/features/master/departments/DepartmentListPage
 import DesignationListPage from "@/features/master/designations/DesignationListPage";
 import LeaveTypeListPage from "@/features/leaveTypes/LeaveTypeListPage";
 import HolidayListPage from "@/features/holidays/HolidayListPage";
+import HolidayCalendarPage from "@/features/holidays/HolidayCalendarPage";
 // import ComingSoonPage from "@/features/master/ComingSoonPage";
 
 // Network
@@ -154,6 +155,7 @@ export default function AppRouter() {
         <Route path="/master/employees" element={<RoleGuard><EmployeeListPage /></RoleGuard>} />
         <Route path="/leave-types" element={<RoleGuard><LeaveTypeListPage /></RoleGuard>} />
         <Route path="/holidays" element={<RoleGuard><HolidayListPage /></RoleGuard>} />
+        <Route path="/holidays/calendar" element={<RoleGuard><HolidayCalendarPage /></RoleGuard>} />
         <Route path="/my-calendar" element={<RoleGuard><MyCalendarPage /></RoleGuard>} />
 
         {/* HR — users filtered by HR sub-role */}

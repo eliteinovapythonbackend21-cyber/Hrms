@@ -95,6 +95,12 @@ export const navConfig = [
     roles: ["admin", "finance", ...HR_SUB_ROLES],
     children: [
       {
+        label: "Calendar",
+        path: "/holidays/calendar",
+        icon: "holiday",
+        roles: ["admin", "finance", ...HR_SUB_ROLES],
+      },
+      {
         label: "Holidays",
         path: "/holidays",
         icon: "holiday",
