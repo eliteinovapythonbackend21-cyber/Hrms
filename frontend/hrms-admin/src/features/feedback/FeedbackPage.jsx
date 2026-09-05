@@ -103,10 +103,15 @@ const REASONS_BY_CATEGORY_FALLBACK = {
   "Personal Problems": [
     "Health / Medical Issue",
     "Family Emergency",
-    "Personal Financial Issue",
+    "Personal Leave Request Issue",
     "Work-Life Balance Concern",
-    "Interpersonal / Team Issue",
-    "Other Personal Problem",
+    "Stress / Mental Health Concern",
+    "Financial Difficulty",
+    "Relocation / Commute Issue",
+    "Harassment / Workplace Conduct Concern",
+    "Interpersonal / Team Conflict",
+    "Career Growth Concern",
+    "Other Personal Issue",
   ],
   Other: ["General Query", "Suggestion / Feedback", "Miscellaneous"],
 };
