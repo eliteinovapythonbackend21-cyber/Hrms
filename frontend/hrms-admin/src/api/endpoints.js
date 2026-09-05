@@ -17,6 +17,7 @@ export const API = {
     CREATE: "/feedback/",
     GET: (id) => `/feedback/${id}`,
     UPDATE: (id) => `/feedback/${id}`,
+    CATEGORIES: "/feedback/categories",
   },
   USERS: {
     LIST: "/users/",

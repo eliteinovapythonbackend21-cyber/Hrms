@@ -21,23 +21,58 @@ feedback_bp = Blueprint("feedback_bp", __name__)
 
 
 # ============================================================================
-# TOP-LEVEL BUG CATEGORIES — sent/received as `category`
+# TOP-LEVEL TICKET CATEGORIES — sent/received as `category`
 # ============================================================================
 
 CATEGORY_OPTIONS = [
-    "Feature Bug",
-    "Internal Bug",
-    "Other Bugs/Issues",
+    "Official Issues",
+    "New Feature Issues",
+    "Hrms Issues",
+    "Personal Problems",
+    "Other",
 ]
 
 
 # ============================================================================
 # DETAILED TICKET REASONS — sent/received as `reason`
 #
-# Shown in the "Support Ticket Reason" dropdown on the Add Ticket form.
+# Shown in the "Support Ticket Reason" dropdown on the Add Ticket form,
+# scoped to whichever `category` is currently selected — each category
+# has its own reason list below. "Hrms Issues" keeps the original,
+# already-correct HRMS reason list; the other four are new.
 # ============================================================================
 
-REASON_OPTIONS = [
+OFFICIAL_ISSUES_REASONS = [
+    "Office Infrastructure Issue",
+    "Seating / Workstation Issue",
+    "Internet / Network Connectivity Issue",
+    "Laptop / Desktop Hardware Issue",
+    "Software / Application Access Issue",
+    "Email / Communication Issue",
+    "ID Card / Access Card Issue",
+    "Parking / Facility Issue",
+    "Meeting Room Booking Issue",
+    "Travel / Conveyance Issue",
+    "Vendor / Client Coordination Issue",
+    "Documentation / Approval Issue",
+    "Other Official Issue",
+]
+
+NEW_FEATURE_ISSUES_REASONS = [
+    "New Feature Request",
+    "Feature Enhancement Request",
+    "UI / UX Improvement Suggestion",
+    "New Module Request",
+    "Report / Dashboard Enhancement Request",
+    "Automation Request",
+    "Integration Request",
+    "Mobile App Feature Request",
+    "Workflow Improvement Request",
+    "Other Feature Request",
+]
+
+# Original HRMS reason list — kept exactly as-is (confirmed correct).
+HRMS_ISSUES_REASONS = [
     "Login / Password Issue",
     "Account Locked / Access Issue",
     "Employee Profile Update",
@@ -82,6 +117,48 @@ REASON_OPTIONS = [
     "HR Policy / Process Clarification",
     "General HRMS Query",
     "Other / Miscellaneous",
+]
+
+PERSONAL_PROBLEMS_REASONS = [
+    "Health / Medical Issue",
+    "Family Emergency",
+    "Personal Leave Request Issue",
+    "Work-Life Balance Concern",
+    "Stress / Mental Health Concern",
+    "Financial Difficulty",
+    "Relocation / Commute Issue",
+    "Harassment / Workplace Conduct Concern",
+    "Interpersonal / Team Conflict",
+    "Career Growth Concern",
+    "Other Personal Issue",
+]
+
+OTHER_REASONS = [
+    "General Query",
+    "Suggestion / Feedback",
+    "Complaint",
+    "Miscellaneous Request",
+    "Not Listed Above",
+]
+
+# category -> its own reason list. Every category in CATEGORY_OPTIONS
+# must have an entry here — list_feedback_categories is the single
+# source the frontend renders the reason dropdown from.
+REASONS_BY_CATEGORY = {
+    "Official Issues": OFFICIAL_ISSUES_REASONS,
+    "New Feature Issues": NEW_FEATURE_ISSUES_REASONS,
+    "Hrms Issues": HRMS_ISSUES_REASONS,
+    "Personal Problems": PERSONAL_PROBLEMS_REASONS,
+    "Other": OTHER_REASONS,
+}
+
+# Flat union of every reason across every category — kept for
+# FeedbackTicket.SUBCATEGORIES / any consumer that just wants "is this a
+# known reason at all" without caring which category it belongs to.
+REASON_OPTIONS = [
+    reason
+    for reasons in REASONS_BY_CATEGORY.values()
+    for reason in reasons
 ]
 
 
@@ -177,15 +254,24 @@ def _add_history(
 
 
 def _validate_category(category):
-    """Validate against the top-level bug categories."""
+    """Validate against the top-level ticket categories."""
 
     return category in CATEGORY_OPTIONS
 
 
-def _validate_reason(reason):
-    """Validate against the detailed ticket reasons."""
+def _reasons_for(category):
+    """The reason list scoped to one category — empty list for an
+    unrecognized category rather than raising."""
 
-    return reason in REASON_OPTIONS
+    return REASONS_BY_CATEGORY.get(category, [])
+
+
+def _validate_reason(category, reason):
+    """A reason is only valid for the category it was submitted under —
+    e.g. an "Hrms Issues" reason can't be attached to a "Personal
+    Problems" ticket."""
+
+    return reason in _reasons_for(category)
 
 
 def _parse_bool(value):
@@ -295,7 +381,13 @@ def list_feedback_categories(token_response):
         "message": "Support ticket categories fetched",
         "data": {
             "categories": CATEGORY_OPTIONS,
+            # Flat union — kept for any consumer that doesn't care which
+            # category a reason belongs to.
             "reasons": REASON_OPTIONS,
+            # category -> its own reason list, so the frontend's "Support
+            # Ticket Reason" dropdown can update live when the category
+            # changes.
+            "reasons_by_category": REASONS_BY_CATEGORY,
             "statuses": STATUS_OPTIONS,
         },
         "token_response": token_response,
@@ -380,11 +472,13 @@ def create_feedback(token_response):
     # CATEGORY VALIDATION
     # ------------------------------------------------------------------------
     #
-    # The Add Ticket form sends the top-level bug type as `category`:
+    # The Add Ticket form sends the top-level type as `category`:
     #
-    #   Feature Bug
-    #   Internal Bug
-    #   Other Bugs/Issues
+    #   Official Issues
+    #   New Feature Issues
+    #   Hrms Issues
+    #   Personal Problems
+    #   Other
     # ------------------------------------------------------------------------
 
     if not _validate_category(category):
@@ -399,15 +493,16 @@ def create_feedback(token_response):
     # REASON VALIDATION
     # ------------------------------------------------------------------------
     #
-    # The Add Ticket form sends the detailed reason as `reason`
-    # (e.g. "Attendance Issue", "Payroll / Salary Issue").
+    # The Add Ticket form sends the detailed reason as `reason`, scoped
+    # to whichever category was selected (e.g. "Hrms Issues" ->
+    # "Attendance Issue" / "Payroll / Salary Issue").
     # ------------------------------------------------------------------------
 
-    if not _validate_reason(reason):
+    if not _validate_reason(category, reason):
         return jsonify({
             "message": (
-                "reason must be one of: "
-                + ", ".join(REASON_OPTIONS)
+                f"reason must be one of: "
+                + ", ".join(_reasons_for(category))
             )
         }), 400
 
@@ -591,6 +686,16 @@ def update_feedback(ticket_id, token_response):
                 )
             }), 400
 
+        # The reason is only meaningful in the context of a category, so
+        # figure out the EFFECTIVE category first (the one being switched
+        # to, if `category` is in this request; otherwise the ticket's
+        # existing one) — then validate `reason` (whether newly submitted
+        # or the ticket's existing one) against that category's list.
+        # This catches both "changed category but left a now-mismatched
+        # reason behind" and "changed reason without re-checking it still
+        # belongs to the current category".
+        effective_category = ticket.category
+
         if "category" in data:
             category = (
                 data.get("category") or ""
@@ -604,6 +709,8 @@ def update_feedback(ticket_id, token_response):
                     )
                 }), 400
 
+            effective_category = category
+
             if ticket.category != category:
                 ticket.category = category
                 history_parts.append(
@@ -615,11 +722,11 @@ def update_feedback(ticket_id, token_response):
                 data.get("reason") or ""
             ).strip()
 
-            if not _validate_reason(reason):
+            if not _validate_reason(effective_category, reason):
                 return jsonify({
                     "message": (
                         "reason must be one of: "
-                        + ", ".join(REASON_OPTIONS)
+                        + ", ".join(_reasons_for(effective_category))
                     )
                 }), 400
 
@@ -628,6 +735,17 @@ def update_feedback(ticket_id, token_response):
                 history_parts.append(
                     f"Reason changed to '{reason}'."
                 )
+        elif "category" in data and ticket.subcategory not in _reasons_for(
+            effective_category
+        ):
+            return jsonify({
+                "message": (
+                    "The ticket's current reason doesn't belong to the "
+                    "new category — please also choose a new "
+                    "'reason' that matches: "
+                    + ", ".join(_reasons_for(effective_category))
+                )
+            }), 400
 
         if "purpose" in data:
             purpose = (

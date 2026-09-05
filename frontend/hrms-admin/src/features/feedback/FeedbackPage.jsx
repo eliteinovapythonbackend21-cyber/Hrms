@@ -8,6 +8,7 @@ import { useToast } from "@/components/feedback/Toast";
 
 import {
   useFeedbackTickets,
+  useFeedbackCategories,
   useCreateFeedbackTicket,
   useUpdateFeedbackTicket,
   useDeactivateFeedbackTicket,
@@ -20,71 +21,95 @@ import { formatDateTime } from "@/utils/formatDate";
 import { useMyEmployee } from "@/hooks/useMyEmployee";
 
 /* =========================================================
-   TOP-LEVEL BUG CATEGORIES
+   TOP-LEVEL TICKET CATEGORIES + PER-CATEGORY REASONS
 
-   Sent to the API as `category`. Validated server-side against
-   feedback_routes.py's CATEGORY_OPTIONS (must stay in sync).
+   These are only FALLBACKS shown for the instant before
+   useFeedbackCategories() resolves — the real, authoritative
+   lists come live from GET /feedback/categories
+   (feedback.py's CATEGORY_OPTIONS / REASONS_BY_CATEGORY), so
+   changing the reasons for a category only needs a backend edit.
 ========================================================= */
 
 const MAIN_CATEGORY_OPTIONS = [
-  "Feature Bug",
-  "Internal Bug",
-  "Other Bugs/Issues",
+  "Official Issues",
+  "New Feature Issues",
+  "Hrms Issues",
+  "Personal Problems",
+  "Other",
 ];
 
-/* =========================================================
-   DETAILED TICKET REASONS
-
-   Sent to the API as `reason`. Validated server-side against
-   feedback_routes.py's REASON_OPTIONS (must stay in sync).
-========================================================= */
-
-const REASON_OPTIONS = [
-  "Login / Password Issue",
-  "Account Locked / Access Issue",
-  "Employee Profile Update",
-  "Employee Master Data Correction",
-  "New Employee Creation",
-  "Employee Exit / Deactivation",
-  "Attendance Issue",
-  "Attendance Regularization",
-  "Leave Balance Issue",
-  "Leave Application Issue",
-  "Leave Approval Issue",
-  "Holiday / Calendar Issue",
-  "Shift / Roster Issue",
-  "Work From Home / Remote Work Issue",
-  "Overtime Issue",
-  "Payroll / Salary Issue",
-  "Payslip Issue",
-  "Tax / TDS Issue",
-  "Reimbursement Issue",
-  "Expense Claim Issue",
-  "Loan / Advance Issue",
-  "Bank Account / Payment Details Update",
-  "Benefits / Insurance Issue",
-  "Performance Management Issue",
-  "Appraisal / Rating Issue",
-  "Training / Learning Issue",
-  "Recruitment / Hiring Issue",
-  "Onboarding Issue",
-  "Employee Documents Issue",
-  "HR Letter / Certificate Request",
-  "Organization / Department Change",
-  "Manager / Reporting Structure Change",
-  "Transfer / Location Change",
-  "Notification / Email Issue",
-  "Mobile App Issue",
-  "HRMS System Error",
-  "Data / Report Issue",
-  "Integration Issue",
-  "Approval Workflow Issue",
-  "Permission / Role Access Request",
-  "Feature / Configuration Request",
-  "HR Policy / Process Clarification",
-  "General HRMS Query",
-  "Other / Miscellaneous",
-];
+const REASONS_BY_CATEGORY_FALLBACK = {
+  "Official Issues": [
+    "Office Timing Issue",
+    "Workplace Conduct Issue",
+    "Attendance Policy Query",
+    "Leave Policy Query",
+    "Office Equipment / Facility Issue",
+    "Other Official Issue",
+  ],
+  "New Feature Issues": [
+    "New Feature Request",
+    "Feature Enhancement Suggestion",
+    "UI/UX Improvement Suggestion",
+    "Report / Export Feature Request",
+    "Other Feature Request",
+  ],
+  "Hrms Issues": [
+    "Login / Password Issue",
+    "Account Locked / Access Issue",
+    "Employee Profile Update",
+    "Employee Master Data Correction",
+    "New Employee Creation",
+    "Employee Exit / Deactivation",
+    "Attendance Issue",
+    "Attendance Regularization",
+    "Leave Balance Issue",
+    "Leave Application Issue",
+    "Leave Approval Issue",
+    "Holiday / Calendar Issue",
+    "Shift / Roster Issue",
+    "Work From Home / Remote Work Issue",
+    "Overtime Issue",
+    "Payroll / Salary Issue",
+    "Payslip Issue",
+    "Tax / TDS Issue",
+    "Reimbursement Issue",
+    "Expense Claim Issue",
+    "Loan / Advance Issue",
+    "Bank Account / Payment Details Update",
+    "Benefits / Insurance Issue",
+    "Performance Management Issue",
+    "Appraisal / Rating Issue",
+    "Training / Learning Issue",
+    "Recruitment / Hiring Issue",
+    "Onboarding Issue",
+    "Employee Documents Issue",
+    "HR Letter / Certificate Request",
+    "Organization / Department Change",
+    "Manager / Reporting Structure Change",
+    "Transfer / Location Change",
+    "Notification / Email Issue",
+    "Mobile App Issue",
+    "HRMS System Error",
+    "Data / Report Issue",
+    "Integration Issue",
+    "Approval Workflow Issue",
+    "Permission / Role Access Request",
+    "Feature / Configuration Request",
+    "HR Policy / Process Clarification",
+    "General HRMS Query",
+    "Other / Miscellaneous",
+  ],
+  "Personal Problems": [
+    "Health / Medical Issue",
+    "Family Emergency",
+    "Personal Financial Issue",
+    "Work-Life Balance Concern",
+    "Interpersonal / Team Issue",
+    "Other Personal Problem",
+  ],
+  Other: ["General Query", "Suggestion / Feedback", "Miscellaneous"],
+};
 
 const STATUS_OPTIONS = ["Open", "In Progress", "Resolved"];
 
@@ -297,15 +322,23 @@ function FieldLabel({ children, required = false }) {
 function AddTicketModal({ open, onClose, onCreated }) {
   const { showToast } = useToast();
   const createTicket = useCreateFeedbackTicket();
+  const { data: categoryData } = useFeedbackCategories();
   const user = getUser();
   const { employee } = useMyEmployee();
 
   const employeeCode = employee?.employee_code || "";
-  const employeeId = employee?.id || "";
   const employeeName =
     [employee?.first_name, employee?.last_name].filter(Boolean).join(" ") ||
     user?.username ||
     "";
+  const companyName = employee?.department?.company?.name || "";
+  const branchName = employee?.department?.branch?.name || "";
+  const departmentName = employee?.department?.department_name || "";
+  const designationName = employee?.designation?.designation_name || "";
+
+  const categoryOptions = categoryData?.categories || MAIN_CATEGORY_OPTIONS;
+  const reasonsByCategory =
+    categoryData?.reasons_by_category || REASONS_BY_CATEGORY_FALLBACK;
 
   const [category, setCategory] = useState("");
   const [reason, setReason] = useState("");
@@ -314,6 +347,13 @@ function AddTicketModal({ open, onClose, onCreated }) {
   const [screenshot, setScreenshot] = useState(null);
   const [preview, setPreview] = useState(null);
   const [previewOpen, setPreviewOpen] = useState(false);
+
+  const reasonOptions = reasonsByCategory[category] || [];
+
+  const handleCategoryChange = (value) => {
+    setCategory(value);
+    setReason("");
+  };
 
   const resetForm = () => {
     setCategory("");
@@ -373,7 +413,6 @@ function AddTicketModal({ open, onClose, onCreated }) {
     try {
       const payload = {
         employee: employeeCode,
-        employee_id: employeeId,
         name: employeeName,
         category,
         reason,
@@ -421,18 +460,9 @@ function AddTicketModal({ open, onClose, onCreated }) {
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <div>
-              <FieldLabel>Employee</FieldLabel>
-              <input
-                value={employeeCode || "Not Available"}
-                readOnly
-                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-500 outline-none dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-400"
-              />
-            </div>
-
-            <div>
               <FieldLabel>Employee ID</FieldLabel>
               <input
-                value={employeeId || "Not Available"}
+                value={employeeCode || "Not Available"}
                 readOnly
                 className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-500 outline-none dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-400"
               />
@@ -446,6 +476,42 @@ function AddTicketModal({ open, onClose, onCreated }) {
                 className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-500 outline-none dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-400"
               />
             </div>
+
+            <div>
+              <FieldLabel>Company</FieldLabel>
+              <input
+                value={companyName || "Not Available"}
+                readOnly
+                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-500 outline-none dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-400"
+              />
+            </div>
+
+            <div>
+              <FieldLabel>Branch</FieldLabel>
+              <input
+                value={branchName || "Not Available"}
+                readOnly
+                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-500 outline-none dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-400"
+              />
+            </div>
+
+            <div>
+              <FieldLabel>Department</FieldLabel>
+              <input
+                value={departmentName || "Not Available"}
+                readOnly
+                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-500 outline-none dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-400"
+              />
+            </div>
+
+            <div>
+              <FieldLabel>Designation</FieldLabel>
+              <input
+                value={designationName || "Not Available"}
+                readOnly
+                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-500 outline-none dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-400"
+              />
+            </div>
           </div>
         </div>
 
@@ -454,11 +520,11 @@ function AddTicketModal({ open, onClose, onCreated }) {
             <FieldLabel required>Category</FieldLabel>
             <select
               value={category}
-              onChange={(event) => setCategory(event.target.value)}
+              onChange={(event) => handleCategoryChange(event.target.value)}
               className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
             >
               <option value="">Select a category</option>
-              {MAIN_CATEGORY_OPTIONS.map((option) => (
+              {categoryOptions.map((option) => (
                 <option key={option} value={option}>
                   {option}
                 </option>
@@ -471,10 +537,13 @@ function AddTicketModal({ open, onClose, onCreated }) {
             <select
               value={reason}
               onChange={(event) => setReason(event.target.value)}
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
+              disabled={!category}
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 disabled:cursor-not-allowed disabled:bg-slate-50 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
             >
-              <option value="">Select a reason</option>
-              {REASON_OPTIONS.map((option) => (
+              <option value="">
+                {category ? "Select a reason" : "Select a category first"}
+              </option>
+              {reasonOptions.map((option) => (
                 <option key={option} value={option}>
                   {option}
                 </option>
@@ -627,11 +696,28 @@ function AddTicketModal({ open, onClose, onCreated }) {
 function EditTicketModal({ ticket, open, onClose }) {
   const { showToast } = useToast();
   const updateTicket = useUpdateFeedbackTicket();
+  const { data: categoryData } = useFeedbackCategories();
+
+  const categoryOptions = categoryData?.categories || MAIN_CATEGORY_OPTIONS;
+  const reasonsByCategory =
+    categoryData?.reasons_by_category || REASONS_BY_CATEGORY_FALLBACK;
 
   const [category, setCategory] = useState(ticket?.category || "");
   const [reason, setReason] = useState(ticket?.subcategory || "");
   const [purpose, setPurpose] = useState(ticket?.purpose || "");
   const [description, setDescription] = useState(ticket?.description || "");
+
+  const reasonOptions = reasonsByCategory[category] || [];
+
+  const handleCategoryChange = (value) => {
+    setCategory(value);
+    // Only clear the reason if it doesn't belong to the newly picked
+    // category — keeps the ticket's existing reason selected when the
+    // category hasn't actually changed.
+    setReason((prev) =>
+      (reasonsByCategory[value] || []).includes(prev) ? prev : ""
+    );
+  };
 
   const handleSave = async () => {
     if (!ticket) return;
@@ -692,11 +778,11 @@ function EditTicketModal({ ticket, open, onClose }) {
             <FieldLabel required>Category</FieldLabel>
             <select
               value={category}
-              onChange={(event) => setCategory(event.target.value)}
+              onChange={(event) => handleCategoryChange(event.target.value)}
               className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
             >
               <option value="">Select a category</option>
-              {MAIN_CATEGORY_OPTIONS.map((option) => (
+              {categoryOptions.map((option) => (
                 <option key={option} value={option}>
                   {option}
                 </option>
@@ -709,10 +795,13 @@ function EditTicketModal({ ticket, open, onClose }) {
             <select
               value={reason}
               onChange={(event) => setReason(event.target.value)}
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
+              disabled={!category}
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 disabled:cursor-not-allowed disabled:bg-slate-50 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
             >
-              <option value="">Select a reason</option>
-              {REASON_OPTIONS.map((option) => (
+              <option value="">
+                {category ? "Select a reason" : "Select a category first"}
+              </option>
+              {reasonOptions.map((option) => (
                 <option key={option} value={option}>
                   {option}
                 </option>
