@@ -160,10 +160,13 @@ export const navConfig = [
     children: [
       { label: "Employees", path: "/crm/employees", icon: "employees" },
       { label: "Leads", path: "/crm/leads", icon: "crm" },
-      // Admin manages leads directly here; the Lead Generation Report
-      // (Excel export) now lives under the Admin section instead of CRM —
-      // the Lead Upload screen itself (spreadsheet + photo/OCR) is reserved
-      // for CRM Marketing-designation employees (see CRM_EMPLOYEE_NAV).
+      // Admin can also upload leads directly (spreadsheet or photo/OCR) —
+      // the backend already allows admin here (is_admin OR
+      // is_crm_marketing_user); CRM_EMPLOYEE_NAV additionally surfaces
+      // this same screen to CRM Marketing-designation employees.
+      // The Lead Generation Report (Excel export) lives under the Admin
+      // section instead of here.
+      { label: "Lead Upload", path: "/crm/leads/upload", icon: "crm" },
       { label: "Weekly Lead Report", path: "/crm/leads/weekly", icon: "crm" },
       { label: "Customers", path: "/crm/customers", icon: "crm" },
       { label: "Registeration", path: "/crm/meetings", icon: "crm" },
