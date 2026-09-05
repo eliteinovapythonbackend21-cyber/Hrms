@@ -176,6 +176,13 @@ def upload_leads(token_response):
     if not _allowed_file(file.filename):
         return jsonify({"message": "Only .xlsx files are supported"}), 400
 
+    creator_employee_id = None
+    try:
+        employee = getattr(current_user, "employee", None)
+        creator_employee_id = employee.id if employee else None
+    except Exception:
+        creator_employee_id = None
+
     assigned_to_raw = request.form.get("assigned_to")
     assigned_to = None
     if assigned_to_raw:
@@ -183,6 +190,13 @@ def upload_leads(token_response):
             assigned_to = int(assigned_to_raw)
         except (TypeError, ValueError):
             return jsonify({"message": "Invalid assigned_to value"}), 400
+
+    # A non-admin (CRM Marketing) login can only ever assign leads to
+    # themselves — whatever they submit is overridden, mirroring
+    # meetings.py's _attribute_registration pattern, so the UI-level
+    # restriction to "just their own name" can't be bypassed via the API.
+    if not is_admin(current_user):
+        assigned_to = creator_employee_id
 
     try:
         workbook = load_workbook(file, data_only=True)
@@ -194,13 +208,6 @@ def upload_leads(token_response):
 
     if not rows:
         return jsonify({"message": "The uploaded file has no data rows (only a header, or is empty)"}), 400
-
-    creator_employee_id = None
-    try:
-        employee = getattr(current_user, "employee", None)
-        creator_employee_id = employee.id if employee else None
-    except Exception:
-        creator_employee_id = None
 
     batch = LeadUploadBatch(
         uploaded_by=current_user.id,
@@ -277,6 +284,13 @@ def upload_lead_photo(token_response):
     if not _allowed_image(file.filename):
         return jsonify({"message": "Only .png, .jpg or .jpeg image files are supported"}), 400
 
+    creator_employee_id = None
+    try:
+        employee = getattr(current_user, "employee", None)
+        creator_employee_id = employee.id if employee else None
+    except Exception:
+        creator_employee_id = None
+
     assigned_to_raw = request.form.get("assigned_to")
     assigned_to = None
     if assigned_to_raw:
@@ -284,6 +298,11 @@ def upload_lead_photo(token_response):
             assigned_to = int(assigned_to_raw)
         except (TypeError, ValueError):
             return jsonify({"message": "Invalid assigned_to value"}), 400
+
+    # Same override as upload_leads: a non-admin login can only assign to
+    # themselves, regardless of what's submitted.
+    if not is_admin(current_user):
+        assigned_to = creator_employee_id
 
     try:
         from PIL import Image
@@ -313,13 +332,6 @@ def upload_lead_photo(token_response):
             "message": "Could not identify a lead name in the image — please add it manually",
             "data": {"raw_text": raw_text.strip()},
         }), 422
-
-    creator_employee_id = None
-    try:
-        employee = getattr(current_user, "employee", None)
-        creator_employee_id = employee.id if employee else None
-    except Exception:
-        creator_employee_id = None
 
     batch = LeadUploadBatch(
         uploaded_by=current_user.id,

@@ -249,15 +249,25 @@ export default function LeadUploadPage() {
   const fileInputRef = useRef(null);
   const photoInputRef = useRef(null);
 
-  // A CRM Marketing employee login (role "employee") defaults both
-  // assignee dropdowns to themselves — they're the one uploading, so
-  // leads should land on their own name unless they pick someone else.
-  // Admin logins keep no default, since admin uploads on behalf of
+  // A CRM Marketing employee login (role "employee") can only ever assign
+  // leads to themselves — the backend enforces this too (upload_leads /
+  // upload_lead_photo override whatever assigned_to is submitted for a
+  // non-admin caller), so the dropdown is locked to just their own name
+  // instead of showing the whole CRM directory. Admin logins keep the
+  // full picker with no default, since admin uploads on behalf of
   // whichever employee they choose each time.
   const currentUser = getUser();
-  const ownEmployeeId =
-    currentUser?.role === "employee" ? currentUser?.employee?.id : "";
+  const isEmployeeLogin = currentUser?.role === "employee";
+  const ownEmployeeId = isEmployeeLogin ? currentUser?.employee?.id : "";
   const defaultAssignee = ownEmployeeId ? String(ownEmployeeId) : "";
+  const ownEmployeeLabel = isEmployeeLogin
+    ? [currentUser?.employee?.first_name, currentUser?.employee?.last_name]
+        .filter(Boolean)
+        .join(" ")
+        .trim() ||
+      currentUser?.employee?.employee_code ||
+      `Employee #${ownEmployeeId}`
+    : "";
 
   const [selectedFile, setSelectedFile] = useState(null);
   const [assignedTo, setAssignedTo] = useState(defaultAssignee);
@@ -287,7 +297,12 @@ export default function LeadUploadPage() {
   const uploadLeads = useUploadLeads();
   const uploadLeadPhoto = useUploadLeadPhoto();
   const deactivateLeadUpload = useDeactivateLeadUpload();
-  const employeeOptions = useCRMEmployeeOptions();
+  const crmEmployeeOptions = useCRMEmployeeOptions();
+  // Locked to just "self" for a CRM Marketing employee login — see note
+  // above ownEmployeeId/defaultAssignee.
+  const assigneeOptions = isEmployeeLogin
+    ? [{ value: ownEmployeeId, label: ownEmployeeLabel }]
+    : crmEmployeeOptions;
 
   /* -------------------------------------------------------
      DERIVED
@@ -555,15 +570,16 @@ export default function LeadUploadPage() {
           <div className="flex flex-col justify-between gap-3">
             <div>
               <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">
-                Default Assignee (optional)
+                {isEmployeeLogin ? "Assigned To" : "Default Assignee (optional)"}
               </label>
               <select
                 value={assignedTo}
                 onChange={(event) => setAssignedTo(event.target.value)}
-                className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
+                disabled={isEmployeeLogin}
+                className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white dark:disabled:bg-white/[0.03]"
               >
-                <option value="">No default assignee</option>
-                {employeeOptions.map((employee) => (
+                {!isEmployeeLogin && <option value="">No default assignee</option>}
+                {assigneeOptions.map((employee) => (
                   <option key={employee.value} value={employee.value}>
                     {employee.label}
                   </option>
@@ -654,15 +670,16 @@ export default function LeadUploadPage() {
           <div className="flex flex-col justify-between gap-3">
             <div>
               <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">
-                Assign To (optional)
+                {isEmployeeLogin ? "Assigned To" : "Assign To (optional)"}
               </label>
               <select
                 value={photoAssignedTo}
                 onChange={(event) => setPhotoAssignedTo(event.target.value)}
-                className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
+                disabled={isEmployeeLogin}
+                className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white dark:disabled:bg-white/[0.03]"
               >
-                <option value="">No default assignee</option>
-                {employeeOptions.map((employee) => (
+                {!isEmployeeLogin && <option value="">No default assignee</option>}
+                {assigneeOptions.map((employee) => (
                   <option key={employee.value} value={employee.value}>
                     {employee.label}
                   </option>
