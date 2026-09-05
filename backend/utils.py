@@ -448,6 +448,29 @@ def is_crm_department_user(user):
     return is_crm_employee(employee)
 
 
+def is_crm_marketing_employee(employee):
+    """True for a CRM-department employee whose Designation name contains
+    "Marketing" (e.g. "Marketing Executive") — the only CRM employees who
+    may reach Lead Upload (spreadsheet or photo/OCR). Designation-based,
+    not a separate role/table, so it stays in sync with whatever the
+    Designation master already has."""
+    if not employee or not is_crm_employee(employee):
+        return False
+    designation = getattr(employee, "designation", None)
+    designation_name = (getattr(designation, "designation_name", None) or "").strip().lower()
+    return "marketing" in designation_name
+
+
+def is_crm_marketing_user(user):
+    """Server-side mirror of is_crm_marketing_employee for a plain
+    "employee"-role login — the gate used by the Lead Upload endpoints."""
+    if not user:
+        return False
+    from models import Employee
+    employee = Employee.query.filter_by(user_id=user.id).first()
+    return is_crm_marketing_employee(employee)
+
+
 def ensure_crm_employee(employee_id):
     """Returns (employee, error_response). error_response is a
     (jsonify, status) tuple if employee_id doesn't resolve to an

@@ -15,6 +15,7 @@ export const crmApi = {
     changeStatus: (id, status) => axiosClient.post(C.LEAD_STATUS_CHANGE(id), { status }),
     getAssignmentHistory: (id) => axiosClient.get(C.LEAD_ASSIGNMENT_HISTORY(id)),
     getStatusHistory: (id) => axiosClient.get(C.LEAD_STATUS_HISTORY(id)),
+    report: (params) => axiosClient.get(C.LEADS_REPORT, { params, responseType: "blob" }),
   },
 
   leadUploads: {
@@ -25,6 +26,14 @@ export const crmApi = {
       formData.append("file", file);
       if (assignedTo) formData.append("assigned_to", assignedTo);
       return axiosClient.post(C.LEAD_UPLOADS, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+    },
+    uploadPhoto: (file, assignedTo) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      if (assignedTo) formData.append("assigned_to", assignedTo);
+      return axiosClient.post(C.LEAD_UPLOADS_PHOTO, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
     },

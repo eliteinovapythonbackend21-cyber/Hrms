@@ -6,7 +6,7 @@ import TableToolbar from "@/components/table/TableToolbar";
 
 import { useToast } from "@/components/feedback/Toast";
 
-import { useLeadUploads, useUploadLeads } from "./useLeadUpload";
+import { useLeadUploads, useUploadLeads, useUploadLeadPhoto } from "./useLeadUpload";
 
 import { useCRMEmployeeOptions } from "@/hooks/useLookupOptions";
 
@@ -237,10 +237,16 @@ function BatchDetailsCard({ batch }) {
 export default function LeadUploadPage() {
   const { showToast } = useToast();
   const fileInputRef = useRef(null);
+  const photoInputRef = useRef(null);
 
   const [selectedFile, setSelectedFile] = useState(null);
   const [assignedTo, setAssignedTo] = useState("");
   const [isDragging, setIsDragging] = useState(false);
+
+  const [selectedPhoto, setSelectedPhoto] = useState(null);
+  const [photoAssignedTo, setPhotoAssignedTo] = useState("");
+  const [photoPreview, setPhotoPreview] = useState(null);
+  const [lastExtraction, setLastExtraction] = useState(null);
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -257,6 +263,7 @@ export default function LeadUploadPage() {
   const batches = allData?.items || [];
 
   const uploadLeads = useUploadLeads();
+  const uploadLeadPhoto = useUploadLeadPhoto();
   const employeeOptions = useCRMEmployeeOptions();
 
   /* -------------------------------------------------------
@@ -348,6 +355,57 @@ export default function LeadUploadPage() {
       setAssignedTo("");
     } catch (error) {
       showToast(error?.response?.data?.message || error?.message || "Upload failed", "error");
+    }
+  };
+
+  const handlePhotoChange = (event) => {
+    const file = event.target.files?.[0] || null;
+    setSelectedPhoto(file);
+    setLastExtraction(null);
+    setPhotoPreview(file ? URL.createObjectURL(file) : null);
+  };
+
+  const clearSelectedPhoto = () => {
+    setSelectedPhoto(null);
+    setPhotoPreview(null);
+    if (photoInputRef.current) {
+      photoInputRef.current.value = "";
+    }
+  };
+
+  const handlePhotoUpload = async () => {
+    if (!selectedPhoto) {
+      showToast("Please choose a lead photo to upload", "error");
+      return;
+    }
+
+    try {
+      const result = await uploadLeadPhoto.mutateAsync({
+        file: selectedPhoto,
+        assignedTo: photoAssignedTo || undefined,
+      });
+
+      const extracted = result?.data?.data;
+      setLastExtraction(extracted || null);
+
+      showToast(
+        `Lead extracted: ${extracted?.lead?.lead_name || "unnamed"}${
+          extracted?.lead?.contact_number ? ` · ${extracted.lead.contact_number}` : ""
+        }`,
+        "success"
+      );
+
+      clearSelectedPhoto();
+      setPhotoAssignedTo("");
+    } catch (error) {
+      const extracted = error?.response?.data?.data;
+      if (extracted?.raw_text) {
+        setLastExtraction(extracted);
+      }
+      showToast(
+        error?.response?.data?.message || error?.message || "Photo upload failed",
+        "error"
+      );
     }
   };
 
@@ -476,6 +534,136 @@ export default function LeadUploadPage() {
         <p className="mt-3 text-[11px] text-slate-400">
           Expected columns (row 1 = header): lead_name, contact_number, email, source, status
         </p>
+      </div>
+
+      {/* PHOTO / OCR UPLOAD PANEL */}
+      <div className="rounded-xl border border-slate-200 bg-gradient-to-br from-white to-slate-50/60 p-5 shadow-sm dark:border-white/10 dark:from-primary-500/[0.06] dark:to-white/[0.02]">
+        <div className="mb-3">
+          <h2 className="text-sm font-semibold text-slate-800 dark:text-white">
+            Lead Photo (auto-extract)
+          </h2>
+          <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+            Upload a photo of handwritten/typed lead notes from your gallery — the name and
+            contact number are extracted automatically.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_260px]">
+          <div>
+            <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">
+              Lead Photo
+            </label>
+
+            {selectedPhoto ? (
+              <div className="flex items-center gap-3 rounded-lg border border-primary-200 bg-primary-50 p-3 dark:border-primary-500/30 dark:bg-primary-500/10">
+                {photoPreview && (
+                  <img
+                    src={photoPreview}
+                    alt="Lead preview"
+                    className="h-14 w-14 shrink-0 rounded-lg object-cover ring-1 ring-primary-200 dark:ring-primary-500/30"
+                  />
+                )}
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-slate-800 dark:text-slate-100">
+                    {selectedPhoto.name}
+                  </p>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    {formatFileSize(selectedPhoto.size)}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={clearSelectedPhoto}
+                  title="Remove photo"
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-500 hover:bg-white dark:text-slate-400 dark:hover:bg-slate-800"
+                >
+                  <CloseIcon />
+                </button>
+              </div>
+            ) : (
+              <label className="flex h-24 cursor-pointer flex-col items-center justify-center gap-1.5 rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 text-center transition-colors hover:bg-slate-100 dark:border-slate-600 dark:bg-white/[0.06]/60 dark:hover:bg-slate-800">
+                <UploadIcon />
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  <span className="font-semibold text-primary-600 dark:text-primary-400">
+                    Choose a photo
+                  </span>{" "}
+                  from your gallery
+                </p>
+                <input
+                  ref={photoInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePhotoChange}
+                  className="hidden"
+                />
+              </label>
+            )}
+          </div>
+
+          <div className="flex flex-col justify-between gap-3">
+            <div>
+              <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">
+                Assign To (optional)
+              </label>
+              <select
+                value={photoAssignedTo}
+                onChange={(event) => setPhotoAssignedTo(event.target.value)}
+                className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
+              >
+                <option value="">No default assignee</option>
+                {employeeOptions.map((employee) => (
+                  <option key={employee.value} value={employee.value}>
+                    {employee.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <Button
+              type="button"
+              onClick={handlePhotoUpload}
+              disabled={uploadLeadPhoto.isPending || !selectedPhoto}
+              className="h-10 w-full px-4"
+            >
+              {uploadLeadPhoto.isPending ? "Extracting..." : "Upload & Extract"}
+            </Button>
+          </div>
+        </div>
+
+        {lastExtraction && (
+          <div className="mt-4 rounded-lg border border-slate-200 bg-white p-3 dark:border-white/10 dark:bg-white/[0.04]">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+              Extracted Details
+            </p>
+
+            {lastExtraction.lead ? (
+              <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs">
+                <Badge className="bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300">
+                  {lastExtraction.lead.lead_name}
+                </Badge>
+                {lastExtraction.lead.contact_number && (
+                  <Badge className="bg-slate-100 text-slate-700 dark:bg-white/10 dark:text-slate-300">
+                    {lastExtraction.lead.contact_number}
+                  </Badge>
+                )}
+                <span className="text-slate-400">
+                  — saved as a Lead. Edit it from the Leads screen if anything was misread.
+                </span>
+              </div>
+            ) : (
+              <p className="mt-1 text-xs text-red-500 dark:text-red-400">
+                Couldn't confidently extract a name — nothing was saved. Raw text read from the
+                image is shown below; add the lead manually if needed.
+              </p>
+            )}
+
+            {lastExtraction.raw_text && (
+              <pre className="mt-2 max-h-32 overflow-y-auto whitespace-pre-wrap rounded-md bg-slate-50 p-2 text-[11px] text-slate-600 dark:bg-white/[0.06] dark:text-slate-300">
+                {lastExtraction.raw_text}
+              </pre>
+            )}
+          </div>
+        )}
       </div>
 
       {/* FILTERS */}

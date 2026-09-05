@@ -158,8 +158,11 @@ export const navConfig = [
     roles: ["admin"],
     children: [
       { label: "Employees", path: "/crm/employees", icon: "employees" },
-      { label: "Lead Upload", path: "/crm/leads/upload", icon: "crm" },
       { label: "Leads", path: "/crm/leads", icon: "crm" },
+      // Admin manages leads directly and downloads the Excel report below —
+      // the Lead Upload screen itself (spreadsheet + photo/OCR) is reserved
+      // for CRM Marketing-designation employees (see CRM_EMPLOYEE_NAV).
+      { label: "Lead Generation Report", path: "/crm/leads/report", icon: "crm" },
       { label: "Weekly Lead Report", path: "/crm/leads/weekly", icon: "crm" },
       { label: "Customers", path: "/crm/customers", icon: "crm" },
       { label: "Registeration", path: "/crm/meetings", icon: "crm" },
@@ -247,6 +250,10 @@ export const CRM_EMPLOYEE_NAV = {
   icon: "crm",
   children: [
     { label: "Registeration", path: "/crm/meetings", icon: "crm" },
+    // Only rendered for a CRM Marketing-designation employee — Sidebar.jsx
+    // filters this entry out via useIsCrmMarketingEmployee() for every
+    // other CRM employee.
+    { label: "Lead Upload", path: "/crm/leads/upload", icon: "crm" },
     { label: "Targets", path: "/crm/leads/employees/targets", icon: "employees" },
     // Tier dashboard — tier badge + weekly / monthly / yearly payouts + invoices.
     { label: "Incentives", path: "/crm/incentives", icon: "crm" },

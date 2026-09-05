@@ -59,6 +59,13 @@ export const routePermissions = {
   "/roles": ["admin"],
   "/roles/:id/permissions": ["admin"],
   "/crm/leads": ["admin"],
+  // CRM Marketing-designation employees reach Lead Upload (spreadsheet +
+  // photo/OCR); the backend endpoints re-check the designation themselves,
+  // and the sidebar only ever shows the link to them — this just keeps a
+  // direct URL from being blocked by role alone.
+  "/crm/leads/upload": ["admin", "employee"],
+  // Admin-only Lead Generation Excel report.
+  "/crm/leads/report": ["admin"],
   "/crm/customers/:id": ["admin"],
   "/crm/customers": ["admin"],
   "/crm/follow-ups": ["admin"],

@@ -80,6 +80,7 @@ import InvoiceListPage from "@/features/crm/invoices/InvoiceListPage";
 import PaymentListPage from "@/features/crm/payments/PaymentListPage";
 import SupportTicketListPage from "@/features/crm/support-tickets/SupportTicketListPage";
 import LeadUploadPage from "@/features/crm/leads/LeadUploadPage";
+import LeadGenerationReportPage from "@/features/crm/leads/LeadGenerationReportPage";
 import LeadWeeklySnapshotPage from "@/features/crm/leads/LeadWeeklySnapshotPage";
 import DepartmentHeadcountPage from "@/features/crm/leads/DepartmentHeadcountPage";
 import EmployeeTargetPage from "@/features/crm/leads/EmployeeTargetPage";
@@ -200,6 +201,7 @@ export default function AppRouter() {
         <Route path="/crm/payments" element={<RoleGuard><PaymentListPage /></RoleGuard>} />
         <Route path="/crm/support-tickets" element={<RoleGuard><SupportTicketListPage /></RoleGuard>} />
         <Route path="/crm/leads/upload" element={<RoleGuard><LeadUploadPage /></RoleGuard>} />
+        <Route path="/crm/leads/report" element={<RoleGuard><LeadGenerationReportPage /></RoleGuard>} />
         <Route path="/crm/leads/weekly" element={<RoleGuard><LeadWeeklySnapshotPage /></RoleGuard>} />
         <Route path="/crm/leads/employees/headcount" element={<RoleGuard><DepartmentHeadcountPage /></RoleGuard>} />
         <Route path="/crm/leads/employees/targets" element={<RoleGuard><EmployeeTargetPage /></RoleGuard>} />

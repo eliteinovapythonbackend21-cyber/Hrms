@@ -2295,6 +2295,10 @@ class Lead(TimestampMixin, db.Model):
     email = db.Column(db.String(150))
     source = db.Column(db.String(50))
     status = db.Column(db.String(20), default="New")
+    # Free-text notes — for a photo/OCR-created lead this holds the raw
+    # extracted text so a human can verify/correct anything the OCR
+    # engine misread.
+    notes = db.Column(db.Text, nullable=True)
     assigned_to = db.Column(db.Integer, db.ForeignKey("employees.id"))
     created_by = db.Column(db.Integer, db.ForeignKey("employees.id"))
     upload_batch_id = db.Column(db.Integer, db.ForeignKey("lead_upload_batches.id"), nullable=True)

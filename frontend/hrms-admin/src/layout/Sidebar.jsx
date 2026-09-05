@@ -6,6 +6,7 @@ import { getUser } from "@/utils/tokenHelpers";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useMyEmployee } from "@/hooks/useMyEmployee";
 import { useIsCrmEmployee } from "@/hooks/useIsCrmEmployee";
+import { useIsCrmMarketingEmployee } from "@/hooks/useIsCrmMarketingEmployee";
 import { useIsHrEmployee } from "@/hooks/useIsHrEmployee";
 import { useIsFinanceEmployee } from "@/hooks/useIsFinanceEmployee";
 import { resolveUploadUrl } from "@/utils/fileUrl";
@@ -209,14 +210,26 @@ export default function Sidebar() {
     "Member";
 
   const { isCrmEmployee } = useIsCrmEmployee();
+  const { isCrmMarketingEmployee } = useIsCrmMarketingEmployee();
   const { isHrEmployee } = useIsHrEmployee();
   const { isFinanceEmployee } = useIsFinanceEmployee();
+
+  // "Lead Upload" only ever shows for a CRM Marketing-designation employee
+  // — every other CRM employee gets the rest of CRM_EMPLOYEE_NAV unchanged.
+  const crmEmployeeNav = isCrmEmployee
+    ? {
+        ...CRM_EMPLOYEE_NAV,
+        children: CRM_EMPLOYEE_NAV.children.filter(
+          (child) => child.path !== "/crm/leads/upload" || isCrmMarketingEmployee
+        ),
+      }
+    : null;
 
   const filteredNav = [
     ...navConfig.filter(
       (item) => !item.roles || item.roles.includes(user?.role)
     ),
-    ...(isCrmEmployee ? [CRM_EMPLOYEE_NAV] : []),
+    ...(crmEmployeeNav ? [crmEmployeeNav] : []),
     ...(isHrEmployee ? [HR_EMPLOYEE_NAV] : []),
     ...(isFinanceEmployee ? [FINANCE_EMPLOYEE_NAV] : []),
     ...(!FEEDBACK_NAV.roles || FEEDBACK_NAV.roles.includes(user?.role) ? [FEEDBACK_NAV] : []),

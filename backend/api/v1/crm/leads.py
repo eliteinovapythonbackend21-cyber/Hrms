@@ -4,8 +4,13 @@ Lead -> Customer conversion is a single transactional endpoint
 orphaned Customer without its Lead being marked Converted.
 """
 
-from flask import jsonify, request
+import io
+from datetime import timedelta
+
+from flask import jsonify, request, send_file
 from flask_jwt_extended import jwt_required
+from openpyxl import Workbook
+from openpyxl.utils import get_column_letter
 from sqlalchemy.exc import IntegrityError
 
 from extensions import db
@@ -15,6 +20,7 @@ from utils import (
     handle_integrity_error,
     is_admin,
     get_current_user,
+    parse_date,
     register_crud_blueprint,
     with_token,
     ensure_crm_employee
@@ -31,6 +37,7 @@ leads_bp = register_crud_blueprint(
         "source",
         "status",
         "assigned_to",
+        "notes",
         "is_active",
     ],
     search_fields=[
@@ -334,3 +341,81 @@ def get_lead_status_history(lead_id, token_response):
             "token_response": token_response,
         }
     ), 200
+
+
+@leads_bp.route("/report", methods=["GET"])
+@jwt_required()
+@with_token
+def export_lead_generation_report(token_response):
+    """Admin-only Lead Generation Report (Excel) — CRM Marketing employees
+    can upload leads but never download this, per the access split between
+    the two."""
+    if not is_admin(get_current_user()):
+        return jsonify({"message": "Admin privileges required"}), 403
+
+    from_date = parse_date(request.args.get("from_date"))
+    to_date = parse_date(request.args.get("to_date"))
+
+    query = Lead.query
+    if from_date:
+        query = query.filter(Lead.created_at >= from_date)
+    if to_date:
+        query = query.filter(Lead.created_at < to_date + timedelta(days=1))
+
+    leads = query.order_by(Lead.created_at.desc()).all()
+
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.title = "Lead Generation"
+
+    headers = [
+        "Lead ID",
+        "Lead Name",
+        "Contact Number",
+        "Email",
+        "Source",
+        "Status",
+        "Assigned To",
+        "Created By",
+        "Created At",
+    ]
+    sheet.append(headers)
+
+    for lead in leads:
+        assignee = lead.assignee
+        creator = lead.creator
+        sheet.append([
+            lead.id,
+            lead.lead_name or "-",
+            lead.contact_number or "-",
+            lead.email or "-",
+            lead.source or "-",
+            lead.status or "-",
+            (
+                f"{assignee.first_name or ''} {assignee.last_name or ''}".strip()
+                if assignee
+                else "-"
+            ),
+            (
+                f"{creator.first_name or ''} {creator.last_name or ''}".strip()
+                if creator
+                else "-"
+            ),
+            lead.created_at.isoformat() if lead.created_at else "-",
+        ])
+
+    for column_cells in sheet.columns:
+        values = [str(cell.value) for cell in column_cells if cell.value is not None]
+        max_length = max((len(v) for v in values), default=10)
+        sheet.column_dimensions[get_column_letter(column_cells[0].column)].width = max(14, max_length + 2)
+
+    buffer = io.BytesIO()
+    workbook.save(buffer)
+    buffer.seek(0)
+
+    return send_file(
+        buffer,
+        as_attachment=True,
+        download_name="lead_generation_report.xlsx",
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )

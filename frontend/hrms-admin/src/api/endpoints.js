@@ -142,6 +142,8 @@ export const API = {
     LEAD_CONVERT: (id) => `/leads/${id}/convert`,
     LEAD_UPLOADS: "/lead-uploads/",
     LEAD_UPLOADS_ITEM: (id) => `/lead-uploads/${id}`,
+    LEAD_UPLOADS_PHOTO: "/lead-uploads/photo",
+    LEADS_REPORT: "/leads/report",
     LEAD_ASSIGN: (id) => `/leads/${id}/assign`,
     LEAD_STATUS_CHANGE: (id) => `/leads/${id}/status`,
     LEAD_ASSIGNMENT_HISTORY: (id) => `/leads/${id}/assignment-history`,

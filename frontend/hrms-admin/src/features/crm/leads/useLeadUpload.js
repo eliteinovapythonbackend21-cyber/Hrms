@@ -42,6 +42,24 @@ export function useUploadLeads() {
 }
 
 /* =========================================================
+   PHOTO / OCR UPLOAD
+========================================================= */
+
+export function useUploadLeadPhoto() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ file, assignedTo }) =>
+      api.uploadPhoto(file, assignedTo),
+
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["lead-uploads"] });
+      queryClient.invalidateQueries({ queryKey: ["leads"] });
+    },
+  });
+}
+
+/* =========================================================
    DEACTIVATE
 ========================================================= */
 
