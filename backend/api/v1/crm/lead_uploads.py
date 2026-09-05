@@ -38,7 +38,7 @@ from utils import (
 lead_uploads_bp = Blueprint("lead_uploads_bp", __name__)
 
 ALLOWED_EXTENSIONS = {"xlsx"}
-ALLOWED_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "webp", "heic", "heif"}
+ALLOWED_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg"}
 EXPECTED_COLUMNS = ["lead_name", "contact_number", "email", "source", "status"]
 
 # International-ish phone pattern: an optional "+", then 8-15 digits with
@@ -275,7 +275,7 @@ def upload_lead_photo(token_response):
         return jsonify({"message": "No image provided"}), 400
 
     if not _allowed_image(file.filename):
-        return jsonify({"message": "Only image files (png/jpg/jpeg/webp/heic) are supported"}), 400
+        return jsonify({"message": "Only .png, .jpg or .jpeg image files are supported"}), 400
 
     assigned_to_raw = request.form.get("assigned_to")
     assigned_to = None

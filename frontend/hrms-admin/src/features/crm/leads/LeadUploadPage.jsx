@@ -9,6 +9,7 @@ import { useToast } from "@/components/feedback/Toast";
 import { useLeadUploads, useUploadLeads, useUploadLeadPhoto } from "./useLeadUpload";
 
 import { useCRMEmployeeOptions } from "@/hooks/useLookupOptions";
+import { getUser } from "@/utils/tokenHelpers";
 
 /* =========================================================
    CONSTANTS
@@ -16,6 +17,8 @@ import { useCRMEmployeeOptions } from "@/hooks/useLookupOptions";
 
 const CARD_PAGE_SIZE = 6;
 const TABLE_PAGE_SIZE = 10;
+
+const ALLOWED_IMAGE_TYPES = ["image/png", "image/jpeg"];
 
 const STATUS_BADGE_CLASS = {
   Processing: "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400",
@@ -239,12 +242,22 @@ export default function LeadUploadPage() {
   const fileInputRef = useRef(null);
   const photoInputRef = useRef(null);
 
+  // A CRM Marketing employee login (role "employee") defaults both
+  // assignee dropdowns to themselves — they're the one uploading, so
+  // leads should land on their own name unless they pick someone else.
+  // Admin logins keep no default, since admin uploads on behalf of
+  // whichever employee they choose each time.
+  const currentUser = getUser();
+  const ownEmployeeId =
+    currentUser?.role === "employee" ? currentUser?.employee?.id : "";
+  const defaultAssignee = ownEmployeeId ? String(ownEmployeeId) : "";
+
   const [selectedFile, setSelectedFile] = useState(null);
-  const [assignedTo, setAssignedTo] = useState("");
+  const [assignedTo, setAssignedTo] = useState(defaultAssignee);
   const [isDragging, setIsDragging] = useState(false);
 
   const [selectedPhoto, setSelectedPhoto] = useState(null);
-  const [photoAssignedTo, setPhotoAssignedTo] = useState("");
+  const [photoAssignedTo, setPhotoAssignedTo] = useState(defaultAssignee);
   const [photoPreview, setPhotoPreview] = useState(null);
   const [lastExtraction, setLastExtraction] = useState(null);
 
@@ -352,7 +365,7 @@ export default function LeadUploadPage() {
       showToast(`Uploaded: ${result?.data?.data?.success_count ?? 0} leads created`, "success");
 
       clearSelectedFile();
-      setAssignedTo("");
+      setAssignedTo(defaultAssignee);
     } catch (error) {
       showToast(error?.response?.data?.message || error?.message || "Upload failed", "error");
     }
@@ -360,6 +373,13 @@ export default function LeadUploadPage() {
 
   const handlePhotoChange = (event) => {
     const file = event.target.files?.[0] || null;
+
+    if (file && !ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      showToast("Only .png, .jpg or .jpeg image files are supported", "error");
+      event.target.value = "";
+      return;
+    }
+
     setSelectedPhoto(file);
     setLastExtraction(null);
     setPhotoPreview(file ? URL.createObjectURL(file) : null);
@@ -396,7 +416,7 @@ export default function LeadUploadPage() {
       );
 
       clearSelectedPhoto();
-      setPhotoAssignedTo("");
+      setPhotoAssignedTo(defaultAssignee);
     } catch (error) {
       const extracted = error?.response?.data?.data;
       if (extracted?.raw_text) {
@@ -544,7 +564,7 @@ export default function LeadUploadPage() {
           </h2>
           <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
             Upload a photo of handwritten/typed lead notes from your gallery — the name and
-            contact number are extracted automatically.
+            contact number are extracted automatically. Supported formats: PNG, JPG, JPEG.
           </p>
         </div>
 
@@ -592,7 +612,7 @@ export default function LeadUploadPage() {
                 <input
                   ref={photoInputRef}
                   type="file"
-                  accept="image/*"
+                  accept=".png,.jpg,.jpeg,image/png,image/jpeg"
                   onChange={handlePhotoChange}
                   className="hidden"
                 />
