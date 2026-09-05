@@ -7,7 +7,7 @@ utils.is_crm_marketing_employee):
                                 one Lead per data row.
   POST /lead-uploads/photo   — a single lead photo (multipart field "file",
                                 e.g. a phone-gallery picture of handwritten
-                                notes), OCR'd via pytesseract to extract a
+                                notes), OCR'd via EasyOCR to extract a
                                 name + contact number into ONE Lead, with
                                 the full raw OCR text kept in Lead.notes so
                                 a human can verify/correct anything misread.
@@ -15,6 +15,12 @@ utils.is_crm_marketing_employee):
 Both paths share a LeadUploadBatch row (for the existing upload-history
 list/deactivate UI) and the same per-lead creation helper so the two
 stay in sync.
+
+OCR uses EasyOCR (pure pip install, no separate OS-level binary like
+Tesseract — its model weights download automatically on first use and
+are then cached locally), so this works the same on any machine that
+can `pip install -r requirements.txt`, not just whichever machine had
+a binary manually installed on it.
 """
 
 import re
@@ -58,6 +64,34 @@ def _allowed_file(filename):
 
 def _allowed_image(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_IMAGE_EXTENSIONS
+
+
+# Module-level singleton — loading EasyOCR's model weights takes a few
+# seconds, so it must happen once per process (first request pays that
+# cost; every request after reuses the same in-memory reader), not on
+# every /photo call. English only for now; add language codes here
+# (EasyOCR's ISO 639-2 list) if leads start coming in other languages.
+_easyocr_reader = None
+
+
+def _get_ocr_reader():
+    global _easyocr_reader
+    if _easyocr_reader is None:
+        import sys
+        import easyocr
+
+        # EasyOCR's first-run model download prints a progress bar using a
+        # "█" block character. On Windows, stdout often defaults to the
+        # legacy cp1252 codepage (not UTF-8), which can't encode that
+        # character and crashes the download outright. Force UTF-8 with a
+        # safe fallback so the download always succeeds, on every OS.
+        try:
+            sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        except Exception:
+            pass
+
+        _easyocr_reader = easyocr.Reader(["en"], gpu=False)
+    return _easyocr_reader
 
 
 def _build_lead(
@@ -269,9 +303,9 @@ def upload_leads(token_response):
 @with_token
 def upload_lead_photo(token_response):
     """OCR a single lead photo (phone-gallery picture of handwritten/typed
-    notes) into one Lead. Requires the Tesseract-OCR binary installed on
-    the server in addition to the pytesseract/Pillow pip packages —
-    see requirements.txt."""
+    notes) into one Lead. Uses EasyOCR (see requirements.txt) — a plain
+    pip package, no OS-level binary to install, so this works the same
+    on any machine that installed requirements.txt."""
     current_user = get_current_user()
 
     if not _can_upload_leads(current_user):
@@ -305,20 +339,18 @@ def upload_lead_photo(token_response):
         assigned_to = creator_employee_id
 
     try:
-        from PIL import Image
-        import pytesseract
+        reader = _get_ocr_reader()
     except ImportError:
         return jsonify({
-            "message": (
-                "OCR support is not installed on this server "
-                "(pip install pytesseract Pillow, plus the Tesseract-OCR "
-                "binary itself)."
-            )
+            "message": "OCR support is not installed on this server (pip install easyocr)."
         }), 500
 
     try:
-        image = Image.open(file.stream)
-        raw_text = pytesseract.image_to_string(image)
+        image_bytes = file.read()
+        # detail=0 returns just the recognized strings (no bounding boxes/
+        # confidence scores), which is all _extract_lead_fields needs.
+        lines = reader.readtext(image_bytes, detail=0, paragraph=True)
+        raw_text = "\n".join(lines)
     except Exception as exc:
         return jsonify({"message": f"Could not read text from the image: {exc}"}), 400
 

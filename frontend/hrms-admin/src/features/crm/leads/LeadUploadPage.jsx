@@ -2,6 +2,7 @@ import { useCallback, useMemo, useRef, useState } from "react";
 
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
+import Modal from "@/components/ui/Modal";
 import TableToolbar from "@/components/table/TableToolbar";
 
 import { useToast } from "@/components/feedback/Toast";
@@ -276,6 +277,7 @@ export default function LeadUploadPage() {
   const [selectedPhoto, setSelectedPhoto] = useState(null);
   const [photoAssignedTo, setPhotoAssignedTo] = useState(defaultAssignee);
   const [photoPreview, setPhotoPreview] = useState(null);
+  const [photoPreviewOpen, setPhotoPreviewOpen] = useState(false);
   const [lastExtraction, setLastExtraction] = useState(null);
 
   const [search, setSearch] = useState("");
@@ -418,6 +420,7 @@ export default function LeadUploadPage() {
   const clearSelectedPhoto = () => {
     setSelectedPhoto(null);
     setPhotoPreview(null);
+    setPhotoPreviewOpen(false);
     if (photoInputRef.current) {
       photoInputRef.current.value = "";
     }
@@ -624,11 +627,18 @@ export default function LeadUploadPage() {
             {selectedPhoto ? (
               <div className="flex items-center gap-3 rounded-lg border border-primary-200 bg-primary-50 p-3 dark:border-primary-500/30 dark:bg-primary-500/10">
                 {photoPreview && (
-                  <img
-                    src={photoPreview}
-                    alt="Lead preview"
-                    className="h-14 w-14 shrink-0 rounded-lg object-cover ring-1 ring-primary-200 dark:ring-primary-500/30"
-                  />
+                  <button
+                    type="button"
+                    onClick={() => setPhotoPreviewOpen(true)}
+                    className="shrink-0"
+                    title="Preview photo"
+                  >
+                    <img
+                      src={photoPreview}
+                      alt="Lead preview"
+                      className="h-14 w-14 rounded-lg object-cover ring-1 ring-primary-200 transition hover:opacity-90 dark:ring-primary-500/30"
+                    />
+                  </button>
                 )}
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium text-slate-800 dark:text-slate-100">
@@ -637,6 +647,15 @@ export default function LeadUploadPage() {
                   <p className="text-[11px] text-slate-500 dark:text-slate-400">
                     {formatFileSize(selectedPhoto.size)}
                   </p>
+                  {photoPreview && (
+                    <button
+                      type="button"
+                      onClick={() => setPhotoPreviewOpen(true)}
+                      className="mt-0.5 text-[11px] font-semibold text-primary-600 hover:underline dark:text-primary-400"
+                    >
+                      Preview
+                    </button>
+                  )}
                 </div>
                 <button
                   type="button"
@@ -1019,6 +1038,21 @@ export default function LeadUploadPage() {
         confirmText="Remove"
         loading={deactivateLeadUpload.isPending}
       />
+
+      {photoPreviewOpen && photoPreview && (
+        <Modal
+          open={photoPreviewOpen}
+          onClose={() => setPhotoPreviewOpen(false)}
+          title="Lead Photo Preview"
+          size="lg"
+        >
+          <img
+            src={photoPreview}
+            alt="Lead photo preview"
+            className="max-h-[70vh] w-full rounded-lg object-contain"
+          />
+        </Modal>
+      )}
     </div>
   );
 }

@@ -13,5 +13,4 @@ cloudinary
 reportlab
 requests
 razorpay
-pytesseract
-Pillow
+easyocr
