@@ -7,25 +7,29 @@ utils.is_crm_marketing_employee):
                                 one Lead per data row.
   POST /lead-uploads/photo   — a single lead photo (multipart field "file",
                                 e.g. a phone-gallery picture of handwritten
-                                notes), OCR'd via EasyOCR to extract a
-                                name + contact number into ONE Lead, with
-                                the full raw OCR text kept in Lead.notes so
-                                a human can verify/correct anything misread.
+                                notes), OCR'd via the OCR.space cloud API to
+                                extract a name + contact number into ONE
+                                Lead, with the full raw OCR text kept in
+                                Lead.notes so a human can verify/correct
+                                anything misread.
 
 Both paths share a LeadUploadBatch row (for the existing upload-history
 list/deactivate UI) and the same per-lead creation helper so the two
 stay in sync.
 
-OCR uses EasyOCR (pure pip install, no separate OS-level binary like
-Tesseract — its model weights download automatically on first use and
-are then cached locally), so this works the same on any machine that
-can `pip install -r requirements.txt`, not just whichever machine had
-a binary manually installed on it.
+OCR uses OCR.space's hosted API (https://ocr.space/ocrapi), not a
+self-hosted engine (Tesseract/EasyOCR) — this backend deploys as a
+Vercel serverless function with a 500MB bundle-size limit, and EasyOCR
+alone bundles to ~5.6GB (PyTorch + friends), which fails outright. A
+plain HTTP call via `requests` (already a dependency) keeps the bundle
+tiny and works identically on any host. Requires OCR_SPACE_API_KEY set
+as an environment variable (free key: https://ocr.space/ocrapi/freekey).
 """
 
 import re
 
-from flask import Blueprint, jsonify, request
+import requests
+from flask import Blueprint, current_app, jsonify, request
 from flask_jwt_extended import jwt_required
 from openpyxl import load_workbook
 
@@ -66,32 +70,49 @@ def _allowed_image(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_IMAGE_EXTENSIONS
 
 
-# Module-level singleton — loading EasyOCR's model weights takes a few
-# seconds, so it must happen once per process (first request pays that
-# cost; every request after reuses the same in-memory reader), not on
-# every /photo call. English only for now; add language codes here
-# (EasyOCR's ISO 639-2 list) if leads start coming in other languages.
-_easyocr_reader = None
+OCR_SPACE_ENDPOINT = "https://api.ocr.space/parse/image"
 
 
-def _get_ocr_reader():
-    global _easyocr_reader
-    if _easyocr_reader is None:
-        import sys
-        import easyocr
+class OcrNotConfiguredError(Exception):
+    """Raised when OCR_SPACE_API_KEY isn't set — distinct from a network/
+    API failure so the route can return a clear, actionable message."""
 
-        # EasyOCR's first-run model download prints a progress bar using a
-        # "█" block character. On Windows, stdout often defaults to the
-        # legacy cp1252 codepage (not UTF-8), which can't encode that
-        # character and crashes the download outright. Force UTF-8 with a
-        # safe fallback so the download always succeeds, on every OS.
-        try:
-            sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-        except Exception:
-            pass
 
-        _easyocr_reader = easyocr.Reader(["en"], gpu=False)
-    return _easyocr_reader
+def _run_ocr(image_bytes, filename):
+    """Sends the image to OCR.space's hosted API and returns the raw
+    recognized text. No local model/binary — keeps this backend's
+    deployment bundle tiny (see module docstring for why that matters
+    on Vercel)."""
+    api_key = current_app.config.get("OCR_SPACE_API_KEY")
+    if not api_key:
+        raise OcrNotConfiguredError()
+
+    response = requests.post(
+        OCR_SPACE_ENDPOINT,
+        files={"file": (filename, image_bytes)},
+        data={
+            "apikey": api_key,
+            "language": "eng",
+            "isOverlayRequired": False,
+            "OCREngine": 2,
+        },
+        timeout=30,
+    )
+    response.raise_for_status()
+    payload = response.json()
+
+    if payload.get("IsErroredOnProcessing"):
+        error_message = payload.get("ErrorMessage") or payload.get("ErrorDetails") or "OCR failed"
+        if isinstance(error_message, list):
+            error_message = "; ".join(error_message)
+        raise ValueError(error_message)
+
+    parsed_results = payload.get("ParsedResults") or []
+    return "\n".join(
+        (result.get("ParsedText") or "").strip()
+        for result in parsed_results
+        if result.get("ParsedText")
+    ).strip()
 
 
 def _build_lead(
@@ -339,18 +360,16 @@ def upload_lead_photo(token_response):
         assigned_to = creator_employee_id
 
     try:
-        reader = _get_ocr_reader()
-    except ImportError:
+        raw_text = _run_ocr(file.read(), file.filename)
+    except OcrNotConfiguredError:
         return jsonify({
-            "message": "OCR support is not installed on this server (pip install easyocr)."
+            "message": (
+                "OCR is not configured on this server — set OCR_SPACE_API_KEY "
+                "(free key at https://ocr.space/ocrapi/freekey)."
+            )
         }), 500
-
-    try:
-        image_bytes = file.read()
-        # detail=0 returns just the recognized strings (no bounding boxes/
-        # confidence scores), which is all _extract_lead_fields needs.
-        lines = reader.readtext(image_bytes, detail=0, paragraph=True)
-        raw_text = "\n".join(lines)
+    except requests.RequestException as exc:
+        return jsonify({"message": f"Could not reach the OCR service: {exc}"}), 502
     except Exception as exc:
         return jsonify({"message": f"Could not read text from the image: {exc}"}), 400
 

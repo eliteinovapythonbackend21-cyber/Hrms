@@ -37,3 +37,10 @@ class Config:
     RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET")
     # The RazorpayX current account payouts are debited from.
     RAZORPAY_ACCOUNT_NUMBER = os.getenv("RAZORPAY_ACCOUNT_NUMBER")
+
+    # OCR.space free-tier API key for Lead Upload's photo/OCR endpoint —
+    # get one at https://ocr.space/ocrapi/freekey (no credit card). A
+    # self-hosted OCR engine (Tesseract/EasyOCR) can't run on Vercel's
+    # serverless size limit (500MB; EasyOCR alone bundles to ~5.6GB), so
+    # this calls OCR.space's hosted API instead — near-zero package size.
+    OCR_SPACE_API_KEY = os.getenv("OCR_SPACE_API_KEY")

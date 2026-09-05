@@ -60,6 +60,77 @@ function getInitials(name) {
   return name[0]?.toUpperCase() || "?";
 }
 
+// OCR.space's free tier caps uploads at 1MB — phone camera photos are
+// routinely 3-8MB, so every lead photo is downscaled/re-compressed
+// client-side (via <canvas>, no extra dependency) before it's ever sent
+// anywhere. Re-encodes as JPEG, capping the longest edge at 1600px, then
+// steps quality down until the result fits comfortably under the limit.
+const MAX_PHOTO_DIMENSION = 1600;
+const MAX_PHOTO_BYTES = 900 * 1024; // stay safely under OCR.space's 1MB cap
+
+function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error || new Error("Could not read the file"));
+    reader.readAsDataURL(file);
+  });
+}
+
+function loadImage(src) {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error("Could not load the image"));
+    image.src = src;
+  });
+}
+
+function canvasToBlob(canvas, mimeType, quality) {
+  return new Promise((resolve) => canvas.toBlob(resolve, mimeType, quality));
+}
+
+async function compressImageFile(file) {
+  try {
+    const dataUrl = await readFileAsDataUrl(file);
+    const image = await loadImage(dataUrl);
+
+    let { width, height } = image;
+    if (width > MAX_PHOTO_DIMENSION || height > MAX_PHOTO_DIMENSION) {
+      const scale = MAX_PHOTO_DIMENSION / Math.max(width, height);
+      width = Math.round(width * scale);
+      height = Math.round(height * scale);
+    }
+
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    canvas.getContext("2d").drawImage(image, 0, 0, width, height);
+
+    let quality = 0.9;
+    let blob = await canvasToBlob(canvas, "image/jpeg", quality);
+
+    while (blob && blob.size > MAX_PHOTO_BYTES && quality > 0.3) {
+      quality -= 0.15;
+      blob = await canvasToBlob(canvas, "image/jpeg", quality);
+    }
+
+    if (!blob || blob.size >= file.size) {
+      // Compression didn't actually help (e.g. already a tiny image) —
+      // keep the original rather than risk a worse/garbled result.
+      return file;
+    }
+
+    const compressedName = file.name.replace(/\.[^.]+$/, "") + ".jpg";
+    return new File([blob], compressedName, { type: "image/jpeg", lastModified: Date.now() });
+  } catch {
+    // If anything about compression fails, fall back to the original file
+    // — the upload can still proceed, OCR.space will just reject it if
+    // it's genuinely over the size limit.
+    return file;
+  }
+}
+
 /* =========================================================
    ICONS
 ========================================================= */
@@ -278,6 +349,7 @@ export default function LeadUploadPage() {
   const [photoAssignedTo, setPhotoAssignedTo] = useState(defaultAssignee);
   const [photoPreview, setPhotoPreview] = useState(null);
   const [photoPreviewOpen, setPhotoPreviewOpen] = useState(false);
+  const [compressingPhoto, setCompressingPhoto] = useState(false);
   const [lastExtraction, setLastExtraction] = useState(null);
 
   const [search, setSearch] = useState("");
@@ -403,7 +475,7 @@ export default function LeadUploadPage() {
     }
   };
 
-  const handlePhotoChange = (event) => {
+  const handlePhotoChange = async (event) => {
     const file = event.target.files?.[0] || null;
 
     if (file && !ALLOWED_IMAGE_TYPES.includes(file.type)) {
@@ -412,9 +484,25 @@ export default function LeadUploadPage() {
       return;
     }
 
-    setSelectedPhoto(file);
     setLastExtraction(null);
-    setPhotoPreview(file ? URL.createObjectURL(file) : null);
+
+    if (!file) {
+      setSelectedPhoto(null);
+      setPhotoPreview(null);
+      return;
+    }
+
+    // Phone camera photos routinely land at 3-8MB; OCR.space's free tier
+    // caps uploads at 1MB, so every photo is downscaled/re-compressed
+    // client-side before it's stored as the selected file.
+    setCompressingPhoto(true);
+    try {
+      const processedFile = await compressImageFile(file);
+      setSelectedPhoto(processedFile);
+      setPhotoPreview(URL.createObjectURL(processedFile));
+    } finally {
+      setCompressingPhoto(false);
+    }
   };
 
   const clearSelectedPhoto = () => {
@@ -615,6 +703,7 @@ export default function LeadUploadPage() {
           <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
             Upload a photo of handwritten/typed lead notes from your gallery — the name and
             contact number are extracted automatically. Supported formats: PNG, JPG, JPEG.
+            Large photos are compressed automatically before upload.
           </p>
         </div>
 
@@ -624,7 +713,11 @@ export default function LeadUploadPage() {
               Lead Photo
             </label>
 
-            {selectedPhoto ? (
+            {compressingPhoto ? (
+              <div className="flex h-24 flex-col items-center justify-center gap-1.5 rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 text-center dark:border-slate-600 dark:bg-white/[0.06]/60">
+                <p className="text-xs text-slate-500 dark:text-slate-400">Compressing photo...</p>
+              </div>
+            ) : selectedPhoto ? (
               <div className="flex items-center gap-3 rounded-lg border border-primary-200 bg-primary-50 p-3 dark:border-primary-500/30 dark:bg-primary-500/10">
                 {photoPreview && (
                   <button
@@ -709,7 +802,7 @@ export default function LeadUploadPage() {
             <Button
               type="button"
               onClick={handlePhotoUpload}
-              disabled={uploadLeadPhoto.isPending || !selectedPhoto}
+              disabled={uploadLeadPhoto.isPending || compressingPhoto || !selectedPhoto}
               className="h-10 w-full px-4"
             >
               {uploadLeadPhoto.isPending ? "Extracting..." : "Upload & Extract"}

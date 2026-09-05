@@ -13,4 +13,3 @@ cloudinary
 reportlab
 requests
 razorpay
-easyocr
