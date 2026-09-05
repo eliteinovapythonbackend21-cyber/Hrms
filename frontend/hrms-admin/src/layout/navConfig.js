@@ -34,6 +34,7 @@ export const navConfig = [
       { label: "Resignations", path: "/employee/resignations", icon: "employeeLifecycle" },
       { label: "Performance", path: "/employee/performance", icon: "employeeLifecycle" },
       { label: "Reports", path: "/reports", icon: "reports" },
+      { label: "Lead Generation Report", path: "/crm/leads/report", icon: "crm" },
       { label: "Roles & Permissions", path: "/roles", icon: "roles" },
     ],
   },
@@ -159,10 +160,10 @@ export const navConfig = [
     children: [
       { label: "Employees", path: "/crm/employees", icon: "employees" },
       { label: "Leads", path: "/crm/leads", icon: "crm" },
-      // Admin manages leads directly and downloads the Excel report below —
+      // Admin manages leads directly here; the Lead Generation Report
+      // (Excel export) now lives under the Admin section instead of CRM —
       // the Lead Upload screen itself (spreadsheet + photo/OCR) is reserved
       // for CRM Marketing-designation employees (see CRM_EMPLOYEE_NAV).
-      { label: "Lead Generation Report", path: "/crm/leads/report", icon: "crm" },
       { label: "Weekly Lead Report", path: "/crm/leads/weekly", icon: "crm" },
       { label: "Customers", path: "/crm/customers", icon: "crm" },
       { label: "Registeration", path: "/crm/meetings", icon: "crm" },
