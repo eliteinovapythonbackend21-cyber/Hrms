@@ -113,6 +113,66 @@ function getCustomerDisplayName(
   }`;
 }
 
+function getInitials(name) {
+  if (!name) {
+    return "?";
+  }
+
+  const parts = String(name)
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+
+  if (!parts.length) {
+    return "?";
+  }
+
+  return (
+    parts[0][0] + (parts.length > 1 ? parts[parts.length - 1][0] : "")
+  ).toUpperCase();
+}
+
+function getAssigneeName(ticket) {
+  const assignee = ticket?.assignee;
+
+  if (!assignee) {
+    return null;
+  }
+
+  return (
+    [assignee.first_name, assignee.last_name].filter(Boolean).join(" ") ||
+    assignee.employee_code ||
+    null
+  );
+}
+
+function getTicketAgeLabel(ticket) {
+  if (!ticket?.created_at) {
+    return "-";
+  }
+
+  const created = new Date(ticket.created_at);
+
+  if (Number.isNaN(created.getTime())) {
+    return "-";
+  }
+
+  const days = Math.max(
+    0,
+    Math.floor((Date.now() - created.getTime()) / (1000 * 60 * 60 * 24))
+  );
+
+  if (days === 0) {
+    return "Today";
+  }
+
+  if (days === 1) {
+    return "1 day";
+  }
+
+  return `${days} days`;
+}
+
 function formatDateTime(value) {
   if (!value) {
     return "-";
@@ -178,6 +238,54 @@ function getStatusBadgeClass(
       status
     ] ||
     STATUS_BADGE_CLASS.Open
+  );
+}
+
+const STATUS_ACCENT_CLASS = {
+  Open: "bg-sky-400",
+  "In Progress": "bg-amber-400",
+  Resolved: "bg-emerald-500",
+  Closed: "bg-slate-300 dark:bg-slate-600",
+  Inactive: "bg-slate-300 dark:bg-slate-600",
+};
+
+function getStatusAccentClass(status) {
+  return STATUS_ACCENT_CLASS[status] || STATUS_ACCENT_CLASS.Open;
+}
+
+/* =========================================================
+   INITIALS AVATAR
+========================================================= */
+
+const AVATAR_TONES = [
+  "bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300",
+  "bg-violet-100 text-violet-700 dark:bg-violet-500/15 dark:text-violet-300",
+  "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
+  "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
+  "bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300",
+];
+
+function toneForName(name) {
+  const source = String(name || "?");
+  let hash = 0;
+
+  for (let i = 0; i < source.length; i += 1) {
+    hash = (hash + source.charCodeAt(i)) % AVATAR_TONES.length;
+  }
+
+  return AVATAR_TONES[hash];
+}
+
+function InitialsAvatar({ name, size = "h-8 w-8 text-[11px]" }) {
+  return (
+    <div
+      className={`flex ${size} shrink-0 items-center justify-center rounded-full font-semibold ${toneForName(
+        name
+      )}`}
+      title={name || "Unknown"}
+    >
+      {getInitials(name)}
+    </div>
   );
 }
 
@@ -284,28 +392,6 @@ const CustomerIcon = () => (
   </svg>
 );
 
-const SubjectIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    className="h-3.5 w-3.5 shrink-0 text-slate-400"
-    fill="none"
-    viewBox="0 0 20 20"
-    stroke="currentColor"
-    strokeWidth="1.4"
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      d="M4 4h12v12H4z"
-    />
-
-    <path
-      strokeLinecap="round"
-      d="M6.5 7.5h7M6.5 10h5M6.5 12.5h4"
-    />
-  </svg>
-);
-
 const DescriptionIcon = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -324,28 +410,6 @@ const DescriptionIcon = () => (
     <path
       strokeLinecap="round"
       d="M6.5 7h7M6.5 10h7M6.5 13h5"
-    />
-  </svg>
-);
-
-const StatusIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    className="h-3.5 w-3.5 shrink-0 text-slate-400"
-    fill="none"
-    viewBox="0 0 20 20"
-    stroke="currentColor"
-    strokeWidth="1.4"
-  >
-    <circle
-      cx="10"
-      cy="10"
-      r="6.5"
-    />
-
-    <path
-      strokeLinecap="round"
-      d="M7 10h6"
     />
   </svg>
 );
@@ -576,15 +640,22 @@ function SupportTicketDetailsCard({
   return (
     <div className="w-[380px] max-w-[calc(100vw-32px)] rounded-xl border border-slate-200 border-t-2 border-t-primary-500 bg-white p-4 text-left shadow-xl dark:border-white/10 dark:bg-white/[0.06]">
       <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-            Support Ticket Details
-          </p>
+        <div className="flex min-w-0 flex-1 items-center gap-2.5">
+          <InitialsAvatar
+            name={customerName}
+            size="h-9 w-9 text-xs"
+          />
 
-          <p className="mt-1 break-words text-sm font-semibold text-slate-800 dark:text-white">
-            Ticket #
-            {ticket?.id ?? "-"}
-          </p>
+          <div className="min-w-0">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+              Support Ticket Details
+            </p>
+
+            <p className="mt-1 break-words text-sm font-semibold text-slate-800 dark:text-white">
+              Ticket #
+              {ticket?.id ?? "-"}
+            </p>
+          </div>
         </div>
 
         <Badge
@@ -649,6 +720,36 @@ function SupportTicketDetailsCard({
           <span className="break-words text-right text-xs font-semibold text-slate-700 dark:text-slate-200">
             {ticket?.subject ||
               "-"}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-[105px_minmax(0,1fr)] gap-3">
+          <span className="text-xs text-slate-400">
+            Assigned To
+          </span>
+
+          <span className="break-words text-right text-xs font-medium text-slate-700 dark:text-slate-200">
+            {getAssigneeName(ticket) || "Unassigned"}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-[105px_minmax(0,1fr)] gap-3">
+          <span className="text-xs text-slate-400">
+            Raised By
+          </span>
+
+          <span className="break-words text-right text-xs font-medium text-slate-700 dark:text-slate-200">
+            {ticket?.raised_by_user?.username || "-"}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-[105px_minmax(0,1fr)] gap-3">
+          <span className="text-xs text-slate-400">
+            Age
+          </span>
+
+          <span className="text-right text-xs font-medium text-slate-700 dark:text-slate-200">
+            {getTicketAgeLabel(ticket)}
           </span>
         </div>
 
@@ -1628,36 +1729,48 @@ export default function SupportTicketListPage() {
                   }`}
                 >
                   <div
-                    className={`h-full p-4 pb-12 ${
+                    className={`absolute inset-x-0 top-0 h-1 rounded-t-2xl ${
+                      !isActive
+                        ? "bg-slate-300 dark:bg-slate-600"
+                        : getStatusAccentClass(status)
+                    }`}
+                  />
+
+                  <div
+                    className={`h-full p-4 pt-5 pb-12 ${
                       !isActive
                         ? "opacity-75"
                         : ""
                     }`}
                   >
                     <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <HoverDetailsTrigger
-                          align="left"
-                          panel={
-                            <SupportTicketDetailsCard
-                              ticket={
-                                ticket
-                              }
-                            />
-                          }
-                        >
-                          <p className="max-w-[220px] cursor-pointer truncate text-sm font-semibold text-slate-900 dark:text-white">
-                            {ticket.subject ||
-                              `Ticket #${ticket.id}`}
-                          </p>
-                        </HoverDetailsTrigger>
+                      <div className="flex min-w-0 items-center gap-2.5">
+                        <InitialsAvatar
+                          name={getCustomerDisplayName(ticket)}
+                        />
 
-                        <p className="mt-0.5 text-[10px] text-slate-400">
-                          Ticket #
-                          {
-                            ticket.id
-                          }
-                        </p>
+                        <div className="min-w-0">
+                          <HoverDetailsTrigger
+                            align="left"
+                            panel={
+                              <SupportTicketDetailsCard
+                                ticket={
+                                  ticket
+                                }
+                              />
+                            }
+                          >
+                            <p className="max-w-[180px] cursor-pointer truncate text-sm font-semibold text-slate-900 dark:text-white">
+                              {ticket.subject ||
+                                `Ticket #${ticket.id}`}
+                            </p>
+                          </HoverDetailsTrigger>
+
+                          <p className="mt-0.5 truncate text-[10px] text-slate-400">
+                            Ticket #{ticket.id} ·{" "}
+                            {getTicketAgeLabel(ticket)}
+                          </p>
+                        </div>
                       </div>
 
                       <Badge
@@ -1682,31 +1795,34 @@ export default function SupportTicketListPage() {
                         </span>
                       </div>
 
-                      <div className="flex items-center gap-1.5">
-                        <SubjectIcon />
-
-                        <span className="truncate">
-                          {ticket.subject ||
-                            "-"}
-                        </span>
-                      </div>
-
                       <div className="flex items-start gap-1.5">
                         <DescriptionIcon />
 
-                        <span className="line-clamp-3">
+                        <span className="line-clamp-2">
                           {ticket.description ||
                             "No description added."}
                         </span>
                       </div>
 
                       <div className="flex items-center gap-1.5">
-                        <StatusIcon />
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-3.5 w-3.5 shrink-0 text-slate-400"
+                          fill="none"
+                          viewBox="0 0 20 20"
+                          stroke="currentColor"
+                          strokeWidth="1.4"
+                        >
+                          <circle cx="7" cy="6.5" r="2.3" />
+                          <circle cx="14" cy="6.5" r="2" />
+                          <path
+                            strokeLinecap="round"
+                            d="M3 16c.6-2.4 2-3.6 4-3.6s3.4 1.2 4 3.6M12.5 12.9c1.6.2 2.7 1.3 3.2 3.1"
+                          />
+                        </svg>
 
                         <span className="truncate">
-                          Status:{" "}
-                          {ticket.status ||
-                            "Open"}
+                          {getAssigneeName(ticket) || "Unassigned"}
                         </span>
                       </div>
                     </div>
@@ -1720,8 +1836,22 @@ export default function SupportTicketListPage() {
                           ticket
                         )
                       }
-                      className="bg-white text-xs font-semibold text-slate-600 hover:bg-slate-50 dark:bg-white/[0.04] dark:text-slate-300"
+                      className="flex items-center justify-center gap-1 bg-white text-xs font-semibold text-slate-600 hover:bg-slate-50 dark:bg-white/[0.04] dark:text-slate-300"
                     >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-3.5 w-3.5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M16.862 4.487l1.687-1.688a2.121 2.121 0 013 3l-9.9 9.9-4.137 1.034 1.034-4.137 9.9-9.9z"
+                        />
+                      </svg>
                       Edit
                     </button>
 
@@ -1737,8 +1867,22 @@ export default function SupportTicketListPage() {
                             ticket
                           )
                         }
-                        className="bg-white text-xs font-semibold text-red-500 hover:bg-red-50 disabled:opacity-40 dark:bg-white/[0.04] dark:text-red-400"
+                        className="flex items-center justify-center gap-1 bg-white text-xs font-semibold text-red-500 hover:bg-red-50 disabled:opacity-40 dark:bg-white/[0.04] dark:text-red-400"
                       >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-3.5 w-3.5"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M6 7h12M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m2 0v12a2 2 0 01-2 2H8a2 2 0 01-2-2V7h12z"
+                          />
+                        </svg>
                         Deactivate
                       </button>
                     ) : (
@@ -1753,8 +1897,22 @@ export default function SupportTicketListPage() {
                             ticket
                           )
                         }
-                        className="bg-white text-xs font-semibold text-emerald-600 hover:bg-emerald-50 disabled:opacity-40 dark:bg-white/[0.04] dark:text-emerald-400"
+                        className="flex items-center justify-center gap-1 bg-white text-xs font-semibold text-emerald-600 hover:bg-emerald-50 disabled:opacity-40 dark:bg-white/[0.04] dark:text-emerald-400"
                       >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-3.5 w-3.5"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M4 12a8 8 0 018-8 8.5 8.5 0 017 4M20 4v5h-5M20 12a8 8 0 01-8 8 8.5 8.5 0 017-4M4 20v-5h5"
+                          />
+                        </svg>
                         Reactivate
                       </button>
                     )}
@@ -1766,8 +1924,27 @@ export default function SupportTicketListPage() {
                           ticket
                         )
                       }
-                      className="bg-white text-xs font-semibold text-primary-600 hover:bg-primary-50 dark:bg-white/[0.04] dark:text-primary-400"
+                      className="flex items-center justify-center gap-1 bg-white text-xs font-semibold text-primary-600 hover:bg-primary-50 dark:bg-white/[0.04] dark:text-primary-400"
                     >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-3.5 w-3.5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                        />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M2.5 12S6 5 12 5s9.5 7 9.5 7-3.5 7-9.5 7-9.5-7-9.5-7z"
+                        />
+                      </svg>
                       Details
                     </button>
                   </div>
@@ -1802,7 +1979,15 @@ export default function SupportTicketListPage() {
                 </th>
 
                 <th className="px-4 py-3 font-medium">
+                  Assigned To
+                </th>
+
+                <th className="px-4 py-3 font-medium">
                   Status
+                </th>
+
+                <th className="px-4 py-3 font-medium">
+                  Age
                 </th>
 
                 <th className="px-4 py-3 font-medium">
@@ -1855,18 +2040,27 @@ export default function SupportTicketListPage() {
                       </td>
 
                       <td className="px-4 py-3">
-                        <span className="font-medium text-slate-700 dark:text-slate-200">
-                          {getCustomerDisplayName(
-                            ticket
-                          )}
-                        </span>
+                        <div className="flex items-center gap-2.5">
+                          <InitialsAvatar
+                            name={getCustomerDisplayName(ticket)}
+                            size="h-7 w-7 text-[10px]"
+                          />
 
-                        <p className="mt-0.5 text-[10px] text-slate-400">
-                          Customer #
-                          {
-                            ticket.customer_id
-                          }
-                        </p>
+                          <div className="min-w-0">
+                            <span className="block truncate font-medium text-slate-700 dark:text-slate-200">
+                              {getCustomerDisplayName(
+                                ticket
+                              )}
+                            </span>
+
+                            <p className="mt-0.5 text-[10px] text-slate-400">
+                              Customer #
+                              {
+                                ticket.customer_id
+                              }
+                            </p>
+                          </div>
+                        </div>
                       </td>
 
                       <td className="max-w-[220px] px-4 py-3">
@@ -1883,6 +2077,14 @@ export default function SupportTicketListPage() {
                         </span>
                       </td>
 
+                      <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
+                        {getAssigneeName(ticket) || (
+                          <span className="text-slate-400">
+                            Unassigned
+                          </span>
+                        )}
+                      </td>
+
                       <td className="px-4 py-3">
                         <Badge
                           className={getStatusBadgeClass(
@@ -1891,6 +2093,10 @@ export default function SupportTicketListPage() {
                         >
                           {status}
                         </Badge>
+                      </td>
+
+                      <td className="whitespace-nowrap px-4 py-3 text-slate-500 dark:text-slate-400">
+                        {getTicketAgeLabel(ticket)}
                       </td>
 
                       <td className="px-4 py-3">
