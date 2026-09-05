@@ -43,8 +43,17 @@ function getRangeLabel(slab) {
   return `${slab.min_customers} – ${slab.max_customers}`;
 }
 
+function getTierLabel(slab) {
+  return slab.plan_name
+    ? `${slab.plan_name} · beyond target`
+    : "Before target (eligibility gate)";
+}
+
+const PLAN_ELIGIBILITY_PCT = { Silver: 50, Gold: 30, Diamond: 20 };
+
 const EXPORT_COLUMNS = [
   { header: "Period", accessor: (r) => r.period_type || "Monthly" },
+  { header: "Plan", accessor: (r) => r.plan_name || "— (base tier)" },
   { header: "Range", accessor: getRangeLabel },
   { header: "Min Extra Customers", accessor: (r) => r.min_customers },
   { header: "Max Extra Customers", accessor: (r) => (r.max_customers ?? "No upper limit") },
@@ -173,6 +182,14 @@ function SlabDetailsCard({ slab }) {
 
       <div className="space-y-2.5">
         <div className="grid grid-cols-[100px_minmax(0,1fr)] gap-3">
+          <span className="text-xs text-slate-400">Plan</span>
+          <span className="text-right text-xs font-medium text-slate-700 dark:text-slate-200">
+            {slab?.plan_name
+              ? `${slab.plan_name} (${PLAN_ELIGIBILITY_PCT[slab.plan_name] ?? "-"}% eligibility)`
+              : "— (base tier)"}
+          </span>
+        </div>
+        <div className="grid grid-cols-[100px_minmax(0,1fr)] gap-3">
           <span className="text-xs text-slate-400">Min Extra</span>
           <span className="text-right text-xs font-medium text-slate-700 dark:text-slate-200">
             {slab?.min_customers}
@@ -259,6 +276,7 @@ export default function IncentiveSlabPage() {
 
   const [formState, setFormState] = useState({
     period_type: "Weekly",
+    plan_name: "",
     min_customers: "",
     max_customers: "",
     incentive_amount: "",
@@ -309,7 +327,7 @@ export default function IncentiveSlabPage() {
   const openAddForm = () => {
     if (readOnly) return;
     setEditingSlab(null);
-    setFormState({ period_type: periodFilter, min_customers: "", max_customers: "", incentive_amount: "" });
+    setFormState({ period_type: periodFilter, plan_name: "", min_customers: "", max_customers: "", incentive_amount: "" });
     setFormOpen(true);
   };
 
@@ -318,6 +336,7 @@ export default function IncentiveSlabPage() {
     setEditingSlab(slab);
     setFormState({
       period_type: slab.period_type || "Monthly",
+      plan_name: slab.plan_name || "",
       min_customers: slab.min_customers ?? "",
       max_customers: slab.max_customers ?? "",
       incentive_amount: slab.incentive_amount ?? "",
@@ -331,6 +350,7 @@ export default function IncentiveSlabPage() {
 
     const payload = {
       period_type: formState.period_type || "Monthly",
+      plan_name: formState.plan_name || null,
       min_customers: Number(formState.min_customers) || 0,
       max_customers: formState.max_customers === "" ? null : Number(formState.max_customers),
       incentive_amount: Number(formState.incentive_amount) || 0,
@@ -585,7 +605,6 @@ export default function IncentiveSlabPage() {
         <div className="grid grid-cols-1 items-stretch gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {paged.map((slab) => {
             const isActive = slab.is_active !== false;
-            const tierNumber = sorted.findIndex((s) => s.id === slab.id) + 1;
 
             return (
               <div
@@ -598,7 +617,7 @@ export default function IncentiveSlabPage() {
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex min-w-0 items-center gap-2.5">
                       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-xs font-bold text-amber-600 dark:bg-amber-500/10 dark:text-amber-400">
-                        T{tierNumber}
+                        {slab.plan_name ? slab.plan_name.charAt(0) : "—"}
                       </div>
                       <div className="min-w-0">
                         <HoverDetailsTrigger align="left" panel={<SlabDetailsCard slab={slab} />}>
@@ -608,7 +627,7 @@ export default function IncentiveSlabPage() {
                         </HoverDetailsTrigger>
                         <div className="mt-0.5 flex items-center gap-1 text-[11px] text-slate-400">
                           <RangeIcon />
-                          Tier {tierNumber}
+                          {getTierLabel(slab)}
                         </div>
                       </div>
                     </div>
@@ -685,7 +704,7 @@ export default function IncentiveSlabPage() {
           <table className="w-full text-left text-sm">
             <thead className="tbl-head border-b border-slate-200 dark:border-white/10">
               <tr>
-                <th className="px-4 py-3 font-medium">Tier</th>
+                <th className="px-4 py-3 font-medium">Plan / Tier</th>
                 <th className="px-4 py-3 font-medium">Extra Customers (Min)</th>
                 <th className="px-4 py-3 font-medium">Extra Customers (Max)</th>
                 <th className="px-4 py-3 font-medium">Incentive Amount</th>
@@ -696,13 +715,17 @@ export default function IncentiveSlabPage() {
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {paged.map((slab) => {
                 const isActive = slab.is_active !== false;
-                const tierNumber = sorted.findIndex((s) => s.id === slab.id) + 1;
 
                 return (
                   <tr key={slab.id} className="tbl-row">
                     <td className="px-4 py-3">
-                      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-amber-50 text-[10px] font-bold text-amber-600 dark:bg-amber-500/10 dark:text-amber-400">
-                        {tierNumber}
+                      <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+                        <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-50 text-[10px] font-bold text-amber-600 dark:bg-amber-500/10 dark:text-amber-400">
+                          {slab.plan_name ? slab.plan_name.charAt(0) : "—"}
+                        </span>
+                        <span className="text-xs text-slate-600 dark:text-slate-300">
+                          {getTierLabel(slab)}
+                        </span>
                       </span>
                     </td>
                     <td className="px-4 py-3">
@@ -837,6 +860,24 @@ export default function IncentiveSlabPage() {
                   {PERIOD_TYPES.map((p) => (
                     <option key={p} value={p}>
                       {p}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">
+                  Plan (leave blank for the base "before target" tier)
+                </label>
+                <select
+                  value={formState.plan_name}
+                  onChange={(e) => setFormState((s) => ({ ...s, plan_name: e.target.value }))}
+                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
+                >
+                  <option value="">Before target (no plan — pays 0)</option>
+                  {Object.keys(PLAN_ELIGIBILITY_PCT).map((plan) => (
+                    <option key={plan} value={plan}>
+                      {plan} — beyond target
                     </option>
                   ))}
                 </select>

@@ -2600,6 +2600,13 @@ class IncentiveSlab(TimestampMixin, db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     period_type = db.Column(db.String(20), nullable=False, default="Monthly")
+    # NULL = the base "before target" tier, which pays nothing (0) and is
+    # shown just to make the eligibility gate visible: 10 total registrations
+    # PLUS each plan's own share of the target (Silver 50% / Gold 30% /
+    # Diamond 20%) must be met before that plan's "beyond target" tier below
+    # opens up. A named plan = that period's "beyond target" tier for that
+    # plan specifically, at 6% of the plan's MembershipPlan.rate.
+    plan_name = db.Column(db.String(30), nullable=True)
     min_customers = db.Column(db.Integer, nullable=False)
     max_customers = db.Column(db.Integer, nullable=True)  # NULL = no upper bound
     incentive_amount = db.Column(db.Numeric(12, 2), nullable=False)
