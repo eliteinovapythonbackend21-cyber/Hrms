@@ -404,7 +404,7 @@ export default function IncentiveSlabPage() {
               Incentive Slabs
             </h1>
             <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
-              Base incentive amount by monthly registration count
+              Legacy monthly-extras incentive amount — used by Incentive Payouts, not CRM Incentives
             </p>
           </div>
         </div>
@@ -433,14 +433,16 @@ export default function IncentiveSlabPage() {
 
       {/* INFO BANNER */}
       <div className="rounded-xl border border-primary-100 bg-primary-50/60 px-4 py-3 text-xs text-primary-800 dark:border-primary-500/20 dark:bg-primary-500/[0.06] dark:text-primary-300">
-        This slab is the flat base incentive — ₹1,000 for the first 30
-        registrations a CRM employee adds via the Registration page in a
-        month. Beyond 30, each additional registration adds a further
-        0.6% of ₹1,000 (₹6) on top — that per-registration scaling can't
-        be expressed as a fixed range/amount slab, so it's calculated
-        live on the{" "}
-        <span className="font-semibold">CRM Incentives</span> screen
-        rather than defined here.
+        These slabs power the older{" "}
+        <span className="font-semibold">Incentive Payouts</span> screen only —
+        a flat amount paid once an employee's monthly registrations exceed
+        their target by the slab's range. The main{" "}
+        <span className="font-semibold">CRM Incentives</span> screen uses a
+        different, newer rule instead: Weekly/Monthly/Quarterly targets of
+        10/40/120, gated by a minimum of 10 registrations and each membership
+        plan's eligibility share (Silver 50% · Gold 30% · Diamond 20% of
+        target), paying 6% of that plan's price per registration past the
+        period target — configured via Membership Plans, not here.
       </div>
 
       {/* STATS */}

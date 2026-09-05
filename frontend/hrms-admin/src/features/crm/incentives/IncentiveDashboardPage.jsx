@@ -29,10 +29,6 @@ const MONTHS = [
   "July", "August", "September", "October", "November", "December",
 ];
 
-// Flat monthly rule — no tiers: ₹1,000 covers the first 30 registrations,
-// then +0.6% of ₹1,000 (₹6) for every registration from the 31st onward.
-const INCENTIVE_TARGET_COUNT = 30;
-
 function StatusPill({ value }) {
   const map = {
     Pending: "chip-amber",
@@ -273,6 +269,7 @@ export default function IncentiveDashboardPage() {
       { header: "Period", accessor: (r) => `${MONTHS[r.month - 1]} ${r.year}` },
       { header: "Weeks", accessor: (r) => r.week_count },
       { header: "Registrations", accessor: (r) => r.registration_count },
+      { header: "Target", accessor: (r) => r.target_count },
       { header: "Eligible", accessor: (r) => r.eligible_count },
       { header: "Payout", accessor: (r) => r.amount },
       { header: "Status", accessor: (r) => r.status },
@@ -303,12 +300,15 @@ export default function IncentiveDashboardPage() {
 
   const { exporting, exportToExcel, exportToPDF } = useTableExport();
 
-  // Current month's registration progress toward the 30-registration flat
-  // incentive, for the CRM employee's own "My Incentive" summary.
+  // Current month's registration progress toward that month's Monthly
+  // target (Weekly=10/Monthly=40/Quarterly=120 by default, or a per-employee
+  // EmployeeTarget override — snapshotted onto the payout row itself so this
+  // never has to guess), for the CRM employee's own "My Incentive" summary.
   const currentMonthRow = (summary?.monthly || []).find(
     (m) => m.month === month && m.year === year
   );
   const currentMonthCount = currentMonthRow?.registration_count ?? 0;
+  const currentMonthTarget = currentMonthRow?.target_count || 40;
 
   return (
     <div className="min-w-0 space-y-5">
@@ -319,8 +319,11 @@ export default function IncentiveDashboardPage() {
             CRM Incentives
           </h1>
           <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
-            Flat monthly incentive — ₹1,000 for the first 30 registrations,
-            plus 0.6% of ₹1,000 (₹6) per registration after 30
+            Weekly/Monthly/Quarterly targets (10 / 40 / 120) — once an
+            employee clears at least 10 registrations and hits their plan's
+            eligibility share (Silver 50% · Gold 30% · Diamond 20% of
+            target), every registration past the period target earns 6% of
+            that membership plan's price
           </p>
         </div>
 
@@ -406,7 +409,7 @@ export default function IncentiveDashboardPage() {
             <p className="mt-1 text-2xl font-bold text-slate-900 dark:text-white">
               {currentMonthCount}
               <span className="ml-1 text-sm font-medium text-slate-400">
-                / {INCENTIVE_TARGET_COUNT}+
+                / {currentMonthTarget}+
               </span>
             </p>
             <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-white/10">
@@ -415,7 +418,7 @@ export default function IncentiveDashboardPage() {
                 style={{
                   width: `${Math.min(
                     100,
-                    (currentMonthCount / INCENTIVE_TARGET_COUNT) * 100
+                    (currentMonthCount / currentMonthTarget) * 100
                   )}%`,
                 }}
               />
@@ -520,6 +523,7 @@ export default function IncentiveDashboardPage() {
           },
           { key: "week_count", label: "Weeks", align: "right" },
           { key: "registration_count", label: "Regs", align: "right" },
+          { key: "target_count", label: "Target", align: "right" },
           { key: "eligible_count", label: "Eligible", align: "right" },
           {
             key: "amount",

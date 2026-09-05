@@ -2837,6 +2837,11 @@ class MonthlyPayout(TimestampMixin, db.Model):
 
     week_count = db.Column(db.Integer, nullable=False, default=0)
     registration_count = db.Column(db.Integer, nullable=False, default=0)
+    # Snapshot of the Monthly period target used for this row's eligible_count
+    # (incentive_engine.PERIOD_TARGETS["Monthly"], or the employee's own
+    # EmployeeTarget override) — lets the UI show real progress instead of a
+    # hardcoded number.
+    target_count = db.Column(db.Integer, nullable=False, default=0)
     eligible_count = db.Column(db.Integer, nullable=False, default=0)
     amount = db.Column(db.Numeric(12, 2), nullable=False, default=0)
     # Incentive is marked payable on the 20th of the month following the

@@ -356,6 +356,7 @@ def rebuild_monthly_payout(employee_id, month, year, commit=False):
 
     payout.week_count = len(rows)
     payout.registration_count = reg
+    payout.target_count = target
     payout.eligible_count = eligible
     payout.amount = amount
     payout.due_date = payable_due_date(month, year)
