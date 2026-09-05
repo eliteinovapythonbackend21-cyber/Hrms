@@ -272,26 +272,6 @@ function useTotal(key, listFn, params) {
   return { count: data?.total ?? 0, loading: isLoading };
 }
 
-function CrmWorkspaceCards() {
-  const registrations = useTotal("crm-registrations", crmApi.meetings.list);
-  const targets = useTotal("crm-targets", crmApi.employeeTargets.list);
-  const incentives = useTotal("crm-quotations", crmApi.quotations.list);
-  const slabs = useTotal("crm-slabs", crmApi.incentiveSlabs.list);
-  const payouts = useTotal("crm-payouts", crmApi.employeeIncentives.list);
-  const invoices = useTotal("crm-invoices", crmApi.invoices.list);
-
-  const cards = [
-    { label: "Registration", path: "/crm/meetings", icon: "crm", hint: "Add / view registrations", ...registrations },
-    { label: "Target", path: "/crm/leads/employees/targets", icon: "employees", hint: "Employee targets", ...targets },
-    { label: "Incentive", path: "/crm/quotations", icon: "crm", hint: "Incentive records", ...incentives },
-    { label: "Incentive Slabs", path: "/crm/leads/incentive-slabs", icon: "crm", hint: "Configured slabs", ...slabs },
-    { label: "Incentive Payouts", path: "/crm/leads/payouts", icon: "crm", hint: "Payout records", ...payouts },
-    { label: "Incentive Invoice", path: "/crm/invoices", icon: "crm", hint: "Invoices", ...invoices },
-  ];
-
-  return <WorkspaceCardGrid cards={cards} tone="primary" />;
-}
-
 /* ---------------------------------------------------------
    Weekly / Monthly / Quarterly incentive breakdown — CRM employee's
    own current-period target, registrations, incentive slab/amount,
@@ -970,10 +950,9 @@ export default function DashboardPage() {
                 icon={<GridIcon />}
                 tone="primary"
                 title="CRM workspace"
-                subtitle="Your CRM screens — registrations, targets, incentives, payouts and invoices"
+                subtitle="Your current-period target, registrations and incentive figures"
               />
 
-              <CrmWorkspaceCards />
               <CrmPeriodSummaryCard />
             </section>
           )}
