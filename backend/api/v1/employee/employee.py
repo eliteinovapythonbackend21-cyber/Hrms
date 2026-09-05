@@ -10,7 +10,7 @@ from models import (
 )
 from utils import (
     paginate_query, apply_search_filters, hash_password,
-    is_finance_department_user,
+    is_finance_department_user, is_crm_department_user,
 )
 from ..attendance.attendance_engine import recompute_attendance, open_session
 
@@ -283,6 +283,48 @@ def list_employees(token_response):
     query = Employee.query
     query = apply_search_filters(query, request.args, ["first_name", "last_name", "employee_code"])
     return jsonify({"message": "Employees fetched", "data": paginate_query(query, request.args), "token_response": get_jwt()}), 200
+
+
+@employee_bp.route("/crm-directory", methods=["GET"])
+@jwt_required()
+@with_token
+def list_crm_employee_directory(token_response):
+    """Minimal CRM-department employee list (id + name + code only) for
+    any CRM-department "employee" login — used by the "Assign To" /
+    "Default Assignee" dropdowns (e.g. Lead Upload). Deliberately much
+    narrower than list_employees (admin/finance-only, full records):
+    scoped to CRM department, minimal fields, open to any CRM employee
+    so Marketing employees can assign leads to their CRM colleagues."""
+    current_user = _get_current_user()
+
+    if not (_is_admin(current_user) or is_crm_department_user(current_user)):
+        return jsonify({"message": "CRM department privileges required"}), 403
+
+    employees = (
+        Employee.query.join(Department)
+        .filter(
+            db.func.lower(db.func.trim(Department.department_name)) == "crm",
+            Employee.is_active == True,
+        )
+        .order_by(Employee.first_name)
+        .all()
+    )
+
+    return jsonify({
+        "message": "CRM employee directory fetched",
+        "data": {
+            "items": [
+                {
+                    "id": e.id,
+                    "employee_code": e.employee_code,
+                    "first_name": e.first_name,
+                    "last_name": e.last_name,
+                }
+                for e in employees
+            ]
+        },
+        "token_response": token_response,
+    }), 200
 
 
 @employee_bp.route("/<int:employee_id>", methods=["GET"])

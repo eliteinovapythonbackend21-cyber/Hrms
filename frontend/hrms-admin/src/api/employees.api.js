@@ -3,6 +3,7 @@ import { API } from "./endpoints";
 
 export const employeesApi = {
   list: (params) => axiosClient.get(API.EMPLOYEES.LIST, { params }),
+  crmDirectory: () => axiosClient.get(API.EMPLOYEES.CRM_DIRECTORY),
   create: (payload) => axiosClient.post(API.EMPLOYEES.CREATE, payload),
   get: (id) => axiosClient.get(API.EMPLOYEES.GET(id)),
   update: (id, payload) => axiosClient.put(API.EMPLOYEES.UPDATE(id), payload),

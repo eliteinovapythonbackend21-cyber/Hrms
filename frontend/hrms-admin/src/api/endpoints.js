@@ -36,6 +36,7 @@ export const API = {
     GET: (id) => `/employees/${id}`,
     UPDATE: (id) => `/employees/${id}`,
     DELETE: (id) => `/employees/${id}`,
+    CRM_DIRECTORY: "/employees/crm-directory",
     SALARY_LIST: "/employees/salary",
     SALARY_GET: (id) => `/employees/${id}/salary`,
     SALARY_UPDATE: (id) => `/employees/${id}/salary`,

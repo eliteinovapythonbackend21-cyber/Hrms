@@ -6,7 +6,14 @@ import TableToolbar from "@/components/table/TableToolbar";
 
 import { useToast } from "@/components/feedback/Toast";
 
-import { useLeadUploads, useUploadLeads, useUploadLeadPhoto } from "./useLeadUpload";
+import ConfirmDialog from "@/components/feedback/ConfirmDialog";
+
+import {
+  useLeadUploads,
+  useUploadLeads,
+  useUploadLeadPhoto,
+  useDeactivateLeadUpload,
+} from "./useLeadUpload";
 
 import { useCRMEmployeeOptions } from "@/hooks/useLookupOptions";
 import { getUser } from "@/utils/tokenHelpers";
@@ -263,6 +270,8 @@ export default function LeadUploadPage() {
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [activeFilter, setActiveFilter] = useState("active");
+  const [deleteTarget, setDeleteTarget] = useState(null);
   const [viewMode, setViewMode] = useState("table");
   const [page, setPage] = useState(1);
 
@@ -277,6 +286,7 @@ export default function LeadUploadPage() {
 
   const uploadLeads = useUploadLeads();
   const uploadLeadPhoto = useUploadLeadPhoto();
+  const deactivateLeadUpload = useDeactivateLeadUpload();
   const employeeOptions = useCRMEmployeeOptions();
 
   /* -------------------------------------------------------
@@ -296,6 +306,11 @@ export default function LeadUploadPage() {
     const normalizedSearch = search.trim().toLowerCase();
 
     return batches.filter((batch) => {
+      const isActive = batch.is_active !== false;
+
+      if (activeFilter === "active" && !isActive) return false;
+      if (activeFilter === "inactive" && isActive) return false;
+
       if (statusFilter && batch.status !== statusFilter) return false;
 
       if (normalizedSearch) {
@@ -305,7 +320,7 @@ export default function LeadUploadPage() {
 
       return true;
     });
-  }, [batches, search, statusFilter]);
+  }, [batches, search, statusFilter, activeFilter]);
 
   const sorted = useMemo(
     () => filtered.slice().sort((a, b) => new Date(b.created_at) - new Date(a.created_at)),
@@ -432,7 +447,23 @@ export default function LeadUploadPage() {
   const clearFilters = () => {
     setSearch("");
     setStatusFilter("");
+    setActiveFilter("active");
     setPage(1);
+  };
+
+  const confirmDeactivate = async () => {
+    if (!deleteTarget?.id) return;
+
+    try {
+      await deactivateLeadUpload.mutateAsync(deleteTarget.id);
+      showToast("Upload batch removed", "success");
+      setDeleteTarget(null);
+    } catch (error) {
+      showToast(
+        error?.response?.data?.message || error?.message || "Failed to remove the batch",
+        "error"
+      );
+    }
   };
 
   return (
@@ -722,7 +753,7 @@ export default function LeadUploadPage() {
               <option value="Completed with errors">Completed with errors</option>
             </select>
 
-            {(search || statusFilter) && (
+            {(search || statusFilter || activeFilter !== "active") && (
               <button
                 type="button"
                 onClick={clearFilters}
@@ -733,7 +764,27 @@ export default function LeadUploadPage() {
             )}
           </div>
 
-          <div className="flex flex-wrap items-center justify-end gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center rounded-lg bg-slate-100 p-1 dark:bg-white/[0.06]">
+              {["active", "inactive", "all"].map((status) => (
+                <button
+                  key={status}
+                  type="button"
+                  onClick={() => {
+                    setActiveFilter(status);
+                    setPage(1);
+                  }}
+                  className={`rounded-md px-3 py-1.5 text-xs font-medium capitalize ${
+                    activeFilter === status
+                      ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
+                      : "text-slate-500 dark:text-slate-400"
+                  }`}
+                >
+                  {status}
+                </button>
+              ))}
+            </div>
+
             <div className="flex items-center rounded-lg bg-slate-100 p-1 dark:bg-white/[0.06]">
               <button
                 type="button"
@@ -790,6 +841,7 @@ export default function LeadUploadPage() {
                 <th className="px-4 py-3 font-medium">Failed</th>
                 <th className="px-4 py-3 font-medium">Status</th>
                 <th className="px-4 py-3 font-medium">Uploaded At</th>
+                <th className="px-4 py-3 text-right font-medium">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -814,10 +866,28 @@ export default function LeadUploadPage() {
                   <td className="px-4 py-3 text-emerald-600 dark:text-emerald-400">{batch.success_count}</td>
                   <td className="px-4 py-3 text-red-500 dark:text-red-400">{batch.failed_count}</td>
                   <td className="px-4 py-3">
-                    <Badge className={getStatusBadgeClass(batch.status)}>{batch.status}</Badge>
+                    <div className="flex flex-wrap items-center gap-1">
+                      <Badge className={getStatusBadgeClass(batch.status)}>{batch.status}</Badge>
+                      {batch.is_active === false && (
+                        <Badge className="bg-slate-100 text-slate-500 dark:bg-white/10 dark:text-slate-400">
+                          Removed
+                        </Badge>
+                      )}
+                    </div>
                   </td>
                   <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                     {formatDateTime(batch.created_at)}
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    {batch.is_active !== false && (
+                      <button
+                        type="button"
+                        onClick={() => setDeleteTarget(batch)}
+                        className="rounded-lg border border-red-200 px-2.5 py-1.5 text-xs font-medium text-red-600 transition hover:bg-red-50 dark:border-red-900/50 dark:text-red-400 dark:hover:bg-red-500/10"
+                      >
+                        Remove
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -869,9 +939,25 @@ export default function LeadUploadPage() {
                 </div>
               </div>
 
-              <div className="mt-3 flex items-center gap-1.5 text-[11px] text-slate-400">
-                <CalendarIcon />
-                {formatDateTime(batch.created_at)}
+              <div className="mt-3 flex items-center justify-between gap-1.5">
+                <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
+                  <CalendarIcon />
+                  {formatDateTime(batch.created_at)}
+                </div>
+
+                {batch.is_active !== false ? (
+                  <button
+                    type="button"
+                    onClick={() => setDeleteTarget(batch)}
+                    className="rounded-lg border border-red-200 px-2 py-1 text-[11px] font-medium text-red-600 transition hover:bg-red-50 dark:border-red-900/50 dark:text-red-400 dark:hover:bg-red-500/10"
+                  >
+                    Remove
+                  </button>
+                ) : (
+                  <Badge className="bg-slate-100 text-slate-500 dark:bg-white/10 dark:text-slate-400">
+                    Removed
+                  </Badge>
+                )}
               </div>
             </div>
           ))}
@@ -902,6 +988,20 @@ export default function LeadUploadPage() {
           </button>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={confirmDeactivate}
+        title="Remove Upload Batch"
+        message={
+          deleteTarget
+            ? `Are you sure you want to remove "${deleteTarget.file_name}" from the history? The leads it already created are not deleted.`
+            : ""
+        }
+        confirmText="Remove"
+        loading={deactivateLeadUpload.isPending}
+      />
     </div>
   );
 }

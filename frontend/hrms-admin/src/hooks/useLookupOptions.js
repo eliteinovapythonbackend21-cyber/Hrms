@@ -31,16 +31,20 @@ export function useEmployeeOptions() {
 }
 
 export function useCRMEmployeeOptions() {
+  // Uses the CRM-scoped directory endpoint (open to any CRM-department
+  // employee, not just admin/finance like employeesApi.list) so a CRM
+  // Marketing employee's "Assign To" dropdown — including their own
+  // default selection — actually has options to render. Falls back to
+  // the full employees list for admin/finance callers is unnecessary
+  // here since crm-directory already covers admin too.
   const { data } = useQuery({
     queryKey: ["lookup", "crm-employees"],
-    queryFn: async () => (await employeesApi.list(ACTIVE_ONLY)).data.data,
+    queryFn: async () => (await employeesApi.crmDirectory()).data.data,
   });
-  return (data?.items || [])
-    .filter((e) => e.department?.department_name === "CRM")
-    .map((e) => ({
-      value: e.id,
-      label: `${e.first_name || ""} ${e.last_name || ""}`.trim() || e.employee_code || `Employee #${e.id}`,
-    }));
+  return (data?.items || []).map((e) => ({
+    value: e.id,
+    label: `${e.first_name || ""} ${e.last_name || ""}`.trim() || e.employee_code || `Employee #${e.id}`,
+  }));
 }
 
 export function useDepartmentOptions() {
