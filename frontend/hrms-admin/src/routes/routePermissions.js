@@ -43,6 +43,9 @@ export const routePermissions = {
   "/attendance/manual": ["admin"],
   "/attendance/reports": ["admin"],
   "/leaves": ["admin", ...EMPLOYEE_LIKE_ROLES],
+  // Every login (any department) can log/view their own day-to-day
+  // expenses here.
+  "/my-expenses": ["admin", ...EMPLOYEE_LIKE_ROLES],
   "/leaves/new": ["admin", ...EMPLOYEE_LIKE_ROLES],
   "/leaves/approvals": ["admin"],
   "/leaves/monthly-record": ["admin", ...EMPLOYEE_LIKE_ROLES],
@@ -95,6 +98,7 @@ export const routePermissions = {
   "/finance/accounts": ["admin", "finance"],
   "/finance/vendors": ["admin", "finance"],
   "/finance/expenses": ["admin", "finance"],
+  "/finance/employee-expenses": ["admin", "finance"],
   "/finance/income": ["admin", "finance"],
   "/reports": ["admin", "finance", "HR Director", "HR Manager"],
 };

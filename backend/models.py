@@ -3393,6 +3393,47 @@ class Expense(TimestampMixin, db.Model):
         return Attendance._create_workbook("Finance Report", headers, rows)
 
 
+class EmployeeExpense(TimestampMixin, db.Model):
+    """Day-to-day personal expense an employee logs for their own
+    record-keeping (travel, food, fuel, etc.) — distinct from `Expense`
+    above, which is a company/ledger expense that debits an Account and
+    has no employee_id or approval concept. No approval workflow here:
+    an employee freely adds/edits/deactivates their own entries; admin
+    and Finance-department logins can view everyone's."""
+
+    __tablename__ = "employee_expenses"
+
+    CATEGORIES = (
+        "Travel",
+        "Food",
+        "Fuel / Transport",
+        "Accommodation",
+        "Office Supplies",
+        "Client Entertainment",
+        "Other",
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    employee_id = db.Column(db.Integer, db.ForeignKey("employees.id"), nullable=False)
+    category = db.Column(db.String(50), nullable=False)
+    amount = db.Column(db.Numeric(12, 2), nullable=False)
+    expense_date = db.Column(db.Date, nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    receipt_url = db.Column(db.String(500), nullable=True)
+    is_active = db.Column(db.Boolean, default=True)
+
+    employee = db.relationship("Employee")
+
+    def to_dict(self):
+        data = super().to_dict()
+        data["employee"] = _summary(
+            self.employee, ["id", "employee_code", "first_name", "last_name"]
+        )
+        if self.amount is not None:
+            data["amount"] = float(self.amount)
+        return data
+
+
 class Income(TimestampMixin, db.Model):
     __tablename__ = "income"
 

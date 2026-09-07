@@ -102,6 +102,14 @@ export const API = {
     REJECT: (id) => `/leaves/${id}/reject`,
     MONTHLY_SUMMARY: "/leaves/monthly-summary",
   },
+  EMPLOYEE_EXPENSES: {
+    LIST: "/employee-expenses/",
+    CREATE: "/employee-expenses/",
+    GET: (id) => `/employee-expenses/${id}`,
+    UPDATE: (id) => `/employee-expenses/${id}`,
+    DEACTIVATE: (id) => `/employee-expenses/${id}/deactivate`,
+    CATEGORIES: "/employee-expenses/categories",
+  },
   ROLES: {
     LIST: "/roles/",
     CREATE: "/roles/",

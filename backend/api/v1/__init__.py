@@ -6,6 +6,7 @@ from .attendance import attendance_bp
 from .network import network_bp
 from .auth import auth_bp
 from .leave import leave_bp
+from .employee_expenses import employee_expenses_bp
 from .role.role import role_bp
 from .dashboard import dashboard_bp
 from .employee_lifecycle import lifecycle_blueprints
@@ -22,6 +23,7 @@ blueprints = [
     (network_bp, "/network"),
     (auth_bp, "/auth"),
     (leave_bp, "/leaves"),
+    (employee_expenses_bp, "/employee-expenses"),
     (role_bp, "/roles"),
     (dashboard_bp, "/dashboard"),
     (feedback_bp, "/feedback"),
