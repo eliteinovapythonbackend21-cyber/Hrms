@@ -54,6 +54,22 @@ const PLAN_COLUMNS = ["Silver", "Gold", "Diamond"].map((plan) => ({
   ),
 }));
 
+function SectionHeading({ children, count }) {
+  return (
+    <div className="mb-2 flex items-center gap-2">
+      <span className="h-4 w-1 rounded-full bg-primary-500" />
+      <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+        {children}
+      </h3>
+      {count != null && (
+        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500 dark:bg-white/10 dark:text-slate-300">
+          {count}
+        </span>
+      )}
+    </div>
+  );
+}
+
 function StatusPill({ value }) {
   const map = {
     Pending: "chip-amber",
@@ -105,10 +121,10 @@ function DataGrid({ columns, rows, empty }) {
   }
 
   return (
-    <div className="card overflow-hidden">
+    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
       <div className="overflow-x-auto">
         <table className="w-full min-w-[720px] text-left text-sm">
-          <thead className="tbl-head">
+          <thead className="sticky top-0 z-10 bg-slate-50/95 backdrop-blur dark:bg-slate-800/95">
             {hasGroups && (
               <tr>
                 {groupHeaderCells.map((c) =>
@@ -116,7 +132,7 @@ function DataGrid({ columns, rows, empty }) {
                     <th
                       key={c.key}
                       colSpan={c.colSpan}
-                      className="border-b border-slate-100 px-4 py-2 text-center text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:border-white/[0.06]"
+                      className="border-b border-slate-200 px-4 py-2 text-center text-[11px] font-semibold uppercase tracking-wide text-primary-600 dark:border-white/10 dark:text-primary-300"
                     >
                       {c.label}
                     </th>
@@ -124,7 +140,9 @@ function DataGrid({ columns, rows, empty }) {
                     <th
                       key={c.key}
                       rowSpan={c.rowSpan}
-                      className={`px-4 py-3 align-bottom ${c.plain.align === "right" ? "text-right" : ""}`}
+                      className={`whitespace-nowrap border-b border-slate-200 px-4 py-3 align-bottom text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:border-white/10 dark:text-slate-400 ${
+                        c.plain.align === "right" ? "text-right" : ""
+                      }`}
                     >
                       {c.plain.label}
                       {c.plain.subLabel && (
@@ -142,7 +160,9 @@ function DataGrid({ columns, rows, empty }) {
                 hasGroups && !c.group ? null : (
                   <th
                     key={c.key}
-                    className={`px-4 py-3 ${c.align === "right" ? "text-right" : ""}`}
+                    className={`whitespace-nowrap border-b border-slate-200 px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:border-white/10 dark:text-slate-400 ${
+                      c.align === "right" ? "text-right" : ""
+                    }`}
                   >
                     {c.label}
                     {c.subLabel && (
@@ -157,12 +177,15 @@ function DataGrid({ columns, rows, empty }) {
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-white/[0.06]">
             {rows.map((row, i) => (
-              <tr key={row.id ?? i} className="tbl-row">
+              <tr
+                key={row.id ?? i}
+                className="transition-colors odd:bg-white even:bg-slate-50/60 hover:bg-primary-50/40 dark:odd:bg-transparent dark:even:bg-white/[0.02] dark:hover:bg-white/[0.05]"
+              >
                 {columns.map((c) => (
                   <td
                     key={c.key}
-                    className={`px-4 py-3 ${
-                      c.align === "right" ? "text-right" : ""
+                    className={`px-4 py-3 text-slate-700 dark:text-slate-200 ${
+                      c.align === "right" ? "whitespace-nowrap text-right" : ""
                     }`}
                   >
                     {c.render ? c.render(row) : row[c.key] ?? "—"}
@@ -325,39 +348,12 @@ export default function IncentiveDashboardPage() {
     [allWeeklyRows, currentWeekStart]
   );
 
-  // 1st/2nd/3rd/4th-week breakdown per employee for the Monthly tab —
-  // built from the same per-month WeeklyIncentive rows already fetched
-  // above (weekly query is scoped to {year, month}, same as this tab).
-  const weekBreakdownByEmployee = useMemo(() => {
-    const map = {};
-    const sorted = allWeeklyRows
-      .slice()
-      .sort((a, b) => new Date(a.week_start_date) - new Date(b.week_start_date));
-    for (const row of sorted) {
-      if (!map[row.employee_id]) map[row.employee_id] = [];
-      map[row.employee_id].push(row);
-    }
-    return map;
-  }, [allWeeklyRows]);
-
-  // 1st/2nd/3rd-month breakdown per employee for the Quarterly tab — built
-  // from monthlyRows (already fetched for the whole selected year).
+  // The 3 calendar months that make up the selected quarter — used to
+  // scope the Quarterly tab's month-wise breakdown rows.
   const quarterMonths = useMemo(() => {
     const start = (quarter - 1) * 3 + 1;
     return [start, start + 1, start + 2];
   }, [quarter]);
-
-  const monthBreakdownByEmployee = useMemo(() => {
-    const map = {};
-    for (const employeeMonth of quarterMonths) {
-      for (const row of monthlyRows) {
-        if (row.month !== employeeMonth) continue;
-        if (!map[row.employee_id]) map[row.employee_id] = [];
-        map[row.employee_id].push(row);
-      }
-    }
-    return map;
-  }, [monthlyRows, quarterMonths]);
 
   const yearOptions = useMemo(() => {
     const y = now.getFullYear();
@@ -516,97 +512,80 @@ export default function IncentiveDashboardPage() {
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          {tab === "quarterly" ? (
+        <div className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-white p-2.5 shadow-sm dark:border-white/10 dark:bg-white/[0.04] sm:flex-row sm:flex-wrap sm:items-center">
+          <div className="flex items-center gap-2">
+            {tab === "quarterly" ? (
+              <select
+                value={quarter}
+                onChange={(e) => setQuarter(Number(e.target.value))}
+                className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm dark:border-white/10 dark:bg-white/[0.06] dark:text-white"
+              >
+                {[1, 2, 3, 4].map((q) => (
+                  <option key={q} value={q}>
+                    Q{q}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <select
+                value={month}
+                onChange={(e) => setMonth(Number(e.target.value))}
+                className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm dark:border-white/10 dark:bg-white/[0.06] dark:text-white"
+              >
+                {MONTHS.map((m, i) => (
+                  <option key={m} value={i + 1}>
+                    {m}
+                  </option>
+                ))}
+              </select>
+            )}
             <select
-              value={quarter}
-              onChange={(e) => setQuarter(Number(e.target.value))}
-              className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm dark:border-white/10 dark:bg-white/[0.04] dark:text-white"
+              value={year}
+              onChange={(e) => setYear(Number(e.target.value))}
+              className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm dark:border-white/10 dark:bg-white/[0.06] dark:text-white"
             >
-              {[1, 2, 3, 4].map((q) => (
-                <option key={q} value={q}>
-                  Q{q}
+              {yearOptions.map((y) => (
+                <option key={y} value={y}>
+                  {y}
                 </option>
               ))}
             </select>
-          ) : (
-            <select
-              value={month}
-              onChange={(e) => setMonth(Number(e.target.value))}
-              className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm dark:border-white/10 dark:bg-white/[0.04] dark:text-white"
-            >
-              {MONTHS.map((m, i) => (
-                <option key={m} value={i + 1}>
-                  {m}
-                </option>
-              ))}
-            </select>
-          )}
-          <select
-            value={year}
-            onChange={(e) => setYear(Number(e.target.value))}
-            className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm dark:border-white/10 dark:bg-white/[0.04] dark:text-white"
-          >
-            {yearOptions.map((y) => (
-              <option key={y} value={y}>
-                {y}
-              </option>
-            ))}
-          </select>
+          </div>
 
-          <TableToolbar
-            onRefresh={() => {
-              weekly.refetch();
-              monthly.refetch();
-              quarterly.refetch();
-              yearly.refetch();
-              invoices.refetch();
-            }}
-            refreshing={weekly.isFetching}
-            exporting={exporting}
-            onExportExcel={() =>
-              exportToExcel(ROWS_BY_TAB[tab], EXPORT_COLUMNS_BY_TAB[tab], `crm-incentives-${tab}`)
-            }
-            onExportPDF={() =>
-              exportToPDF(
-                ROWS_BY_TAB[tab],
-                EXPORT_COLUMNS_BY_TAB[tab],
-                `crm-incentives-${tab}`,
-                `CRM Incentives — ${TABS.find((t) => t.id === tab)?.label}`
-              )
-            }
-          />
+          <div className="hidden h-6 w-px bg-slate-200 dark:bg-white/10 sm:block" />
 
-          {canManage && (
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={runNow}
-              isLoading={runMut.isPending}
-              className="h-10 px-4"
-            >
-              Run for {MONTHS[month - 1]} {year}
-            </Button>
-          )}
+          <div className="flex flex-wrap items-center gap-2">
+            {canManage && (
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={runNow}
+                isLoading={runMut.isPending}
+                className="h-10 px-4"
+              >
+                Run for {MONTHS[month - 1]} {year}
+              </Button>
+            )}
 
-          {canManage && (
-            <Button
-              type="button"
-              onClick={runPayoutNow}
-              isLoading={runPayoutMut.isPending}
-              title="Invoice + settle this period now (via Razorpay when configured, else an internal settlement) — same as the automated 20th-of-the-month run, on demand"
-              className="h-10 px-4"
-            >
-              Run Payout Now
-            </Button>
-          )}
+            {canManage && (
+              <Button
+                type="button"
+                onClick={runPayoutNow}
+                isLoading={runPayoutMut.isPending}
+                title="Invoice + settle this period now (via Razorpay when configured, else an internal settlement) — same as the automated 20th-of-the-month run, on demand"
+                className="h-10 px-4"
+              >
+                Run Payout Now
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 
       {/* CRM EMPLOYEE — MY INCENTIVE PROGRESS */}
       {isCrmEmployee && summary && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <div className="stat-tile stat-tile-primary p-4">
+          <div className="rounded-xl border border-amber-100 bg-gradient-to-br from-amber-50 to-white p-4 shadow-sm dark:border-amber-500/20 dark:from-amber-500/[0.06] dark:to-white/[0.02]">
             <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
               Registrations — {MONTHS[month - 1]} {year}
             </p>
@@ -618,7 +597,7 @@ export default function IncentiveDashboardPage() {
             </p>
             <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-white/10">
               <div
-                className="h-full rounded-full bg-primary-500"
+                className="h-full rounded-full bg-amber-500 transition-all"
                 style={{
                   width: `${Math.min(
                     100,
@@ -628,7 +607,7 @@ export default function IncentiveDashboardPage() {
               />
             </div>
           </div>
-          <div className="stat-tile stat-tile-success p-4">
+          <div className="rounded-xl border border-emerald-100 bg-gradient-to-br from-emerald-50 to-white p-4 shadow-sm dark:border-emerald-500/20 dark:from-emerald-500/[0.06] dark:to-white/[0.02]">
             <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
               This month's incentive
             </p>
@@ -636,7 +615,7 @@ export default function IncentiveDashboardPage() {
               {formatCurrency(currentMonthRow?.amount || 0)}
             </p>
           </div>
-          <div className="stat-tile stat-tile-info p-4">
+          <div className="rounded-xl border border-blue-100 bg-gradient-to-br from-blue-50 to-white p-4 shadow-sm dark:border-blue-500/20 dark:from-blue-500/[0.06] dark:to-white/[0.02]">
             <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
               This year's payout
             </p>
@@ -666,29 +645,54 @@ export default function IncentiveDashboardPage() {
           ))}
         </div>
 
-        <div className="flex items-center rounded-lg bg-slate-100 p-1 dark:bg-white/[0.06]">
-          <button
-            type="button"
-            onClick={() => setViewMode("card")}
-            className={`rounded-md px-3 py-1.5 text-xs font-medium ${
-              viewMode === "card"
-                ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
-                : "text-slate-500 dark:text-slate-400"
-            }`}
-          >
-            Card
-          </button>
-          <button
-            type="button"
-            onClick={() => setViewMode("table")}
-            className={`rounded-md px-3 py-1.5 text-xs font-medium ${
-              viewMode === "table"
-                ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
-                : "text-slate-500 dark:text-slate-400"
-            }`}
-          >
-            Table
-          </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <TableToolbar
+            onRefresh={() => {
+              weekly.refetch();
+              monthly.refetch();
+              quarterly.refetch();
+              yearly.refetch();
+              invoices.refetch();
+            }}
+            refreshing={weekly.isFetching}
+            exporting={exporting}
+            onExportExcel={() =>
+              exportToExcel(ROWS_BY_TAB[tab], EXPORT_COLUMNS_BY_TAB[tab], `crm-incentives-${tab}`)
+            }
+            onExportPDF={() =>
+              exportToPDF(
+                ROWS_BY_TAB[tab],
+                EXPORT_COLUMNS_BY_TAB[tab],
+                `crm-incentives-${tab}`,
+                `CRM Incentives — ${TABS.find((t) => t.id === tab)?.label}`
+              )
+            }
+          />
+
+          <div className="flex items-center rounded-lg bg-slate-100 p-1 dark:bg-white/[0.06]">
+            <button
+              type="button"
+              onClick={() => setViewMode("card")}
+              className={`rounded-md px-3 py-1.5 text-xs font-medium ${
+                viewMode === "card"
+                  ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
+                  : "text-slate-500 dark:text-slate-400"
+              }`}
+            >
+              Card
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("table")}
+              className={`rounded-md px-3 py-1.5 text-xs font-medium ${
+                viewMode === "table"
+                  ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
+                  : "text-slate-500 dark:text-slate-400"
+              }`}
+            >
+              Table
+            </button>
+          </div>
         </div>
       </div>
 
@@ -729,43 +733,39 @@ export default function IncentiveDashboardPage() {
       })()}
 
       {tab === "monthly" && (() => {
-        // Selecting a month narrows this tab to just that month's row per
-        // employee, with a 1st/2nd/3rd/4th-week breakdown alongside it.
         const monthRows = monthlyRows.filter((r) => r.month === month);
 
-        // Date range for each week-of-month, read off whichever employee
-        // actually has that week's row (weeks are the same calendar dates
-        // for everyone in a given month) — shown as a second header line
-        // directly above its column, so the dates sit inside the table
-        // itself instead of a caption underneath it.
-        const weekDatesByIndex = [0, 1, 2, 3].map((idx) => {
-          for (const rows of Object.values(weekBreakdownByEmployee)) {
-            if (rows[idx]) return rows[idx];
-          }
-          return null;
-        });
+        // Week-wise breakdown, shown exactly like the Weekly tab — one row
+        // per employee per week — for every week that falls in the
+        // selected month, instead of squeezed into columns.
+        const weekBreakdownRows = allWeeklyRows
+          .slice()
+          .sort((a, b) => new Date(a.week_start_date) - new Date(b.week_start_date));
 
-        const weekColumns = [1, 2, 3, 4].map((weekIndex) => {
-          const dateRow = weekDatesByIndex[weekIndex - 1];
-          return {
-            key: `week_${weekIndex}`,
-            group: "Week-wise Breakdown",
-            label: `${weekIndex === 1 ? "1st" : weekIndex === 2 ? "2nd" : weekIndex === 3 ? "3rd" : "4th"} Week`,
-            subLabel: dateRow
-              ? `${formatDate(dateRow.week_start_date)} – ${formatDate(dateRow.week_end_date)}`
-              : null,
+        const weekColumns = [
+          { key: "emp", label: "Employee", render: empName },
+          {
+            key: "week",
+            label: "Week",
+            render: (r) =>
+              `${formatDate(r.week_start_date)} – ${formatDate(r.week_end_date)}`,
+          },
+          { key: "registration_count", label: "Regs", align: "right" },
+          { key: "target_count", label: "Target", align: "right" },
+          { key: "eligible_count", label: "Incentive", align: "right" },
+          ...PLAN_COLUMNS,
+          {
+            key: "amount",
+            label: "Incentive Amount",
             align: "right",
-            render: (r) => {
-              const weeks = weekBreakdownByEmployee[r.employee_id] || [];
-              const week = weeks[weekIndex - 1];
-              return (
-                <span className="text-slate-600 dark:text-slate-300">
-                  {week ? week.registration_count : "—"}
-                </span>
-              );
-            },
-          };
-        });
+            render: (r) => (
+              <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                {formatCurrency(r.amount)}
+              </span>
+            ),
+          },
+        ];
+        const weekEmpty = `No weekly activity recorded for ${MONTHS[month - 1]} ${year} yet.`;
 
         const columns = [
           { key: "emp", label: "Employee", render: empName },
@@ -774,7 +774,6 @@ export default function IncentiveDashboardPage() {
             label: "Period",
             render: (r) => `${MONTHS[r.month - 1]} ${r.year}`,
           },
-          ...weekColumns,
           { key: "registration_count", label: "Total Regs", align: "right" },
           { key: "target_count", label: "Target", align: "right" },
           { key: "eligible_count", label: "Incentive", align: "right" },
@@ -818,34 +817,69 @@ export default function IncentiveDashboardPage() {
             : []),
         ];
         const empty = `No monthly payouts for ${MONTHS[month - 1]} ${year}.`;
-        return viewMode === "card" ? (
-          <CardGrid empty={empty} rows={monthRows} columns={columns} />
-        ) : (
-          <DataGrid empty={empty} rows={monthRows} columns={columns} />
+
+        return (
+          <div className="space-y-6">
+            <div>
+              <SectionHeading count={weekBreakdownRows.length}>
+                Week-wise Breakdown — {MONTHS[month - 1]} {year}
+              </SectionHeading>
+              {viewMode === "card" ? (
+                <CardGrid empty={weekEmpty} rows={weekBreakdownRows} columns={weekColumns} />
+              ) : (
+                <DataGrid empty={weekEmpty} rows={weekBreakdownRows} columns={weekColumns} />
+              )}
+            </div>
+            <div>
+              <SectionHeading count={monthRows.length}>Monthly Total</SectionHeading>
+              {viewMode === "card" ? (
+                <CardGrid empty={empty} rows={monthRows} columns={columns} />
+              ) : (
+                <DataGrid empty={empty} rows={monthRows} columns={columns} />
+              )}
+            </div>
+          </div>
         );
       })()}
 
       {tab === "quarterly" && (() => {
-        const monthColumns = [0, 1, 2].map((offset) => {
-          const ordinal = offset === 0 ? "1st" : offset === 1 ? "2nd" : "3rd";
-          const monthNum = quarterMonths[offset];
-          return {
-            key: `qmonth_${offset}`,
-            group: "Month-wise Breakdown",
-            label: `${ordinal} Month`,
-            subLabel: monthNum ? `${MONTHS[monthNum - 1]} ${year}` : null,
+        // Month-wise breakdown, shown exactly like the Monthly tab's own
+        // total row — one row per employee per month — for every month
+        // that falls in the selected quarter, instead of squeezed into
+        // columns.
+        const monthBreakdownRows = monthlyRows
+          .filter((r) => quarterMonths.includes(r.month))
+          .slice()
+          .sort((a, b) => a.month - b.month);
+
+        const monthColumns = [
+          { key: "emp", label: "Employee", render: empName },
+          {
+            key: "period",
+            label: "Month",
+            render: (r) => `${MONTHS[r.month - 1]} ${r.year}`,
+          },
+          { key: "registration_count", label: "Regs", align: "right" },
+          { key: "target_count", label: "Target", align: "right" },
+          { key: "eligible_count", label: "Incentive", align: "right" },
+          ...PLAN_COLUMNS,
+          {
+            key: "amount",
+            label: "Payout",
             align: "right",
-            render: (r) => {
-              const monthsForEmployee = monthBreakdownByEmployee[r.employee_id] || [];
-              const monthRow = monthsForEmployee[offset];
-              return (
-                <span className="text-slate-600 dark:text-slate-300">
-                  {monthRow ? monthRow.registration_count : "—"}
-                </span>
-              );
-            },
-          };
-        });
+            render: (r) => (
+              <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                {formatCurrency(r.amount)}
+              </span>
+            ),
+          },
+          {
+            key: "status",
+            label: "Status",
+            render: (r) => <StatusPill value={r.status} />,
+          },
+        ];
+        const monthEmpty = `No monthly figures recorded for Q${quarter} ${year} yet.`;
 
         const columns = [
           { key: "emp", label: "Employee", render: empName },
@@ -854,7 +888,6 @@ export default function IncentiveDashboardPage() {
             label: "Period",
             render: (r) => `Q${r.quarter} ${r.year}`,
           },
-          ...monthColumns,
           { key: "registration_count", label: "Total Regs", align: "right" },
           { key: "target_count", label: "Target", align: "right" },
           { key: "eligible_count", label: "Incentive", align: "right" },
@@ -871,10 +904,28 @@ export default function IncentiveDashboardPage() {
           },
         ];
         const empty = `No quarterly figures for Q${quarter} ${year} yet.`;
-        return viewMode === "card" ? (
-          <CardGrid empty={empty} rows={quarterlyRows} columns={columns} />
-        ) : (
-          <DataGrid empty={empty} rows={quarterlyRows} columns={columns} />
+
+        return (
+          <div className="space-y-6">
+            <div>
+              <SectionHeading count={monthBreakdownRows.length}>
+                Month-wise Breakdown — Q{quarter} {year}
+              </SectionHeading>
+              {viewMode === "card" ? (
+                <CardGrid empty={monthEmpty} rows={monthBreakdownRows} columns={monthColumns} />
+              ) : (
+                <DataGrid empty={monthEmpty} rows={monthBreakdownRows} columns={monthColumns} />
+              )}
+            </div>
+            <div>
+              <SectionHeading count={quarterlyRows.length}>Quarterly Total</SectionHeading>
+              {viewMode === "card" ? (
+                <CardGrid empty={empty} rows={quarterlyRows} columns={columns} />
+              ) : (
+                <DataGrid empty={empty} rows={quarterlyRows} columns={columns} />
+              )}
+            </div>
+          </div>
         );
       })()}
 
