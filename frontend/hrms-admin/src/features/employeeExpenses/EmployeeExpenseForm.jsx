@@ -2,6 +2,7 @@ import { useState } from "react";
 
 import Button from "@/components/ui/Button";
 import { useEmployeeExpenseCategories } from "./useEmployeeExpenses";
+import { useEmployeeOptions } from "@/hooks/useLookupOptions";
 
 function FieldLabel({ children, required = false }) {
   return (
@@ -28,10 +29,18 @@ export default function EmployeeExpenseForm({
   onCancel,
   loading,
   isEdit,
+  // Only privileged (admin/Finance) logins get an Employee picker — a
+  // plain employee always logs their own, stamped server-side regardless
+  // of what's sent.
+  canPickEmployee = false,
 }) {
   const { data: categoryData } = useEmployeeExpenseCategories();
   const categories = categoryData?.categories || FALLBACK_CATEGORIES;
+  const employeeOptions = useEmployeeOptions();
 
+  const [employeeId, setEmployeeId] = useState(
+    initialData.employee_id ?? initialData.employee?.id ?? ""
+  );
   const [category, setCategory] = useState(initialData.category || "");
   const [amount, setAmount] = useState(
     initialData.amount !== undefined && initialData.amount !== null
@@ -47,6 +56,11 @@ export default function EmployeeExpenseForm({
 
   const handleSubmit = (event) => {
     event.preventDefault();
+
+    if (canPickEmployee && !employeeId) {
+      setError("Please select an employee");
+      return;
+    }
 
     if (!category) {
       setError("Please select a category");
@@ -73,6 +87,10 @@ export default function EmployeeExpenseForm({
       description: description.trim() || undefined,
     };
 
+    if (canPickEmployee && employeeId) {
+      payload.employee_id = employeeId;
+    }
+
     if (receipt) {
       payload.receipt = receipt;
     }
@@ -85,6 +103,24 @@ export default function EmployeeExpenseForm({
       {error && (
         <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600 dark:border-red-900/40 dark:bg-red-500/10 dark:text-red-400">
           {error}
+        </div>
+      )}
+
+      {canPickEmployee && (
+        <div>
+          <FieldLabel required>Employee</FieldLabel>
+          <select
+            value={employeeId}
+            onChange={(event) => setEmployeeId(event.target.value)}
+            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
+          >
+            <option value="">Select an employee</option>
+            {employeeOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
         </div>
       )}
 

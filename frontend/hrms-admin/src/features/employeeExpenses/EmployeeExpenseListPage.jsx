@@ -304,6 +304,7 @@ export default function EmployeeExpenseListPage() {
             setEditing(null);
           }}
           isEdit={!!editing}
+          canPickEmployee={canManageAll}
         />
       </Modal>
 

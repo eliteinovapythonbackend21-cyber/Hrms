@@ -203,6 +203,9 @@ def update_employee_expense(expense_id, token_response):
 
     data = request.form.to_dict() if request.form else (request.get_json(silent=True) or {})
 
+    if _is_privileged(current_user) and data.get("employee_id"):
+        expense.employee_id = int(data.get("employee_id"))
+
     if "category" in data:
         category = (data.get("category") or "").strip()
         if category not in EmployeeExpense.CATEGORIES:
