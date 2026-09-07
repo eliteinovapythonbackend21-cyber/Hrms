@@ -272,6 +272,7 @@ export default function IncentiveDashboardPage() {
       { header: "Registrations", accessor: (r) => r.registration_count },
       { header: "Target", accessor: (r) => r.target_count },
       { header: "Eligible", accessor: (r) => r.eligible_count },
+      { header: "Eligible Amount", accessor: (r) => r.amount },
     ],
     monthly: [
       { header: "Employee", accessor: empName },
@@ -535,6 +536,16 @@ export default function IncentiveDashboardPage() {
           { key: "registration_count", label: "Regs", align: "right" },
           { key: "target_count", label: "Target", align: "right" },
           { key: "eligible_count", label: "Eligible", align: "right" },
+          {
+            key: "amount",
+            label: "Eligible Amount",
+            align: "right",
+            render: (r) => (
+              <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                {formatCurrency(r.amount)}
+              </span>
+            ),
+          },
         ];
         const empty = `No weekly incentive rows for ${MONTHS[month - 1]} ${year}. ${
           canManage ? "Run the calculation above." : ""
