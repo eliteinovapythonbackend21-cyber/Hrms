@@ -355,12 +355,19 @@ def export_lead_generation_report(token_response):
 
     from_date = parse_date(request.args.get("from_date"))
     to_date = parse_date(request.args.get("to_date"))
+    lead_id = request.args.get("lead_id")
 
     query = Lead.query
-    if from_date:
-        query = query.filter(Lead.created_at >= from_date)
-    if to_date:
-        query = query.filter(Lead.created_at < to_date + timedelta(days=1))
+    if lead_id:
+        # Single-lead export — the per-row "Download" action on the Lead
+        # Generation Report screen. Date range is ignored when a specific
+        # lead is requested.
+        query = query.filter(Lead.id == lead_id)
+    else:
+        if from_date:
+            query = query.filter(Lead.created_at >= from_date)
+        if to_date:
+            query = query.filter(Lead.created_at < to_date + timedelta(days=1))
 
     leads = query.order_by(Lead.created_at.desc()).all()
 
@@ -413,9 +420,13 @@ def export_lead_generation_report(token_response):
     workbook.save(buffer)
     buffer.seek(0)
 
+    filename = (
+        f"lead_{lead_id}.xlsx" if lead_id else "lead_generation_report.xlsx"
+    )
+
     return send_file(
         buffer,
         as_attachment=True,
-        download_name="lead_generation_report.xlsx",
+        download_name=filename,
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )

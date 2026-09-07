@@ -202,6 +202,22 @@ export default function LeadGenerationReportPage() {
       ),
   });
 
+  // Per-row download — same endpoint, scoped to a single lead_id, so each
+  // row can be exported on its own instead of only the whole date range.
+  const downloadLead = useMutation({
+    mutationFn: async (lead) => {
+      const res = await crmApi.leads.report({ lead_id: lead.id });
+      downloadBlob(res, `lead_${lead.id}.xlsx`);
+      return res;
+    },
+    onSuccess: () => showToast("Lead downloaded", "success"),
+    onError: (error) =>
+      showToast(
+        error?.response?.data?.message || "Failed to download this lead",
+        "error"
+      ),
+  });
+
   const columns = [
     {
       key: "lead_name",
@@ -258,16 +274,31 @@ export default function LeadGenerationReportPage() {
     },
     {
       key: "actions",
-      label: "Details",
-      render: (row) => (
-        <button
-          type="button"
-          onClick={() => setSelectedLead(row)}
-          className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-primary-600 transition hover:bg-primary-50 dark:border-white/10 dark:bg-white/[0.06] dark:text-primary-400 dark:hover:bg-primary-500/10"
-        >
-          View
-        </button>
-      ),
+      label: "Actions",
+      render: (row) => {
+        const isDownloadingRow =
+          downloadLead.isPending && downloadLead.variables?.id === row.id;
+
+        return (
+          <div className="flex items-center gap-1.5 whitespace-nowrap">
+            <button
+              type="button"
+              onClick={() => setSelectedLead(row)}
+              className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-primary-600 transition hover:bg-primary-50 dark:border-white/10 dark:bg-white/[0.06] dark:text-primary-400 dark:hover:bg-primary-500/10"
+            >
+              View
+            </button>
+            <button
+              type="button"
+              onClick={() => downloadLead.mutate(row)}
+              disabled={isDownloadingRow}
+              className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-50 disabled:opacity-50 dark:border-white/10 dark:bg-white/[0.06] dark:text-slate-300 dark:hover:bg-white/10"
+            >
+              {isDownloadingRow ? "Downloading..." : "Download"}
+            </button>
+          </div>
+        );
+      },
     },
   ];
 
@@ -278,8 +309,8 @@ export default function LeadGenerationReportPage() {
           Lead Generation Report
         </h1>
         <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
-          Preview leads in the table below, then download every matching lead (name, contact,
-          source, status, assignment) as Excel
+          Preview leads in the table below, download every matching lead as one Excel file, or use
+          each row's own Download button to export just that lead
         </p>
       </div>
 
