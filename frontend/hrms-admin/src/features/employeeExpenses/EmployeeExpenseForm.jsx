@@ -1,8 +1,11 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 
 import Button from "@/components/ui/Button";
 import { useEmployeeExpenseCategories } from "./useEmployeeExpenses";
 import { useEmployeeOptions } from "@/hooks/useLookupOptions";
+import { useMyEmployee } from "@/hooks/useMyEmployee";
+import { employeesApi } from "@/api/employees.api";
 
 function FieldLabel({ children, required = false }) {
   return (
@@ -38,9 +41,36 @@ export default function EmployeeExpenseForm({
   const categories = categoryData?.categories || FALLBACK_CATEGORIES;
   const employeeOptions = useEmployeeOptions();
 
+  // Full employee records (with department -> company/branch and
+  // designation already nested, per Employee.to_dict()) so the selected
+  // employee's org details can be shown read-only below — fetched only
+  // for a privileged (admin/Finance) login, since a plain employee's own
+  // details come from useMyEmployee() instead.
+  const { data: employeesData } = useQuery({
+    queryKey: ["lookup", "employees-detailed"],
+    queryFn: async () => (await employeesApi.list({ is_active: true, per_page: 500 })).data.data,
+    enabled: canPickEmployee,
+  });
+  const employees = employeesData?.items || [];
+
+  const { employee: myEmployee } = useMyEmployee();
+
   const [employeeId, setEmployeeId] = useState(
     initialData.employee_id ?? initialData.employee?.id ?? ""
   );
+
+  const selectedEmployee = canPickEmployee
+    ? employees.find((e) => String(e.id) === String(employeeId))
+    : myEmployee;
+
+  const orgDetails = selectedEmployee
+    ? {
+        company: selectedEmployee.department?.company?.name || "",
+        branch: selectedEmployee.department?.branch?.name || "",
+        department: selectedEmployee.department?.department_name || "",
+        designation: selectedEmployee.designation?.designation_name || "",
+      }
+    : null;
   const [category, setCategory] = useState(initialData.category || "");
   const [amount, setAmount] = useState(
     initialData.amount !== undefined && initialData.amount !== null
@@ -121,6 +151,31 @@ export default function EmployeeExpenseForm({
               </option>
             ))}
           </select>
+        </div>
+      )}
+
+      {orgDetails && (
+        <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-white/10 dark:bg-white/[0.03]">
+          <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+            Employee Details
+          </p>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {[
+              ["Company", orgDetails.company],
+              ["Branch", orgDetails.branch],
+              ["Department", orgDetails.department],
+              ["Designation", orgDetails.designation],
+            ].map(([label, value]) => (
+              <div key={label}>
+                <p className="text-[9px] font-medium uppercase tracking-wide text-slate-400">
+                  {label}
+                </p>
+                <p className="mt-0.5 truncate text-xs font-semibold text-slate-700 dark:text-slate-200">
+                  {value || "—"}
+                </p>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

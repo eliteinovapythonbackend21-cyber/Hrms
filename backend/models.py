@@ -3429,6 +3429,7 @@ class EmployeeExpense(TimestampMixin, db.Model):
         data["employee"] = _summary(
             self.employee, ["id", "employee_code", "first_name", "last_name"]
         )
+        data["employee_hierarchy"] = Lead._employee_hierarchy(self.employee)
         if self.amount is not None:
             data["amount"] = float(self.amount)
         return data

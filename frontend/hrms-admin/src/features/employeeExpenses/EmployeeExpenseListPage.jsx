@@ -134,6 +134,42 @@ export default function EmployeeExpenseListPage() {
               </span>
             ),
           },
+          {
+            key: "company",
+            label: "Company",
+            render: (r) => (
+              <span className="text-sm text-slate-600 dark:text-slate-300">
+                {r.employee_hierarchy?.company?.name || "-"}
+              </span>
+            ),
+          },
+          {
+            key: "branch",
+            label: "Branch",
+            render: (r) => (
+              <span className="text-sm text-slate-600 dark:text-slate-300">
+                {r.employee_hierarchy?.branch?.name || "-"}
+              </span>
+            ),
+          },
+          {
+            key: "department",
+            label: "Department",
+            render: (r) => (
+              <span className="text-sm text-slate-600 dark:text-slate-300">
+                {r.employee_hierarchy?.department?.department_name || "-"}
+              </span>
+            ),
+          },
+          {
+            key: "designation",
+            label: "Designation",
+            render: (r) => (
+              <span className="text-sm text-slate-600 dark:text-slate-300">
+                {r.employee_hierarchy?.designation?.designation_name || "-"}
+              </span>
+            ),
+          },
         ]
       : []),
     {
