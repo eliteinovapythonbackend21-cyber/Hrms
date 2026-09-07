@@ -75,6 +75,11 @@ meetings_bp = register_crud_blueprint(
     deletable=False,
     admin_only=False,
     on_create=_attribute_registration,
+    # Every registration a CRM employee creates is already stamped to their
+    # own Employee record (see _attribute_registration above) — the list
+    # must mirror that: a plain CRM employee login only ever sees their own
+    # registrations, not every other CRM employee's. Admin still sees all.
+    own_employee_scope_field="registered_by",
 )
 
 
