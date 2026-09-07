@@ -91,6 +91,7 @@ export const crmApi = {
     runPayout: (month, year) => axiosClient.post(C.INCENTIVE_RUN_PAYOUT, { month, year }),
     weekly: (params) => axiosClient.get(C.INCENTIVE_WEEKLY, { params }),
     monthly: (params) => axiosClient.get(C.INCENTIVE_MONTHLY, { params }),
+    quarterly: (params) => axiosClient.get(C.INCENTIVE_QUARTERLY, { params }),
     yearly: (params) => axiosClient.get(C.INCENTIVE_YEARLY, { params }),
     summary: (params) => axiosClient.get(C.INCENTIVE_SUMMARY, { params }),
     periodSummary: (params) => axiosClient.get(C.INCENTIVE_PERIOD_SUMMARY, { params }),

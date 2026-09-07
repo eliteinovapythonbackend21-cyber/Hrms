@@ -59,6 +59,14 @@ export function useMonthlyPayouts(params, options = {}) {
   });
 }
 
+export function useQuarterlyIncentives(params, options = {}) {
+  return useQuery({
+    queryKey: ["incentive-quarterly", params],
+    queryFn: async () => unwrap(await api.quarterly(params)),
+    ...options,
+  });
+}
+
 export function useYearlyPayouts(params, options = {}) {
   return useQuery({
     queryKey: ["incentive-yearly", params],

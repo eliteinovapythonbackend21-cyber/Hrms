@@ -161,6 +161,7 @@ export const API = {
     INCENTIVE_RUN_PAYOUT: "/incentives/run-payout",
     INCENTIVE_WEEKLY: "/incentives/weekly",
     INCENTIVE_MONTHLY: "/incentives/monthly",
+    INCENTIVE_QUARTERLY: "/incentives/quarterly",
     INCENTIVE_YEARLY: "/incentives/yearly",
     INCENTIVE_SUMMARY: "/incentives/summary",
     INCENTIVE_MONTHLY_INVOICE: (id) => `/incentives/monthly/${id}/invoice`,

@@ -14,6 +14,7 @@ import {
   useRunPayoutNow,
   useWeeklyIncentives,
   useMonthlyPayouts,
+  useQuarterlyIncentives,
   useYearlyPayouts,
   useIncentiveSummary,
   useIncentiveInvoiceList,
@@ -179,8 +180,10 @@ export default function IncentiveDashboardPage() {
   const canManage = isAdmin;
 
   const now = new Date();
+  const currentQuarter = Math.floor(now.getMonth() / 3) + 1;
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
+  const [quarter, setQuarter] = useState(currentQuarter);
   const [tab, setTab] = useState("weekly");
   const [viewMode, setViewMode] = useState("table");
 
@@ -191,6 +194,10 @@ export default function IncentiveDashboardPage() {
 
   const weekly = useWeeklyIncentives({ year, month, per_page: 500 });
   const monthly = useMonthlyPayouts({ year, per_page: 500 });
+  const quarterly = useQuarterlyIncentives(
+    { year, quarter },
+    { enabled: tab === "quarterly" }
+  );
   const yearly = useYearlyPayouts({ year, per_page: 500 });
   const invoices = useIncentiveInvoiceList({ per_page: 500 });
 
@@ -200,6 +207,7 @@ export default function IncentiveDashboardPage() {
 
   const weeklyRows = weekly.data?.items || [];
   const monthlyRows = monthly.data?.items || [];
+  const quarterlyRows = quarterly.data?.items || [];
   const yearlyRows = yearly.data?.items || [];
   const invoiceRows = invoices.data?.items || [];
 
@@ -248,6 +256,7 @@ export default function IncentiveDashboardPage() {
   const TABS = [
     { id: "weekly", label: "Weekly" },
     { id: "monthly", label: "Monthly" },
+    { id: "quarterly", label: "Quarterly" },
     { id: "yearly", label: "Yearly" },
     { id: "invoices", label: "Invoices" },
   ];
@@ -274,6 +283,14 @@ export default function IncentiveDashboardPage() {
       { header: "Payout", accessor: (r) => r.amount },
       { header: "Status", accessor: (r) => r.status },
     ],
+    quarterly: [
+      { header: "Employee", accessor: empName },
+      { header: "Period", accessor: (r) => `Q${r.quarter} ${r.year}` },
+      { header: "Registrations", accessor: (r) => r.registration_count },
+      { header: "Target", accessor: (r) => r.target_count },
+      { header: "Eligible", accessor: (r) => r.eligible_count },
+      { header: "Amount", accessor: (r) => r.amount },
+    ],
     yearly: [
       { header: "Employee", accessor: empName },
       { header: "Year", accessor: (r) => r.year },
@@ -294,6 +311,7 @@ export default function IncentiveDashboardPage() {
   const ROWS_BY_TAB = {
     weekly: weeklyRows,
     monthly: monthlyRows,
+    quarterly: quarterlyRows,
     yearly: yearlyRows,
     invoices: invoiceRows,
   };
@@ -328,17 +346,31 @@ export default function IncentiveDashboardPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <select
-            value={month}
-            onChange={(e) => setMonth(Number(e.target.value))}
-            className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm dark:border-white/10 dark:bg-white/[0.04] dark:text-white"
-          >
-            {MONTHS.map((m, i) => (
-              <option key={m} value={i + 1}>
-                {m}
-              </option>
-            ))}
-          </select>
+          {tab === "quarterly" ? (
+            <select
+              value={quarter}
+              onChange={(e) => setQuarter(Number(e.target.value))}
+              className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm dark:border-white/10 dark:bg-white/[0.04] dark:text-white"
+            >
+              {[1, 2, 3, 4].map((q) => (
+                <option key={q} value={q}>
+                  Q{q}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <select
+              value={month}
+              onChange={(e) => setMonth(Number(e.target.value))}
+              className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm dark:border-white/10 dark:bg-white/[0.04] dark:text-white"
+            >
+              {MONTHS.map((m, i) => (
+                <option key={m} value={i + 1}>
+                  {m}
+                </option>
+              ))}
+            </select>
+          )}
           <select
             value={year}
             onChange={(e) => setYear(Number(e.target.value))}
@@ -355,6 +387,7 @@ export default function IncentiveDashboardPage() {
             onRefresh={() => {
               weekly.refetch();
               monthly.refetch();
+              quarterly.refetch();
               yearly.refetch();
               invoices.refetch();
             }}
@@ -568,6 +601,36 @@ export default function IncentiveDashboardPage() {
           <CardGrid empty={empty} rows={monthlyRows} columns={columns} />
         ) : (
           <DataGrid empty={empty} rows={monthlyRows} columns={columns} />
+        );
+      })()}
+
+      {tab === "quarterly" && (() => {
+        const columns = [
+          { key: "emp", label: "Employee", render: empName },
+          {
+            key: "period",
+            label: "Period",
+            render: (r) => `Q${r.quarter} ${r.year}`,
+          },
+          { key: "registration_count", label: "Regs", align: "right" },
+          { key: "target_count", label: "Target", align: "right" },
+          { key: "eligible_count", label: "Eligible", align: "right" },
+          {
+            key: "amount",
+            label: "Amount",
+            align: "right",
+            render: (r) => (
+              <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                {formatCurrency(r.amount)}
+              </span>
+            ),
+          },
+        ];
+        const empty = `No quarterly figures for Q${quarter} ${year} yet.`;
+        return viewMode === "card" ? (
+          <CardGrid empty={empty} rows={quarterlyRows} columns={columns} />
+        ) : (
+          <DataGrid empty={empty} rows={quarterlyRows} columns={columns} />
         );
       })()}
 

@@ -665,6 +665,43 @@ def employee_summary(employee_id, year):
     }
 
 
+def quarter_bounds(quarter, year):
+    """(start, end) datetimes covering the given quarter — end is exclusive."""
+    start_month = (quarter - 1) * 3 + 1
+    quarter_months = [((start_month + i - 1) % 12) + 1 for i in range(3)]
+    quarter_years = [year + ((start_month + i - 1) // 12) for i in range(3)]
+
+    start = datetime.combine(date(quarter_years[0], quarter_months[0], 1), time.min)
+    end_month, end_year = quarter_months[-1] + 1, quarter_years[-1]
+    if end_month > 12:
+        end_month, end_year = 1, end_year + 1
+    end = datetime.combine(date(end_year, end_month, 1), time.min)
+    return start, end
+
+
+def compute_quarterly_row(employee_id, quarter, year):
+    """One employee's figures for an arbitrary (quarter, year) — the
+    CRM Incentives screen's Quarterly tab equivalent of a MonthlyPayout
+    row. There is no persisted QuarterlyPayout table (only Monthly is ever
+    invoiced/paid, per payable_due_date), so this is always computed live."""
+    start, end = quarter_bounds(quarter, year)
+    target = _quarterly_target(employee_id, quarter, year)
+    calc = compute_period_incentive(employee_id, start, end, target, "Quarterly")
+
+    return {
+        "employee_id": employee_id,
+        "quarter": quarter,
+        "year": year,
+        "month_count": 3,
+        "registration_count": calc["total"],
+        "target_count": target,
+        "eligible_count": max(0, calc["total"] - target),
+        "amount": calc["amount"],
+        "breakdown": calc["breakdown"],
+        "eligible": calc["eligible"],
+    }
+
+
 def dashboard_period_summary(employee_id, period_type, today=None):
     """CURRENT Weekly/Monthly/Quarterly incentive snapshot for the CRM
     dashboard's period toggle — target, actual registrations, the

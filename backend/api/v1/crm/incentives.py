@@ -33,6 +33,8 @@ from utils import (
 )
 
 from .incentive_engine import (
+    _crm_employee_ids,
+    compute_quarterly_row,
     dashboard_period_summary,
     employee_summary,
     monday_of,
@@ -331,6 +333,54 @@ def list_yearly(token_response):
         q = q.filter(YearlyPayout.year == _int_arg("year"))
 
     return _paginated(q.order_by(YearlyPayout.year.desc()))
+
+
+@incentives_bp.route("/quarterly", methods=["GET"])
+@jwt_required()
+@with_token
+def list_quarterly(token_response):
+    """Quarterly tab on the CRM Incentives screen — always computed live
+    (no persisted QuarterlyPayout table; see compute_quarterly_row), for
+    the requested (or current) quarter/year, scoped like every other
+    /incentives/* list."""
+    scope, err = _resolve_scope(get_current_user())
+    if err:
+        return err
+
+    today = date.today()
+    year = _int_arg("year") or today.year
+    quarter = _int_arg("quarter") or ((today.month - 1) // 3 + 1)
+    if quarter not in (1, 2, 3, 4):
+        return jsonify({"message": "quarter must be 1-4"}), 400
+
+    employee_ids = [scope] if scope is not None else _crm_employee_ids()
+
+    employees = {
+        e.id: e
+        for e in Employee.query.filter(Employee.id.in_(employee_ids)).all()
+    } if employee_ids else {}
+
+    rows = []
+    for employee_id in employee_ids:
+        row = compute_quarterly_row(employee_id, quarter, year)
+        employee = employees.get(employee_id)
+        row["employee"] = (
+            {
+                "id": employee.id,
+                "employee_code": employee.employee_code,
+                "first_name": employee.first_name,
+                "last_name": employee.last_name,
+            }
+            if employee
+            else None
+        )
+        rows.append(row)
+
+    return jsonify({
+        "message": "Quarterly incentives fetched",
+        "data": {"items": rows, "total": len(rows), "quarter": quarter, "year": year},
+        "token_response": token_response,
+    }), 200
 
 
 @incentives_bp.route("/summary", methods=["GET"])
