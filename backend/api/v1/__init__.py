@@ -6,13 +6,14 @@ from .attendance import attendance_bp
 from .network import network_bp
 from .auth import auth_bp
 from .leave import leave_bp
-from .employee_expenses import employee_expenses_bp
+from .office_expenses import office_expenses_bp
 from .role.role import role_bp
 from .dashboard import dashboard_bp
 from .employee_lifecycle import lifecycle_blueprints
 from .crm import crm_blueprints
 from .finance import finance_blueprints
 from .feedback import feedback_bp
+
 
 blueprints = [
     (user_bp, "/users"),
@@ -23,7 +24,7 @@ blueprints = [
     (network_bp, "/network"),
     (auth_bp, "/auth"),
     (leave_bp, "/leaves"),
-    (employee_expenses_bp, "/employee-expenses"),
+    (office_expenses_bp, "/office-expenses"),
     (role_bp, "/roles"),
     (dashboard_bp, "/dashboard"),
     (feedback_bp, "/feedback"),

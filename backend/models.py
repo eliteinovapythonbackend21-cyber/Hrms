@@ -3403,46 +3403,173 @@ class Expense(TimestampMixin, db.Model):
         return Attendance._create_workbook("Finance Report", headers, rows)
 
 
-class EmployeeExpense(TimestampMixin, db.Model):
-    """Day-to-day personal expense an employee logs for their own
-    record-keeping (travel, food, fuel, etc.) — distinct from `Expense`
-    above, which is a company/ledger expense that debits an Account and
-    has no employee_id or approval concept. No approval workflow here:
-    an employee freely adds/edits/deactivates their own entries; admin
-    and Finance-department logins can view everyone's."""
+class OfficeExpense(TimestampMixin, db.Model):
+    """
+    Office expense / purchase record.
+
+    This is intentionally different from the accounting Expense model.
+
+    OfficeExpense is used for:
+      - day-to-day office purchases
+      - weekly reports
+      - monthly reports
+      - quarterly reports
+      - tracking who purchased an item
+      - tracking where it was purchased from
+      - tracking whether the amount was collected
+      - tracking the collection method
+    """
 
     __tablename__ = "employee_expenses"
 
+    PURCHASE_TYPES = (
+        "Office Purchase",
+        "Out Purchase",
+    )
+
+    COLLECTION_STATUSES = (
+        "Collected",
+        "Not Collected",
+    )
+
+    COLLECTION_MODES = (
+        "Cash",
+        "UPI",
+        "Bank Transfer",
+        "Card",
+        "Other",
+    )
+
     CATEGORIES = (
+        "Stationery",
+        "Printing",
+        "Cleaning",
+        "Pantry",
+        "Maintenance",
         "Travel",
-        "Food",
         "Fuel / Transport",
-        "Accommodation",
+        "IT / Electronics",
         "Office Supplies",
         "Client Entertainment",
         "Other",
     )
 
     id = db.Column(db.Integer, primary_key=True)
-    employee_id = db.Column(db.Integer, db.ForeignKey("employees.id"), nullable=False)
-    category = db.Column(db.String(50), nullable=False)
-    amount = db.Column(db.Numeric(12, 2), nullable=False)
-    expense_date = db.Column(db.Date, nullable=False)
-    description = db.Column(db.Text, nullable=True)
-    receipt_url = db.Column(db.String(500), nullable=True)
-    is_active = db.Column(db.Boolean, default=True)
 
-    employee = db.relationship("Employee")
+    # Employee who owns the record / whose expense is being recorded.
+    employee_id = db.Column(
+        db.Integer,
+        db.ForeignKey("employees.id"),
+        nullable=False,
+    )
+
+    # New office-expense fields.
+    purchase_type = db.Column(
+        db.String(50),
+        nullable=False,
+        default="Office Purchase",
+    )
+
+    category = db.Column(
+        db.String(80),
+        nullable=False,
+    )
+
+    item_name = db.Column(
+        db.String(255),
+        nullable=False,
+    )
+
+    amount = db.Column(
+        db.Numeric(12, 2),
+        nullable=False,
+    )
+
+    purchased_by = db.Column(
+        db.String(150),
+        nullable=False,
+    )
+
+    purchased_from = db.Column(
+        db.String(255),
+        nullable=True,
+    )
+
+    expense_date = db.Column(
+        db.Date,
+        nullable=False,
+    )
+
+    description = db.Column(
+        db.Text,
+        nullable=True,
+    )
+
+    receipt_url = db.Column(
+        db.String(500),
+        nullable=True,
+    )
+
+    # Collection tracking.
+    collection_status = db.Column(
+        db.String(30),
+        nullable=False,
+        default="Not Collected",
+    )
+
+    collection_mode = db.Column(
+        db.String(50),
+        nullable=True,
+    )
+
+    collection_date = db.Column(
+        db.Date,
+        nullable=True,
+    )
+
+    is_active = db.Column(
+        db.Boolean,
+        default=True,
+        nullable=False,
+    )
+
+    employee = db.relationship(
+        "Employee",
+        backref=db.backref("office_expenses", lazy=True),
+    )
 
     def to_dict(self):
         data = super().to_dict()
+
         data["employee"] = _summary(
-            self.employee, ["id", "employee_code", "first_name", "last_name"]
+            self.employee,
+            [
+                "id",
+                "employee_code",
+                "first_name",
+                "last_name",
+            ],
         )
-        data["employee_hierarchy"] = Lead._employee_hierarchy(self.employee)
+
+        data["employee_hierarchy"] = Lead._employee_hierarchy(
+            self.employee
+        )
+
         if self.amount is not None:
             data["amount"] = float(self.amount)
+
+        if self.expense_date:
+            data["expense_date"] = self.expense_date.isoformat()
+
+        if self.collection_date:
+            data["collection_date"] = self.collection_date.isoformat()
+
         return data
+
+
+# Backward compatibility:
+# Existing imports using EmployeeExpense continue to work.
+EmployeeExpense = OfficeExpense
 
 
 class Income(TimestampMixin, db.Model):
