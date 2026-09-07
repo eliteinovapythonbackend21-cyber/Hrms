@@ -19,8 +19,13 @@ Per employee, per period (Weekly/Monthly/Quarterly):
 
     Amount: only registrations AFTER the first `period_target` of them
     (chronologically) can earn incentive — and only if their plan passed
-    its own eligibility gate above. Each qualifying registration earns
-    INCENTIVE_RATE_PERCENT (6%) of that plan's current MembershipPlan.rate.
+    its own eligibility gate above. The rate escalates the further past
+    target an employee gets, per TIER_STEPS (1-based rank among the
+    "extra" registrations beyond target, independent of plan):
+      Weekly:    extra 1-5   -> 6%,  6-10  -> 8%,  11+ -> 10% of plan rate
+      Monthly:   extra 1-15  -> 6%,  16-30 -> 8%,  31+ -> 10% of plan rate
+      Quarterly: extra 1-30  -> 6%,  31-60 -> 8%,  61+ -> 10% of plan rate
+    (mirrors the tiers configured on the Incentive Slabs screen).
 
 Per employee, per ISO week (Mon-Sun; a week belongs to the month its
 Monday falls in) a WeeklyIncentive row is kept for the weekly
@@ -77,7 +82,23 @@ DEFAULT_TIERS = [
 PERIOD_TARGETS = {"Weekly": 10, "Monthly": 40, "Quarterly": 120}
 MIN_ELIGIBLE_REGISTRATIONS = 10
 PLAN_ELIGIBILITY_PCT = {"Silver": 0.50, "Gold": 0.30, "Diamond": 0.20}
-INCENTIVE_RATE_PERCENT = 6.0  # % of a plan's rate, per qualifying registration
+
+# Escalating rate per "extra" (1-based) registration position beyond the
+# period target: (min_extra, max_extra_or_None, percent_of_plan_rate).
+# Mirrors the Incentive Slabs screen's Weekly/Monthly/Quarterly tiers.
+TIER_STEPS = {
+    "Weekly": [(1, 5, 6.0), (6, 10, 8.0), (11, None, 10.0)],
+    "Monthly": [(1, 15, 6.0), (16, 30, 8.0), (31, None, 10.0)],
+    "Quarterly": [(1, 30, 6.0), (31, 60, 8.0), (61, None, 10.0)],
+}
+
+
+def _tier_percent(period_type, extra_position):
+    steps = TIER_STEPS.get(period_type, TIER_STEPS["Monthly"])
+    for lo, hi, pct in steps:
+        if extra_position >= lo and (hi is None or extra_position <= hi):
+            return pct
+    return steps[-1][2]
 
 
 def _plan_rates():
@@ -87,7 +108,7 @@ def _plan_rates():
     }
 
 
-def compute_period_incentive(employee_id, start, end, target, plan_rates=None):
+def compute_period_incentive(employee_id, start, end, target, period_type="Monthly", plan_rates=None):
     """Core plan-based formula for one employee over [start, end).
 
     Returns a dict: total, target, eligible (bool), amount, breakdown
@@ -128,11 +149,12 @@ def compute_period_incentive(employee_id, start, end, target, plan_rates=None):
     beyond_target_rows = rows[target:]
     amount = 0.0
     breakdown = {}
-    for row in beyond_target_rows:
+    for extra_position, row in enumerate(beyond_target_rows, start=1):
         if row.membership_plan not in eligible_plans:
             continue
         rate = plan_rates.get(row.membership_plan, 0.0)
-        incentive = round((INCENTIVE_RATE_PERCENT / 100) * rate, 2)
+        pct = _tier_percent(period_type, extra_position)
+        incentive = round((pct / 100) * rate, 2)
         amount += incentive
         breakdown[row.membership_plan] = round(breakdown.get(row.membership_plan, 0.0) + incentive, 2)
 
@@ -144,13 +166,14 @@ def compute_period_incentive(employee_id, start, end, target, plan_rates=None):
 def compute_monthly_incentive_amount(count):
     """Backward-compatible helper retained for any external caller that
     only has a raw count (no plan breakdown) — approximates the old flat
-    rule's shape but is NOT used by rebuild_monthly_payout anymore, which
-    calls compute_period_incentive with the real per-plan breakdown."""
+    rule's shape (using the first escalating tier's rate) but is NOT used
+    by rebuild_monthly_payout anymore, which calls compute_period_incentive
+    with the real per-plan, per-tier breakdown."""
     if count <= 0:
         return 0.0
     target = PERIOD_TARGETS["Monthly"]
     extra = max(0, count - target)
-    return round(extra * (INCENTIVE_RATE_PERCENT / 100) * 1000.0, 2)
+    return round(extra * (TIER_STEPS["Monthly"][0][2] / 100) * 1000.0, 2)
 
 
 def payable_due_date(month, year):
@@ -290,7 +313,7 @@ def recompute_week(employee_id, monday, commit=False):
 
     start = datetime.combine(monday, time.min)
     end = datetime.combine(monday + timedelta(days=7), time.min)
-    calc = compute_period_incentive(employee_id, start, end, target)
+    calc = compute_period_incentive(employee_id, start, end, target, "Weekly")
 
     eligible = max(0, count - target)
     amount = calc["amount"]
@@ -341,7 +364,7 @@ def rebuild_monthly_payout(employee_id, month, year, commit=False):
     start = datetime.combine(date(year, month, 1), time.min)
     end = datetime.combine(date(year, month, days_in_month) + timedelta(days=1), time.min)
     target = _monthly_target(employee_id, month, year)
-    calc = compute_period_incentive(employee_id, start, end, target)
+    calc = compute_period_incentive(employee_id, start, end, target, "Monthly")
 
     reg = calc["total"]
     eligible = max(0, reg - target)
@@ -655,7 +678,7 @@ def dashboard_period_summary(employee_id, period_type, today=None):
         start = datetime.combine(monday, time.min)
         end = datetime.combine(monday + timedelta(days=7), time.min)
         target = _weekly_target(employee_id, monday)
-        calc = compute_period_incentive(employee_id, start, end, target)
+        calc = compute_period_incentive(employee_id, start, end, target, "Weekly")
         weekly_row = WeeklyIncentive.query.filter_by(
             employee_id=employee_id, week_start_date=monday
         ).first()
@@ -681,7 +704,7 @@ def dashboard_period_summary(employee_id, period_type, today=None):
         days_in_month = monthrange(year, month)[1]
         start = datetime.combine(date(year, month, 1), time.min)
         end = datetime.combine(date(year, month, days_in_month) + timedelta(days=1), time.min)
-        calc = compute_period_incentive(employee_id, start, end, target)
+        calc = compute_period_incentive(employee_id, start, end, target, "Monthly")
 
         weeks = [_weekly_registration_count(employee_id, monday) for monday in weeks_touching_month(month, year)]
         weeks = (weeks + [0, 0, 0, 0])[:4]
@@ -726,7 +749,7 @@ def dashboard_period_summary(employee_id, period_type, today=None):
     end = datetime.combine(date(end_year, end_month, 1), time.min)
 
     target = _quarterly_target(employee_id, quarter, year)
-    calc = compute_period_incentive(employee_id, start, end, target)
+    calc = compute_period_incentive(employee_id, start, end, target, "Quarterly")
 
     months = [
         _monthly_registration_count(employee_id, m, y)
