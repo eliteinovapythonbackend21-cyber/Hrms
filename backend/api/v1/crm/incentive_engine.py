@@ -339,6 +339,7 @@ def recompute_week(employee_id, monday, commit=False):
     row.tier_name = tier.name if tier else None
     row.rate_per_registration = 0.0
     row.amount = amount
+    row.breakdown = calc["breakdown"]
     row.is_active = True
 
     if commit:
@@ -383,6 +384,7 @@ def rebuild_monthly_payout(employee_id, month, year, commit=False):
     payout.target_count = target
     payout.eligible_count = eligible
     payout.amount = amount
+    payout.breakdown = calc["breakdown"]
     payout.due_date = payable_due_date(month, year)
     payout.is_active = True
     # Once an amount is payable, mark it Approved so it's ready for the

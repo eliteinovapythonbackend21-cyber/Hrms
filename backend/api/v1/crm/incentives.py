@@ -514,3 +514,73 @@ def list_incentive_invoices(token_response):
         q = q.filter(Invoice.employee_id == scope)
 
     return _paginated(q.order_by(Invoice.id.desc()))
+
+
+@incentives_bp.route("/invoices/report", methods=["GET"])
+@jwt_required()
+@with_token
+def download_monthly_invoice_report(token_response):
+    """Admin-only Excel export of every Paid Incentive invoice for one
+    month/year — the "Download Monthly Invoice" button on the Invoices
+    tab of the CRM Incentives screen."""
+    if not _can_manage(get_current_user()):
+        return jsonify({"message": "Admin privileges required"}), 403
+
+    month = _int_arg("month") or date.today().month
+    year = _int_arg("year") or date.today().year
+
+    invoices = (
+        Invoice.query.filter(Invoice.invoice_type == "Incentive", Invoice.status == "Paid")
+        .join(MonthlyPayout, Invoice.monthly_payout_id == MonthlyPayout.id)
+        .filter(MonthlyPayout.month == month, MonthlyPayout.year == year)
+        .order_by(Invoice.id.desc())
+        .all()
+    )
+
+    import io
+
+    from flask import send_file
+    from openpyxl import Workbook
+    from openpyxl.utils import get_column_letter
+
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.title = "Incentive Invoices"
+
+    headers = ["Invoice #", "Employee", "Amount", "Due Date", "Status", "Paid On"]
+    sheet.append(headers)
+
+    for invoice in invoices:
+        employee = invoice.employee
+        employee_name = (
+            f"{employee.first_name or ''} {employee.last_name or ''}".strip()
+            if employee
+            else f"#{invoice.employee_id}"
+        )
+        last_payment = max(
+            (p.payment_date for p in invoice.payments if p.payment_date), default=None
+        )
+        sheet.append([
+            invoice.invoice_number or f"INC{invoice.id:05d}",
+            employee_name or "-",
+            float(invoice.amount or 0),
+            invoice.due_date.isoformat() if invoice.due_date else "-",
+            invoice.status or "-",
+            last_payment.isoformat() if last_payment else "-",
+        ])
+
+    for column_cells in sheet.columns:
+        values = [str(cell.value) for cell in column_cells if cell.value is not None]
+        max_length = max((len(v) for v in values), default=10)
+        sheet.column_dimensions[get_column_letter(column_cells[0].column)].width = max(14, max_length + 2)
+
+    buffer = io.BytesIO()
+    workbook.save(buffer)
+    buffer.seek(0)
+
+    return send_file(
+        buffer,
+        as_attachment=True,
+        download_name=f"incentive_invoices_{year}_{month:02d}.xlsx",
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )

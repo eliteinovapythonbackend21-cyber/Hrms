@@ -22,8 +22,11 @@ import { useIsCrmEmployee } from "@/hooks/useIsCrmEmployee";
    CONSTANTS
 ========================================================= */
 
-const CARD_PAGE_SIZE = 6;
-const TABLE_PAGE_SIZE = 10;
+// Each period only ever has a small, fixed set of slabs (the base
+// eligibility-gate tier + escalating tiers per plan) — generous enough
+// that every slab always fits on one page/scroll, no "Next" needed.
+const CARD_PAGE_SIZE = 100;
+const TABLE_PAGE_SIZE = 100;
 const PERIOD_TYPES = ["Weekly", "Monthly", "Quarterly"];
 
 /* =========================================================
@@ -266,7 +269,7 @@ export default function IncentiveSlabPage() {
 
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState("active");
-  const [viewMode, setViewMode] = useState("card");
+  const [viewMode, setViewMode] = useState("table");
   const [page, setPage] = useState(1);
 
   const [formOpen, setFormOpen] = useState(false);
@@ -474,7 +477,15 @@ export default function IncentiveSlabPage() {
         </div>
       )}
 
-      {/* PERIOD TYPE TABS */}
+      {/* STATS */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard icon={<SlabIcon />} value={allSlabs.length} label="Total Slabs" tone="sky" />
+        <StatCard icon={<ActiveStatIcon />} value={activeSlabs.length} label="Active Slabs" tone="emerald" />
+        <StatCard icon={<InactiveStatIcon />} value={inactiveSlabs.length} label="Inactive Slabs" tone="red" />
+        <StatCard icon={<AmountStatIcon />} value={formatCurrency(highestAmount)} label="Highest Incentive" tone="amber" />
+      </div>
+
+      {/* PERIOD TYPE TABS — sits under the stat cards, right above the slab list itself */}
       <div className="flex w-fit items-center rounded-lg bg-slate-100 p-1 dark:bg-white/[0.06]">
         {PERIOD_TYPES.map((period) => (
           <button
@@ -493,14 +504,6 @@ export default function IncentiveSlabPage() {
             {period}
           </button>
         ))}
-      </div>
-
-      {/* STATS */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard icon={<SlabIcon />} value={allSlabs.length} label="Total Slabs" tone="sky" />
-        <StatCard icon={<ActiveStatIcon />} value={activeSlabs.length} label="Active Slabs" tone="emerald" />
-        <StatCard icon={<InactiveStatIcon />} value={inactiveSlabs.length} label="Inactive Slabs" tone="red" />
-        <StatCard icon={<AmountStatIcon />} value={formatCurrency(highestAmount)} label="Highest Incentive" tone="amber" />
       </div>
 
       {/* FILTERS */}
@@ -561,20 +564,6 @@ export default function IncentiveSlabPage() {
               <button
                 type="button"
                 onClick={() => {
-                  setViewMode("card");
-                  setPage(1);
-                }}
-                className={`rounded-md px-3 py-1.5 text-xs font-medium ${
-                  viewMode === "card"
-                    ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
-                    : "text-slate-500 dark:text-slate-400"
-                }`}
-              >
-                Card
-              </button>
-              <button
-                type="button"
-                onClick={() => {
                   setViewMode("table");
                   setPage(1);
                 }}
@@ -585,6 +574,20 @@ export default function IncentiveSlabPage() {
                 }`}
               >
                 Table
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setViewMode("card");
+                  setPage(1);
+                }}
+                className={`rounded-md px-3 py-1.5 text-xs font-medium ${
+                  viewMode === "card"
+                    ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
+                    : "text-slate-500 dark:text-slate-400"
+                }`}
+              >
+                Card
               </button>
             </div>
           </div>
@@ -809,30 +812,33 @@ export default function IncentiveSlabPage() {
         </div>
       )}
 
-      {/* PAGINATION */}
-      <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500 shadow-sm dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-400">
-        <span>
-          Page {page} of {pageCount}
-        </span>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            disabled={page <= 1}
-            onClick={() => setPage((current) => Math.max(1, current - 1))}
-            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium disabled:opacity-40 dark:border-white/10 dark:bg-white/[0.06]"
-          >
-            Previous
-          </button>
-          <button
-            type="button"
-            disabled={page >= pageCount}
-            onClick={() => setPage((current) => Math.min(pageCount, current + 1))}
-            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium disabled:opacity-40 dark:border-white/10 dark:bg-white/[0.06]"
-          >
-            Next
-          </button>
+      {/* PAGINATION — hidden when everything already fits on one page/scroll,
+          which is the normal case now that every slab is shown at once. */}
+      {pageCount > 1 && (
+        <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500 shadow-sm dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-400">
+          <span>
+            Page {page} of {pageCount}
+          </span>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              disabled={page <= 1}
+              onClick={() => setPage((current) => Math.max(1, current - 1))}
+              className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium disabled:opacity-40 dark:border-white/10 dark:bg-white/[0.06]"
+            >
+              Previous
+            </button>
+            <button
+              type="button"
+              disabled={page >= pageCount}
+              onClick={() => setPage((current) => Math.min(pageCount, current + 1))}
+              className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium disabled:opacity-40 dark:border-white/10 dark:bg-white/[0.06]"
+            >
+              Next
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* ADD / EDIT FORM */}
       {formOpen && (

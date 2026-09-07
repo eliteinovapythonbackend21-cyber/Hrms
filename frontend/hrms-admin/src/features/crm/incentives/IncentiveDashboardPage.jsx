@@ -1,13 +1,16 @@
 import { useMemo, useState } from "react";
+import { useMutation } from "@tanstack/react-query";
 
 import TableToolbar from "@/components/table/TableToolbar";
 import { useTableExport } from "@/hooks/useTableExport";
+import { useFileDownload } from "@/hooks/useFileDownload";
 import Button from "@/components/ui/Button";
 import { useToast } from "@/components/feedback/Toast";
 import { getUser } from "@/utils/tokenHelpers";
 import { formatCurrency } from "@/utils/formatCurrency";
 import { formatDate } from "@/utils/formatDate";
 import { useIsCrmEmployee } from "@/hooks/useIsCrmEmployee";
+import { crmApi } from "@/api/crm.api";
 
 import {
   useRunIncentives,
@@ -29,6 +32,27 @@ const MONTHS = [
   "January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December",
 ];
+
+const PLAN_TONE = {
+  Silver: "text-slate-600 dark:text-slate-300",
+  Gold: "text-amber-600 dark:text-amber-400",
+  Diamond: "text-sky-600 dark:text-sky-400",
+};
+
+// Silver/Gold/Diamond per-plan incentive columns, shared by the Weekly,
+// Monthly and Quarterly tabs — reads WeeklyIncentive/MonthlyPayout's
+// `breakdown` (or the live-computed Quarterly row's) so the plan-based
+// split is visible alongside the combined total, not just the total.
+const PLAN_COLUMNS = ["Silver", "Gold", "Diamond"].map((plan) => ({
+  key: `plan_${plan}`,
+  label: plan,
+  align: "right",
+  render: (r) => (
+    <span className={`font-medium ${PLAN_TONE[plan]}`}>
+      {formatCurrency(r.breakdown?.[plan] || 0)}
+    </span>
+  ),
+}));
 
 function StatusPill({ value }) {
   const map = {
@@ -174,6 +198,7 @@ function CardGrid({ columns, rows, empty }) {
 
 export default function IncentiveDashboardPage() {
   const { showToast } = useToast();
+  const { downloadBlob } = useFileDownload();
   const user = getUser();
   const isAdmin = String(user?.role || "").toLowerCase() === "admin";
   const { isCrmEmployee } = useIsCrmEmployee();
@@ -205,11 +230,60 @@ export default function IncentiveDashboardPage() {
   const runPayoutMut = useRunPayoutNow();
   const genMut = useGenerateIncentiveInvoice();
 
-  const weeklyRows = weekly.data?.items || [];
+  const allWeeklyRows = weekly.data?.items || [];
   const monthlyRows = monthly.data?.items || [];
   const quarterlyRows = quarterly.data?.items || [];
   const yearlyRows = yearly.data?.items || [];
   const invoiceRows = invoices.data?.items || [];
+
+  // Weekly tab shows the CURRENT week only, not every week of the
+  // selected month — the month/year pickers still drive Monthly/Yearly.
+  const currentWeekStart = useMemo(() => {
+    const day = now.getDay();
+    const diff = day === 0 ? -6 : 1 - day;
+    const monday = new Date(now);
+    monday.setDate(now.getDate() + diff);
+    return monday.toISOString().slice(0, 10);
+  }, [now]);
+
+  const weeklyRows = useMemo(
+    () => allWeeklyRows.filter((r) => r.week_start_date === currentWeekStart),
+    [allWeeklyRows, currentWeekStart]
+  );
+
+  // 1st/2nd/3rd/4th-week breakdown per employee for the Monthly tab —
+  // built from the same per-month WeeklyIncentive rows already fetched
+  // above (weekly query is scoped to {year, month}, same as this tab).
+  const weekBreakdownByEmployee = useMemo(() => {
+    const map = {};
+    const sorted = allWeeklyRows
+      .slice()
+      .sort((a, b) => new Date(a.week_start_date) - new Date(b.week_start_date));
+    for (const row of sorted) {
+      if (!map[row.employee_id]) map[row.employee_id] = [];
+      map[row.employee_id].push(row);
+    }
+    return map;
+  }, [allWeeklyRows]);
+
+  // 1st/2nd/3rd-month breakdown per employee for the Quarterly tab — built
+  // from monthlyRows (already fetched for the whole selected year).
+  const quarterMonths = useMemo(() => {
+    const start = (quarter - 1) * 3 + 1;
+    return [start, start + 1, start + 2];
+  }, [quarter]);
+
+  const monthBreakdownByEmployee = useMemo(() => {
+    const map = {};
+    for (const employeeMonth of quarterMonths) {
+      for (const row of monthlyRows) {
+        if (row.month !== employeeMonth) continue;
+        if (!map[row.employee_id]) map[row.employee_id] = [];
+        map[row.employee_id].push(row);
+      }
+    }
+    return map;
+  }, [monthlyRows, quarterMonths]);
 
   const yearOptions = useMemo(() => {
     const y = now.getFullYear();
@@ -247,6 +321,19 @@ export default function IncentiveDashboardPage() {
     }
   };
 
+  const invoiceReportMut = useMutation({
+    mutationFn: async () => {
+      const res = await crmApi.incentives.invoicesReport({ month, year });
+      downloadBlob(res, `incentive_invoices_${year}_${String(month).padStart(2, "0")}.xlsx`);
+      return res;
+    },
+    onSuccess: () => showToast(`${MONTHS[month - 1]} ${year} invoices downloaded`, "success"),
+    onError: (e) =>
+      showToast(e?.response?.data?.message || "Failed to download invoices", "error"),
+  });
+
+  const downloadMonthlyInvoices = () => invoiceReportMut.mutate();
+
   const empName = (r) =>
     r.employee
       ? `${r.employee.first_name || ""} ${r.employee.last_name || ""}`.trim() ||
@@ -271,8 +358,11 @@ export default function IncentiveDashboardPage() {
       { header: "Week End", accessor: (r) => formatDate(r.week_end_date) },
       { header: "Registrations", accessor: (r) => r.registration_count },
       { header: "Target", accessor: (r) => r.target_count },
-      { header: "Eligible", accessor: (r) => r.eligible_count },
-      { header: "Eligible Amount", accessor: (r) => r.amount },
+      { header: "Incentive", accessor: (r) => r.eligible_count },
+      { header: "Silver", accessor: (r) => r.breakdown?.Silver || 0 },
+      { header: "Gold", accessor: (r) => r.breakdown?.Gold || 0 },
+      { header: "Diamond", accessor: (r) => r.breakdown?.Diamond || 0 },
+      { header: "Incentive Amount", accessor: (r) => r.amount },
     ],
     monthly: [
       { header: "Employee", accessor: empName },
@@ -280,7 +370,10 @@ export default function IncentiveDashboardPage() {
       { header: "Weeks", accessor: (r) => r.week_count },
       { header: "Registrations", accessor: (r) => r.registration_count },
       { header: "Target", accessor: (r) => r.target_count },
-      { header: "Eligible", accessor: (r) => r.eligible_count },
+      { header: "Incentive", accessor: (r) => r.eligible_count },
+      { header: "Silver", accessor: (r) => r.breakdown?.Silver || 0 },
+      { header: "Gold", accessor: (r) => r.breakdown?.Gold || 0 },
+      { header: "Diamond", accessor: (r) => r.breakdown?.Diamond || 0 },
       { header: "Payout", accessor: (r) => r.amount },
       { header: "Status", accessor: (r) => r.status },
     ],
@@ -289,7 +382,10 @@ export default function IncentiveDashboardPage() {
       { header: "Period", accessor: (r) => `Q${r.quarter} ${r.year}` },
       { header: "Registrations", accessor: (r) => r.registration_count },
       { header: "Target", accessor: (r) => r.target_count },
-      { header: "Eligible", accessor: (r) => r.eligible_count },
+      { header: "Incentive", accessor: (r) => r.eligible_count },
+      { header: "Silver", accessor: (r) => r.breakdown?.Silver || 0 },
+      { header: "Gold", accessor: (r) => r.breakdown?.Gold || 0 },
+      { header: "Diamond", accessor: (r) => r.breakdown?.Diamond || 0 },
       { header: "Amount", accessor: (r) => r.amount },
     ],
     yearly: [
@@ -297,7 +393,7 @@ export default function IncentiveDashboardPage() {
       { header: "Year", accessor: (r) => r.year },
       { header: "Months", accessor: (r) => r.month_count },
       { header: "Registrations", accessor: (r) => r.registration_count },
-      { header: "Eligible", accessor: (r) => r.eligible_count },
+      { header: "Incentive", accessor: (r) => r.eligible_count },
       { header: "Total Payout", accessor: (r) => r.amount },
     ],
     invoices: [
@@ -311,7 +407,7 @@ export default function IncentiveDashboardPage() {
 
   const ROWS_BY_TAB = {
     weekly: weeklyRows,
-    monthly: monthlyRows,
+    monthly: monthlyRows.filter((r) => r.month === month),
     quarterly: quarterlyRows,
     yearly: yearlyRows,
     invoices: invoiceRows,
@@ -535,10 +631,11 @@ export default function IncentiveDashboardPage() {
           },
           { key: "registration_count", label: "Regs", align: "right" },
           { key: "target_count", label: "Target", align: "right" },
-          { key: "eligible_count", label: "Eligible", align: "right" },
+          { key: "eligible_count", label: "Incentive", align: "right" },
+          ...PLAN_COLUMNS,
           {
             key: "amount",
-            label: "Eligible Amount",
+            label: "Incentive Amount",
             align: "right",
             render: (r) => (
               <span className="font-semibold text-emerald-600 dark:text-emerald-400">
@@ -547,7 +644,7 @@ export default function IncentiveDashboardPage() {
             ),
           },
         ];
-        const empty = `No weekly incentive rows for ${MONTHS[month - 1]} ${year}. ${
+        const empty = `No incentive activity for the current week yet. ${
           canManage ? "Run the calculation above." : ""
         }`;
         return viewMode === "card" ? (
@@ -558,6 +655,24 @@ export default function IncentiveDashboardPage() {
       })()}
 
       {tab === "monthly" && (() => {
+        // Selecting a month narrows this tab to just that month's row per
+        // employee, with a 1st/2nd/3rd/4th-week breakdown alongside it.
+        const monthRows = monthlyRows.filter((r) => r.month === month);
+        const weekColumns = [1, 2, 3, 4].map((weekIndex) => ({
+          key: `week_${weekIndex}`,
+          label: `${weekIndex === 1 ? "1st" : weekIndex === 2 ? "2nd" : weekIndex === 3 ? "3rd" : "4th"} Week`,
+          align: "right",
+          render: (r) => {
+            const weeks = weekBreakdownByEmployee[r.employee_id] || [];
+            const week = weeks[weekIndex - 1];
+            return (
+              <span className="text-slate-600 dark:text-slate-300">
+                {week ? week.registration_count : "—"}
+              </span>
+            );
+          },
+        }));
+
         const columns = [
           { key: "emp", label: "Employee", render: empName },
           {
@@ -565,10 +680,11 @@ export default function IncentiveDashboardPage() {
             label: "Period",
             render: (r) => `${MONTHS[r.month - 1]} ${r.year}`,
           },
-          { key: "week_count", label: "Weeks", align: "right" },
-          { key: "registration_count", label: "Regs", align: "right" },
+          ...weekColumns,
+          { key: "registration_count", label: "Total Regs", align: "right" },
           { key: "target_count", label: "Target", align: "right" },
-          { key: "eligible_count", label: "Eligible", align: "right" },
+          { key: "eligible_count", label: "Incentive", align: "right" },
+          ...PLAN_COLUMNS,
           {
             key: "amount",
             label: "Payout",
@@ -607,15 +723,30 @@ export default function IncentiveDashboardPage() {
               ]
             : []),
         ];
-        const empty = `No monthly payouts for ${year}.`;
+        const empty = `No monthly payouts for ${MONTHS[month - 1]} ${year}.`;
         return viewMode === "card" ? (
-          <CardGrid empty={empty} rows={monthlyRows} columns={columns} />
+          <CardGrid empty={empty} rows={monthRows} columns={columns} />
         ) : (
-          <DataGrid empty={empty} rows={monthlyRows} columns={columns} />
+          <DataGrid empty={empty} rows={monthRows} columns={columns} />
         );
       })()}
 
       {tab === "quarterly" && (() => {
+        const monthColumns = [0, 1, 2].map((offset) => ({
+          key: `qmonth_${offset}`,
+          label: `${offset === 0 ? "1st" : offset === 1 ? "2nd" : "3rd"} Month`,
+          align: "right",
+          render: (r) => {
+            const monthsForEmployee = monthBreakdownByEmployee[r.employee_id] || [];
+            const monthRow = monthsForEmployee[offset];
+            return (
+              <span className="text-slate-600 dark:text-slate-300">
+                {monthRow ? `${MONTHS[monthRow.month - 1].slice(0, 3)}: ${monthRow.registration_count}` : "—"}
+              </span>
+            );
+          },
+        }));
+
         const columns = [
           { key: "emp", label: "Employee", render: empName },
           {
@@ -623,9 +754,11 @@ export default function IncentiveDashboardPage() {
             label: "Period",
             render: (r) => `Q${r.quarter} ${r.year}`,
           },
-          { key: "registration_count", label: "Regs", align: "right" },
+          ...monthColumns,
+          { key: "registration_count", label: "Total Regs", align: "right" },
           { key: "target_count", label: "Target", align: "right" },
-          { key: "eligible_count", label: "Eligible", align: "right" },
+          { key: "eligible_count", label: "Incentive", align: "right" },
+          ...PLAN_COLUMNS,
           {
             key: "amount",
             label: "Amount",
@@ -651,7 +784,7 @@ export default function IncentiveDashboardPage() {
           { key: "year", label: "Year", align: "right" },
           { key: "month_count", label: "Months", align: "right" },
           { key: "registration_count", label: "Regs", align: "right" },
-          { key: "eligible_count", label: "Eligible", align: "right" },
+          { key: "eligible_count", label: "Incentive", align: "right" },
           {
             key: "amount",
             label: "Total payout",
@@ -693,10 +826,27 @@ export default function IncentiveDashboardPage() {
           },
         ];
         const empty = "No incentive invoices yet.";
-        return viewMode === "card" ? (
-          <CardGrid empty={empty} rows={invoiceRows} columns={columns} />
-        ) : (
-          <DataGrid empty={empty} rows={invoiceRows} columns={columns} />
+        return (
+          <div className="space-y-3">
+            {canManage && (
+              <div className="flex justify-end">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={downloadMonthlyInvoices}
+                  isLoading={invoiceReportMut.isPending}
+                  className="h-9 px-3 text-xs"
+                >
+                  Download {MONTHS[month - 1]} {year} Invoices
+                </Button>
+              </div>
+            )}
+            {viewMode === "card" ? (
+              <CardGrid empty={empty} rows={invoiceRows} columns={columns} />
+            ) : (
+              <DataGrid empty={empty} rows={invoiceRows} columns={columns} />
+            )}
+          </div>
         );
       })()}
     </div>

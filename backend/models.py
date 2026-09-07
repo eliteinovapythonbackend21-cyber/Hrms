@@ -2830,6 +2830,11 @@ class WeeklyIncentive(TimestampMixin, db.Model):
     tier_name = db.Column(db.String(30), nullable=True)                 # snapshot
     rate_per_registration = db.Column(db.Numeric(12, 2), nullable=False, default=0)  # snapshot
     amount = db.Column(db.Numeric(12, 2), nullable=False, default=0)
+    # {"Silver": 60.0, "Gold": 90.0, ...} — per-plan slice of `amount`,
+    # from incentive_engine.compute_period_incentive's breakdown, so the
+    # CRM Incentives screen can show Silver/Gold/Diamond separately
+    # instead of only the combined total.
+    breakdown = db.Column(JSONB, nullable=True)
 
     status = db.Column(db.String(20), default="Pending")   # Pending / Approved / Paid
     is_active = db.Column(db.Boolean, default=True)
@@ -2847,6 +2852,7 @@ class WeeklyIncentive(TimestampMixin, db.Model):
         for k in ("rate_per_registration", "amount"):
             if data.get(k) is not None:
                 data[k] = float(data[k])
+        data["breakdown"] = self.breakdown or {}
         return data
 
 
@@ -2871,6 +2877,9 @@ class MonthlyPayout(TimestampMixin, db.Model):
     # incentive period — snapshotted here so the invoice generated from it
     # carries the same due date.
     due_date = db.Column(db.Date, nullable=True)
+    # {"Silver": 60.0, "Gold": 90.0, ...} — same per-plan breakdown as
+    # WeeklyIncentive.breakdown, for the Monthly tab.
+    breakdown = db.Column(JSONB, nullable=True)
 
     status = db.Column(db.String(20), default="Pending")
     is_active = db.Column(db.Boolean, default=True)
@@ -2886,6 +2895,7 @@ class MonthlyPayout(TimestampMixin, db.Model):
         data["employee"] = _summary(self.employee, ["id", "employee_code", "first_name", "last_name"])
         if data.get("amount") is not None:
             data["amount"] = float(data["amount"])
+        data["breakdown"] = self.breakdown or {}
         return data
 
 

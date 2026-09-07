@@ -98,6 +98,8 @@ export const crmApi = {
     generateInvoice: (payoutId) =>
       axiosClient.post(C.INCENTIVE_MONTHLY_INVOICE(payoutId)),
     invoices: (params) => axiosClient.get(C.INCENTIVE_INVOICES, { params }),
+    invoicesReport: (params) =>
+      axiosClient.get(C.INCENTIVE_INVOICES_REPORT, { params, responseType: "blob" }),
   },
 
   customers: {

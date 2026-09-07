@@ -16,6 +16,8 @@ import {
 } from "./useEmployeeTargets";
 
 import { useCRMEmployeeOptions } from "@/hooks/useLookupOptions";
+import { employeesApi } from "@/api/employees.api";
+import { useQuery } from "@tanstack/react-query";
 import { useIsCrmEmployee } from "@/hooks/useIsCrmEmployee";
 import { Link } from "react-router-dom";
 import { useIncentiveSummary } from "@/features/crm/incentives/useIncentives";
@@ -348,6 +350,15 @@ export default function EmployeeTargetPage() {
 
   const employeeOptions = useCRMEmployeeOptions();
 
+  // Full employee records (department nested) so the "Set Target" form can
+  // show the selected employee's Department read-only.
+  const { data: employeesDetailedData } = useQuery({
+    queryKey: ["lookup", "employees-detailed"],
+    queryFn: async () => (await employeesApi.list({ is_active: true, per_page: 500 })).data.data,
+    enabled: !readOnly,
+  });
+  const employeesDetailed = employeesDetailedData?.items || [];
+
   /* -------------------------------------------------------
      STATE
   ------------------------------------------------------- */
@@ -463,6 +474,29 @@ export default function EmployeeTargetPage() {
     setFormOpen(true);
   };
 
+  // Client-side duplicate guard: an employee can only ever have one ACTIVE
+  // target per exact period (mirrors the backend's unique constraint on
+  // employee_id + period_type + year + month/quarter/week_start_date), so
+  // catch it here with a clear message instead of letting a raw DB
+  // integrity error surface.
+  const findDuplicateTarget = (payload, excludeId) => {
+    return allRecords.find((record) => {
+      if (record.id === excludeId) return false;
+      if (record.is_active === false) return false;
+      if (Number(record.employee_id) !== Number(payload.employee_id)) return false;
+      if (record.period_type !== payload.period_type) return false;
+      if (Number(record.year) !== Number(payload.year)) return false;
+
+      if (payload.period_type === "Weekly") {
+        return record.week_start_date === payload.week_start_date;
+      }
+      if (payload.period_type === "Quarterly") {
+        return Number(record.quarter) === Number(payload.quarter);
+      }
+      return Number(record.month) === Number(payload.month);
+    });
+  };
+
   const handleFormSubmit = async (event) => {
     event.preventDefault();
     if (readOnly) return;
@@ -501,6 +535,17 @@ export default function EmployeeTargetPage() {
     }
 
     const payload = { ...basePayload, ...periodPayload };
+
+    const duplicate = findDuplicateTarget(payload, editingRecord?.id);
+    if (duplicate) {
+      showToast(
+        `${getEmployeeName(duplicate)} already has a ${payload.period_type.toLowerCase()} target set for ${getPeriodLabel(
+          duplicate
+        )} (${duplicate.target_customer_count} customers). Edit that target instead of creating a new one.`,
+        "error"
+      );
+      return;
+    }
 
     try {
       if (editingRecord) {
@@ -1060,6 +1105,23 @@ export default function EmployeeTargetPage() {
                   ))}
                 </select>
               </div>
+
+              {formState.employee_id && (
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">
+                    Department
+                  </label>
+                  <input
+                    type="text"
+                    readOnly
+                    value={
+                      employeesDetailed.find((e) => String(e.id) === String(formState.employee_id))
+                        ?.department?.department_name || "—"
+                    }
+                    className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-500 outline-none dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-400"
+                  />
+                </div>
+              )}
 
               <div>
                 <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">

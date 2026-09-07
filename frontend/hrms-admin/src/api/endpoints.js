@@ -174,6 +174,7 @@ export const API = {
     INCENTIVE_SUMMARY: "/incentives/summary",
     INCENTIVE_MONTHLY_INVOICE: (id) => `/incentives/monthly/${id}/invoice`,
     INCENTIVE_INVOICES: "/incentives/invoices",
+    INCENTIVE_INVOICES_REPORT: "/incentives/invoices/report",
     EMPLOYEE_TARGETS: "/employee-targets/",
     EMPLOYEE_TARGETS_ITEM: (id) => `/employee-targets/${id}`,
     MEMBERSHIP_PLANS: "/membership-plans/",
