@@ -78,20 +78,81 @@ function DataGrid({ columns, rows, empty }) {
       </div>
     );
   }
+
+  // Columns can opt into a shared `group` label (e.g. "Week-wise
+  // Breakdown") — grouped columns get a spanning header row of their
+  // own, sitting above their individual per-column headers, instead of
+  // sharing one flat header row with every other column.
+  const hasGroups = columns.some((c) => c.group);
+  const groupHeaderCells = [];
+  if (hasGroups) {
+    let i = 0;
+    while (i < columns.length) {
+      const c = columns[i];
+      if (!c.group) {
+        groupHeaderCells.push({ key: c.key, rowSpan: 2, colSpan: 1, label: null, plain: c, align: c.align });
+        i += 1;
+        continue;
+      }
+      let span = 0;
+      const groupLabel = c.group;
+      while (i < columns.length && columns[i].group === groupLabel) {
+        span += 1;
+        i += 1;
+      }
+      groupHeaderCells.push({ key: `group_${groupLabel}`, rowSpan: 1, colSpan: span, label: groupLabel });
+    }
+  }
+
   return (
     <div className="card overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full min-w-[720px] text-left text-sm">
           <thead className="tbl-head">
+            {hasGroups && (
+              <tr>
+                {groupHeaderCells.map((c) =>
+                  c.label ? (
+                    <th
+                      key={c.key}
+                      colSpan={c.colSpan}
+                      className="border-b border-slate-100 px-4 py-2 text-center text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:border-white/[0.06]"
+                    >
+                      {c.label}
+                    </th>
+                  ) : (
+                    <th
+                      key={c.key}
+                      rowSpan={c.rowSpan}
+                      className={`px-4 py-3 align-bottom ${c.plain.align === "right" ? "text-right" : ""}`}
+                    >
+                      {c.plain.label}
+                      {c.plain.subLabel && (
+                        <span className="mt-0.5 block whitespace-nowrap text-[10px] font-normal normal-case tracking-normal text-slate-400">
+                          {c.plain.subLabel}
+                        </span>
+                      )}
+                    </th>
+                  )
+                )}
+              </tr>
+            )}
             <tr>
-              {columns.map((c) => (
-                <th
-                  key={c.key}
-                  className={`px-4 py-3 ${c.align === "right" ? "text-right" : ""}`}
-                >
-                  {c.label}
-                </th>
-              ))}
+              {columns.map((c) =>
+                hasGroups && !c.group ? null : (
+                  <th
+                    key={c.key}
+                    className={`px-4 py-3 ${c.align === "right" ? "text-right" : ""}`}
+                  >
+                    {c.label}
+                    {c.subLabel && (
+                      <span className="mt-0.5 block whitespace-nowrap text-[10px] font-normal normal-case tracking-normal text-slate-400">
+                        {c.subLabel}
+                      </span>
+                    )}
+                  </th>
+                )
+              )}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-white/[0.06]">
@@ -147,14 +208,27 @@ function RecordCard({ row, columns }) {
         <>
           <div className="my-3 border-t border-slate-100 dark:border-white/[0.06]" />
           <div className="flex-1 space-y-2 text-xs">
-            {restCols.map((c) => (
-              <div key={c.key} className="flex items-center justify-between gap-3">
-                <span className="shrink-0 text-slate-400">{c.label}</span>
-                <span className="truncate text-right font-medium text-slate-700 dark:text-slate-200">
-                  {renderVal(c)}
-                </span>
-              </div>
-            ))}
+            {restCols.map((c, idx) => {
+              const startsGroup = c.group && restCols[idx - 1]?.group !== c.group;
+              return (
+                <div key={c.key}>
+                  {startsGroup && (
+                    <p className="mb-1.5 mt-2 text-[10px] font-semibold uppercase tracking-wide text-slate-400 first:mt-0">
+                      {c.group}
+                    </p>
+                  )}
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="shrink-0 text-slate-400">
+                      {c.label}
+                      {c.subLabel ? ` (${c.subLabel})` : ""}
+                    </span>
+                    <span className="truncate text-right font-medium text-slate-700 dark:text-slate-200">
+                      {renderVal(c)}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </>
       )}
@@ -661,8 +735,9 @@ export default function IncentiveDashboardPage() {
 
         // Date range for each week-of-month, read off whichever employee
         // actually has that week's row (weeks are the same calendar dates
-        // for everyone in a given month) — used to label the column with
-        // the real date range instead of just "1st Week".
+        // for everyone in a given month) — shown as a second header line
+        // directly above its column, so the dates sit inside the table
+        // itself instead of a caption underneath it.
         const weekDatesByIndex = [0, 1, 2, 3].map((idx) => {
           for (const rows of Object.values(weekBreakdownByEmployee)) {
             if (rows[idx]) return rows[idx];
@@ -671,14 +746,14 @@ export default function IncentiveDashboardPage() {
         });
 
         const weekColumns = [1, 2, 3, 4].map((weekIndex) => {
-          const ordinal = weekIndex === 1 ? "1st" : weekIndex === 2 ? "2nd" : weekIndex === 3 ? "3rd" : "4th";
           const dateRow = weekDatesByIndex[weekIndex - 1];
-          const dateLabel = dateRow
-            ? `${formatDate(dateRow.week_start_date)} – ${formatDate(dateRow.week_end_date)}`
-            : null;
           return {
             key: `week_${weekIndex}`,
-            label: dateLabel ? `${ordinal} Week (${dateLabel})` : `${ordinal} Week`,
+            group: "Week-wise Breakdown",
+            label: `${weekIndex === 1 ? "1st" : weekIndex === 2 ? "2nd" : weekIndex === 3 ? "3rd" : "4th"} Week`,
+            subLabel: dateRow
+              ? `${formatDate(dateRow.week_start_date)} – ${formatDate(dateRow.week_end_date)}`
+              : null,
             align: "right",
             render: (r) => {
               const weeks = weekBreakdownByEmployee[r.employee_id] || [];
@@ -751,20 +826,26 @@ export default function IncentiveDashboardPage() {
       })()}
 
       {tab === "quarterly" && (() => {
-        const monthColumns = [0, 1, 2].map((offset) => ({
-          key: `qmonth_${offset}`,
-          label: `${offset === 0 ? "1st" : offset === 1 ? "2nd" : "3rd"} Month`,
-          align: "right",
-          render: (r) => {
-            const monthsForEmployee = monthBreakdownByEmployee[r.employee_id] || [];
-            const monthRow = monthsForEmployee[offset];
-            return (
-              <span className="text-slate-600 dark:text-slate-300">
-                {monthRow ? `${MONTHS[monthRow.month - 1].slice(0, 3)}: ${monthRow.registration_count}` : "—"}
-              </span>
-            );
-          },
-        }));
+        const monthColumns = [0, 1, 2].map((offset) => {
+          const ordinal = offset === 0 ? "1st" : offset === 1 ? "2nd" : "3rd";
+          const monthNum = quarterMonths[offset];
+          return {
+            key: `qmonth_${offset}`,
+            group: "Month-wise Breakdown",
+            label: `${ordinal} Month`,
+            subLabel: monthNum ? `${MONTHS[monthNum - 1]} ${year}` : null,
+            align: "right",
+            render: (r) => {
+              const monthsForEmployee = monthBreakdownByEmployee[r.employee_id] || [];
+              const monthRow = monthsForEmployee[offset];
+              return (
+                <span className="text-slate-600 dark:text-slate-300">
+                  {monthRow ? monthRow.registration_count : "—"}
+                </span>
+              );
+            },
+          };
+        });
 
         const columns = [
           { key: "emp", label: "Employee", render: empName },
