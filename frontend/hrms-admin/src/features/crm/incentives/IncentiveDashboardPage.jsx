@@ -658,20 +658,39 @@ export default function IncentiveDashboardPage() {
         // Selecting a month narrows this tab to just that month's row per
         // employee, with a 1st/2nd/3rd/4th-week breakdown alongside it.
         const monthRows = monthlyRows.filter((r) => r.month === month);
-        const weekColumns = [1, 2, 3, 4].map((weekIndex) => ({
-          key: `week_${weekIndex}`,
-          label: `${weekIndex === 1 ? "1st" : weekIndex === 2 ? "2nd" : weekIndex === 3 ? "3rd" : "4th"} Week`,
-          align: "right",
-          render: (r) => {
-            const weeks = weekBreakdownByEmployee[r.employee_id] || [];
-            const week = weeks[weekIndex - 1];
-            return (
-              <span className="text-slate-600 dark:text-slate-300">
-                {week ? week.registration_count : "—"}
-              </span>
-            );
-          },
-        }));
+
+        // Date range for each week-of-month, read off whichever employee
+        // actually has that week's row (weeks are the same calendar dates
+        // for everyone in a given month) — used to label the column with
+        // the real date range instead of just "1st Week".
+        const weekDatesByIndex = [0, 1, 2, 3].map((idx) => {
+          for (const rows of Object.values(weekBreakdownByEmployee)) {
+            if (rows[idx]) return rows[idx];
+          }
+          return null;
+        });
+
+        const weekColumns = [1, 2, 3, 4].map((weekIndex) => {
+          const ordinal = weekIndex === 1 ? "1st" : weekIndex === 2 ? "2nd" : weekIndex === 3 ? "3rd" : "4th";
+          const dateRow = weekDatesByIndex[weekIndex - 1];
+          const dateLabel = dateRow
+            ? `${formatDate(dateRow.week_start_date)} – ${formatDate(dateRow.week_end_date)}`
+            : null;
+          return {
+            key: `week_${weekIndex}`,
+            label: dateLabel ? `${ordinal} Week (${dateLabel})` : `${ordinal} Week`,
+            align: "right",
+            render: (r) => {
+              const weeks = weekBreakdownByEmployee[r.employee_id] || [];
+              const week = weeks[weekIndex - 1];
+              return (
+                <span className="text-slate-600 dark:text-slate-300">
+                  {week ? week.registration_count : "—"}
+                </span>
+              );
+            },
+          };
+        });
 
         const columns = [
           { key: "emp", label: "Employee", render: empName },

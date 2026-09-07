@@ -247,6 +247,7 @@ export default function IncentiveSlabPage() {
   const { exporting, exportToExcel, exportToPDF } = useTableExport();
 
   const [periodFilter, setPeriodFilter] = useState("Weekly");
+  const [planFilter, setPlanFilter] = useState("All");
 
   const {
     data: allData,
@@ -305,6 +306,14 @@ export default function IncentiveSlabPage() {
       if (activeFilter === "active" && !isActive) return false;
       if (activeFilter === "inactive" && isActive) return false;
 
+      if (planFilter !== "All") {
+        if (planFilter === "Base") {
+          if (slab.plan_name) return false;
+        } else if (slab.plan_name !== planFilter) {
+          return false;
+        }
+      }
+
       if (normalizedSearch) {
         const haystack = [getRangeLabel(slab), slab.incentive_amount].join(" ").toLowerCase();
         if (!haystack.includes(normalizedSearch)) return false;
@@ -312,7 +321,7 @@ export default function IncentiveSlabPage() {
 
       return true;
     });
-  }, [allSlabs, search, activeFilter]);
+  }, [allSlabs, search, activeFilter, planFilter]);
 
   const sorted = useMemo(
     () => filtered.slice().sort((a, b) => a.min_customers - b.min_customers),
@@ -408,6 +417,7 @@ export default function IncentiveSlabPage() {
   const clearFilters = () => {
     setSearch("");
     setActiveFilter("active");
+    setPlanFilter("All");
     setPage(1);
   };
 
@@ -506,6 +516,29 @@ export default function IncentiveSlabPage() {
         ))}
       </div>
 
+      {/* PLAN/CATEGORY TABS — Silver / Gold / Diamond, scoped within whichever
+          period is selected above, so picking a category shows just that
+          plan's slabs instead of every plan mixed together. */}
+      <div className="flex w-fit flex-wrap items-center gap-1 rounded-lg bg-slate-100 p-1 dark:bg-white/[0.06]">
+        {["All", "Base", ...Object.keys(PLAN_ELIGIBILITY_PCT)].map((plan) => (
+          <button
+            key={plan}
+            type="button"
+            onClick={() => {
+              setPlanFilter(plan);
+              setPage(1);
+            }}
+            className={`rounded-md px-3 py-1.5 text-xs font-medium transition ${
+              planFilter === plan
+                ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
+                : "text-slate-500 hover:text-slate-700 dark:text-slate-400"
+            }`}
+          >
+            {plan === "Base" ? "Before target" : plan}
+          </button>
+        ))}
+      </div>
+
       {/* FILTERS */}
       <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
         <div className="flex flex-col gap-3">
@@ -528,7 +561,7 @@ export default function IncentiveSlabPage() {
               />
             </div>
 
-            {(search || activeFilter !== "active") && (
+            {(search || activeFilter !== "active" || planFilter !== "All") && (
               <button
                 type="button"
                 onClick={clearFilters}
