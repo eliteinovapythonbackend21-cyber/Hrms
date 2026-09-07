@@ -35,8 +35,11 @@ from utils import (
 from .incentive_engine import (
     dashboard_period_summary,
     employee_summary,
+    monday_of,
     payable_due_date,
     process_payout_for_period,
+    recompute_week,
+    rebuild_monthly_payout,
     run_period,
     seed_default_tiers,
 )
@@ -257,11 +260,19 @@ def list_weekly(token_response):
     if err:
         return err
 
+    month, year = _int_arg("month"), _int_arg("year")
+
+    # Same opportunistic-refresh reasoning as /summary above: a scoped
+    # employee's own current-week row must exist before this list is read,
+    # regardless of which request happened to land first.
+    today = date.today()
+    if scope is not None and (not year or year == today.year) and (not month or month == today.month):
+        recompute_week(scope, monday_of(today))
+        db.session.commit()
+
     q = WeeklyIncentive.query
     if scope is not None:
         q = q.filter(WeeklyIncentive.employee_id == scope)
-
-    month, year = _int_arg("month"), _int_arg("year")
     if year:
         q = q.filter(db.extract("year", WeeklyIncentive.week_start_date) == year)
     if month:
@@ -285,13 +296,20 @@ def list_monthly(token_response):
     if err:
         return err
 
+    year, month = _int_arg("year"), _int_arg("month")
+
+    today = date.today()
+    if scope is not None and (not year or year == today.year) and (not month or month == today.month):
+        rebuild_monthly_payout(scope, today.month, today.year)
+        db.session.commit()
+
     q = MonthlyPayout.query
     if scope is not None:
         q = q.filter(MonthlyPayout.employee_id == scope)
-    if _int_arg("year"):
-        q = q.filter(MonthlyPayout.year == _int_arg("year"))
-    if _int_arg("month"):
-        q = q.filter(MonthlyPayout.month == _int_arg("month"))
+    if year:
+        q = q.filter(MonthlyPayout.year == year)
+    if month:
+        q = q.filter(MonthlyPayout.month == month)
     if request.args.get("status"):
         q = q.filter(MonthlyPayout.status == request.args.get("status"))
 
@@ -339,6 +357,17 @@ def incentive_summary(token_response):
             "data": {"year": year, "items": rows},
             "token_response": token_response,
         }), 200
+
+    # Opportunistic refresh: a CRM employee (or admin looking at one
+    # employee) should never see a blank Weekly/Monthly tab just because
+    # nobody has clicked "Run" yet — mirrors the 20th-of-the-month
+    # auto-payout's opportunistic pattern in app.py, scoped to just this
+    # employee's current week/month so it stays cheap on every page load.
+    today = date.today()
+    if year == today.year:
+        recompute_week(scope, monday_of(today))
+        rebuild_monthly_payout(scope, today.month, today.year)
+        db.session.commit()
 
     return jsonify({
         "message": "Incentive summary fetched",

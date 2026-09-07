@@ -303,9 +303,10 @@ def recompute_week(employee_id, monday, commit=False):
         employee_id=employee_id, week_start_date=monday
     ).first()
 
-    if count == 0 and row is None:
-        return None  # nothing to record for an empty week
-
+    # Always create/update the row, even at 0 registrations — mirrors
+    # MonthlyPayout (which never skips a zero-activity period either) so a
+    # CRM employee's Weekly tab always shows their current week instead of
+    # appearing empty/broken until they register something.
     target = _weekly_target(employee_id, monday)
     # The weekly "tier" badge is a separate, older performance-badge
     # concept — kept only for display, unrelated to the payable amount.
