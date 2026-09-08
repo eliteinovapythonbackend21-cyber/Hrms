@@ -335,3 +335,37 @@ export function useDeactivateEmployeeExpense() {
  */
 export const useDeactivateOfficeExpense =
   useDeactivateEmployeeExpense;
+
+
+/*
+ * Reactivate Office Expense.
+ *
+ * Goes through the same PUT /<id> route as edit — a partial
+ * { is_active: true } payload is enough, same pattern as
+ * Leads/Holidays reactivation.
+ */
+export function useReactivateEmployeeExpense() {
+  const queryClient =
+    useQueryClient();
+
+  return useMutation({
+    mutationFn: (id) =>
+      employeeExpensesApi.update(
+        id,
+        { is_active: true }
+      ),
+
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: KEY,
+      });
+    },
+  });
+}
+
+
+/*
+ * New terminology alias.
+ */
+export const useReactivateOfficeExpense =
+  useReactivateEmployeeExpense;

@@ -8,6 +8,7 @@ import {
   useCreateEmployeeExpense,
   useUpdateEmployeeExpense,
   useDeactivateEmployeeExpense,
+  useReactivateEmployeeExpense,
 } from "./useEmployeeExpenses";
 
 import EmployeeExpenseForm from "./EmployeeExpenseForm";
@@ -215,6 +216,7 @@ function ExpenseTable({
   canManageAll,
   onEdit,
   onDeactivate,
+  onReactivate,
 }) {
   const columns = useMemo(
     () => [
@@ -315,6 +317,30 @@ function ExpenseTable({
       },
 
       {
+        key: "status",
+        label: "Status",
+
+        render: (row) => (
+          <Badge
+            className={
+              row.is_active
+                ? "inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300"
+                : "inline-flex items-center gap-1.5 rounded-full bg-red-50 px-2.5 py-1 text-xs text-red-700 dark:bg-red-500/10 dark:text-red-300"
+            }
+          >
+            <span
+              className={
+                row.is_active
+                  ? "h-1.5 w-1.5 rounded-full bg-emerald-500"
+                  : "h-1.5 w-1.5 rounded-full bg-red-500"
+              }
+            />
+            {row.is_active ? "Active" : "Inactive"}
+          </Badge>
+        ),
+      },
+
+      {
         key: "receipt",
         label: "Receipt",
 
@@ -353,7 +379,7 @@ function ExpenseTable({
               Edit
             </button>
 
-            {row.is_active && (
+            {row.is_active ? (
               <button
                 type="button"
                 onClick={() =>
@@ -362,6 +388,16 @@ function ExpenseTable({
                 className="rounded-lg border border-red-200 bg-white px-2.5 py-1.5 text-xs font-medium text-red-600 transition hover:bg-red-50 dark:border-red-900/50 dark:bg-white/[0.06] dark:text-red-400"
               >
                 Deactivate
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() =>
+                  onReactivate(row)
+                }
+                className="rounded-lg border border-emerald-200 bg-white px-2.5 py-1.5 text-xs font-medium text-emerald-600 transition hover:bg-emerald-50 dark:border-emerald-900/40 dark:bg-white/[0.06] dark:text-emerald-400"
+              >
+                Reactivate
               </button>
             )}
           </div>
@@ -372,6 +408,7 @@ function ExpenseTable({
       canManageAll,
       onEdit,
       onDeactivate,
+      onReactivate,
     ]
   );
 
@@ -607,6 +644,11 @@ export default function EmployeeExpenseListPage() {
   const [collectionStatusFilter, setCollectionStatusFilter] =
     useState("");
 
+  // "active" | "inactive" | "all" — mirrors the same pattern used on
+  // Holidays/Lead Upload for viewing deactivated records.
+  const [activeFilter, setActiveFilter] =
+    useState("active");
+
 
   const [modalOpen, setModalOpen] =
     useState(false);
@@ -631,7 +673,11 @@ export default function EmployeeExpenseListPage() {
   const listParams = useMemo(() => {
     const params = {
       per_page: 2000,
-      is_active: true,
+
+      is_active:
+        activeFilter === "all"
+          ? undefined
+          : activeFilter === "active",
 
       category:
         categoryFilter || undefined,
@@ -685,6 +731,7 @@ export default function EmployeeExpenseListPage() {
     categoryFilter,
     purchaseTypeFilter,
     collectionStatusFilter,
+    activeFilter,
   ]);
 
 
@@ -756,6 +803,9 @@ export default function EmployeeExpenseListPage() {
 
   const deactivateExpense =
     useDeactivateEmployeeExpense();
+
+  const reactivateExpense =
+    useReactivateEmployeeExpense();
 
 
   const expenses =
@@ -1096,10 +1146,32 @@ export default function EmployeeExpenseListPage() {
     };
 
 
+  const handleReactivate =
+    async (row) => {
+      try {
+        await reactivateExpense.mutateAsync(
+          row.id
+        );
+
+        showToast(
+          "Office expense reactivated.",
+          "success"
+        );
+      } catch (error) {
+        showToast(
+          error?.response?.data?.message ||
+            "Operation failed.",
+          "error"
+        );
+      }
+    };
+
+
   const resetReportFilters = () => {
     setCategoryFilter("");
     setPurchaseTypeFilter("");
     setCollectionStatusFilter("");
+    setActiveFilter("active");
   };
 
 
@@ -1391,6 +1463,38 @@ export default function EmployeeExpenseListPage() {
           )}
 
 
+          {(activeView === "day" ||
+            activeView === "monthly" ||
+            activeView === "received") && (
+            <div>
+              <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">
+                Status
+              </label>
+
+              <div className="flex h-10 items-center rounded-lg bg-slate-100 p-1 dark:bg-white/[0.06]">
+                {["active", "inactive", "all"].map(
+                  (status) => (
+                    <button
+                      key={status}
+                      type="button"
+                      onClick={() =>
+                        setActiveFilter(status)
+                      }
+                      className={`rounded-md px-3 py-1.5 text-xs font-medium capitalize ${
+                        activeFilter === status
+                          ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
+                          : "text-slate-500 dark:text-slate-400"
+                      }`}
+                    >
+                      {status}
+                    </button>
+                  )
+                )}
+              </div>
+            </div>
+          )}
+
+
           <button
             type="button"
             onClick={resetReportFilters}
@@ -1434,6 +1538,7 @@ export default function EmployeeExpenseListPage() {
             canManageAll={canManageAll}
             onEdit={openEdit}
             onDeactivate={setConfirmRow}
+            onReactivate={handleReactivate}
           />
         </>
       )}
@@ -1479,6 +1584,7 @@ export default function EmployeeExpenseListPage() {
             canManageAll={canManageAll}
             onEdit={openEdit}
             onDeactivate={setConfirmRow}
+            onReactivate={handleReactivate}
           />
         </>
       )}
