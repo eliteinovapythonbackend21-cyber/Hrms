@@ -36,14 +36,18 @@ export default function TableToolbar({ onRefresh, refreshing, onExportExcel, onE
         <RefreshIcon spinning={refreshing} />
         <span className="hidden sm:inline">Refresh</span>
       </button>
-      <button type="button" onClick={onExportExcel} disabled={exporting} className={btnClass} title="Export as Excel/CSV">
-        <ExcelIcon />
-        <span className="hidden sm:inline">Excel</span>
-      </button>
-      <button type="button" onClick={onExportPDF} disabled={exporting} className={btnClass} title="Export as PDF">
-        <PdfIcon />
-        <span className="hidden sm:inline">PDF</span>
-      </button>
+      {onExportExcel && (
+        <button type="button" onClick={onExportExcel} disabled={exporting} className={btnClass} title="Export as Excel/CSV">
+          <ExcelIcon />
+          <span className="hidden sm:inline">Excel</span>
+        </button>
+      )}
+      {onExportPDF && (
+        <button type="button" onClick={onExportPDF} disabled={exporting} className={btnClass} title="Export as PDF">
+          <PdfIcon />
+          <span className="hidden sm:inline">PDF</span>
+        </button>
+      )}
     </div>
   );
 }

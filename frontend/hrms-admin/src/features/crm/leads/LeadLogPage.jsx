@@ -47,13 +47,20 @@ export default function LeadLogPage() {
   const { value: search, setValue: setSearch } = useDebouncedSearch();
   const [page] = useState(1);
 
-  const { data, isLoading, isFetching, refetch } = useQuery({
+  const { data, isLoading, isFetching, isError, error, refetch } = useQuery({
     queryKey: ["lead-upload-log", { page, search }],
     queryFn: async () =>
       (await crmApi.leads.log({ page, per_page: 200, search: search || undefined })).data.data,
   });
 
   const leads = data?.items || [];
+
+  // Surface a real failure (403/500/network) instead of letting it silently
+  // fall through to the "No lead upload activity found" empty state — that
+  // empty text should only ever mean "the query genuinely returned zero rows".
+  const errorMessage = isError
+    ? error?.response?.data?.message || error?.message || "Failed to load the lead log."
+    : null;
 
   const columns = [
     {
@@ -133,11 +140,17 @@ export default function LeadLogPage() {
           </div>
         </div>
 
+        {errorMessage && (
+          <div className="border-b border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-400">
+            {errorMessage}
+          </div>
+        )}
+
         <DataTable
           columns={columns}
           data={leads}
           loading={isLoading}
-          emptyText="No lead upload activity found."
+          emptyText={errorMessage ? " " : "No lead upload activity found."}
         />
       </div>
     </div>
