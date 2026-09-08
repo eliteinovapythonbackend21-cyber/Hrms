@@ -13,6 +13,7 @@ from models import Customer
 from utils import (
     fetch_or_404,
     is_admin,
+    is_crm_department_user,
     get_current_user,
     register_crud_blueprint,
     with_token,
@@ -54,11 +55,14 @@ def deactivate_customer(
 ):
     current_user = get_current_user()
 
-    if not is_admin(current_user):
+    if not (
+        is_admin(current_user)
+        or is_crm_department_user(current_user)
+    ):
         return jsonify(
             {
                 "message":
-                    "Admin privileges required"
+                    "Admin or CRM privileges required"
             }
         ), 403
 

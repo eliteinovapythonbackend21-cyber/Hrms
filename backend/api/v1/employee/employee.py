@@ -319,6 +319,12 @@ def list_crm_employee_directory(token_response):
                     "employee_code": e.employee_code,
                     "first_name": e.first_name,
                     "last_name": e.last_name,
+                    # Voice / Non-Voice / Marketing — the real sub-team
+                    # distinction inside CRM (department is always "CRM"
+                    # for every row here, so it's not useful on its own).
+                    "designation_name": (
+                        e.designation.designation_name if e.designation else None
+                    ),
                 }
                 for e in employees
             ]

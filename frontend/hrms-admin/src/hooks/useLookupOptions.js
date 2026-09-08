@@ -4,6 +4,7 @@ import { masterApi } from "@/api/master.api";
 import { crmApi } from "@/api/crm.api";
 import { financeApi } from "@/api/finance.api";
 import { employeeLifecycleApi } from "@/api/employee.api";
+import { getUser } from "@/utils/tokenHelpers";
 
 // Shared FK-dropdown lookups used across the create-only lifecycle / CRM /
 // finance forms. Each fetches a large single page (no search box in these
@@ -41,10 +42,18 @@ export function useCRMEmployeeOptions() {
     queryKey: ["lookup", "crm-employees"],
     queryFn: async () => (await employeesApi.crmDirectory()).data.data,
   });
-  return (data?.items || []).map((e) => ({
-    value: e.id,
-    label: `${e.first_name || ""} ${e.last_name || ""}`.trim() || e.employee_code || `Employee #${e.id}`,
-  }));
+  return (data?.items || []).map((e) => {
+    const name =
+      `${e.first_name || ""} ${e.last_name || ""}`.trim() ||
+      e.employee_code ||
+      `Employee #${e.id}`;
+    return {
+      value: e.id,
+      // "Name (Designation)" — Voice / Non-Voice / Marketing is the real
+      // sub-team distinction inside CRM (every row's department is CRM).
+      label: e.designation_name ? `${name} (${e.designation_name})` : name,
+    };
+  });
 }
 
 export function useDepartmentOptions() {
@@ -90,11 +99,29 @@ export function useMembershipPlanOptions() {
 }
 
 export function useLeadOptions() {
+  const isAdminViewer = getUser()?.role === "admin";
+
   const { data } = useQuery({
     queryKey: ["lookup", "leads"],
     queryFn: async () => (await crmApi.leads.list(ACTIVE_ONLY)).data.data,
   });
-  return (data?.items || []).map((l) => ({ value: l.id, label: l.lead_name }));
+
+  return (data?.items || []).map((l) => {
+    // Admin sees which department each lead belongs to, e.g. "Walk-in
+    // Enquiry (CRM)" — a CRM employee just sees the plain lead name,
+    // since it's implicitly their own department's lead.
+    const departmentName =
+      l.assignee_hierarchy?.department?.department_name ||
+      l.creator_hierarchy?.department?.department_name;
+
+    return {
+      value: l.id,
+      label:
+        isAdminViewer && departmentName
+          ? `${l.lead_name} (${departmentName})`
+          : l.lead_name,
+    };
+  });
 }
 
 export function useQuotationOptions() {

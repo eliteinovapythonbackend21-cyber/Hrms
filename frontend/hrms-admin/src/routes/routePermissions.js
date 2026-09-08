@@ -69,8 +69,14 @@ export const routePermissions = {
   "/crm/leads/upload": ["admin", "employee"],
   // Admin-only Lead Generation Excel report.
   "/crm/leads/report": ["admin"],
-  "/crm/customers/:id": ["admin"],
-  "/crm/customers": ["admin"],
+  // Read-only lead-upload log for non-marketing CRM employees (Voice /
+  // Non-Voice) — sidebar-gated, see CRM_EMPLOYEE_NAV / Sidebar.jsx.
+  "/crm/leads/log": ["admin", "employee"],
+  // "employee" here covers CRM-department employees adding/managing
+  // customers and converting registrations, same full-access pattern as
+  // Registration (meetings.py) below.
+  "/crm/customers/:id": ["admin", "employee"],
+  "/crm/customers": ["admin", "employee"],
   "/crm/follow-ups": ["admin"],
   // "employee" here covers CRM-department employees adding their own
   // Registrations (see meetings.py's on_create, which stamps

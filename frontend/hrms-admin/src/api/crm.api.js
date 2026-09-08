@@ -16,6 +16,7 @@ export const crmApi = {
     getAssignmentHistory: (id) => axiosClient.get(C.LEAD_ASSIGNMENT_HISTORY(id)),
     getStatusHistory: (id) => axiosClient.get(C.LEAD_STATUS_HISTORY(id)),
     report: (params) => axiosClient.get(C.LEADS_REPORT, { params, responseType: "blob" }),
+    log: (params) => axiosClient.get(C.LEADS_LOG, { params }),
   },
 
   leadUploads: {
@@ -37,6 +38,7 @@ export const crmApi = {
         headers: { "Content-Type": "multipart/form-data" },
       });
     },
+    template: () => axiosClient.get(C.LEAD_UPLOADS_TEMPLATE, { responseType: "blob" }),
   },
 
   leadWeeklySnapshots: {

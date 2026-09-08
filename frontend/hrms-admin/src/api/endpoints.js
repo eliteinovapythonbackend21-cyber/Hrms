@@ -321,8 +321,14 @@ export const API = {
     LEAD_UPLOADS_PHOTO:
       "/lead-uploads/photo",
 
+    LEAD_UPLOADS_TEMPLATE:
+      "/lead-uploads/template",
+
     LEADS_REPORT:
       "/leads/report",
+
+    LEADS_LOG:
+      "/leads/log",
 
     LEAD_ASSIGN: (id) =>
       `/leads/${id}/assign`,

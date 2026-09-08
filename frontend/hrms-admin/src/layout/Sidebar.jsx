@@ -214,14 +214,17 @@ export default function Sidebar() {
   const { isHrEmployee } = useIsHrEmployee();
   const { isFinanceEmployee } = useIsFinanceEmployee();
 
-  // "Lead Upload" only ever shows for a CRM Marketing-designation employee
-  // — every other CRM employee gets the rest of CRM_EMPLOYEE_NAV unchanged.
+  // "Lead Upload" only ever shows for a CRM Marketing-designation employee;
+  // "Lead Log" is its flip side — the read-only upload activity log shown
+  // to every OTHER CRM employee (Voice / Non-Voice) instead.
   const crmEmployeeNav = isCrmEmployee
     ? {
         ...CRM_EMPLOYEE_NAV,
-        children: CRM_EMPLOYEE_NAV.children.filter(
-          (child) => child.path !== "/crm/leads/upload" || isCrmMarketingEmployee
-        ),
+        children: CRM_EMPLOYEE_NAV.children.filter((child) => {
+          if (child.path === "/crm/leads/upload") return isCrmMarketingEmployee;
+          if (child.path === "/crm/leads/log") return !isCrmMarketingEmployee;
+          return true;
+        }),
       }
     : null;
 

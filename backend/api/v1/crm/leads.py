@@ -19,6 +19,7 @@ from utils import (
     fetch_or_404,
     handle_integrity_error,
     is_admin,
+    is_crm_department_user,
     get_current_user,
     parse_date,
     register_crud_blueprint,
@@ -341,6 +342,38 @@ def get_lead_status_history(lead_id, token_response):
             "token_response": token_response,
         }
     ), 200
+
+
+@leads_bp.route("/log", methods=["GET"])
+@jwt_required()
+@with_token
+def list_lead_upload_log(token_response):
+    """Read-only lead-upload activity log for non-Marketing CRM employees
+    (Voice / Non-Voice) — who uploaded which lead, when, from which
+    batch. Deliberately excludes contact_number/email (that's the whole
+    point: they can see upload activity, not the leads' own contact
+    details) and has no Excel export — view only, in the UI and here."""
+    current_user = get_current_user()
+
+    if not (is_admin(current_user) or is_crm_department_user(current_user)):
+        return jsonify({"message": "Admin or CRM privileges required"}), 403
+
+    query = Lead.query.order_by(Lead.created_at.desc())
+    paginated = paginate_query(query, request.args)
+
+    def _redact(lead_dict):
+        lead_dict.pop("contact_number", None)
+        lead_dict.pop("email", None)
+        lead_dict.pop("notes", None)
+        return lead_dict
+
+    paginated["items"] = [_redact(item) for item in paginated.get("items", [])]
+
+    return jsonify({
+        "message": "Lead upload log fetched",
+        "data": paginated,
+        "token_response": token_response,
+    }), 200
 
 
 @leads_bp.route("/report", methods=["GET"])

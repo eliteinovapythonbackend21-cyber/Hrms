@@ -260,10 +260,16 @@ export const CRM_EMPLOYEE_NAV = {
   icon: "crm",
   children: [
     { label: "Registeration", path: "/crm/meetings", icon: "crm" },
+    { label: "Customers", path: "/crm/customers", icon: "crm" },
     // Only rendered for a CRM Marketing-designation employee — Sidebar.jsx
     // filters this entry out via useIsCrmMarketingEmployee() for every
     // other CRM employee.
     { label: "Lead Upload", path: "/crm/leads/upload", icon: "crm" },
+    // The flip side of Lead Upload — Sidebar.jsx renders this only for a
+    // NON-marketing CRM employee (Voice/Non-Voice designation), a
+    // read-only log of who uploaded which lead (no contact numbers, no
+    // download) so they can see upload activity without the upload tools.
+    { label: "Lead Log", path: "/crm/leads/log", icon: "crm" },
     { label: "Targets", path: "/crm/leads/employees/targets", icon: "employees" },
     // Tier dashboard — tier badge + weekly / monthly / yearly payouts + invoices.
     { label: "Incentives", path: "/crm/incentives", icon: "crm" },

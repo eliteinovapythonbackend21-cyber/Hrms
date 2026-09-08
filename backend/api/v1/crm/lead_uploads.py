@@ -26,12 +26,13 @@ tiny and works identically on any host. Requires OCR_SPACE_API_KEY set
 as an environment variable (free key: https://ocr.space/ocrapi/freekey).
 """
 
+import io
 import re
 
 import requests
-from flask import Blueprint, current_app, jsonify, request
+from flask import Blueprint, current_app, jsonify, request, send_file
 from flask_jwt_extended import jwt_required
-from openpyxl import load_workbook
+from openpyxl import Workbook, load_workbook
 
 from extensions import db
 from models import Lead, LeadUploadBatch
@@ -177,6 +178,42 @@ def _extract_lead_fields(raw_text):
             break
 
     return name, contact_number
+
+
+@lead_uploads_bp.route("/template", methods=["GET"])
+@jwt_required()
+@with_token
+def download_lead_upload_template(token_response):
+    """Header-only .xlsx matching EXPECTED_COLUMNS, so the uploader
+    doesn't have to guess column names/order by hand."""
+    current_user = get_current_user()
+
+    if not _can_upload_leads(current_user):
+        return jsonify({"message": "Admin or CRM Marketing privileges required"}), 403
+
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.title = "Leads"
+    sheet.append(EXPECTED_COLUMNS)
+    # One example row so the format is unambiguous — not required, the
+    # uploader can delete it before adding their own rows.
+    sheet.append(["Jane Doe", "9876543210", "jane@example.com", "Walk-in", "New"])
+
+    for column_cells in sheet.columns:
+        values = [str(cell.value) for cell in column_cells if cell.value is not None]
+        max_length = max((len(v) for v in values), default=10)
+        sheet.column_dimensions[column_cells[0].column_letter].width = max(14, max_length + 2)
+
+    buffer = io.BytesIO()
+    workbook.save(buffer)
+    buffer.seek(0)
+
+    return send_file(
+        buffer,
+        as_attachment=True,
+        download_name="lead_upload_template.xlsx",
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
 
 
 @lead_uploads_bp.route("/", methods=["GET"])  # CHANGED: relative

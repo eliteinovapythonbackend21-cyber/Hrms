@@ -17,7 +17,9 @@ import {
 } from "./useLeadUpload";
 
 import { useCRMEmployeeOptions } from "@/hooks/useLookupOptions";
+import { useFileDownload } from "@/hooks/useFileDownload";
 import { getUser } from "@/utils/tokenHelpers";
+import { crmApi } from "@/api/crm.api";
 
 /* =========================================================
    CONSTANTS
@@ -318,8 +320,10 @@ function BatchDetailsCard({ batch }) {
 
 export default function LeadUploadPage() {
   const { showToast } = useToast();
+  const { downloadBlob } = useFileDownload();
   const fileInputRef = useRef(null);
   const photoInputRef = useRef(null);
+  const [downloadingTemplate, setDownloadingTemplate] = useState(false);
 
   // A CRM Marketing employee login (role "employee") can only ever assign
   // leads to themselves — the backend enforces this too (upload_leads /
@@ -472,6 +476,21 @@ export default function LeadUploadPage() {
       setAssignedTo(defaultAssignee);
     } catch (error) {
       showToast(error?.response?.data?.message || error?.message || "Upload failed", "error");
+    }
+  };
+
+  const handleDownloadTemplate = async () => {
+    setDownloadingTemplate(true);
+    try {
+      const res = await crmApi.leadUploads.template();
+      downloadBlob(res, "lead_upload_template.xlsx");
+    } catch (error) {
+      showToast(
+        error?.response?.data?.message || error?.message || "Failed to download the template",
+        "error"
+      );
+    } finally {
+      setDownloadingTemplate(false);
     }
   };
 
@@ -689,9 +708,20 @@ export default function LeadUploadPage() {
           </div>
         </div>
 
-        <p className="mt-3 text-[11px] text-slate-400">
-          Expected columns (row 1 = header): lead_name, contact_number, email, source, status
-        </p>
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+          <p className="text-[11px] text-slate-400">
+            Expected columns (row 1 = header): lead_name, contact_number, email, source, status
+          </p>
+
+          <button
+            type="button"
+            onClick={handleDownloadTemplate}
+            disabled={downloadingTemplate}
+            className="text-[11px] font-semibold text-primary-600 hover:underline disabled:opacity-50 dark:text-primary-400"
+          >
+            {downloadingTemplate ? "Downloading..." : "Download Excel Template"}
+          </button>
+        </div>
       </div>
 
       {/* PHOTO / OCR UPLOAD PANEL */}
