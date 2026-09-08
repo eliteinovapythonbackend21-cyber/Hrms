@@ -107,19 +107,18 @@ export function useLeadOptions() {
   });
 
   return (data?.items || []).map((l) => {
-    // Admin sees which department each lead belongs to, e.g. "Walk-in
-    // Enquiry (CRM)" — a CRM employee just sees the plain lead name,
-    // since it's implicitly their own department's lead.
-    const departmentName =
-      l.assignee_hierarchy?.department?.department_name ||
-      l.creator_hierarchy?.department?.department_name;
+    // Admin sees which CRM employee the lead belongs to, e.g.
+    // "Walk-in Enquiry (Arjun Kumar)" — a CRM employee just sees the
+    // plain lead name, since it's implicitly their own lead.
+    const owner = l.assignee || l.creator;
+    const ownerName =
+      [owner?.first_name, owner?.last_name].filter(Boolean).join(" ").trim() ||
+      owner?.employee_code ||
+      "Unassigned";
 
     return {
       value: l.id,
-      label:
-        isAdminViewer && departmentName
-          ? `${l.lead_name} (${departmentName})`
-          : l.lead_name,
+      label: isAdminViewer ? `${l.lead_name} (${ownerName})` : l.lead_name,
     };
   });
 }
