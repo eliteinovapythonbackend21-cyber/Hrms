@@ -1649,9 +1649,11 @@ export default function EmployeeExpenseListPage() {
             setEditing(null);
           }}
           isEdit={Boolean(editing)}
-          canPickEmployee={
-            canManageAll
-          }
+          // Office Expenses is always self-attributed — the free-text
+          // "Purchased By" field already names who bought the item, so
+          // there's no "Employee" record picker at all, not even for
+          // admin. The backend still attributes every new expense to the
+          // logged-in user's own Employee record.
         />
       </Modal>
 
