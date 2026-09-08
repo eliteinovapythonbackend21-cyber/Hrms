@@ -129,7 +129,11 @@ export const navConfig = [
       { label: "Attendance", path: "/attendance", icon: "attendance", roles: ["employee"] },
       { label: "Leave", path: "/leaves", icon: "leaves", roles: ["employee"] },
       { label: "Monthly Leave Record", path: "/leaves/monthly-record", icon: "leaves", roles: ["employee"] },
-      { label: "My Expenses", path: "/my-expenses", icon: "finance", roles: ["employee"] },
+      // "My Expenses"/Office Expenses intentionally NOT here — every
+      // other department's employee login (CRM, HR, Normal) must not see
+      // it. Only Finance-department employees (FINANCE_EMPLOYEE_NAV's
+      // "Office Expenses") and admin (Admin section's "Office Expenses")
+      // get this screen.
     ],
   },
   {
