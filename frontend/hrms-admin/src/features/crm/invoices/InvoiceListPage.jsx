@@ -17,7 +17,6 @@ import {
   useDownloadInvoice,
 } from "./useInvoices";
 
-import { useCustomerOptions } from "@/hooks/useLookupOptions";
 import { useIsCrmEmployee } from "@/hooks/useIsCrmEmployee";
 
 import { useTableExport } from "@/hooks/useTableExport";
@@ -949,6 +948,242 @@ const IconButton = ({
 };
 
 /* =========================================================
+   CALENDAR VIEW — invoices plotted on their due date
+========================================================= */
+
+const MONTH_NAMES = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
+
+const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+function dueDateKey(value) {
+  if (!value) return "";
+  const raw = String(value).slice(0, 10);
+  return /^\d{4}-\d{2}-\d{2}$/.test(raw) ? raw : "";
+}
+
+function toISODate(year, month, day) {
+  return `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
+function InvoiceCalendar({ invoices, onSelectInvoice, readOnly }) {
+  const today = new Date();
+  const [calendarYear, setCalendarYear] = useState(today.getFullYear());
+  const [calendarMonth, setCalendarMonth] = useState(today.getMonth());
+
+  const invoicesByDate = useMemo(() => {
+    const map = new Map();
+    invoices.forEach((invoice) => {
+      const key = dueDateKey(invoice.due_date);
+      if (!key) return;
+      if (!map.has(key)) map.set(key, []);
+      map.get(key).push(invoice);
+    });
+    return map;
+  }, [invoices]);
+
+  const monthInvoiceCount = useMemo(() => {
+    let count = 0;
+    invoicesByDate.forEach((_, key) => {
+      const [year, month] = key.split("-").map(Number);
+      if (year === calendarYear && month - 1 === calendarMonth) count += 1;
+    });
+    return count;
+  }, [invoicesByDate, calendarYear, calendarMonth]);
+
+  const cells = useMemo(() => {
+    const firstOfMonth = new Date(calendarYear, calendarMonth, 1);
+    const startWeekday = firstOfMonth.getDay();
+    const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
+    const prevMonthDays = new Date(calendarYear, calendarMonth, 0).getDate();
+    const out = [];
+
+    for (let i = startWeekday - 1; i >= 0; i -= 1) {
+      const day = prevMonthDays - i;
+      const date = new Date(calendarYear, calendarMonth - 1, day);
+      const key = toISODate(date.getFullYear(), date.getMonth(), day);
+      out.push({ day, key, isCurrentMonth: false, invoices: invoicesByDate.get(key) || [] });
+    }
+
+    for (let day = 1; day <= daysInMonth; day += 1) {
+      const key = toISODate(calendarYear, calendarMonth, day);
+      out.push({ day, key, isCurrentMonth: true, invoices: invoicesByDate.get(key) || [] });
+    }
+
+    let nextDay = 1;
+    while (out.length < 42) {
+      const date = new Date(calendarYear, calendarMonth + 1, nextDay);
+      const key = toISODate(date.getFullYear(), date.getMonth(), nextDay);
+      out.push({ day: nextDay, key, isCurrentMonth: false, invoices: invoicesByDate.get(key) || [] });
+      nextDay += 1;
+    }
+
+    return out;
+  }, [calendarYear, calendarMonth, invoicesByDate]);
+
+  const goToPrevMonth = () => {
+    if (calendarMonth === 0) {
+      setCalendarMonth(11);
+      setCalendarYear((year) => year - 1);
+    } else {
+      setCalendarMonth((month) => month - 1);
+    }
+  };
+
+  const goToNextMonth = () => {
+    if (calendarMonth === 11) {
+      setCalendarMonth(0);
+      setCalendarYear((year) => year + 1);
+    } else {
+      setCalendarMonth((month) => month + 1);
+    }
+  };
+
+  const goToToday = () => {
+    setCalendarYear(today.getFullYear());
+    setCalendarMonth(today.getMonth());
+  };
+
+  const isToday = (year, month, day) =>
+    year === today.getFullYear() && month === today.getMonth() && day === today.getDate();
+
+  return (
+    <div className="overflow-visible rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
+      <div className="border-b border-slate-200 bg-gradient-to-r from-slate-50 via-white to-primary-50/60 px-4 py-3 dark:border-white/10 dark:from-slate-800/80 dark:via-slate-900 dark:to-primary-950/20">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <button
+              type="button"
+              onClick={goToPrevMonth}
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-base font-semibold text-slate-500 transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-600 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-400"
+              aria-label="Previous month"
+            >
+              ‹
+            </button>
+
+            <span className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-200">
+              {MONTH_NAMES[calendarMonth]} {calendarYear}
+            </span>
+
+            <button
+              type="button"
+              onClick={goToNextMonth}
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-base font-semibold text-slate-500 transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-600 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-400"
+              aria-label="Next month"
+            >
+              ›
+            </button>
+
+            <button
+              type="button"
+              onClick={goToToday}
+              className="h-8 rounded-lg bg-primary-600 px-3 text-[10px] font-bold text-white shadow-sm transition hover:bg-primary-700"
+            >
+              Today
+            </button>
+          </div>
+
+          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold text-slate-500 dark:bg-white/[0.06] dark:text-slate-400">
+            {monthInvoiceCount} invoice{monthInvoiceCount === 1 ? "" : "s"} due this month
+          </span>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-7 bg-slate-100/80 dark:bg-white/[0.06]">
+        {WEEKDAY_LABELS.map((label, index) => (
+          <div
+            key={label}
+            className={`border-r border-slate-200 px-1 py-2 text-center text-[9px] font-bold uppercase tracking-wider last:border-r-0 dark:border-white/10 ${
+              index === 0 || index === 6
+                ? "text-primary-400 dark:text-primary-500"
+                : "text-slate-500 dark:text-slate-400"
+            }`}
+          >
+            {label}
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-7 gap-px bg-slate-200/70 dark:bg-slate-700/70">
+        {cells.map((cell) => {
+          const todayCell = isToday(calendarYear, calendarMonth, cell.day);
+
+          return (
+            <div
+              key={`${cell.key}-${cell.isCurrentMonth}`}
+              className={`relative min-h-[100px] p-1.5 ${
+                cell.isCurrentMonth ? "bg-white dark:bg-white/[0.04]" : "bg-slate-50/80 dark:bg-slate-950/50"
+              } ${todayCell ? "ring-2 ring-inset ring-primary-400 dark:ring-primary-500" : ""}`}
+            >
+              <span
+                className={`flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold ${
+                  todayCell
+                    ? "bg-primary-600 text-white"
+                    : cell.isCurrentMonth
+                    ? "text-slate-700 dark:text-slate-200"
+                    : "text-slate-300 dark:text-slate-600"
+                }`}
+              >
+                {cell.day}
+              </span>
+
+              <div className="mt-1 space-y-1">
+                {cell.invoices.slice(0, 2).map((invoice) => {
+                  const status = getInvoiceStatus(invoice);
+                  return (
+                    <button
+                      key={invoice.id}
+                      type="button"
+                      onClick={() => !readOnly && onSelectInvoice(invoice)}
+                      title={`${invoice.invoice_number || `Invoice #${invoice.id}`} — ${formatCurrency(invoice.amount)}`}
+                      className={`flex w-full items-center gap-1 rounded-md border px-1 py-1 text-left transition ${
+                        status === "Overdue"
+                          ? "border-red-200 bg-red-50 text-red-700 hover:bg-red-100 dark:border-red-900/40 dark:bg-red-500/10 dark:text-red-300"
+                          : status === "Paid"
+                          ? "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-900/40 dark:bg-emerald-500/10 dark:text-emerald-300"
+                          : "border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 dark:border-amber-900/40 dark:bg-amber-500/10 dark:text-amber-300"
+                      }`}
+                    >
+                      <span className="truncate text-[9px] font-semibold leading-3.5">
+                        {invoice.invoice_number || `#${invoice.id}`}
+                      </span>
+                    </button>
+                  );
+                })}
+
+                {cell.invoices.length > 2 && (
+                  <div className="rounded-md bg-slate-100 px-1.5 py-1 text-[8px] font-semibold text-slate-500 dark:bg-white/[0.06] dark:text-slate-400">
+                    +{cell.invoices.length - 2} more
+                  </div>
+                )}
+              </div>
+
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3 border-t border-slate-200 bg-gradient-to-r from-slate-50 to-primary-50/40 px-3 py-2 dark:border-white/10 dark:from-slate-800 dark:to-primary-950/20">
+        <span className="flex items-center gap-1.5 text-[9px] font-semibold text-slate-500 dark:text-slate-400">
+          <span className="h-1.5 w-1.5 rounded-full bg-amber-500" /> Unpaid
+        </span>
+        <span className="flex items-center gap-1.5 text-[9px] font-semibold text-slate-500 dark:text-slate-400">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> Paid
+        </span>
+        <span className="flex items-center gap-1.5 text-[9px] font-semibold text-slate-500 dark:text-slate-400">
+          <span className="h-1.5 w-1.5 rounded-full bg-red-500" /> Overdue
+        </span>
+        <span className="ml-auto text-[9px] text-slate-400">
+          Invoices are plotted by due date — click one to {readOnly ? "view" : "manage"} it.
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/* =========================================================
    PAGE
 ========================================================= */
 
@@ -983,16 +1218,8 @@ export default function InvoiceListPage() {
   const downloadInvoice =
     useDownloadInvoice();
 
-  const customerOptions =
-    useCustomerOptions();
-
   const [search, setSearch] =
     useState("");
-
-  const [
-    customerFilter,
-    setCustomerFilter,
-  ] = useState("");
 
   const [
     statusFilter,
@@ -1140,18 +1367,6 @@ export default function InvoiceListPage() {
           }
 
           if (
-            customerFilter &&
-            String(
-              invoice.customer_id
-            ) !==
-              String(
-                customerFilter
-              )
-          ) {
-            return false;
-          }
-
-          if (
             statusFilter &&
             getInvoiceStatus(
               invoice
@@ -1196,7 +1411,6 @@ export default function InvoiceListPage() {
     }, [
       allInvoices,
       search,
-      customerFilter,
       statusFilter,
       activeFilter,
     ]);
@@ -1470,7 +1684,6 @@ export default function InvoiceListPage() {
   const clearFilters =
     () => {
       setSearch("");
-      setCustomerFilter("");
       setStatusFilter("");
       setActiveFilter("active");
       setPage(1);
@@ -1626,45 +1839,6 @@ export default function InvoiceListPage() {
               />
             </div>
 
-            {/* CUSTOMER */}
-
-            <select
-              value={
-                customerFilter
-              }
-              onChange={(
-                event
-              ) => {
-                setCustomerFilter(
-                  event.target.value
-                );
-
-                setPage(1);
-              }}
-              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none sm:max-w-[230px] dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
-            >
-              <option value="">
-                All Customers
-              </option>
-
-              {customerOptions.map(
-                (customer) => (
-                  <option
-                    key={
-                      customer.value
-                    }
-                    value={
-                      customer.value
-                    }
-                  >
-                    {
-                      customer.label
-                    }
-                  </option>
-                )
-              )}
-            </select>
-
             {/* STATUS */}
 
             <select
@@ -1700,7 +1874,6 @@ export default function InvoiceListPage() {
             </select>
 
             {(search ||
-              customerFilter ||
               statusFilter ||
               activeFilter !==
                 "active") && (
@@ -1787,12 +1960,42 @@ export default function InvoiceListPage() {
               >
                 Table
               </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setViewMode(
+                    "calendar"
+                  );
+                }}
+                className={`rounded-md px-3 py-1.5 text-xs font-medium ${
+                  viewMode ===
+                  "calendar"
+                    ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"
+                    : "text-slate-500 dark:text-slate-400"
+                }`}
+              >
+                Calendar
+              </button>
             </div>
           </div>
         </div>
       </div>
 
+      {/* CALENDAR */}
+
+      {viewMode === "calendar" && (
+        <InvoiceCalendar
+          invoices={filtered}
+          onSelectInvoice={handleEdit}
+          readOnly={readOnly}
+        />
+      )}
+
       {/* DATA */}
+
+      {viewMode !== "calendar" && (
+      <>
 
       {isLoading ? (
         <div className="py-10 text-center text-sm text-slate-400">
@@ -2294,9 +2497,12 @@ export default function InvoiceListPage() {
           </table>
         </div>
       )}
+      </>
+      )}
 
       {/* PAGINATION */}
 
+      {viewMode !== "calendar" && (
       <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500 shadow-sm dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-400">
         <span>
           Page {page} of{" "}
@@ -2339,6 +2545,7 @@ export default function InvoiceListPage() {
           </button>
         </div>
       </div>
+      )}
 
       {/* ADD / EDIT */}
 
