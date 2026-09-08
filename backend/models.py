@@ -3462,10 +3462,14 @@ class OfficeExpense(TimestampMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
 
     # Employee who owns the record / whose expense is being recorded.
+    # Nullable: an admin login (no Employee record of their own) can still
+    # log an office expense — the free-text "Purchased By" field is the
+    # actual record of who bought the item, this FK is just an optional
+    # attribution when the logged-in user does have an Employee record.
     employee_id = db.Column(
         db.Integer,
         db.ForeignKey("employees.id"),
-        nullable=False,
+        nullable=True,
     )
 
     # New office-expense fields.

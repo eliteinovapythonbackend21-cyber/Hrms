@@ -102,7 +102,7 @@ def _resolve_employee(current_user, employee_id):
 
     employee = _own_employee(current_user)
 
-    if not employee:
+    if not employee and not _is_privileged(current_user):
         return None, (
             jsonify(
                 {
@@ -113,6 +113,10 @@ def _resolve_employee(current_user, employee_id):
             400,
         )
 
+    # Admin/finance logins routinely have no Employee record of their
+    # own — that's fine here, employee_id is just an optional
+    # attribution; "Purchased By" (free text) is the real record of
+    # who bought the item.
     return employee, None
 
 
@@ -396,7 +400,7 @@ def create_office_expense(token_response):
         return error_response
 
     expense = OfficeExpense(
-        employee_id=employee.id,
+        employee_id=employee.id if employee else None,
         purchase_type=purchase_type,
         category=category,
         item_name=item_name,
