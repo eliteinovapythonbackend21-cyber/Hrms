@@ -133,21 +133,6 @@ function formatAmount(value) {
 }
 
 
-function getEmployeeName(row) {
-  return (
-    [
-      row.employee?.first_name,
-      row.employee?.last_name,
-    ]
-      .filter(Boolean)
-      .join(" ")
-      .trim() ||
-    row.employee?.employee_code ||
-    "-"
-  );
-}
-
-
 function StatCard({
   label,
   value,
@@ -292,20 +277,6 @@ function ExpenseTable({
         ),
       },
 
-      ...(canManageAll
-        ? [
-            {
-              key: "employee",
-              label: "Employee",
-
-              render: (row) => (
-                <span className="text-sm text-slate-700 dark:text-slate-200">
-                  {getEmployeeName(row)}
-                </span>
-              ),
-            },
-          ]
-        : []),
 
       {
         key: "collection",
