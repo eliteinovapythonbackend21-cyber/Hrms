@@ -6,6 +6,9 @@ import {
   OFFICE_EXPENSE_CATEGORIES,
   OFFICE_EXPENSE_COLLECTION_MODES,
   OFFICE_EXPENSE_COLLECTION_STATUSES,
+  OFFICE_EXPENSE_COLLECTOR_DEFAULTS,
+  OFFICE_EXPENSE_PAID_FROM_DEFAULTS,
+  OFFICE_EXPENSE_PAYMENT_STATUSES,
   OFFICE_EXPENSE_PURCHASE_TYPES,
   useEmployeeExpenseCategories,
 } from "./useEmployeeExpenses";
@@ -55,6 +58,21 @@ export default function EmployeeExpenseForm({
     expenseOptions?.collection_modes?.length
       ? expenseOptions.collection_modes
       : OFFICE_EXPENSE_COLLECTION_MODES;
+
+  const paidFromDefaults =
+    expenseOptions?.paid_from_defaults?.length
+      ? expenseOptions.paid_from_defaults
+      : OFFICE_EXPENSE_PAID_FROM_DEFAULTS;
+
+  const collectorDefaults =
+    expenseOptions?.collector_defaults?.length
+      ? expenseOptions.collector_defaults
+      : OFFICE_EXPENSE_COLLECTOR_DEFAULTS;
+
+  const paymentStatuses =
+    expenseOptions?.payment_statuses?.length
+      ? expenseOptions.payment_statuses
+      : OFFICE_EXPENSE_PAYMENT_STATUSES;
 
 
   const { employee: myEmployee } =
@@ -119,6 +137,32 @@ export default function EmployeeExpenseForm({
     useState(
       initialData.collection_date
         ? initialData.collection_date.slice(0, 10)
+        : ""
+    );
+
+
+  const [paidFrom, setPaidFrom] = useState(
+    initialData.paid_from || ""
+  );
+
+
+  const [amountPaid, setAmountPaid] = useState(
+    initialData.amount_paid !== undefined &&
+      initialData.amount_paid !== null
+      ? String(initialData.amount_paid)
+      : "0"
+  );
+
+
+  const [paymentStatus, setPaymentStatus] = useState(
+    initialData.payment_status || "Pending"
+  );
+
+
+  const [reimbursementDate, setReimbursementDate] =
+    useState(
+      initialData.reimbursement_date
+        ? initialData.reimbursement_date.slice(0, 10)
         : ""
     );
 
@@ -221,6 +265,18 @@ export default function EmployeeExpenseForm({
       return;
     }
 
+    const amountPaidValue = Number(amountPaid || 0);
+
+    if (Number.isNaN(amountPaidValue) || amountPaidValue < 0) {
+      setError("Please enter a valid amount paid.");
+      return;
+    }
+
+    if (paymentStatus === "Reimbursed" && !reimbursementDate) {
+      setError("Please select the reimbursement date.");
+      return;
+    }
+
     setError("");
 
 
@@ -250,6 +306,17 @@ export default function EmployeeExpenseForm({
       collection_date:
         collectionStatus === "Collected"
           ? collectionDate
+          : undefined,
+
+      paid_from: paidFrom.trim() || undefined,
+
+      amount_paid: amountPaidValue,
+
+      payment_status: paymentStatus,
+
+      reimbursement_date:
+        paymentStatus === "Reimbursed"
+          ? reimbursementDate
           : undefined,
 
       description:
@@ -382,6 +449,7 @@ export default function EmployeeExpenseForm({
 
           <input
             type="text"
+            list="collector-defaults"
             value={purchasedBy}
             onChange={(event) =>
               setPurchasedBy(event.target.value)
@@ -390,8 +458,14 @@ export default function EmployeeExpenseForm({
             className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
           />
 
+          <datalist id="collector-defaults">
+            {collectorDefaults.map((name) => (
+              <option key={name} value={name} />
+            ))}
+          </datalist>
+
           <p className="mt-1 text-[11px] text-slate-400">
-            Name of the person who purchased the item.
+            Name of the person who purchased the item (usually Arjun / Varahini).
           </p>
         </div>
 
@@ -437,13 +511,117 @@ export default function EmployeeExpenseForm({
       <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-white/[0.03]">
         <div className="mb-4">
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-            Amount Collection Details
+            Amount Paid / Received Details
           </p>
 
           <p className="mt-1 text-[11px] text-slate-400">
-            Track whether the amount related to this office expense has been collected.
+            Bala (MD) / Karapagavalli hold the office funds; Arjun / Varahini collect and
+            purchase. If the amount isn't paid upfront, the collector arranges it and gets
+            reimbursed once paid_from pays it back.
           </p>
         </div>
+
+
+        <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div>
+            <FieldLabel>
+              Amount Paid From
+            </FieldLabel>
+
+            <input
+              type="text"
+              list="paid-from-defaults"
+              value={paidFrom}
+              onChange={(event) =>
+                setPaidFrom(event.target.value)
+              }
+              placeholder="e.g. Bala (MD)"
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
+            />
+
+            <datalist id="paid-from-defaults">
+              {paidFromDefaults.map((name) => (
+                <option key={name} value={name} />
+              ))}
+            </datalist>
+          </div>
+
+          <div>
+            <FieldLabel>
+              Amount Paid (₹)
+            </FieldLabel>
+
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={amountPaid}
+              onChange={(event) =>
+                setAmountPaid(event.target.value)
+              }
+              placeholder="0"
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
+            />
+
+            <p className="mt-1 text-[11px] text-slate-400">
+              Amount Pending: ₹
+              {Math.max(
+                Number(amount || 0) - Number(amountPaid || 0),
+                0
+              ).toLocaleString("en-IN")}
+            </p>
+          </div>
+
+          <div>
+            <FieldLabel required>
+              Payment Status
+            </FieldLabel>
+
+            <select
+              value={paymentStatus}
+              onChange={(event) =>
+                setPaymentStatus(event.target.value)
+              }
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
+            >
+              {paymentStatuses.map((status) => (
+                <option key={status} value={status}>
+                  {status}
+                </option>
+              ))}
+            </select>
+
+            <p className="mt-1 text-[11px] text-slate-400">
+              Pending = collector (Arjun/Varahini) arranged it themselves and is owed it back.
+            </p>
+          </div>
+
+          {paymentStatus === "Reimbursed" && (
+            <div>
+              <FieldLabel required>
+                Reimbursement Date
+              </FieldLabel>
+
+              <input
+                type="date"
+                value={reimbursementDate}
+                onChange={(event) =>
+                  setReimbursementDate(event.target.value)
+                }
+                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-slate-600 dark:bg-white/[0.06] dark:text-white"
+              />
+
+              <p className="mt-1 text-[11px] text-slate-400">
+                When paid_from paid the collector back.
+              </p>
+            </div>
+          )}
+        </div>
+
+
+        <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+          Collection (legacy)
+        </p>
 
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">

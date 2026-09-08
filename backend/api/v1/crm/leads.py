@@ -377,6 +377,50 @@ def list_lead_upload_log(token_response):
     }), 200
 
 
+@leads_bp.route("/log/summary", methods=["GET"])
+@jwt_required()
+@with_token
+def lead_upload_log_summary(token_response):
+    """Per-employee lead COUNT only — this is what Voice/Non-Voice CRM
+    employees actually see on the Lead Log page. No lead-level detail
+    (name/source/contact/etc.) is exposed here, only "who uploaded how
+    many"."""
+    current_user = get_current_user()
+
+    if not (is_admin(current_user) or is_crm_department_user(current_user)):
+        return jsonify({"message": "Admin or CRM privileges required"}), 403
+
+    rows = (
+        db.session.query(
+            Employee.id,
+            Employee.employee_code,
+            Employee.first_name,
+            Employee.last_name,
+            db.func.count(Lead.id).label("lead_count"),
+        )
+        .join(Lead, Lead.created_by == Employee.id)
+        .group_by(Employee.id)
+        .order_by(db.func.count(Lead.id).desc())
+        .all()
+    )
+
+    summary = [
+        {
+            "employee_id": row.id,
+            "employee_code": row.employee_code,
+            "employee_name": f"{row.first_name or ''} {row.last_name or ''}".strip() or row.employee_code,
+            "lead_count": row.lead_count,
+        }
+        for row in rows
+    ]
+
+    return jsonify({
+        "message": "Lead upload count summary fetched",
+        "data": {"items": summary, "total_leads": sum(r["lead_count"] for r in summary)},
+        "token_response": token_response,
+    }), 200
+
+
 @leads_bp.route("/report", methods=["GET"])
 @jwt_required()
 @with_token

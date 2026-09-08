@@ -288,6 +288,36 @@ function ExpenseTable({
       },
 
       {
+        key: "payment",
+        label: "Payment",
+
+        render: (row) => {
+          const statusClass =
+            row.payment_status === "Paid"
+              ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300"
+              : row.payment_status === "Reimbursed"
+              ? "bg-sky-50 text-sky-700 dark:bg-sky-500/10 dark:text-sky-300"
+              : "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300";
+
+          return (
+            <div className="space-y-1">
+              <Badge className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs ${statusClass}`}>
+                {row.payment_status || "Pending"}
+              </Badge>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                From: {row.paid_from || "-"}
+              </p>
+              {Number(row.amount_pending || 0) > 0 && (
+                <p className="text-[11px] font-semibold text-amber-600 dark:text-amber-400">
+                  Pending: ₹{Number(row.amount_pending).toLocaleString("en-IN")}
+                </p>
+              )}
+            </div>
+          );
+        },
+      },
+
+      {
         key: "status",
         label: "Status",
 

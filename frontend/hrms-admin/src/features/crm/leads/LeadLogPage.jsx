@@ -1,114 +1,45 @@
-import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import DataTable from "@/components/table/DataTable";
-import Badge from "@/components/ui/Badge";
 import TableToolbar from "@/components/table/TableToolbar";
-import TableSearchBar from "@/components/table/TableSearchBar";
 
 import { crmApi } from "@/api/crm.api";
-import { useDebouncedSearch } from "@/hooks/useDebouncedSearch";
-
-/* =========================================================
-   HELPERS
-========================================================= */
-
-function formatDateTime(value) {
-  if (!value) return "-";
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString();
-}
-
-function getEmployeeName(employee) {
-  if (!employee) return "-";
-  return (
-    [employee.first_name, employee.last_name].filter(Boolean).join(" ").trim() ||
-    employee.employee_code ||
-    "-"
-  );
-}
-
-const STATUS_BADGE_CLASS = {
-  New: "bg-sky-50 text-sky-700 dark:bg-sky-500/10 dark:text-sky-400",
-  Contacted: "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400",
-  Converted: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400",
-  Lost: "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400",
-};
-
-function getStatusBadgeClass(status) {
-  return STATUS_BADGE_CLASS[status] || "bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-slate-300";
-}
 
 /* =========================================================
    PAGE
+   Voice / Non-Voice CRM employees only get a COUNT of leads
+   uploaded per employee here — no lead-level detail (name,
+   source, contact, etc.) and no download, by design.
 ========================================================= */
 
 export default function LeadLogPage() {
-  const { value: search, setValue: setSearch } = useDebouncedSearch();
-  const [page] = useState(1);
-
   const { data, isLoading, isFetching, isError, error, refetch } = useQuery({
-    queryKey: ["lead-upload-log", { page, search }],
-    queryFn: async () =>
-      (await crmApi.leads.log({ page, per_page: 200, search: search || undefined })).data.data,
+    queryKey: ["lead-upload-log-summary"],
+    queryFn: async () => (await crmApi.leads.logSummary()).data.data,
   });
 
-  const leads = data?.items || [];
+  const rows = data?.items || [];
 
-  // Surface a real failure (403/500/network) instead of letting it silently
-  // fall through to the "No lead upload activity found" empty state — that
-  // empty text should only ever mean "the query genuinely returned zero rows".
   const errorMessage = isError
     ? error?.response?.data?.message || error?.message || "Failed to load the lead log."
     : null;
 
   const columns = [
     {
-      key: "lead_name",
-      label: "Lead Name",
-      render: (row) => (
-        <span className="font-semibold text-slate-800 dark:text-white">{row.lead_name || "-"}</span>
-      ),
-    },
-    {
-      key: "source",
-      label: "Source",
-      render: (row) => <span className="text-slate-600 dark:text-slate-300">{row.source || "-"}</span>,
-    },
-    {
-      key: "status",
-      label: "Status",
-      render: (row) => <Badge className={getStatusBadgeClass(row.status)}>{row.status || "-"}</Badge>,
-    },
-    {
-      key: "creator",
-      label: "Uploaded By",
+      key: "employee_name",
+      label: "Employee",
       render: (row) => (
         <div>
-          <p className="font-medium text-slate-800 dark:text-white">{getEmployeeName(row.creator)}</p>
-          <p className="text-[11px] text-slate-400">{row.creator?.employee_code || "-"}</p>
+          <p className="font-medium text-slate-800 dark:text-white">{row.employee_name || "-"}</p>
+          <p className="text-[11px] text-slate-400">{row.employee_code || "-"}</p>
         </div>
       ),
     },
     {
-      key: "assignee",
-      label: "Assigned To",
+      key: "lead_count",
+      label: "Leads Uploaded",
       render: (row) => (
-        <span className="text-slate-600 dark:text-slate-300">{getEmployeeName(row.assignee)}</span>
-      ),
-    },
-    {
-      key: "upload_batch",
-      label: "Upload File",
-      render: (row) => (
-        <span className="text-slate-600 dark:text-slate-300">{row.upload_batch?.file_name || "-"}</span>
-      ),
-    },
-    {
-      key: "created_at",
-      label: "Created At",
-      render: (row) => (
-        <span className="text-slate-600 dark:text-slate-300">{formatDateTime(row.created_at)}</span>
+        <span className="font-semibold text-slate-800 dark:text-white">{row.lead_count}</span>
       ),
     },
   ];
@@ -121,8 +52,7 @@ export default function LeadLogPage() {
             Lead Log
           </h1>
           <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
-            Who uploaded which lead, and when — view only. Contact details aren't shown here,
-            and this list can't be downloaded.
+            Lead count per employee — view only. No lead details, contact info, or download here.
           </p>
         </div>
 
@@ -130,16 +60,6 @@ export default function LeadLogPage() {
       </div>
 
       <div className="w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
-        <div className="border-b border-slate-200 px-4 py-3 dark:border-white/10">
-          <div className="w-full sm:max-w-sm">
-            <TableSearchBar
-              value={search}
-              onChange={setSearch}
-              placeholder="Search lead name or source..."
-            />
-          </div>
-        </div>
-
         {errorMessage && (
           <div className="border-b border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-400">
             {errorMessage}
@@ -148,7 +68,7 @@ export default function LeadLogPage() {
 
         <DataTable
           columns={columns}
-          data={leads}
+          data={rows}
           loading={isLoading}
           emptyText={errorMessage ? " " : "No lead upload activity found."}
         />

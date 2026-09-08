@@ -330,6 +330,9 @@ export const API = {
     LEADS_LOG:
       "/leads/log",
 
+    LEADS_LOG_SUMMARY:
+      "/leads/log/summary",
+
     LEAD_ASSIGN: (id) =>
       `/leads/${id}/assign`,
 

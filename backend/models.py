@@ -3445,6 +3445,31 @@ class OfficeExpense(TimestampMixin, db.Model):
         "Other",
     )
 
+    # Amount-collection workflow: Bala (MD) / Karapagavalli hold the office
+    # funds; Arjun / Varahini are the ones who actually go buy the item.
+    # These are just the DEFAULT suggestions offered in the UI — the field
+    # itself stays free text so any other name can be entered too.
+    PAID_FROM_DEFAULTS = (
+        "Bala (MD)",
+        "Karapagavalli",
+    )
+
+    COLLECTOR_DEFAULTS = (
+        "Arjun",
+        "Varahini",
+    )
+
+    # Paid: paid_from gave the money upfront, before the purchase.
+    # Pending: paid_from hasn't given anything yet — the collector (Arjun/
+    #   Varahini) arranged the money out of pocket and is owed it back.
+    # Reimbursed: paid_from has since paid the collector back for money
+    #   the collector arranged.
+    PAYMENT_STATUSES = (
+        "Paid",
+        "Pending",
+        "Reimbursed",
+    )
+
     CATEGORIES = (
         "Stationery",
         "Printing",
@@ -3536,6 +3561,33 @@ class OfficeExpense(TimestampMixin, db.Model):
         nullable=True,
     )
 
+    # Amount Paid / Amount Received / Amount Pending workflow: who the
+    # money came FROM (Bala (MD) / Karapagavalli, or a custom name), how
+    # much of the item's amount they actually paid upfront, and whether the
+    # collector (purchased_by — Arjun/Varahini) is still owed the
+    # difference they had to arrange themselves.
+    paid_from = db.Column(
+        db.String(150),
+        nullable=True,
+    )
+
+    amount_paid = db.Column(
+        db.Numeric(12, 2),
+        nullable=False,
+        default=0,
+    )
+
+    payment_status = db.Column(
+        db.String(30),
+        nullable=False,
+        default="Pending",
+    )
+
+    reimbursement_date = db.Column(
+        db.Date,
+        nullable=True,
+    )
+
     is_active = db.Column(
         db.Boolean,
         default=True,
@@ -3572,6 +3624,13 @@ class OfficeExpense(TimestampMixin, db.Model):
 
         if self.collection_date:
             data["collection_date"] = self.collection_date.isoformat()
+
+        amount_paid = float(self.amount_paid or 0)
+        data["amount_paid"] = amount_paid
+        data["amount_pending"] = round(float(self.amount or 0) - amount_paid, 2)
+
+        if self.reimbursement_date:
+            data["reimbursement_date"] = self.reimbursement_date.isoformat()
 
         return data
 

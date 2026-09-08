@@ -1083,6 +1083,35 @@ function InvoiceCalendar({ invoices, onSelectInvoice, readOnly }) {
             >
               Today
             </button>
+
+            {/* Jump straight to a month/year instead of paging one at a
+                time with the arrows — the invoice grid below re-derives
+                from calendarMonth/calendarYear so it updates immediately. */}
+            <select
+              value={calendarMonth}
+              onChange={(e) => setCalendarMonth(Number(e.target.value))}
+              className="h-8 rounded-lg border border-slate-200 bg-white px-2 text-[10px] font-bold text-slate-700 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-200"
+              aria-label="Select month"
+            >
+              {MONTH_NAMES.map((name, index) => (
+                <option key={name} value={index}>
+                  {name}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={calendarYear}
+              onChange={(e) => setCalendarYear(Number(e.target.value))}
+              className="h-8 rounded-lg border border-slate-200 bg-white px-2 text-[10px] font-bold text-slate-700 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-200"
+              aria-label="Select year"
+            >
+              {Array.from({ length: 7 }, (_, i) => today.getFullYear() - 3 + i).map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              ))}
+            </select>
           </div>
 
           <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold text-slate-500 dark:bg-white/[0.06] dark:text-slate-400">
@@ -1113,7 +1142,7 @@ function InvoiceCalendar({ invoices, onSelectInvoice, readOnly }) {
           return (
             <div
               key={`${cell.key}-${cell.isCurrentMonth}`}
-              className={`relative min-h-[100px] p-1.5 ${
+              className={`relative min-h-[64px] p-1.5 ${
                 cell.isCurrentMonth ? "bg-white dark:bg-white/[0.04]" : "bg-slate-50/80 dark:bg-slate-950/50"
               } ${todayCell ? "ring-2 ring-inset ring-primary-400 dark:ring-primary-500" : ""}`}
             >

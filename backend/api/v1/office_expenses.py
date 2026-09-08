@@ -233,6 +233,18 @@ def office_expense_categories(token_response):
                     list(
                         OfficeExpense.COLLECTION_MODES
                     ),
+                "paid_from_defaults":
+                    list(
+                        OfficeExpense.PAID_FROM_DEFAULTS
+                    ),
+                "collector_defaults":
+                    list(
+                        OfficeExpense.COLLECTOR_DEFAULTS
+                    ),
+                "payment_statuses":
+                    list(
+                        OfficeExpense.PAYMENT_STATUSES
+                    ),
             },
             "token_response": token_response,
         }
@@ -392,6 +404,44 @@ def create_office_expense(token_response):
                 }
             ), 400
 
+    try:
+        amount_paid = float(data.get("amount_paid") or 0)
+    except (TypeError, ValueError):
+        return jsonify(
+            {"message": "amount_paid must be a number"}
+        ), 400
+
+    if amount_paid < 0:
+        return jsonify(
+            {"message": "amount_paid cannot be negative"}
+        ), 400
+
+    payment_status = (
+        data.get("payment_status")
+        or "Pending"
+    ).strip()
+
+    if payment_status not in OfficeExpense.PAYMENT_STATUSES:
+        return jsonify(
+            {
+                "message":
+                "payment_status must be one of: "
+                + ", ".join(OfficeExpense.PAYMENT_STATUSES)
+            }
+        ), 400
+
+    reimbursement_date = None
+
+    if data.get("reimbursement_date"):
+        reimbursement_date = _parse_date(
+            data.get("reimbursement_date")
+        )
+
+        if not reimbursement_date:
+            return jsonify(
+                {"message": "Invalid reimbursement_date"}
+            ), 400
+
     receipt_url, error_response = _upload_receipt(
         request.files.get("receipt")
     )
@@ -419,6 +469,13 @@ def create_office_expense(token_response):
         collection_status=collection_status,
         collection_mode=collection_mode,
         collection_date=collection_date,
+        paid_from=(
+            data.get("paid_from")
+            or ""
+        ).strip() or None,
+        amount_paid=amount_paid,
+        payment_status=payment_status,
+        reimbursement_date=reimbursement_date,
         is_active=True,
     )
 
@@ -696,6 +753,66 @@ def update_office_expense(
             expense.collection_date = parsed
         else:
             expense.collection_date = None
+
+    if "paid_from" in data:
+        expense.paid_from = (
+            data.get("paid_from")
+            or ""
+        ).strip() or None
+
+    if "amount_paid" in data:
+        try:
+            amount_paid = float(
+                data.get("amount_paid") or 0
+            )
+        except (TypeError, ValueError):
+            return jsonify(
+                {"message": "Invalid amount_paid"}
+            ), 400
+
+        if amount_paid < 0:
+            return jsonify(
+                {
+                    "message":
+                    "amount_paid cannot be negative"
+                }
+            ), 400
+
+        expense.amount_paid = amount_paid
+
+    if "payment_status" in data:
+        value = (
+            data.get("payment_status")
+            or ""
+        ).strip()
+
+        if value not in OfficeExpense.PAYMENT_STATUSES:
+            return jsonify(
+                {
+                    "message":
+                    "Invalid payment_status"
+                }
+            ), 400
+
+        expense.payment_status = value
+
+    if "reimbursement_date" in data:
+        raw_date = data.get("reimbursement_date")
+
+        if raw_date:
+            parsed = _parse_date(raw_date)
+
+            if not parsed:
+                return jsonify(
+                    {
+                        "message":
+                        "Invalid reimbursement_date"
+                    }
+                ), 400
+
+            expense.reimbursement_date = parsed
+        else:
+            expense.reimbursement_date = None
 
     if (
         expense.collection_status == "Collected"

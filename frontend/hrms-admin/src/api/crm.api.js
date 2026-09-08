@@ -17,6 +17,7 @@ export const crmApi = {
     getStatusHistory: (id) => axiosClient.get(C.LEAD_STATUS_HISTORY(id)),
     report: (params) => axiosClient.get(C.LEADS_REPORT, { params, responseType: "blob" }),
     log: (params) => axiosClient.get(C.LEADS_LOG, { params }),
+    logSummary: () => axiosClient.get(C.LEADS_LOG_SUMMARY),
   },
 
   leadUploads: {

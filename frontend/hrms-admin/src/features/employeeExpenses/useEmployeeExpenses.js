@@ -73,6 +73,38 @@ export const OFFICE_EXPENSE_COLLECTION_MODES = [
 
 
 /*
+ * Amount Paid From — who in the office holds the funds. Free text is
+ * still allowed; these are just the default suggestions.
+ */
+export const OFFICE_EXPENSE_PAID_FROM_DEFAULTS = [
+  "Bala (MD)",
+  "Karapagavalli",
+];
+
+
+/*
+ * Default collectors — the ones who actually go buy the item (and may
+ * have to arrange the money themselves if paid_from hasn't paid yet).
+ */
+export const OFFICE_EXPENSE_COLLECTOR_DEFAULTS = [
+  "Arjun",
+  "Varahini",
+];
+
+
+/*
+ * Paid: paid_from gave the money upfront.
+ * Pending: paid_from hasn't paid yet — the collector arranged it.
+ * Reimbursed: paid_from has since paid the collector back.
+ */
+export const OFFICE_EXPENSE_PAYMENT_STATUSES = [
+  "Paid",
+  "Pending",
+  "Reimbursed",
+];
+
+
+/*
  * Main office expenses list.
  */
 export function useEmployeeExpenses(
@@ -132,6 +164,15 @@ export function useEmployeeExpenseCategories() {
 
       collection_modes:
         OFFICE_EXPENSE_COLLECTION_MODES,
+
+      paid_from_defaults:
+        OFFICE_EXPENSE_PAID_FROM_DEFAULTS,
+
+      collector_defaults:
+        OFFICE_EXPENSE_COLLECTOR_DEFAULTS,
+
+      payment_statuses:
+        OFFICE_EXPENSE_PAYMENT_STATUSES,
     }),
 
     staleTime: Infinity,
