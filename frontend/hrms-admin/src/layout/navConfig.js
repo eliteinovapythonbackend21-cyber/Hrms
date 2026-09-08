@@ -194,7 +194,7 @@ export const navConfig = [
       // { label: "Vendors", path: "/finance/vendors", icon: "finance" },
       // { label: "Expenses", path: "/finance/expenses", icon: "finance" },
       // { label: "Income", path: "/finance/income", icon: "finance" },
-      { label: "Employee Expenses", path: "/finance/employee-expenses", icon: "finance", roles: ["admin", "finance"] },
+      { label: "Office Expenses", path: "/finance/employee-expenses", icon: "finance", roles: ["admin", "finance"] },
       { label: "Attendance", path: "/finance/attendance", icon: "attendance", roles: ["admin", ...EMPLOYEE_LIKE_ROLES] },
       { label: "Employees", path: "/master/employees", icon: "employees" },
       { label: "Payroll", path: "/employee/payroll", icon: "employeeLifecycle", roles: PAYROLL_ROLES },
@@ -293,7 +293,7 @@ export const FINANCE_EMPLOYEE_NAV = {
   children: [
     { label: "Attendance", path: "/finance/attendance", icon: "attendance" },
     { label: "Employees", path: "/master/employees", icon: "employees" },
-    { label: "Employee Expenses", path: "/finance/employee-expenses", icon: "finance" },
+    { label: "Office Expenses", path: "/finance/employee-expenses", icon: "finance" },
     { label: "Payroll", path: "/employee/payroll", icon: "employeeLifecycle" },
     // Combined invoice + payment ledger — a dedicated section since this
     // is the Finance login and needs somewhere to check payment/invoice

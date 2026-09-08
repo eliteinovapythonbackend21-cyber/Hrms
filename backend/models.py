@@ -3422,9 +3422,14 @@ class OfficeExpense(TimestampMixin, db.Model):
 
     __tablename__ = "employee_expenses"
 
+    # Must stay in sync with the frontend's OFFICE_EXPENSE_PURCHASE_TYPES
+    # (useEmployeeExpenses.js) — these two previously drifted (backend had
+    # "Office Purchase"/"Out Purchase" while the frontend already sent
+    # "Office In Purchase"/"Office Out Purchase"), which rejected every
+    # create/update with a 400.
     PURCHASE_TYPES = (
-        "Office Purchase",
-        "Out Purchase",
+        "Office In Purchase",
+        "Office Out Purchase",
     )
 
     COLLECTION_STATUSES = (
