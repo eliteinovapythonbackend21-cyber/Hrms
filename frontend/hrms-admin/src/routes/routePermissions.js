@@ -98,7 +98,11 @@ export const routePermissions = {
   "/finance/accounts": ["admin", "finance"],
   "/finance/vendors": ["admin", "finance"],
   "/finance/expenses": ["admin", "finance"],
-  "/finance/employee-expenses": ["admin", "finance"],
+  // "employee" here covers Finance-department employee logins reaching
+  // this via FINANCE_EMPLOYEE_NAV's "Office Expenses" link (their role is
+  // literally "employee", not "finance" — that's a separate top-level
+  // role) — without it, RoleGuard was bouncing them back to /dashboard.
+  "/finance/employee-expenses": ["admin", "finance", "employee"],
   "/finance/income": ["admin", "finance"],
   "/reports": ["admin", "finance", "HR Director", "HR Manager"],
 };
