@@ -21,6 +21,7 @@ from utils import (
     is_admin,
     is_crm_department_user,
     get_current_user,
+    paginate_query,
     parse_date,
     register_crud_blueprint,
     with_token,
