@@ -2949,6 +2949,27 @@ class IncentivePayoutRun(TimestampMixin, db.Model):
     )
 
 
+class SalaryPayrollRun(TimestampMixin, db.Model):
+    """One row per (month, year) once that month's automated Salary
+    Payroll generation has run — the idempotency guard for
+    salary_payroll_engine.auto_generate_due_salary_payroll(), which
+    self-triggers on the 1st-10th of every month (mirrors
+    IncentivePayoutRun's role for the 20th-of-month CRM incentive
+    payout)."""
+
+    __tablename__ = "salary_payroll_runs"
+
+    id = db.Column(db.Integer, primary_key=True)
+    month = db.Column(db.Integer, nullable=False)
+    year = db.Column(db.Integer, nullable=False)
+    employees_processed = db.Column(db.Integer, default=0)
+    ran_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+    __table_args__ = (
+        db.UniqueConstraint("month", "year", name="uq_salary_payroll_run_period"),
+    )
+
+
 class Quotation(TimestampMixin, db.Model):
     __tablename__ = "quotations"
 

@@ -113,6 +113,16 @@ export const employeeLifecycleApi = {
           responseType: "blob",
         }
       ),
+
+    // Admin/Finance "Run Now" — (re)generates Salary Payroll for a given
+    // month/year (base salary + each CRM employee's latest finalized
+    // incentive). Otherwise self-triggers automatically on the 1st-10th
+    // of every month.
+    generate: ({ month, year }) =>
+      axiosClient.post(
+        L.PAYROLL_GENERATE,
+        { month, year }
+      ),
   },
 
   performance: {

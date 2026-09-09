@@ -201,7 +201,15 @@ export const navConfig = [
       { label: "Office Expenses", path: "/finance/employee-expenses", icon: "finance", roles: ["admin", "finance"] },
       { label: "Attendance", path: "/finance/attendance", icon: "attendance", roles: ["admin", ...EMPLOYEE_LIKE_ROLES] },
       { label: "Employees", path: "/master/employees", icon: "employees" },
-      { label: "Payroll", path: "/employee/payroll", icon: "employeeLifecycle", roles: PAYROLL_ROLES },
+      // CRM incentive figures/invoices per employee per month (20th-of-
+      // month automated payout — see incentive_engine.py). Reuses the
+      // same Incentive Payouts screen the CRM admin nav links to.
+      { label: "CRM Incentive Payroll", path: "/crm/leads/payouts", icon: "crm", roles: ["admin", "finance"] },
+      // Base salary + (for CRM employees) their latest finalized CRM
+      // incentive — auto-generated on the 1st-10th of every month (see
+      // salary_payroll_engine.py); this is the existing generic Payroll
+      // screen, just relabeled to match the two-section naming here.
+      { label: "Salary Payroll", path: "/employee/payroll", icon: "employeeLifecycle", roles: PAYROLL_ROLES },
       // Combined invoice + payment + payroll ledger, across every
       // department (not CRM-only) — same page the Finance-login sidebar
       // links to (see FINANCE_EMPLOYEE_NAV below), just also surfaced
@@ -304,7 +312,8 @@ export const FINANCE_EMPLOYEE_NAV = {
     { label: "Attendance", path: "/finance/attendance", icon: "attendance" },
     { label: "Employees", path: "/master/employees", icon: "employees" },
     { label: "Office Expenses", path: "/finance/employee-expenses", icon: "finance" },
-    { label: "Payroll", path: "/employee/payroll", icon: "employeeLifecycle" },
+    { label: "CRM Incentive Payroll", path: "/crm/leads/payouts", icon: "crm" },
+    { label: "Salary Payroll", path: "/employee/payroll", icon: "employeeLifecycle" },
     // Combined invoice + payment ledger — a dedicated section since this
     // is the Finance login and needs somewhere to check payment/invoice
     // history, distinct from the CRM-only Invoices/Payments screens.

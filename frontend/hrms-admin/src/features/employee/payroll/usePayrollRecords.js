@@ -8,7 +8,7 @@ import {
   useCrudGet,
 } from "@/hooks/useCrudResource";
 
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { useFileDownload } from "@/hooks/useFileDownload";
 
@@ -100,6 +100,24 @@ export function usePayrollReport() {
       }
 
       return response;
+    },
+  });
+}
+
+/* =========================================================
+   GENERATE (Run Now) — admin/finance manual (re)generation of
+   Salary Payroll for a given month/year. The same generation
+   otherwise self-triggers automatically on the 1st-10th of
+   every month.
+========================================================= */
+
+export function useGeneratePayroll() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ month, year }) => api.generate({ month, year }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["payroll"] });
     },
   });
 }

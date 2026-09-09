@@ -6,6 +6,7 @@ import {
   useCreatePayrollRecord,
   useUpdatePayrollRecord,
   useDeactivatePayrollRecord,
+  useGeneratePayroll,
 } from "./usePayrollRecords";
 
 import PayrollRecordForm from "./PayrollRecordForm";
@@ -1070,6 +1071,32 @@ export default function PayrollRecordListPage() {
   const { showToast } =
     useToast();
 
+  const { mutate: generatePayroll, isPending: isGenerating } =
+    useGeneratePayroll();
+
+  const handleGeneratePayroll = () => {
+    const today = new Date();
+    generatePayroll(
+      { month: today.getMonth() + 1, year: today.getFullYear() },
+      {
+        onSuccess: (response) => {
+          const count = response?.data?.data?.employees_processed ?? 0;
+          showToast(
+            `Salary payroll generated for ${count} employee${count === 1 ? "" : "s"}.`,
+            "success"
+          );
+        },
+        onError: (error) => {
+          showToast(
+            error?.response?.data?.message ||
+              "Failed to generate salary payroll.",
+            "error"
+          );
+        },
+      }
+    );
+  };
+
   const [
     companyFilterId,
     setCompanyFilterId,
@@ -2045,6 +2072,17 @@ export default function PayrollRecordListPage() {
               exporting
             }
           />
+
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={handleGeneratePayroll}
+            disabled={isGenerating}
+            className="h-10 w-full px-4 sm:w-auto"
+            title="Regenerates every active employee's payroll for the current month from their base salary + latest finalized CRM incentive. Runs automatically on the 1st-10th of every month too."
+          >
+            {isGenerating ? "Generating..." : "Run Salary Payroll"}
+          </Button>
 
           <Button
             type="button"

@@ -274,6 +274,7 @@ export const API = {
       `/payroll/${id}`,
 
     PAYROLL_REPORT: "/payroll/report",
+    PAYROLL_GENERATE: "/payroll/generate",
 
     PERFORMANCE: "/performance/",
     PERFORMANCE_ITEM: (id) =>

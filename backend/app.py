@@ -78,6 +78,40 @@ def _maybe_run_auto_incentive_payout():
         db.session.rollback()
 
 
+# ==================================================================
+#  AUTOMATED SALARY PAYROLL
+#
+# Same opportunistic trigger as the incentive payout above, but for the
+# 1st-10th-of-month Salary Payroll generation window (base salary + each
+# CRM employee's latest finalized incentive amount). See
+# salary_payroll_engine.auto_generate_due_salary_payroll /
+# SalaryPayrollRun for the idempotency guard.
+# ==================================================================
+
+_last_auto_salary_payroll_check = None
+
+
+@app.before_request
+def _maybe_run_auto_salary_payroll():
+    global _last_auto_salary_payroll_check
+
+    if not request.path.startswith("/api/v1/"):
+        return
+
+    today = date.today()
+    if not (1 <= today.day <= 10) or _last_auto_salary_payroll_check == today:
+        return
+    _last_auto_salary_payroll_check = today
+
+    from api.v1.employee_lifecycle.salary_payroll_engine import (
+        auto_generate_due_salary_payroll,
+    )
+    try:
+        auto_generate_due_salary_payroll(today)
+    except Exception:
+        db.session.rollback()
+
+
 @app.route("/")
 def home():
     return {
